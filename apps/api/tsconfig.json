@@ -18,5 +18,10 @@
         "strictBindCallApply": false,
         "forceConsistentCasingInFileNames": false,
         "noFallthroughCasesInSwitch": false
+    },
+    "ts-node": {
+        "ignore": [
+            "/node_modules/(?!@labamu/database)"
+        ]
     }
 }

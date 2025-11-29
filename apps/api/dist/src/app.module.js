@@ -13,12 +13,14 @@ const strategy_module_1 = require("./strategy/strategy.module");
 const order_module_1 = require("./order/order.module");
 const integration_module_1 = require("./integration/integration.module");
 const reporting_module_1 = require("./reporting/reporting.module");
+const purchase_order_module_1 = require("./purchase-order/purchase-order.module");
+const rule_module_1 = require("./rule/rule.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [inventory_module_1.InventoryModule, strategy_module_1.StrategyModule, order_module_1.OrderModule, integration_module_1.IntegrationModule, reporting_module_1.ReportingModule],
+        imports: [inventory_module_1.InventoryModule, strategy_module_1.StrategyModule, order_module_1.OrderModule, integration_module_1.IntegrationModule, reporting_module_1.ReportingModule, purchase_order_module_1.PurchaseOrderModule, rule_module_1.RuleModule],
         controllers: [],
         providers: [],
     })

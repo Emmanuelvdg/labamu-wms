@@ -330,8 +330,7 @@ let InventoryService = class InventoryService {
                     locationId: data.locationId,
                     productId: data.productId,
                     quantity: data.quantity,
-                    reason: data.reason,
-                    status: 'DONE',
+                    maxQuantity: data.quantity,
                 },
             });
             const inventory = await tx.productInventory.findFirst({
@@ -362,7 +361,6 @@ let InventoryService = class InventoryService {
     async getScrapOrders() {
         return this.prisma.scrapOrder.findMany({
             include: { product: true, location: true },
-            orderBy: { createdAt: 'desc' },
         });
     }
     async moveLocation(locationId, newParentId) {
@@ -468,6 +466,19 @@ let InventoryService = class InventoryService {
             data: { packageId },
         });
     }
+    async createRoute(data) {
+        return this.prisma.route.create({
+            data: {
+                name: data.name,
+                description: data.description,
+            },
+        });
+    }
+    async getRoutes() {
+        return this.prisma.route.findMany({
+            include: { rules: true },
+        });
+    }
     async createRule(data) {
         return this.prisma.rule.create({
             data: {
@@ -498,16 +509,20 @@ let InventoryService = class InventoryService {
                 where: { id: sourceBatch.id },
                 data: { currentQuantity: { decrement: data.quantity } },
             });
+            const destLocation = await tx.location.findUnique({ where: { id: data.destinationLocationId } });
+            if (!destLocation || !destLocation.warehouseId)
+                throw new Error('Destination location must belong to a warehouse');
             await tx.inventoryBatch.create({
                 data: {
                     productId: data.productId,
                     locationId: data.destinationLocationId,
+                    warehouseId: destLocation.warehouseId,
                     initialQuantity: data.quantity,
                     currentQuantity: data.quantity,
+                    costPerUnit: sourceBatch.costPerUnit,
                     purchaseDate: sourceBatch.purchaseDate,
                     expiryDate: sourceBatch.expiryDate,
                     batchNumber: sourceBatch.batchNumber,
-                    supplierId: sourceBatch.supplierId,
                     status: 'Active',
                 },
             });
@@ -516,8 +531,6 @@ let InventoryService = class InventoryService {
                     productId: data.productId,
                     quantity: data.quantity,
                     type: 'TRANSFER',
-                    locationId: data.destinationLocationId,
-                    reason: data.reason || 'Internal Transfer',
                 },
             });
             return { success: true };
@@ -622,12 +635,9 @@ let InventoryService = class InventoryService {
     async checkCycleCounts() {
         const today = new Date();
         const locations = await this.prisma.location.findMany({
-            where: {
-                nextInventoryDate: { lte: today },
-                inventoryFrequency: { gt: 0 },
-            },
+            where: {},
             include: {
-                warehouse: true,
+                warehouseView: true,
             },
         });
         return locations;

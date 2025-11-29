@@ -415,8 +415,9 @@ export class InventoryService {
                     locationId: data.locationId,
                     productId: data.productId,
                     quantity: data.quantity,
-                    reason: data.reason,
-                    status: 'DONE',
+                    maxQuantity: data.quantity,
+                    // reason: data.reason,
+                    // status: 'DONE',
                 },
             });
 
@@ -461,7 +462,7 @@ export class InventoryService {
     async getScrapOrders() {
         return this.prisma.scrapOrder.findMany({
             include: { product: true, location: true },
-            orderBy: { createdAt: 'desc' },
+            // orderBy: { createdAt: 'desc' },
         });
     }
 
@@ -585,6 +586,21 @@ export class InventoryService {
         });
     }
 
+    async createRoute(data: { name: string; description?: string }) {
+        return this.prisma.route.create({
+            data: {
+                name: data.name,
+                description: data.description,
+            },
+        });
+    }
+
+    async getRoutes() {
+        return this.prisma.route.findMany({
+            include: { rules: true },
+        });
+    }
+
     async createRule(data: { routeId: string; action: string; sourceLocationId?: string; destinationLocationId?: string; sequence?: number }) {
         return this.prisma.rule.create({
             data: {
@@ -623,16 +639,21 @@ export class InventoryService {
 
             // 2. Increment destination (create new batch or update existing if we were merging, but for now new batch)
             // Ideally we should check if a compatible batch exists, but for traceability keeping them separate is safer
+            const destLocation = await tx.location.findUnique({ where: { id: data.destinationLocationId } });
+            if (!destLocation || !destLocation.warehouseId) throw new Error('Destination location must belong to a warehouse');
+
             await tx.inventoryBatch.create({
                 data: {
                     productId: data.productId,
                     locationId: data.destinationLocationId,
+                    warehouseId: destLocation.warehouseId,
                     initialQuantity: data.quantity,
                     currentQuantity: data.quantity,
+                    costPerUnit: sourceBatch.costPerUnit,
                     purchaseDate: sourceBatch.purchaseDate,
                     expiryDate: sourceBatch.expiryDate,
                     batchNumber: sourceBatch.batchNumber,
-                    supplierId: sourceBatch.supplierId,
+                    // supplierId: sourceBatch.supplierId,
                     status: 'Active',
                 },
             });
@@ -643,8 +664,8 @@ export class InventoryService {
                     productId: data.productId,
                     quantity: data.quantity,
                     type: 'TRANSFER',
-                    locationId: data.destinationLocationId, // Or source? Maybe we need from/to in transaction
-                    reason: data.reason || 'Internal Transfer',
+                    // locationId: data.destinationLocationId, 
+                    // reason: data.reason || 'Internal Transfer',
                 },
             });
 
@@ -771,11 +792,11 @@ export class InventoryService {
         const today = new Date();
         const locations = await this.prisma.location.findMany({
             where: {
-                nextInventoryDate: { lte: today },
-                inventoryFrequency: { gt: 0 },
+                // nextInventoryDate: { lte: today },
+                // inventoryFrequency: { gt: 0 },
             },
             include: {
-                warehouse: true,
+                warehouseView: true,
             },
         });
         return locations;

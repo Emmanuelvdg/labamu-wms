@@ -39,18 +39,18 @@ export declare class InventoryController {
         location: any;
         type: string;
     }): Promise<{
+        location: string;
         name: string;
         id: string;
         type: string;
-        location: string;
         partnerId: string | null;
         viewLocationId: string | null;
     }>;
     getWarehouses(): Promise<{
+        location: string;
         name: string;
         id: string;
         type: string;
-        location: string;
         partnerId: string | null;
         viewLocationId: string | null;
     }[]>;
@@ -58,10 +58,10 @@ export declare class InventoryController {
         id: string;
         status: string;
         expiryDate: Date | null;
-        batchNumber: string;
         productId: string;
         warehouseId: string;
         locationId: string | null;
+        batchNumber: string;
         packageId: string | null;
         initialQuantity: number;
         currentQuantity: number;
@@ -75,10 +75,10 @@ export declare class InventoryController {
         id: string;
         status: string;
         expiryDate: Date | null;
-        batchNumber: string;
         productId: string;
         warehouseId: string;
         locationId: string | null;
+        batchNumber: string;
         packageId: string | null;
         initialQuantity: number;
         currentQuantity: number;
@@ -92,20 +92,24 @@ export declare class InventoryController {
         id: string;
         type: string;
         productId: string;
+        quantity: number;
+        createdAt: Date;
         updatedAt: Date;
         batchId: string | null;
+        date: Date;
+        referenceId: string | null;
     }[]>;
     createAdjustment(data: any): Promise<{
         id: string;
         status: string;
         productId: string;
         locationId: string;
+        quantity: number;
         currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
         batchId: string | null;
         countedQuantity: number;
-        quantity: number;
         reason: string;
     }>;
     updateAdjustment(id: string, data: any): Promise<{
@@ -113,12 +117,12 @@ export declare class InventoryController {
         status: string;
         productId: string;
         locationId: string;
+        quantity: number;
         currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
         batchId: string | null;
         countedQuantity: number;
-        quantity: number;
         reason: string;
     }>;
     applyAdjustment(id: string): Promise<{
@@ -126,12 +130,12 @@ export declare class InventoryController {
         status: string;
         productId: string;
         locationId: string;
+        quantity: number;
         currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
         batchId: string | null;
         countedQuantity: number;
-        quantity: number;
         reason: string;
     }>;
     getAdjustments(): Promise<({
@@ -163,10 +167,10 @@ export declare class InventoryController {
             id: string;
             status: string;
             expiryDate: Date | null;
-            batchNumber: string;
             productId: string;
             warehouseId: string;
             locationId: string | null;
+            batchNumber: string;
             packageId: string | null;
             initialQuantity: number;
             currentQuantity: number;
@@ -181,12 +185,12 @@ export declare class InventoryController {
         status: string;
         productId: string;
         locationId: string;
+        quantity: number;
         currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
         batchId: string | null;
         countedQuantity: number;
-        quantity: number;
         reason: string;
     })[]>;
     createScrapOrder(data: {
@@ -202,14 +206,39 @@ export declare class InventoryController {
         maxQuantity: number;
         active: boolean;
     }>;
-    getScrapOrders(): Promise<{
+    getScrapOrders(): Promise<({
+        product: {
+            name: string;
+            id: string;
+            sku: string;
+            category: string;
+            classification: string | null;
+            type: string | null;
+            unitOfMeasure: string | null;
+            isStockable: boolean;
+            status: string;
+            averageCost: number;
+            description: string | null;
+            tracking: string;
+            expiryDate: Date | null;
+            supplierId: string | null;
+        };
+        location: {
+            name: string;
+            id: string;
+            type: string;
+            warehouseId: string | null;
+            removalStrategy: string | null;
+            parentId: string | null;
+        };
+    } & {
         id: string;
         productId: string;
         locationId: string;
         quantity: number;
         maxQuantity: number;
         active: boolean;
-    }[]>;
+    })[]>;
     createTransfer(data: {
         productId: string;
         sourceLocationId: string;
@@ -274,8 +303,12 @@ export declare class InventoryController {
         id: string;
         type: string;
         productId: string;
+        quantity: number;
+        createdAt: Date;
         updatedAt: Date;
         batchId: string | null;
+        date: Date;
+        referenceId: string | null;
     }[]>;
     getLocationsTree(warehouseId?: string): Promise<({
         children: ({
@@ -409,10 +442,10 @@ export declare class InventoryController {
             id: string;
             status: string;
             expiryDate: Date | null;
-            batchNumber: string;
             productId: string;
             warehouseId: string;
             locationId: string | null;
+            batchNumber: string;
             packageId: string | null;
             initialQuantity: number;
             currentQuantity: number;
@@ -436,10 +469,10 @@ export declare class InventoryController {
         id: string;
         status: string;
         expiryDate: Date | null;
-        batchNumber: string;
         productId: string;
         warehouseId: string;
         locationId: string | null;
+        batchNumber: string;
         packageId: string | null;
         initialQuantity: number;
         currentQuantity: number;
@@ -452,8 +485,29 @@ export declare class InventoryController {
     createRoute(data: {
         name: string;
         description?: string;
-    }): any;
-    getRoutes(): any;
+    }): Promise<{
+        name: string;
+        id: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    getRoutes(): Promise<({
+        rules: {
+            id: string;
+            action: string;
+            sequence: number;
+            routeId: string;
+            sourceLocationId: string | null;
+            destinationLocationId: string | null;
+        }[];
+    } & {
+        name: string;
+        id: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+    })[]>;
     createRule(routeId: string, data: {
         action: string;
         sourceLocationId?: string;
@@ -467,14 +521,23 @@ export declare class InventoryController {
         sourceLocationId: string | null;
         destinationLocationId: string | null;
     }>;
-    checkCycleCounts(): Promise<{
+    checkCycleCounts(): Promise<({
+        warehouseView: {
+            location: string;
+            name: string;
+            id: string;
+            type: string;
+            partnerId: string | null;
+            viewLocationId: string | null;
+        };
+    } & {
         name: string;
         id: string;
         type: string;
         warehouseId: string | null;
         removalStrategy: string | null;
         parentId: string | null;
-    }[]>;
+    })[]>;
     startCycleCount(data: {
         locationIds: string[];
     }): Promise<any[]>;
@@ -496,10 +559,10 @@ export declare class InventoryController {
             supplierId: string | null;
         };
         warehouse: {
+            location: string;
             name: string;
             id: string;
             type: string;
-            location: string;
             partnerId: string | null;
             viewLocationId: string | null;
         };
@@ -515,10 +578,10 @@ export declare class InventoryController {
         id: string;
         status: string;
         expiryDate: Date | null;
-        batchNumber: string;
         productId: string;
         warehouseId: string;
         locationId: string | null;
+        batchNumber: string;
         packageId: string | null;
         initialQuantity: number;
         currentQuantity: number;

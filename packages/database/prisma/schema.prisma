@@ -32,6 +32,7 @@ model Product {
   scrapOrders     ScrapOrder[]
   reorderingRules ReorderingRule[]
   routes          Route[]
+  purchaseOrderItems PurchaseOrderItem[]
 }
 
 model Route {
@@ -89,6 +90,7 @@ model Location {
   sourceRules     Rule[] @relation("SourceLocation")
   destRules       Rule[] @relation("DestLocation")
   packages        Package[]
+  receipts        Receipt[]
 }
 
 // Aggregate Inventory (Legacy/Fast Lookup)
@@ -275,4 +277,48 @@ model PutawayRule {
   location    Location @relation(fields: [locationId], references: [id])
   priority    Int      @default(0)
   active      Boolean  @default(true)
+}
+
+// --- Inbound / Purchase Order Models ---
+
+model Supplier {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  contactInfo String?  // JSON or text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  purchaseOrders PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  id            String   @id @default(uuid())
+  supplierId    String
+  supplier      Supplier @relation(fields: [supplierId], references: [id])
+  status        String   @default("DRAFT") // DRAFT, ORDERED, RECEIVED, CANCELLED
+  expectedDate  DateTime?
+  items         PurchaseOrderItem[]
+  receipts      Receipt[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(uuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id])
+  quantity        Int
+  unitCost        Float         @default(0)
+}
+
+model Receipt {
+  id              String        @id @default(uuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  status          String        @default("READY") // READY, DONE
+  destinationLocationId String
+  destinationLocation Location  @relation(fields: [destinationLocationId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
