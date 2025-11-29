@@ -1,0 +1,839 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma.service';
+import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
+
+@Injectable()
+export class InventoryService {
+    constructor(private prisma: PrismaService) { }
+
+    async createProduct(data: any): Promise<Product> {
+        return this.prisma.product.create({
+            data: {
+                sku: data.sku,
+                name: data.name,
+                category: data.category,
+                expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
+                classification: data.classification,
+                type: data.type,
+                unitOfMeasure: data.unitOfMeasure,
+                averageCost: data.averageCost,
+                status: data.status,
+                tracking: data.tracking || 'none',
+            },
+        });
+    }
+
+    async getProducts(): Promise<Product[]> {
+        return this.prisma.product.findMany();
+    }
+
+    async createWarehouse(data: { name: string; location: any; type: string }): Promise<Warehouse> {
+        return this.prisma.warehouse.create({
+            data: {
+                ...data,
+                location: JSON.stringify(data.location),
+            },
+        });
+    }
+
+    async getWarehouses(): Promise<Warehouse[]> {
+        const warehouses = await this.prisma.warehouse.findMany();
+        return warehouses.map(w => {
+            try {
+                return {
+                    ...w,
+                    location: JSON.parse(w.location),
+                };
+            } catch (e) {
+                return {
+                    ...w,
+                    location: w.location, // Return raw string if parse fails
+                };
+            }
+        });
+    }
+
+    async addStock(data: { productId: string; warehouseId: string; quantity: number; locationId?: string }): Promise<ProductInventory> {
+        // Legacy support: update aggregate
+        const inventory = await this.prisma.productInventory.findFirst({
+            where: { productId: data.productId, warehouseId: data.warehouseId },
+        });
+
+        if (inventory) {
+            return this.prisma.productInventory.update({
+                where: { id: inventory.id },
+                data: { quantity: inventory.quantity + data.quantity },
+            });
+        } else {
+            return this.prisma.productInventory.create({
+                data: {
+                    productId: data.productId,
+                    warehouseId: data.warehouseId,
+                    quantity: data.quantity,
+                    locationId: data.locationId,
+                },
+            });
+        }
+    }
+
+    async getStock(productId: string): Promise<ProductInventory[]> {
+        return this.prisma.productInventory.findMany({
+            where: { productId },
+            include: { warehouse: true },
+        });
+    }
+
+    async addBatch(data: {
+        productId: string;
+        warehouseId: string;
+        locationId?: string;
+        quantity: number;
+        costPerUnit: number;
+        purchaseDate: Date;
+        expiryDate?: Date;
+        vendor?: string;
+        batchNumber?: string; // Optional: Allow manual batch/serial number
+    }): Promise<InventoryBatch> {
+        const product = await this.prisma.product.findUnique({ where: { id: data.productId } });
+        if (!product) throw new Error('Product not found');
+
+        if (product.tracking === 'serial') {
+            if (data.quantity !== 1) {
+                throw new Error('Serial tracked products must be added one by one (quantity 1)');
+            }
+            if (!data.batchNumber) {
+                throw new Error('Serial number is required for serial tracked products');
+            }
+        }
+
+        // 1. Create Batch
+        const batch = await this.prisma.inventoryBatch.create({
+            data: {
+                batchNumber: data.batchNumber || `BATCH-${Date.now()}`,
+                productId: data.productId,
+                warehouseId: data.warehouseId,
+                locationId: data.locationId,
+                initialQuantity: data.quantity,
+                currentQuantity: data.quantity,
+                costPerUnit: data.costPerUnit,
+                purchaseDate: data.purchaseDate,
+                expiryDate: data.expiryDate,
+                status: 'Active',
+                vendor: data.vendor,
+            },
+        });
+
+        // 2. Update Aggregate Inventory (Legacy support)
+        // Find existing inventory record for this product/warehouse/location
+        const existingInventory = await this.prisma.productInventory.findFirst({
+            where: {
+                productId: data.productId,
+                warehouseId: data.warehouseId,
+                locationId: data.locationId,
+            },
+        });
+
+        if (existingInventory) {
+            await this.prisma.productInventory.update({
+                where: { id: existingInventory.id },
+                data: { quantity: { increment: data.quantity } },
+            });
+        } else {
+            await this.prisma.productInventory.create({
+                data: {
+                    productId: data.productId,
+                    warehouseId: data.warehouseId,
+                    locationId: data.locationId,
+                    quantity: data.quantity,
+                },
+            });
+        }
+
+        // 3. Log Transaction
+        await this.prisma.stockTransaction.create({
+            data: {
+                productId: data.productId,
+                batchId: batch.id,
+                type: 'IN',
+                quantity: data.quantity,
+                date: new Date(),
+            },
+        });
+
+        return batch;
+    }
+
+    async getBatches(productId: string): Promise<InventoryBatch[]> {
+        return this.prisma.inventoryBatch.findMany({
+            where: { productId },
+            include: { warehouse: true, location: true },
+        });
+    }
+
+    async getTransactions(productId: string) {
+        return this.prisma.stockTransaction.findMany({
+            where: { productId },
+            orderBy: { date: 'desc' },
+        });
+    }
+
+    async reserveStock(data: { orderId: string; items: { productId: string; quantity: number }[]; strategy: string }): Promise<any> {
+        const results = [];
+
+        // Simple transaction to ensure atomicity
+        await this.prisma.$transaction(async (tx) => {
+            for (const item of data.items) {
+                // Fetch available inventory
+                const inventory = await tx.productInventory.findMany({
+                    where: { productId: item.productId },
+                    include: { product: true, warehouse: true },
+                    orderBy: data.strategy === 'FEFO'
+                        ? { product: { expiryDate: 'asc' } }
+                        : { warehouse: { id: 'asc' } } // Default to location/FIFO (mock logic for now)
+                });
+
+                let remainingQty = item.quantity;
+
+                for (const stock of inventory) {
+                    if (remainingQty <= 0) break;
+
+                    const available = stock.quantity - stock.reserved;
+                    if (available > 0) {
+                        const take = Math.min(available, remainingQty);
+
+                        // Update inventory
+                        await tx.productInventory.update({
+                            where: { id: stock.id },
+                            data: { reserved: { increment: take } }
+                        });
+
+                        // Create reservation record
+                        await tx.reservation.create({
+                            data: {
+                                orderId: data.orderId,
+                                productId: item.productId,
+                                quantity: take,
+                                reservationStrategy: data.strategy,
+                            }
+                        });
+
+                        remainingQty -= take;
+                    }
+                }
+
+                if (remainingQty > 0) {
+                    throw new Error(`Insufficient stock for product ${item.productId}`);
+                }
+
+            }
+        });
+
+        return results;
+    }
+
+    async getLocationsTree(warehouseId?: string) {
+        // If warehouseId is provided, find the root view location for that warehouse
+        if (warehouseId) {
+            const warehouse = await this.prisma.warehouse.findUnique({
+                where: { id: warehouseId },
+                include: { viewLocation: { include: { children: { include: { children: true } } } } }, // Simplified recursive include
+            });
+            return warehouse?.viewLocation ? [warehouse.viewLocation] : [];
+        }
+
+        // Otherwise return all root locations (no parent)
+        return this.prisma.location.findMany({
+            where: { parentId: null },
+            include: { children: { include: { children: true } } },
+        });
+    }
+
+    async createLocation(data: {
+        name: string;
+        warehouseId?: string;
+        parentId?: string;
+        type?: string; // LocationType
+        removalStrategy?: string;
+    }) {
+        return this.prisma.location.create({
+            data: {
+                name: data.name,
+                warehouseId: data.warehouseId,
+                parentId: data.parentId,
+                type: data.type || 'INTERNAL',
+                removalStrategy: data.removalStrategy,
+            },
+        });
+    }
+
+    async createAdjustment(data: {
+        locationId: string;
+        productId: string;
+        countedQuantity: number;
+        currentQuantity: number;
+        batchId?: string;
+        reason: string;
+        status?: string;
+    }) {
+        return this.prisma.$transaction(async (tx) => {
+            const quantity = data.countedQuantity - data.currentQuantity;
+            const status = data.status || 'DRAFT';
+
+            // 1. Create Adjustment Record
+            const adjustment = await tx.inventoryAdjustment.create({
+                data: {
+                    locationId: data.locationId,
+                    productId: data.productId,
+                    batchId: data.batchId,
+                    countedQuantity: data.countedQuantity,
+                    currentQuantity: data.currentQuantity,
+                    quantity: quantity,
+                    reason: data.reason,
+                    status: status,
+                },
+            });
+
+            // If status is APPLIED, update inventory immediately
+            if (status === 'APPLIED') {
+                await this._applyAdjustmentLogic(tx, adjustment);
+            }
+
+            return adjustment;
+        });
+    }
+
+    async updateAdjustment(id: string, data: { countedQuantity?: number; locationId?: string; status?: string }) {
+        return this.prisma.inventoryAdjustment.update({
+            where: { id },
+            data: {
+                countedQuantity: data.countedQuantity,
+                locationId: data.locationId,
+                status: data.status,
+            },
+        });
+    }
+
+    async applyAdjustment(id: string) {
+        return this.prisma.$transaction(async (tx) => {
+            const adjustment = await tx.inventoryAdjustment.findUnique({ where: { id } });
+            if (!adjustment) throw new Error('Adjustment not found');
+            if (adjustment.status === 'APPLIED') throw new Error('Adjustment already applied');
+
+            // Update status
+            await tx.inventoryAdjustment.update({
+                where: { id },
+                data: { status: 'APPLIED' },
+            });
+
+            await this._applyAdjustmentLogic(tx, adjustment);
+            return adjustment;
+        });
+    }
+
+    private async _applyAdjustmentLogic(tx: any, adjustment: any) {
+        await this.validateLocationForStock(adjustment.locationId);
+
+        // 1. Update Aggregate Inventory (ProductInventory)
+        const inventory = await tx.productInventory.findFirst({
+            where: {
+                productId: adjustment.productId,
+                locationId: adjustment.locationId,
+            },
+        });
+
+        if (inventory) {
+            await tx.productInventory.update({
+                where: { id: inventory.id },
+                data: { quantity: { increment: adjustment.quantity } },
+            });
+        } else {
+            // Find warehouseId from location
+            const location = await tx.location.findUnique({ where: { id: adjustment.locationId } });
+            if (location && location.warehouseId) {
+                await tx.productInventory.create({
+                    data: {
+                        productId: adjustment.productId,
+                        locationId: adjustment.locationId,
+                        warehouseId: location.warehouseId,
+                        quantity: adjustment.quantity,
+                    },
+                });
+            }
+        }
+
+        // 2. Update Batch Inventory (InventoryBatch) if batchId is present
+        if (adjustment.batchId) {
+            await tx.inventoryBatch.update({
+                where: { id: adjustment.batchId },
+                data: { currentQuantity: { increment: adjustment.quantity } },
+            });
+        }
+
+        // 3. Log Transaction
+        await tx.stockTransaction.create({
+            data: {
+                productId: adjustment.productId,
+                batchId: adjustment.batchId,
+                type: 'ADJUSTMENT',
+                quantity: adjustment.quantity,
+                date: new Date(),
+                referenceId: adjustment.id,
+            },
+        });
+
+        // 4. Update Next Inventory Date for Location
+        const location = await tx.location.findUnique({ where: { id: adjustment.locationId } });
+        if (location && location.inventoryFrequency > 0) {
+            const nextDate = new Date();
+            nextDate.setDate(nextDate.getDate() + location.inventoryFrequency);
+            await tx.location.update({
+                where: { id: location.id },
+                data: { nextInventoryDate: nextDate },
+            });
+        }
+    }
+
+    async getAdjustments(status?: string) {
+        const where = status ? { status } : {};
+        return this.prisma.inventoryAdjustment.findMany({
+            where,
+            include: { product: true, location: true, batch: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    async createScrapOrder(data: {
+        locationId: string;
+        productId: string;
+        quantity: number;
+        reason: string;
+    }) {
+        return this.prisma.$transaction(async (tx) => {
+            // 1. Create Scrap Order
+            const scrapOrder = await tx.scrapOrder.create({
+                data: {
+                    locationId: data.locationId,
+                    productId: data.productId,
+                    quantity: data.quantity,
+                    reason: data.reason,
+                    status: 'DONE',
+                },
+            });
+
+            // 2. Move Stock to "Inventory Loss" (Virtual Location)
+            // For now, we just decrement the stock from the source location.
+            // Ideally, we should move it to a specific "Scrap/Loss" location ID, but finding that ID dynamically is tricky without configuration.
+            // So we will just decrement and log it.
+
+            const inventory = await tx.productInventory.findFirst({
+                where: {
+                    productId: data.productId,
+                    locationId: data.locationId,
+                },
+            });
+
+            if (!inventory || inventory.quantity < data.quantity) {
+                throw new Error('Insufficient stock to scrap');
+            }
+
+            await tx.productInventory.update({
+                where: { id: inventory.id },
+                data: { quantity: { decrement: data.quantity } },
+            });
+
+            // 3. Log Transaction
+            await tx.stockTransaction.create({
+                data: {
+                    productId: data.productId,
+                    type: 'OUT', // Treating scrap as OUT for now, or could be ADJUSTMENT
+                    quantity: data.quantity,
+                    date: new Date(),
+                    referenceId: scrapOrder.id,
+                },
+            });
+
+            return scrapOrder;
+        });
+    }
+
+
+
+    async getScrapOrders() {
+        return this.prisma.scrapOrder.findMany({
+            include: { product: true, location: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+
+
+
+
+    async moveLocation(locationId: string, newParentId: string | null) {
+        // Validation: Prevent circular reference
+        if (newParentId) {
+            let parent = await this.prisma.location.findUnique({ where: { id: newParentId } });
+            while (parent) {
+                if (parent.id === locationId) {
+                    throw new Error('Cannot move a location inside itself');
+                }
+                if (!parent.parentId) break;
+                parent = await this.prisma.location.findUnique({ where: { id: parent.parentId } });
+            }
+        }
+
+        return this.prisma.location.update({
+            where: { id: locationId },
+            data: { parentId: newParentId },
+        });
+    }
+
+    async createPutawayRule(data: { productId?: string; categoryId?: string; locationId: string; priority: number }) {
+        return this.prisma.putawayRule.create({
+            data: {
+                productId: data.productId,
+                categoryId: data.categoryId,
+                locationId: data.locationId,
+                priority: data.priority,
+            },
+        });
+    }
+
+    async getPutawayRules() {
+        return this.prisma.putawayRule.findMany({
+            include: { product: true, location: true },
+            orderBy: { priority: 'desc' },
+        });
+    }
+
+    async applyPutawayStrategy(productId: string): Promise<string | null> {
+        const product = await this.prisma.product.findUnique({ where: { id: productId } });
+        if (!product) return null;
+
+        // 1. Check specific product rules
+        const productRule = await this.prisma.putawayRule.findFirst({
+            where: { productId: productId, active: true },
+            orderBy: { priority: 'desc' },
+        });
+        if (productRule) return productRule.locationId;
+
+        // 2. Check category rules
+        if (product.category) {
+            const categoryRule = await this.prisma.putawayRule.findFirst({
+                where: { categoryId: product.category, active: true },
+                orderBy: { priority: 'desc' },
+            });
+            if (categoryRule) return categoryRule.locationId;
+        }
+
+        return null; // No rule found
+    }
+
+    async suggestRemoval(locationId: string, productId: string, quantity: number) {
+        const location = await this.prisma.location.findUnique({ where: { id: locationId } });
+        if (!location) throw new Error('Location not found');
+
+        const strategy = location.removalStrategy || 'FIFO'; // Default to FIFO
+
+        let orderBy: any = { purchaseDate: 'asc' }; // FIFO
+        if (strategy === 'LIFO') orderBy = { purchaseDate: 'desc' };
+        if (strategy === 'FEFO') orderBy = { expiryDate: 'asc' };
+
+        const batches = await this.prisma.inventoryBatch.findMany({
+            where: {
+                locationId: locationId,
+                productId: productId,
+                currentQuantity: { gt: 0 },
+                status: 'Active',
+            },
+            orderBy: orderBy,
+        });
+
+        // Simple allocation logic
+        const suggestions = [];
+        let remaining = quantity;
+        for (const batch of batches) {
+            if (remaining <= 0) break;
+            const take = Math.min(remaining, batch.currentQuantity);
+            suggestions.push({ batchId: batch.id, quantity: take });
+            remaining -= take;
+        }
+
+        return suggestions;
+    }
+
+    async createPackage(data: { name: string; type: string; locationId?: string }) {
+        return this.prisma.package.create({
+            data: {
+                name: data.name,
+                type: data.type,
+                locationId: data.locationId,
+            },
+        });
+    }
+
+    async getPackages() {
+        return this.prisma.package.findMany({
+            include: { location: true, batches: { include: { product: true } } },
+        });
+    }
+
+    async assignBatchToPackage(batchId: string, packageId: string) {
+        return this.prisma.inventoryBatch.update({
+            where: { id: batchId },
+            data: { packageId },
+        });
+    }
+
+    async createRule(data: { routeId: string; action: string; sourceLocationId?: string; destinationLocationId?: string; sequence?: number }) {
+        return this.prisma.rule.create({
+            data: {
+                routeId: data.routeId,
+                action: data.action,
+                sourceLocationId: data.sourceLocationId,
+                destinationLocationId: data.destinationLocationId,
+                sequence: data.sequence,
+            },
+        });
+    }
+
+    async createTransfer(data: { productId: string; sourceLocationId: string; destinationLocationId: string; quantity: number; reason?: string }) {
+        await this.validateLocationForStock(data.destinationLocationId);
+
+        return this.prisma.$transaction(async (tx) => {
+            // 1. Decrement source
+            const sourceBatch = await tx.inventoryBatch.findFirst({
+                where: {
+                    productId: data.productId,
+                    locationId: data.sourceLocationId,
+                    currentQuantity: { gte: data.quantity },
+                    status: 'Active',
+                },
+                orderBy: { purchaseDate: 'asc' }, // FIFO by default for now
+            });
+
+            if (!sourceBatch) {
+                throw new Error('Insufficient stock in source location');
+            }
+
+            await tx.inventoryBatch.update({
+                where: { id: sourceBatch.id },
+                data: { currentQuantity: { decrement: data.quantity } },
+            });
+
+            // 2. Increment destination (create new batch or update existing if we were merging, but for now new batch)
+            // Ideally we should check if a compatible batch exists, but for traceability keeping them separate is safer
+            await tx.inventoryBatch.create({
+                data: {
+                    productId: data.productId,
+                    locationId: data.destinationLocationId,
+                    initialQuantity: data.quantity,
+                    currentQuantity: data.quantity,
+                    purchaseDate: sourceBatch.purchaseDate,
+                    expiryDate: sourceBatch.expiryDate,
+                    batchNumber: sourceBatch.batchNumber,
+                    supplierId: sourceBatch.supplierId,
+                    status: 'Active',
+                },
+            });
+
+            // 3. Log transaction
+            await tx.stockTransaction.create({
+                data: {
+                    productId: data.productId,
+                    quantity: data.quantity,
+                    type: 'TRANSFER',
+                    locationId: data.destinationLocationId, // Or source? Maybe we need from/to in transaction
+                    reason: data.reason || 'Internal Transfer',
+                },
+            });
+
+            return { success: true };
+        });
+    }
+
+    // Reordering Rules
+    async createReorderingRule(data: { productId: string; locationId: string; minQuantity: number; maxQuantity: number }) {
+        return this.prisma.reorderingRule.create({
+            data: {
+                productId: data.productId,
+                locationId: data.locationId,
+                minQuantity: data.minQuantity,
+                maxQuantity: data.maxQuantity,
+            },
+        });
+    }
+
+    async getReorderingRules() {
+        return this.prisma.reorderingRule.findMany({
+            include: { product: true, location: true },
+        });
+    }
+
+    async checkReorderingRules() {
+        const rules = await this.prisma.reorderingRule.findMany({
+            where: { active: true },
+            include: { product: true, location: true },
+        });
+
+        const suggestions = [];
+
+        for (const rule of rules) {
+            // Calculate current stock at location
+            const stock = await this.prisma.inventoryBatch.aggregate({
+                where: {
+                    productId: rule.productId,
+                    locationId: rule.locationId,
+                    status: 'Active',
+                },
+                _sum: { currentQuantity: true },
+            });
+
+            const currentQty = stock._sum.currentQuantity || 0;
+
+            if (currentQty < rule.minQuantity) {
+                suggestions.push({
+                    ruleId: rule.id,
+                    product: rule.product,
+                    location: rule.location,
+                    currentQuantity: currentQty,
+                    minQuantity: rule.minQuantity,
+                    maxQuantity: rule.maxQuantity,
+                    suggestedOrder: rule.maxQuantity - currentQty,
+                });
+            }
+        }
+
+        return suggestions;
+    }
+
+    // Reporting & Valuation
+    async getValuation() {
+        const batches = await this.prisma.inventoryBatch.findMany({
+            where: {
+                currentQuantity: { gt: 0 },
+            },
+            include: {
+                product: true,
+                location: true,
+            },
+        });
+
+        // Group by Product
+        const valuationByProduct: Record<string, any> = {};
+        let totalValue = 0;
+
+        for (const batch of batches) {
+            const value = batch.currentQuantity * batch.costPerUnit;
+            totalValue += value;
+
+            if (!valuationByProduct[batch.productId]) {
+                valuationByProduct[batch.productId] = {
+                    productId: batch.productId,
+                    productName: batch.product.name,
+                    sku: batch.product.sku,
+                    totalQuantity: 0,
+                    totalValue: 0,
+                    batches: [],
+                };
+            }
+
+            valuationByProduct[batch.productId].totalQuantity += batch.currentQuantity;
+            valuationByProduct[batch.productId].totalValue += value;
+            valuationByProduct[batch.productId].batches.push({
+                batchNumber: batch.batchNumber,
+                quantity: batch.currentQuantity,
+                cost: batch.costPerUnit,
+                value: value,
+                location: batch.location?.name || 'Unknown',
+            });
+        }
+
+        return {
+            totalValue,
+            products: Object.values(valuationByProduct),
+        };
+    }
+
+    async getStockMoves() {
+        return this.prisma.stockTransaction.findMany({
+            orderBy: { date: 'desc' },
+            include: {
+                product: true,
+                // @ts-ignore
+                batch: { include: { location: true } },
+            },
+            take: 100, // Limit to last 100 moves for now
+        });
+    }
+
+    async checkCycleCounts() {
+        const today = new Date();
+        const locations = await this.prisma.location.findMany({
+            where: {
+                nextInventoryDate: { lte: today },
+                inventoryFrequency: { gt: 0 },
+            },
+            include: {
+                warehouse: true,
+            },
+        });
+        return locations;
+    }
+
+    async getTransitItems() {
+        return this.prisma.inventoryBatch.findMany({
+            where: {
+                location: {
+                    type: 'TRANSIT',
+                },
+                currentQuantity: { gt: 0 },
+            },
+            include: {
+                product: true,
+                location: true,
+                warehouse: true,
+            },
+        });
+    }
+
+    async createCycleCountAdjustments(locationIds: string[]) {
+        const adjustments = [];
+
+        for (const locationId of locationIds) {
+            // Find all batches in this location
+            const batches = await this.prisma.inventoryBatch.findMany({
+                where: { locationId, currentQuantity: { gt: 0 } },
+            });
+
+            // Create a draft adjustment for each batch
+            for (const batch of batches) {
+                const adjustment = await this.createAdjustment({
+                    locationId,
+                    productId: batch.productId,
+                    batchId: batch.id,
+                    currentQuantity: batch.currentQuantity,
+                    countedQuantity: batch.currentQuantity, // Default to current
+                    reason: 'Cycle Count',
+                    status: 'DRAFT',
+                });
+                adjustments.push(adjustment);
+            }
+
+            // If location is empty, we might want to create an empty adjustment for a product? 
+            // Odoo typically creates lines for what's there. 
+            // If the user finds something new, they add it manually in the sheet.
+        }
+
+        return adjustments;
+    }
+
+    private async validateLocationForStock(locationId: string) {
+        // @ts-ignore
+        const location = await this.prisma.location.findUnique({ where: { id: locationId } });
+        if (!location) throw new Error('Location not found');
+        if (location.type === 'VIEW') {
+            throw new Error(`Cannot store stock in a VIEW location: ${location.name}`);
+        }
+    }
+}

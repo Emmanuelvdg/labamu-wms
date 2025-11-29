@@ -1,0 +1,278 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Product {
+  id              String   @id @default(uuid())
+  sku             String   @unique
+  name            String
+  category        String
+  classification  String?  // ABC Classification: A, B, C
+  type            String?  // Raw, Finished, Semi-finished
+  unitOfMeasure   String?  // Centimeter, Piece, etc.
+  isStockable     Boolean  @default(true)
+  status          String   @default("Active")
+  averageCost     Float    @default(0)
+  description     String?
+  tracking        String   @default("none") // none, lot, serial
+  expiryDate      DateTime? // Keep for legacy/simple use, but Batches are preferred
+  supplierId      String?
+  inventory       ProductInventory[] // Aggregate view
+  batches         InventoryBatch[]   // Detailed view
+  orderItems      OrderItem[]
+  reservations    Reservation[]
+  transactions    StockTransaction[]
+  putawayRules    PutawayRule[]
+  inventoryAdjustments InventoryAdjustment[]
+  scrapOrders     ScrapOrder[]
+  reorderingRules ReorderingRule[]
+  routes          Route[]
+}
+
+model Route {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  rules       Rule[]
+  products    Product[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Rule {
+  id                  String   @id @default(uuid())
+  routeId             String
+  route               Route    @relation(fields: [routeId], references: [id])
+  action              String   // PULL, PUSH
+  sourceLocationId    String?
+  sourceLocation      Location? @relation("SourceLocation", fields: [sourceLocationId], references: [id])
+  destinationLocationId String?
+  destinationLocation Location? @relation("DestLocation", fields: [destinationLocationId], references: [id])
+  sequence            Int      @default(0)
+}
+
+model Warehouse {
+  id             String   @id @default(uuid())
+  name           String
+  location       String   // JSON: { lat: number, lng: number }
+  type           String
+  partnerId      String?
+  viewLocationId String?  @unique
+  viewLocation   Location? @relation("WarehouseView", fields: [viewLocationId], references: [id])
+  inventory      ProductInventory[]
+  batches        InventoryBatch[]
+}
+
+model Location {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // VIEW, INTERNAL, VENDOR, CUSTOMER, INVENTORY_LOSS, PRODUCTION, TRANSIT
+  removalStrategy String? // FIFO, LIFO, FEFO
+  parentId    String?
+  parent      Location? @relation("LocationHierarchy", fields: [parentId], references: [id])
+  children    Location[] @relation("LocationHierarchy")
+  warehouseId String?
+  warehouseView Warehouse? @relation("WarehouseView")
+  
+  // Relations
+  inventory   ProductInventory[]
+  batches     InventoryBatch[]
+  adjustments InventoryAdjustment[]
+  scrapOrders ScrapOrder[]
+  putawayRules PutawayRule[]
+  reorderingRules ReorderingRule[]
+  sourceRules     Rule[] @relation("SourceLocation")
+  destRules       Rule[] @relation("DestLocation")
+  packages        Package[]
+}
+
+// Aggregate Inventory (Legacy/Fast Lookup)
+model ProductInventory {
+  id          String   @id @default(uuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  locationId  String?
+  location    Location? @relation(fields: [locationId], references: [id])
+  quantity    Int
+  reserved    Int      @default(0)
+}
+
+model InventoryBatch {
+  id              String   @id @default(uuid())
+  batchNumber     String   @unique
+  productId       String
+  product         Product  @relation(fields: [productId], references: [id])
+  warehouseId     String
+  warehouse       Warehouse @relation(fields: [warehouseId], references: [id])
+  locationId      String?
+  location        Location? @relation(fields: [locationId], references: [id])
+  packageId       String?
+  package         Package? @relation(fields: [packageId], references: [id])
+  initialQuantity Int
+  currentQuantity Int
+  costPerUnit     Float
+  purchaseDate    DateTime
+  expiryDate      DateTime?
+  status          String   // Active, Expired, Depleted
+  vendor          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  adjustments     InventoryAdjustment[]
+}
+
+model Package {
+  id          String   @id @default(uuid())
+  name        String   @unique // Barcode / LPN
+  type        String   // Box, Pallet, etc.
+  locationId  String?
+  location    Location? @relation(fields: [locationId], references: [id])
+  batches     InventoryBatch[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model StockTransaction {
+  id          String   @id @default(uuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  batchId     String?
+  type        String   // IN, OUT, ADJUSTMENT, RESERVATION
+  quantity    Int
+  date        DateTime @default(now())
+  referenceId String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id              String   @id @default(uuid())
+  customerId      String
+  status          String   // PENDING, RESERVED, PICKING, SHIPPED, DELIVERED, CANCELLED
+  priority        String   // HIGH, NORMAL, LOW
+  shippingCarrier String?
+  items           OrderItem[]
+  reservations    Reservation[]
+  shipment        Shipment?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model OrderItem {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int
+}
+
+model Reservation {
+  id                  String   @id @default(uuid())
+  productId           String
+  product             Product  @relation(fields: [productId], references: [id])
+  orderId             String
+  order               Order    @relation(fields: [orderId], references: [id])
+  quantity            Int
+  reservationStrategy String   // FIFO, FEFO, LOCATION
+  createdAt           DateTime @default(now())
+}
+
+model PickingStrategy {
+  id     String  @id @default(uuid())
+  name   String  @unique // Single, Cluster, Wave, Batch
+  rules  String  // JSON
+  active Boolean @default(true)
+}
+
+model ReservationStrategy {
+  id     String  @id @default(uuid())
+  name   String  @unique // FIFO, FEFO, Location
+  rules  String  // JSON
+  active Boolean @default(true)
+}
+
+model Shipment {
+  id         String   @id @default(uuid())
+  orderId    String   @unique
+  order      Order    @relation(fields: [orderId], references: [id])
+  carrier    String
+  trackingId String
+  status     String
+}
+
+model ComplianceReport {
+  id        String   @id @default(uuid())
+  type      String   // VAT, SAF-T
+  period    String
+  data      String // JSON
+  createdAt DateTime @default(now())
+}
+
+model SalesChannel {
+  id     String @id @default(uuid())
+  name   String @unique // Tokopedia, Shopee
+  apiKey String
+}
+
+model LogisticsPartner {
+  id        String @id @default(uuid())
+  name      String @unique // JNE, SiCepat
+  apiConfig String // JSON
+}
+
+model InventoryAdjustment {
+  id              String          @id @default(uuid())
+  locationId      String
+  location        Location        @relation(fields: [locationId], references: [id])
+  productId       String
+  product         Product         @relation(fields: [productId], references: [id])
+  batchId         String?
+  batch           InventoryBatch? @relation(fields: [batchId], references: [id])
+  countedQuantity Int             @default(0)
+  currentQuantity Int             @default(0)
+  quantity        Int // Positive = Found, Negative = Lost
+  reason          String
+  status          String // DRAFT, APPLIED
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model ScrapOrder {
+  id          String   @id @default(uuid())
+  locationId  String
+  location    Location @relation(fields: [locationId], references: [id])
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int
+  maxQuantity Int
+  active      Boolean  @default(true)
+}
+
+model ReorderingRule {
+  id          String   @id @default(uuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  locationId  String
+  location    Location @relation(fields: [locationId], references: [id])
+  minQuantity Int
+  maxQuantity Int
+  active      Boolean  @default(true)
+}
+
+model PutawayRule {
+  id          String   @id @default(uuid())
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  categoryId  String?  // Optional: Apply to entire category
+  locationId  String
+  location    Location @relation(fields: [locationId], references: [id])
+  priority    Int      @default(0)
+  active      Boolean  @default(true)
+}
