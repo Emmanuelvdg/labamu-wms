@@ -20,20 +20,28 @@ export declare class PurchaseOrderController {
         };
         items: {
             id: string;
+            productId: string;
             quantity: number;
             unitCost: number;
-            productId: string;
             purchaseOrderId: string;
         }[];
     } & {
         id: string;
-        status: string;
-        expectedDate: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        status: string;
         supplierId: string;
+        expectedDate: Date | null;
     }>;
     findAll(): Promise<({
+        receipts: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: string;
+            destinationLocationId: string;
+            purchaseOrderId: string;
+        }[];
         supplier: {
             id: string;
             createdAt: Date;
@@ -43,36 +51,35 @@ export declare class PurchaseOrderController {
         };
         items: {
             id: string;
+            productId: string;
             quantity: number;
             unitCost: number;
-            productId: string;
             purchaseOrderId: string;
-        }[];
-        receipts: {
-            id: string;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
-            purchaseOrderId: string;
-            destinationLocationId: string;
         }[];
     } & {
         id: string;
-        status: string;
-        expectedDate: Date | null;
         createdAt: Date;
         updatedAt: Date;
+        status: string;
         supplierId: string;
+        expectedDate: Date | null;
     })[]>;
+    getSuppliers(): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        name: string;
+        contactInfo: string | null;
+    }[]>;
     receive(id: string, data: {
         destinationLocationId: string;
     }): Promise<{
         id: string;
-        status: string;
         createdAt: Date;
         updatedAt: Date;
-        purchaseOrderId: string;
+        status: string;
         destinationLocationId: string;
+        purchaseOrderId: string;
     }>;
 }
 //# sourceMappingURL=purchase-order.controller.d.ts.map

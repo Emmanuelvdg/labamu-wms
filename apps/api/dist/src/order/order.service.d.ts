@@ -23,9 +23,9 @@ export declare class OrderService {
     }): Promise<{
         id: string;
         status: string;
-        orderId: string;
         carrier: string;
         trackingId: string;
+        orderId: string;
     }>;
 }
 //# sourceMappingURL=order.service.d.ts.map

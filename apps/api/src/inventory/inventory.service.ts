@@ -248,6 +248,14 @@ export class InventoryService {
         });
     }
 
+    async getLocations(warehouseId?: string) {
+        const where = warehouseId ? { warehouseId } : {};
+        return this.prisma.location.findMany({
+            where,
+            include: { warehouseView: true },
+        });
+    }
+
     async createLocation(data: {
         name: string;
         warehouseId?: string;

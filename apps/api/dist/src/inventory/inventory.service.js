@@ -204,6 +204,13 @@ let InventoryService = class InventoryService {
             include: { children: { include: { children: true } } },
         });
     }
+    async getLocations(warehouseId) {
+        const where = warehouseId ? { warehouseId } : {};
+        return this.prisma.location.findMany({
+            where,
+            include: { warehouseView: true },
+        });
+    }
     async createLocation(data) {
         return this.prisma.location.create({
             data: {

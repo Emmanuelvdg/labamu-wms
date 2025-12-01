@@ -42,6 +42,9 @@ let PurchaseOrderService = class PurchaseOrderService {
             include: { items: true, supplier: true, receipts: true },
         });
     }
+    async getSuppliers() {
+        return this.prisma.supplier.findMany();
+    }
     async receiveGoods(purchaseOrderId, destinationLocationId) {
         const result = await this.prisma.$transaction(async (tx) => {
             const po = await tx.purchaseOrder.findUnique({

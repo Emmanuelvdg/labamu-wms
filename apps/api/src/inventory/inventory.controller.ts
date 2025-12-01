@@ -110,6 +110,11 @@ export class InventoryController {
         return this.inventoryService.getLocationsTree(warehouseId);
     }
 
+    @Get('locations')
+    getLocations(@Query('warehouseId') warehouseId?: string) {
+        return this.inventoryService.getLocations(warehouseId);
+    }
+
     @Post('locations')
     createLocation(@Body() data: any) {
         return this.inventoryService.createLocation(data);

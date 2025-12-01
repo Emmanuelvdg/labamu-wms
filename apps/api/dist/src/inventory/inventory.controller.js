@@ -79,6 +79,9 @@ let InventoryController = class InventoryController {
     getLocationsTree(warehouseId) {
         return this.inventoryService.getLocationsTree(warehouseId);
     }
+    getLocations(warehouseId) {
+        return this.inventoryService.getLocations(warehouseId);
+    }
     createLocation(data) {
         return this.inventoryService.createLocation(data);
     }
@@ -253,6 +256,13 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], InventoryController.prototype, "getLocationsTree", null);
+__decorate([
+    (0, common_1.Get)('locations'),
+    __param(0, (0, common_1.Query)('warehouseId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "getLocations", null);
 __decorate([
     (0, common_1.Post)('locations'),
     __param(0, (0, common_1.Body)()),

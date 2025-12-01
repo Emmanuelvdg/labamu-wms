@@ -35,6 +35,10 @@ export class PurchaseOrderService {
         });
     }
 
+    async getSuppliers() {
+        return this.prisma.supplier.findMany();
+    }
+
     async receiveGoods(purchaseOrderId: string, destinationLocationId: string) {
         // 1. Perform Receipt (Transaction)
         const result = await this.prisma.$transaction(async (tx) => {

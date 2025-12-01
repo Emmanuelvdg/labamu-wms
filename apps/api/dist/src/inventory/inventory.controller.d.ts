@@ -3,15 +3,15 @@ export declare class InventoryController {
     private readonly inventoryService;
     constructor(inventoryService: InventoryService);
     createProduct(data: any): Promise<{
-        name: string;
         id: string;
+        type: string | null;
+        name: string;
+        status: string;
         sku: string;
         category: string;
         classification: string | null;
-        type: string | null;
         unitOfMeasure: string | null;
         isStockable: boolean;
-        status: string;
         averageCost: number;
         description: string | null;
         tracking: string;
@@ -19,15 +19,15 @@ export declare class InventoryController {
         supplierId: string | null;
     }>;
     getProducts(): Promise<{
-        name: string;
         id: string;
+        type: string | null;
+        name: string;
+        status: string;
         sku: string;
         category: string;
         classification: string | null;
-        type: string | null;
         unitOfMeasure: string | null;
         isStockable: boolean;
-        status: string;
         averageCost: number;
         description: string | null;
         tracking: string;
@@ -39,116 +39,116 @@ export declare class InventoryController {
         location: any;
         type: string;
     }): Promise<{
-        location: string;
-        name: string;
         id: string;
         type: string;
-        partnerId: string | null;
+        name: string;
         viewLocationId: string | null;
+        location: string;
+        partnerId: string | null;
     }>;
     getWarehouses(): Promise<{
-        location: string;
-        name: string;
         id: string;
         type: string;
-        partnerId: string | null;
+        name: string;
         viewLocationId: string | null;
+        location: string;
+        partnerId: string | null;
     }[]>;
     addBatch(data: any): Promise<{
         id: string;
-        status: string;
-        expiryDate: Date | null;
         productId: string;
+        createdAt: Date;
+        updatedAt: Date;
         warehouseId: string;
+        currentQuantity: number;
+        status: string;
         locationId: string | null;
+        expiryDate: Date | null;
         batchNumber: string;
         packageId: string | null;
         initialQuantity: number;
-        currentQuantity: number;
         costPerUnit: number;
         purchaseDate: Date;
         vendor: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     getBatches(productId: string): Promise<{
         id: string;
-        status: string;
-        expiryDate: Date | null;
         productId: string;
+        createdAt: Date;
+        updatedAt: Date;
         warehouseId: string;
+        currentQuantity: number;
+        status: string;
         locationId: string | null;
+        expiryDate: Date | null;
         batchNumber: string;
         packageId: string | null;
         initialQuantity: number;
-        currentQuantity: number;
         costPerUnit: number;
         purchaseDate: Date;
         vendor: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }[]>;
     getTransactions(productId: string): Promise<{
         id: string;
-        type: string;
         productId: string;
-        quantity: number;
-        createdAt: Date;
-        updatedAt: Date;
         batchId: string | null;
+        type: string;
+        quantity: number;
         date: Date;
         referenceId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }[]>;
     createAdjustment(data: any): Promise<{
         id: string;
-        status: string;
         productId: string;
-        locationId: string;
+        batchId: string | null;
         quantity: number;
-        currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
-        batchId: string | null;
         countedQuantity: number;
+        currentQuantity: number;
         reason: string;
+        status: string;
+        locationId: string;
     }>;
     updateAdjustment(id: string, data: any): Promise<{
         id: string;
-        status: string;
         productId: string;
-        locationId: string;
+        batchId: string | null;
         quantity: number;
-        currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
-        batchId: string | null;
         countedQuantity: number;
+        currentQuantity: number;
         reason: string;
+        status: string;
+        locationId: string;
     }>;
     applyAdjustment(id: string): Promise<{
         id: string;
-        status: string;
         productId: string;
-        locationId: string;
+        batchId: string | null;
         quantity: number;
-        currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
-        batchId: string | null;
         countedQuantity: number;
+        currentQuantity: number;
         reason: string;
+        status: string;
+        locationId: string;
     }>;
     getAdjustments(): Promise<({
         product: {
-            name: string;
             id: string;
+            type: string | null;
+            name: string;
+            status: string;
             sku: string;
             category: string;
             classification: string | null;
-            type: string | null;
             unitOfMeasure: string | null;
             isStockable: boolean;
-            status: string;
             averageCost: number;
             description: string | null;
             tracking: string;
@@ -156,42 +156,42 @@ export declare class InventoryController {
             supplierId: string | null;
         };
         location: {
-            name: string;
             id: string;
             type: string;
-            warehouseId: string | null;
+            name: string;
             removalStrategy: string | null;
             parentId: string | null;
+            warehouseId: string | null;
         };
         batch: {
             id: string;
-            status: string;
-            expiryDate: Date | null;
             productId: string;
+            createdAt: Date;
+            updatedAt: Date;
             warehouseId: string;
+            currentQuantity: number;
+            status: string;
             locationId: string | null;
+            expiryDate: Date | null;
             batchNumber: string;
             packageId: string | null;
             initialQuantity: number;
-            currentQuantity: number;
             costPerUnit: number;
             purchaseDate: Date;
             vendor: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         };
     } & {
         id: string;
-        status: string;
         productId: string;
-        locationId: string;
+        batchId: string | null;
         quantity: number;
-        currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
-        batchId: string | null;
         countedQuantity: number;
+        currentQuantity: number;
         reason: string;
+        status: string;
+        locationId: string;
     })[]>;
     createScrapOrder(data: {
         locationId: string;
@@ -201,22 +201,22 @@ export declare class InventoryController {
     }): Promise<{
         id: string;
         productId: string;
-        locationId: string;
         quantity: number;
+        locationId: string;
         maxQuantity: number;
         active: boolean;
     }>;
     getScrapOrders(): Promise<({
         product: {
-            name: string;
             id: string;
+            type: string | null;
+            name: string;
+            status: string;
             sku: string;
             category: string;
             classification: string | null;
-            type: string | null;
             unitOfMeasure: string | null;
             isStockable: boolean;
-            status: string;
             averageCost: number;
             description: string | null;
             tracking: string;
@@ -224,18 +224,18 @@ export declare class InventoryController {
             supplierId: string | null;
         };
         location: {
-            name: string;
             id: string;
             type: string;
-            warehouseId: string | null;
+            name: string;
             removalStrategy: string | null;
             parentId: string | null;
+            warehouseId: string | null;
         };
     } & {
         id: string;
         productId: string;
-        locationId: string;
         quantity: number;
+        locationId: string;
         maxQuantity: number;
         active: boolean;
     })[]>;
@@ -263,15 +263,15 @@ export declare class InventoryController {
     }>;
     getReorderingRules(): Promise<({
         product: {
-            name: string;
             id: string;
+            type: string | null;
+            name: string;
+            status: string;
             sku: string;
             category: string;
             classification: string | null;
-            type: string | null;
             unitOfMeasure: string | null;
             isStockable: boolean;
-            status: string;
             averageCost: number;
             description: string | null;
             tracking: string;
@@ -279,12 +279,12 @@ export declare class InventoryController {
             supplierId: string | null;
         };
         location: {
-            name: string;
             id: string;
             type: string;
-            warehouseId: string | null;
+            name: string;
             removalStrategy: string | null;
             parentId: string | null;
+            warehouseId: string | null;
         };
     } & {
         id: string;
@@ -301,58 +301,75 @@ export declare class InventoryController {
     }>;
     getStockMoves(): Promise<{
         id: string;
-        type: string;
         productId: string;
-        quantity: number;
-        createdAt: Date;
-        updatedAt: Date;
         batchId: string | null;
+        type: string;
+        quantity: number;
         date: Date;
         referenceId: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }[]>;
     getLocationsTree(warehouseId?: string): Promise<({
         children: ({
             children: {
-                name: string;
                 id: string;
                 type: string;
-                warehouseId: string | null;
+                name: string;
                 removalStrategy: string | null;
                 parentId: string | null;
+                warehouseId: string | null;
             }[];
         } & {
-            name: string;
             id: string;
             type: string;
-            warehouseId: string | null;
+            name: string;
             removalStrategy: string | null;
             parentId: string | null;
+            warehouseId: string | null;
         })[];
     } & {
-        name: string;
         id: string;
         type: string;
-        warehouseId: string | null;
+        name: string;
         removalStrategy: string | null;
         parentId: string | null;
+        warehouseId: string | null;
+    })[]>;
+    getLocations(warehouseId?: string): Promise<({
+        warehouseView: {
+            id: string;
+            type: string;
+            name: string;
+            viewLocationId: string | null;
+            location: string;
+            partnerId: string | null;
+        };
+    } & {
+        id: string;
+        type: string;
+        name: string;
+        removalStrategy: string | null;
+        parentId: string | null;
+        warehouseId: string | null;
     })[]>;
     createLocation(data: any): Promise<{
-        name: string;
         id: string;
         type: string;
-        warehouseId: string | null;
+        name: string;
         removalStrategy: string | null;
         parentId: string | null;
+        warehouseId: string | null;
     }>;
     moveLocation(id: string, data: {
         newParentId: string | null;
     }): Promise<{
-        name: string;
         id: string;
         type: string;
-        warehouseId: string | null;
+        name: string;
         removalStrategy: string | null;
         parentId: string | null;
+        warehouseId: string | null;
     }>;
     createPutawayRule(data: {
         productId?: string;
@@ -369,15 +386,15 @@ export declare class InventoryController {
     }>;
     getPutawayRules(): Promise<({
         product: {
-            name: string;
             id: string;
+            type: string | null;
+            name: string;
+            status: string;
             sku: string;
             category: string;
             classification: string | null;
-            type: string | null;
             unitOfMeasure: string | null;
             isStockable: boolean;
-            status: string;
             averageCost: number;
             description: string | null;
             tracking: string;
@@ -385,12 +402,12 @@ export declare class InventoryController {
             supplierId: string | null;
         };
         location: {
-            name: string;
             id: string;
             type: string;
-            warehouseId: string | null;
+            name: string;
             removalStrategy: string | null;
             parentId: string | null;
+            warehouseId: string | null;
         };
     } & {
         id: string;
@@ -405,33 +422,33 @@ export declare class InventoryController {
         type: string;
         locationId?: string;
     }): Promise<{
-        name: string;
         id: string;
         type: string;
-        locationId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
+        locationId: string | null;
     }>;
     getPackages(): Promise<({
         location: {
-            name: string;
             id: string;
             type: string;
-            warehouseId: string | null;
+            name: string;
             removalStrategy: string | null;
             parentId: string | null;
+            warehouseId: string | null;
         };
         batches: ({
             product: {
-                name: string;
                 id: string;
+                type: string | null;
+                name: string;
+                status: string;
                 sku: string;
                 category: string;
                 classification: string | null;
-                type: string | null;
                 unitOfMeasure: string | null;
                 isStockable: boolean;
-                status: string;
                 averageCost: number;
                 description: string | null;
                 tracking: string;
@@ -440,73 +457,73 @@ export declare class InventoryController {
             };
         } & {
             id: string;
-            status: string;
-            expiryDate: Date | null;
             productId: string;
+            createdAt: Date;
+            updatedAt: Date;
             warehouseId: string;
+            currentQuantity: number;
+            status: string;
             locationId: string | null;
+            expiryDate: Date | null;
             batchNumber: string;
             packageId: string | null;
             initialQuantity: number;
-            currentQuantity: number;
             costPerUnit: number;
             purchaseDate: Date;
             vendor: string | null;
-            createdAt: Date;
-            updatedAt: Date;
         })[];
     } & {
-        name: string;
         id: string;
         type: string;
-        locationId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
+        locationId: string | null;
     })[]>;
     assignBatchToPackage(packageId: string, data: {
         batchId: string;
     }): Promise<{
         id: string;
-        status: string;
-        expiryDate: Date | null;
         productId: string;
+        createdAt: Date;
+        updatedAt: Date;
         warehouseId: string;
+        currentQuantity: number;
+        status: string;
         locationId: string | null;
+        expiryDate: Date | null;
         batchNumber: string;
         packageId: string | null;
         initialQuantity: number;
-        currentQuantity: number;
         costPerUnit: number;
         purchaseDate: Date;
         vendor: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     createRoute(data: {
         name: string;
         description?: string;
     }): Promise<{
-        name: string;
         id: string;
-        description: string | null;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
+        description: string | null;
     }>;
     getRoutes(): Promise<({
         rules: {
             id: string;
-            action: string;
-            sequence: number;
             routeId: string;
+            action: string;
             sourceLocationId: string | null;
             destinationLocationId: string | null;
+            sequence: number;
         }[];
     } & {
-        name: string;
         id: string;
-        description: string | null;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
+        description: string | null;
     })[]>;
     createRule(routeId: string, data: {
         action: string;
@@ -515,81 +532,81 @@ export declare class InventoryController {
         sequence?: number;
     }): Promise<{
         id: string;
-        action: string;
-        sequence: number;
         routeId: string;
+        action: string;
         sourceLocationId: string | null;
         destinationLocationId: string | null;
+        sequence: number;
     }>;
     checkCycleCounts(): Promise<({
         warehouseView: {
-            location: string;
-            name: string;
             id: string;
             type: string;
-            partnerId: string | null;
+            name: string;
             viewLocationId: string | null;
+            location: string;
+            partnerId: string | null;
         };
     } & {
-        name: string;
         id: string;
         type: string;
-        warehouseId: string | null;
+        name: string;
         removalStrategy: string | null;
         parentId: string | null;
+        warehouseId: string | null;
     })[]>;
     startCycleCount(data: {
         locationIds: string[];
     }): Promise<any[]>;
     getTransitItems(): Promise<({
         product: {
-            name: string;
             id: string;
+            type: string | null;
+            name: string;
+            status: string;
             sku: string;
             category: string;
             classification: string | null;
-            type: string | null;
             unitOfMeasure: string | null;
             isStockable: boolean;
-            status: string;
             averageCost: number;
             description: string | null;
             tracking: string;
             expiryDate: Date | null;
             supplierId: string | null;
         };
-        warehouse: {
-            location: string;
-            name: string;
-            id: string;
-            type: string;
-            partnerId: string | null;
-            viewLocationId: string | null;
-        };
         location: {
-            name: string;
             id: string;
             type: string;
-            warehouseId: string | null;
+            name: string;
             removalStrategy: string | null;
             parentId: string | null;
+            warehouseId: string | null;
+        };
+        warehouse: {
+            id: string;
+            type: string;
+            name: string;
+            viewLocationId: string | null;
+            location: string;
+            partnerId: string | null;
         };
     } & {
         id: string;
-        status: string;
-        expiryDate: Date | null;
         productId: string;
+        createdAt: Date;
+        updatedAt: Date;
         warehouseId: string;
+        currentQuantity: number;
+        status: string;
         locationId: string | null;
+        expiryDate: Date | null;
         batchNumber: string;
         packageId: string | null;
         initialQuantity: number;
-        currentQuantity: number;
         costPerUnit: number;
         purchaseDate: Date;
         vendor: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
 }
 //# sourceMappingURL=inventory.controller.d.ts.map

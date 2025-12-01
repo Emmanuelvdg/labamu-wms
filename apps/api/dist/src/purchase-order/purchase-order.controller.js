@@ -25,6 +25,9 @@ let PurchaseOrderController = class PurchaseOrderController {
     findAll() {
         return this.purchaseOrderService.getPurchaseOrders();
     }
+    getSuppliers() {
+        return this.purchaseOrderService.getSuppliers();
+    }
     receive(id, data) {
         return this.purchaseOrderService.receiveGoods(id, data.destinationLocationId);
     }
@@ -43,6 +46,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], PurchaseOrderController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('suppliers'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], PurchaseOrderController.prototype, "getSuppliers", null);
 __decorate([
     (0, common_1.Post)(':id/receive'),
     __param(0, (0, common_1.Param)('id')),

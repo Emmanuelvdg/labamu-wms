@@ -251,4 +251,41 @@ export async function createRule(routeId: string, data: any) {
     });
 }
 
+// --- Purchase Orders ---
+
+export async function fetchPurchaseOrders() {
+    return fetchWithRetry(`${API_URL}/purchase-orders`);
+}
+
+export async function createPurchaseOrder(data: any) {
+    return fetchWithRetry(`${API_URL}/purchase-orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function receivePurchaseOrder(id: string, destinationLocationId: string) {
+    return fetchWithRetry(`${API_URL}/purchase-orders/${id}/receive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destinationLocationId }),
+    });
+}
+
+export async function fetchSuppliers() {
+    // Mock suppliers for now or add endpoint if needed. 
+    // Ideally we should have a supplier endpoint.
+    // For now, let's return a static list or fetch from a new endpoint if I create it.
+    // I didn't create a SupplierController. I should probably add one or just create suppliers on the fly?
+    // The schema has Supplier model.
+    // Let's assume I need to add fetchSuppliers.
+    // For this iteration, I'll just return an empty list or mock it in the frontend if the endpoint fails.
+    // But wait, I need suppliers to create a PO.
+    // I'll add a simple getSuppliers to the PurchaseOrderController or a new SupplierController.
+    // Let's stick to what I have. I'll add a quick endpoint to PurchaseOrderController to get suppliers?
+    // Or just use the PrismaService in the service to fetch them.
+    return fetchWithRetry(`${API_URL}/purchase-orders/suppliers`);
+}
+
 

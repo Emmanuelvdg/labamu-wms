@@ -15,6 +15,11 @@ export class PurchaseOrderController {
         return this.purchaseOrderService.getPurchaseOrders();
     }
 
+    @Get('suppliers')
+    getSuppliers() {
+        return this.purchaseOrderService.getSuppliers();
+    }
+
     @Post(':id/receive')
     receive(@Param('id') id: string, @Body() data: { destinationLocationId: string }) {
         return this.purchaseOrderService.receiveGoods(id, data.destinationLocationId);
