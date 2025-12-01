@@ -6,9 +6,13 @@ import { usePathname } from 'next/navigation';
 const navigation = [
     { name: 'Dashboard', href: '/' },
     { name: 'Inventory', href: '/inventory' },
-    { name: 'Warehouses', href: '/warehouses' },
+    { name: 'Warehouses', href: '/inventory/warehouses' },
+    { name: 'Locations', href: '/inventory/locations' },
+    { name: 'Adjustments', href: '/inventory/adjustments' },
+    { name: 'Scrap', href: '/inventory/scrap' },
     { name: 'Orders', href: '/orders' },
     { name: 'Purchase Orders', href: '/inventory/purchases' },
+    { name: 'Suppliers', href: '/inventory/suppliers' },
     { name: 'Reports', href: '/reports' },
     { name: 'Settings', href: '/settings' },
 ];

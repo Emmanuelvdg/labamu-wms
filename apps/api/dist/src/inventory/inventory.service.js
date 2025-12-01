@@ -642,7 +642,10 @@ let InventoryService = class InventoryService {
     async checkCycleCounts() {
         const today = new Date();
         const locations = await this.prisma.location.findMany({
-            where: {},
+            where: {
+                nextInventoryDate: { lte: today },
+                inventoryFrequency: { gt: 0 },
+            },
             include: {
                 warehouseView: true,
             },

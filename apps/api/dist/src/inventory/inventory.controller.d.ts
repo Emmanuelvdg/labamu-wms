@@ -43,6 +43,7 @@ export declare class InventoryController {
         type: string;
         name: string;
         viewLocationId: string | null;
+        shortName: string | null;
         location: string;
         partnerId: string | null;
     }>;
@@ -51,6 +52,7 @@ export declare class InventoryController {
         type: string;
         name: string;
         viewLocationId: string | null;
+        shortName: string | null;
         location: string;
         partnerId: string | null;
     }[]>;
@@ -160,6 +162,8 @@ export declare class InventoryController {
             type: string;
             name: string;
             removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
             parentId: string | null;
             warehouseId: string | null;
         };
@@ -228,6 +232,8 @@ export declare class InventoryController {
             type: string;
             name: string;
             removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
             parentId: string | null;
             warehouseId: string | null;
         };
@@ -283,6 +289,8 @@ export declare class InventoryController {
             type: string;
             name: string;
             removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
             parentId: string | null;
             warehouseId: string | null;
         };
@@ -317,6 +325,8 @@ export declare class InventoryController {
                 type: string;
                 name: string;
                 removalStrategy: string | null;
+                inventoryFrequency: number;
+                nextInventoryDate: Date | null;
                 parentId: string | null;
                 warehouseId: string | null;
             }[];
@@ -325,6 +335,8 @@ export declare class InventoryController {
             type: string;
             name: string;
             removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
             parentId: string | null;
             warehouseId: string | null;
         })[];
@@ -333,6 +345,8 @@ export declare class InventoryController {
         type: string;
         name: string;
         removalStrategy: string | null;
+        inventoryFrequency: number;
+        nextInventoryDate: Date | null;
         parentId: string | null;
         warehouseId: string | null;
     })[]>;
@@ -342,6 +356,7 @@ export declare class InventoryController {
             type: string;
             name: string;
             viewLocationId: string | null;
+            shortName: string | null;
             location: string;
             partnerId: string | null;
         };
@@ -350,6 +365,8 @@ export declare class InventoryController {
         type: string;
         name: string;
         removalStrategy: string | null;
+        inventoryFrequency: number;
+        nextInventoryDate: Date | null;
         parentId: string | null;
         warehouseId: string | null;
     })[]>;
@@ -358,6 +375,8 @@ export declare class InventoryController {
         type: string;
         name: string;
         removalStrategy: string | null;
+        inventoryFrequency: number;
+        nextInventoryDate: Date | null;
         parentId: string | null;
         warehouseId: string | null;
     }>;
@@ -368,6 +387,8 @@ export declare class InventoryController {
         type: string;
         name: string;
         removalStrategy: string | null;
+        inventoryFrequency: number;
+        nextInventoryDate: Date | null;
         parentId: string | null;
         warehouseId: string | null;
     }>;
@@ -406,6 +427,8 @@ export declare class InventoryController {
             type: string;
             name: string;
             removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
             parentId: string | null;
             warehouseId: string | null;
         };
@@ -435,6 +458,8 @@ export declare class InventoryController {
             type: string;
             name: string;
             removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
             parentId: string | null;
             warehouseId: string | null;
         };
@@ -544,6 +569,7 @@ export declare class InventoryController {
             type: string;
             name: string;
             viewLocationId: string | null;
+            shortName: string | null;
             location: string;
             partnerId: string | null;
         };
@@ -552,6 +578,8 @@ export declare class InventoryController {
         type: string;
         name: string;
         removalStrategy: string | null;
+        inventoryFrequency: number;
+        nextInventoryDate: Date | null;
         parentId: string | null;
         warehouseId: string | null;
     })[]>;
@@ -580,6 +608,8 @@ export declare class InventoryController {
             type: string;
             name: string;
             removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
             parentId: string | null;
             warehouseId: string | null;
         };
@@ -588,6 +618,7 @@ export declare class InventoryController {
             type: string;
             name: string;
             viewLocationId: string | null;
+            shortName: string | null;
             location: string;
             partnerId: string | null;
         };

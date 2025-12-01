@@ -1,280 +1,141 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { fetchAdjustments, createAdjustment, applyAdjustment, updateAdjustment, fetchLocations, fetchInventory, fetchBatches } from '../../../lib/api';
+import { useState } from 'react';
+import useSWR from 'swr';
+import { fetchAdjustments, checkCycleCounts, startCycleCount, updateAdjustment, applyAdjustment } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+import { Check, Play } from 'lucide-react';
 
-export default function InventoryAdjustmentsPage() {
-    const [adjustments, setAdjustments] = useState([]);
-    const [locations, setLocations] = useState([]);
-    const [products, setProducts] = useState([]);
-    const [batches, setBatches] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [showCreate, setShowCreate] = useState(false);
+export default function AdjustmentsPage() {
+    const { data: adjustments, mutate: mutateAdjustments } = useSWR('adjustments', fetchAdjustments);
+    const { data: dueLocations, mutate: mutateDue } = useSWR('cycle-counts-due', checkCycleCounts);
+    const [counting, setCounting] = useState<Record<string, number>>({});
 
-    // Form State
-    const [formData, setFormData] = useState({
-        locationId: '',
-        productId: '',
-        batchId: '',
-        countedQuantity: 0,
-        currentQuantity: 0,
-        reason: '',
-    });
-
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    async function loadData() {
+    const handleStartCount = async (locationId: string) => {
         try {
-            const [adjData, locData, prodData] = await Promise.all([
-                fetchAdjustments(),
-                fetchLocations(),
-                fetchInventory() // This fetches products
-            ]);
-            setAdjustments(adjData);
-            setLocations(locData);
-            setProducts(prodData);
+            await startCycleCount([locationId]);
+            toast.success('Cycle count started');
+            mutateDue();
+            mutateAdjustments();
         } catch (error) {
-            console.error('Failed to load data:', error);
-        } finally {
-            setLoading(false);
+            toast.error('Failed to start cycle count');
         }
-    }
+    };
 
-    async function handleProductChange(productId: string) {
-        setFormData({ ...formData, productId, batchId: '' });
-        // Fetch batches for this product
-        if (productId) {
-            const batchData = await fetchBatches(productId);
-            setBatches(batchData);
-        } else {
-            setBatches([]);
-        }
-    }
+    const handleUpdateCount = (id: string, qty: number) => {
+        setCounting(prev => ({ ...prev, [id]: qty }));
+    };
 
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
+    const handleSaveCount = async (adjustment: any) => {
+        const qty = counting[adjustment.id];
+        if (qty === undefined) return;
+
         try {
-            await createAdjustment(formData);
-            setShowCreate(false);
-            setFormData({
-                locationId: '',
-                productId: '',
-                batchId: '',
-                countedQuantity: 0,
-                currentQuantity: 0,
-                reason: '',
-            });
-            loadData();
+            await updateAdjustment(adjustment.id, { countedQuantity: qty });
+            toast.success('Count saved');
+            mutateAdjustments();
         } catch (error) {
-            alert('Failed to create adjustment');
+            toast.error('Failed to save count');
         }
-    }
+    };
 
-    async function handleApply(id: string) {
-        if (!confirm('Are you sure you want to apply this adjustment? This will update stock levels.')) return;
+    const handleApply = async (id: string) => {
         try {
             await applyAdjustment(id);
-            loadData();
+            toast.success('Adjustment applied');
+            mutateAdjustments();
         } catch (error) {
-            alert('Failed to apply adjustment');
+            toast.error('Failed to apply adjustment');
         }
-    }
-
-    async function handleSetToZero(id: string) {
-        try {
-            await updateAdjustment(id, { countedQuantity: 0 });
-            loadData();
-        } catch (error) {
-            alert('Failed to update adjustment');
-        }
-    }
-
-    async function handleRelocate(id: string) {
-        const newLocationId = prompt('Enter new Location ID:');
-        if (!newLocationId) return;
-        try {
-            await updateAdjustment(id, { locationId: newLocationId });
-            loadData();
-        } catch (error) {
-            alert('Failed to relocate adjustment. Ensure Location ID is valid.');
-        }
-    }
-
-    if (loading) return <div>Loading...</div>;
+    };
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Inventory Adjustments</h1>
-                <button
-                    onClick={() => setShowCreate(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                    New Adjustment
-                </button>
-            </div>
+        <div className="p-8">
+            <h1 className="text-3xl font-bold mb-6">Inventory Adjustments</h1>
 
-            {showCreate && (
-                <div className="bg-white p-6 rounded-lg shadow mb-6 border border-gray-200">
-                    <h2 className="text-lg font-semibold mb-4">Create Adjustment</h2>
-                    <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Location</label>
-                            <select
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                                value={formData.locationId}
-                                onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
-                                required
-                            >
-                                <option value="">Select Location</option>
-                                {locations.map((loc: any) => (
-                                    <option key={loc.id} value={loc.id}>{loc.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Product</label>
-                            <select
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                                value={formData.productId}
-                                onChange={(e) => handleProductChange(e.target.value)}
-                                required
-                            >
-                                <option value="">Select Product</option>
-                                {products.map((prod: any) => (
-                                    <option key={prod.id} value={prod.id}>{prod.name} ({prod.sku})</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Batch (Optional)</label>
-                            <select
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                                value={formData.batchId}
-                                onChange={(e) => setFormData({ ...formData, batchId: e.target.value })}
-                            >
-                                <option value="">No Batch / Aggregate</option>
-                                {batches.map((batch: any) => (
-                                    <option key={batch.id} value={batch.id}>{batch.batchNumber} (Qty: {batch.currentQuantity})</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Current Quantity (Snapshot)</label>
-                            <input
-                                type="number"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                                value={formData.currentQuantity}
-                                onChange={(e) => setFormData({ ...formData, currentQuantity: parseInt(e.target.value) })}
-                                required
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Enter what the system thinks (or 0 if unknown)</p>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Counted Quantity</label>
-                            <input
-                                type="number"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                                value={formData.countedQuantity}
-                                onChange={(e) => setFormData({ ...formData, countedQuantity: parseInt(e.target.value) })}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Reason</label>
-                            <input
-                                type="text"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"
-                                value={formData.reason}
-                                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                                required
-                            />
-                        </div>
-                        <div className="col-span-2 flex justify-end gap-2 mt-4">
-                            <button
-                                type="button"
-                                onClick={() => setShowCreate(false)}
-                                className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-50"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                            >
-                                Create Draft
-                            </button>
-                        </div>
-                    </form>
+            {/* Due for Cycle Count Section */}
+            {dueLocations && dueLocations.length > 0 && (
+                <div className="mb-8 p-4 border rounded-lg bg-yellow-50">
+                    <h2 className="text-xl font-semibold mb-4 text-yellow-800">Due for Cycle Count</h2>
+                    <div className="grid gap-4">
+                        {dueLocations.map((loc: any) => (
+                            <div key={loc.id} className="flex justify-between items-center bg-white p-3 rounded border">
+                                <div>
+                                    <div className="font-medium">{loc.name}</div>
+                                    <div className="text-sm text-gray-500">
+                                        Warehouse: {loc.warehouseView?.name} | Next Due: {new Date(loc.nextInventoryDate).toLocaleDateString()}
+                                    </div>
+                                </div>
+                                <Button size="sm" onClick={() => handleStartCount(loc.id)}>
+                                    <Play className="mr-2 h-4 w-4" /> Start Count
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+            {/* Active Adjustments Table */}
+            <div className="bg-white rounded-lg border">
+                <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 border-b">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">System</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Counted</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Diff</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            <th className="p-4 font-medium">Product</th>
+                            <th className="p-4 font-medium">Location</th>
+                            <th className="p-4 font-medium">Batch</th>
+                            <th className="p-4 font-medium text-right">Current Qty</th>
+                            <th className="p-4 font-medium text-right">Counted Qty</th>
+                            <th className="p-4 font-medium text-right">Difference</th>
+                            <th className="p-4 font-medium">Status</th>
+                            <th className="p-4 font-medium text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {adjustments.map((adj: any) => (
-                            <tr key={adj.id}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {new Date(adj.createdAt).toLocaleDateString()}
+                    <tbody>
+                        {adjustments?.map((adj: any) => (
+                            <tr key={adj.id} className="border-b last:border-0 hover:bg-gray-50">
+                                <td className="p-4">{adj.product?.name} <span className="text-gray-400 text-xs">{adj.product?.sku}</span></td>
+                                <td className="p-4">{adj.location?.name}</td>
+                                <td className="p-4">{adj.batch?.batchNumber || '-'}</td>
+                                <td className="p-4 text-right">{adj.currentQuantity}</td>
+                                <td className="p-4 text-right">
+                                    {adj.status === 'DRAFT' ? (
+                                        <div className="flex items-center justify-end gap-2">
+                                            <Input
+                                                type="number"
+                                                className="w-24 text-right h-8"
+                                                value={counting[adj.id] !== undefined ? counting[adj.id] : adj.countedQuantity}
+                                                onChange={(e) => handleUpdateCount(adj.id, parseFloat(e.target.value))}
+                                                onBlur={() => handleSaveCount(adj)}
+                                            />
+                                        </div>
+                                    ) : (
+                                        adj.countedQuantity
+                                    )}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{adj.location?.name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{adj.product?.name}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{adj.batch?.batchNumber || '-'}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{adj.currentQuantity}</td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{adj.countedQuantity}</td>
-                                <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${adj.quantity > 0 ? 'text-green-600' : adj.quantity < 0 ? 'text-red-600' : 'text-gray-500'
-                                    }`}>
+                                <td className={`p-4 text-right font-medium ${adj.quantity < 0 ? 'text-red-600' : adj.quantity > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                                     {adj.quantity > 0 ? '+' : ''}{adj.quantity}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${adj.status === 'APPLIED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                        }`}>
+                                <td className="p-4">
+                                    <span className={`px-2 py-1 rounded-full text-xs ${adj.status === 'APPLIED' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
                                         {adj.status}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    {adj.status !== 'APPLIED' && (
-                                        <div className="flex justify-end gap-2">
-                                            <button
-                                                onClick={() => handleSetToZero(adj.id)}
-                                                className="text-orange-600 hover:text-orange-900"
-                                                title="Set Counted Quantity to 0"
-                                            >
-                                                Zero
-                                            </button>
-                                            <button
-                                                onClick={() => handleRelocate(adj.id)}
-                                                className="text-purple-600 hover:text-purple-900"
-                                                title="Change Location"
-                                            >
-                                                Relocate
-                                            </button>
-                                            <button
-                                                onClick={() => handleApply(adj.id)}
-                                                className="text-blue-600 hover:text-blue-900"
-                                            >
-                                                Apply
-                                            </button>
-                                        </div>
+                                <td className="p-4 text-right">
+                                    {adj.status === 'DRAFT' && (
+                                        <Button size="sm" variant="outline" onClick={() => handleApply(adj.id)}>
+                                            <Check className="mr-2 h-4 w-4" /> Apply
+                                        </Button>
                                     )}
                                 </td>
                             </tr>
                         ))}
+                        {!adjustments?.length && (
+                            <tr>
+                                <td colSpan={8} className="p-8 text-center text-gray-500">No adjustments found</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>

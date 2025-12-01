@@ -60,6 +60,7 @@ model Rule {
 model Warehouse {
   id             String   @id @default(uuid())
   name           String
+  shortName      String?
   location       String   // JSON: { lat: number, lng: number }
   type           String
   partnerId      String?
@@ -74,6 +75,8 @@ model Location {
   name        String
   type        String   // VIEW, INTERNAL, VENDOR, CUSTOMER, INVENTORY_LOSS, PRODUCTION, TRANSIT
   removalStrategy String? // FIFO, LIFO, FEFO
+  inventoryFrequency Int @default(0) // Days
+  nextInventoryDate DateTime?
   parentId    String?
   parent      Location? @relation("LocationHierarchy", fields: [parentId], references: [id])
   children    Location[] @relation("LocationHierarchy")

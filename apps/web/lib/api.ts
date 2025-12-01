@@ -11,6 +11,8 @@ async function fetchWithRetry(url: string, options?: RequestInit) {
     }
 }
 
+// --- Inventory ---
+
 export async function fetchInventory() {
     return fetchWithRetry(`${API_URL}/inventory/products`);
 }
@@ -19,39 +21,19 @@ export async function fetchWarehouses() {
     return fetchWithRetry(`${API_URL}/inventory/warehouses`);
 }
 
-export async function fetchAnalytics() {
-    return fetchWithRetry(`${API_URL}/reporting/analytics`);
-}
-
-export async function createOrder(order: any) {
-    return fetchWithRetry(`${API_URL}/orders`, {
+export async function createProduct(product: any) {
+    return fetchWithRetry(`${API_URL}/inventory/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(order),
+        body: JSON.stringify(product),
     });
 }
 
-export async function fetchOrders() {
-    return fetchWithRetry(`${API_URL}/orders`);
-}
-
-export async function generateReport(type: string, period: string) {
-    return fetchWithRetry(`${API_URL}/reporting/compliance`, {
+export async function createWarehouse(warehouse: any) {
+    return fetchWithRetry(`${API_URL}/inventory/warehouses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, period }),
-    });
-}
-
-export async function fetchStrategies(type: 'picking' | 'reservation') {
-    return fetchWithRetry(`${API_URL}/strategy/${type}`);
-}
-
-export async function toggleStrategy(type: 'picking' | 'reservation', id: string, active: boolean) {
-    return fetchWithRetry(`${API_URL}/strategy/${type}/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ active }),
+        body: JSON.stringify(warehouse),
     });
 }
 
@@ -71,29 +53,15 @@ export async function addBatch(batch: any) {
     });
 }
 
-export async function createProduct(product: any) {
-    return fetchWithRetry(`${API_URL}/inventory/products`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(product),
-    });
+export async function fetchValuation() {
+    return fetchWithRetry(`${API_URL}/inventory/valuation`);
 }
 
-export async function createWarehouse(warehouse: any) {
-    return fetchWithRetry(`${API_URL}/inventory/warehouses`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(warehouse),
-    });
+export async function fetchStockMoves() {
+    return fetchWithRetry(`${API_URL}/inventory/moves`);
 }
 
-export async function createShipment(data: any) {
-    return fetchWithRetry(`${API_URL}/orders/ship`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-}
+// --- Locations ---
 
 export async function createLocation(data: any) {
     return fetchWithRetry(`${API_URL}/inventory/locations`, {
@@ -117,7 +85,15 @@ export async function fetchLocationsTree(warehouseId?: string) {
     return fetchWithRetry(url);
 }
 
+export async function moveLocation(locationId: string, newParentId: string | null) {
+    return fetchWithRetry(`${API_URL}/inventory/locations/${locationId}/move`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newParentId }),
+    });
+}
 
+// --- Adjustments & Scrap ---
 
 export async function createAdjustment(data: any) {
     return fetchWithRetry(`${API_URL}/inventory/adjustments`, {
@@ -145,10 +121,6 @@ export async function fetchAdjustments() {
     return fetchWithRetry(`${API_URL}/inventory/adjustments`);
 }
 
-export async function fetchStockMoves() {
-    return fetchWithRetry(`${API_URL}/inventory/moves`);
-}
-
 export async function createScrapOrder(data: any) {
     return fetchWithRetry(`${API_URL}/inventory/scrap`, {
         method: 'POST',
@@ -169,8 +141,74 @@ export async function createTransfer(data: any) {
     });
 }
 
-export async function fetchValuation() {
-    return fetchWithRetry(`${API_URL}/inventory/valuation`);
+export const checkCycleCounts = async () => {
+    return fetchWithRetry(`${API_URL}/inventory/cycle-counts`);
+};
+
+export const startCycleCount = async (locationIds: string[]) => {
+    return fetchWithRetry(`${API_URL}/inventory/cycle-counts/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locationIds }),
+    });
+};
+
+// --- Orders & Shipping ---
+
+export async function createOrder(order: any) {
+    return fetchWithRetry(`${API_URL}/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
+    });
+}
+
+export async function fetchOrders() {
+    return fetchWithRetry(`${API_URL}/orders`);
+}
+
+export async function createShipment(data: any) {
+    return fetchWithRetry(`${API_URL}/orders/ship`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+// --- Purchase Orders ---
+
+export async function fetchPurchaseOrders() {
+    return fetchWithRetry(`${API_URL}/purchase-orders`);
+}
+
+export async function createPurchaseOrder(data: any) {
+    return fetchWithRetry(`${API_URL}/purchase-orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function receivePurchaseOrder(id: string, destinationLocationId: string) {
+    return fetchWithRetry(`${API_URL}/purchase-orders/${id}/receive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destinationLocationId }),
+    });
+}
+
+// --- Rules & Strategies ---
+
+export async function fetchStrategies(type: 'picking' | 'reservation') {
+    return fetchWithRetry(`${API_URL}/strategy/${type}`);
+}
+
+export async function toggleStrategy(type: 'picking' | 'reservation', id: string, active: boolean) {
+    return fetchWithRetry(`${API_URL}/strategy/${type}/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active }),
+    });
 }
 
 export async function createReorderingRule(data: any) {
@@ -187,16 +225,6 @@ export async function fetchReorderingRules() {
 
 export async function checkReorderingRules() {
     return fetchWithRetry(`${API_URL}/inventory/reordering-rules/check`);
-}
-
-
-
-export async function moveLocation(locationId: string, newParentId: string | null) {
-    return fetchWithRetry(`${API_URL}/inventory/locations/${locationId}/move`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newParentId }),
-    });
 }
 
 export async function createPutawayRule(data: any) {
@@ -251,41 +279,56 @@ export async function createRule(routeId: string, data: any) {
     });
 }
 
-// --- Purchase Orders ---
+// --- Reporting ---
 
-export async function fetchPurchaseOrders() {
-    return fetchWithRetry(`${API_URL}/purchase-orders`);
+export async function fetchAnalytics() {
+    return fetchWithRetry(`${API_URL}/reporting/analytics`);
 }
 
-export async function createPurchaseOrder(data: any) {
-    return fetchWithRetry(`${API_URL}/purchase-orders`, {
+export async function generateReport(type: string, period: string) {
+    return fetchWithRetry(`${API_URL}/reporting/compliance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, period }),
+    });
+}
+
+// --- Supplier Management ---
+
+export const fetchSuppliers = async () => {
+    return fetchWithRetry(`${API_URL}/suppliers`);
+};
+
+export const getSupplier = async (id: string) => {
+    return fetchWithRetry(`${API_URL}/suppliers/${id}`);
+};
+
+export const createSupplier = async (data: { name: string; contactInfo?: string }) => {
+    return fetchWithRetry(`${API_URL}/suppliers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
-}
+};
 
-export async function receivePurchaseOrder(id: string, destinationLocationId: string) {
-    return fetchWithRetry(`${API_URL}/purchase-orders/${id}/receive`, {
-        method: 'POST',
+export const updateSupplier = async (id: string, data: { name?: string; contactInfo?: string }) => {
+    return fetchWithRetry(`${API_URL}/suppliers/${id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ destinationLocationId }),
+        body: JSON.stringify(data),
     });
-}
+};
 
-export async function fetchSuppliers() {
-    // Mock suppliers for now or add endpoint if needed. 
-    // Ideally we should have a supplier endpoint.
-    // For now, let's return a static list or fetch from a new endpoint if I create it.
-    // I didn't create a SupplierController. I should probably add one or just create suppliers on the fly?
-    // The schema has Supplier model.
-    // Let's assume I need to add fetchSuppliers.
-    // For this iteration, I'll just return an empty list or mock it in the frontend if the endpoint fails.
-    // But wait, I need suppliers to create a PO.
-    // I'll add a simple getSuppliers to the PurchaseOrderController or a new SupplierController.
-    // Let's stick to what I have. I'll add a quick endpoint to PurchaseOrderController to get suppliers?
-    // Or just use the PrismaService in the service to fetch them.
-    return fetchWithRetry(`${API_URL}/purchase-orders/suppliers`);
-}
+export const deleteSupplier = async (id: string) => {
+    return fetchWithRetry(`${API_URL}/suppliers/${id}`, {
+        method: 'DELETE',
+    });
+};
 
+export const fetchSupplierOrders = async (id: string) => {
+    return fetchWithRetry(`${API_URL}/suppliers/${id}/orders`);
+};
 
+export const fetchProductPriceHistory = async (productId: string) => {
+    return fetchWithRetry(`${API_URL}/suppliers/reports/price-history?productId=${productId}`);
+};

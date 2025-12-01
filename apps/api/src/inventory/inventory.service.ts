@@ -800,8 +800,8 @@ export class InventoryService {
         const today = new Date();
         const locations = await this.prisma.location.findMany({
             where: {
-                // nextInventoryDate: { lte: today },
-                // inventoryFrequency: { gt: 0 },
+                nextInventoryDate: { lte: today },
+                inventoryFrequency: { gt: 0 },
             },
             include: {
                 warehouseView: true,
