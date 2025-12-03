@@ -11,27 +11,67 @@ export class PurchaseOrderService {
         private ruleService: RuleService,
     ) { }
 
-    async createPurchaseOrder(data: { supplierId: string; expectedDate?: Date; items: { productId: string; quantity: number; unitCost: number }[] }) {
-        return this.prisma.purchaseOrder.create({
-            data: {
-                supplierId: data.supplierId,
-                status: 'ORDERED',
-                expectedDate: data.expectedDate,
-                items: {
-                    create: data.items.map(item => ({
+    async createPurchaseOrder(data: { supplierId: string; expectedDate?: Date; items: { productId: string; quantity: number; unitCost: number }[]; destinationLocationId?: string }) {
+        return this.prisma.$transaction(async (tx) => {
+            const po = await tx.purchaseOrder.create({
+                data: {
+                    supplierId: data.supplierId,
+                    status: 'ORDERED',
+                    expectedDate: data.expectedDate,
+                    items: {
+                        create: data.items.map(item => ({
+                            productId: item.productId,
+                            quantity: item.quantity,
+                            unitCost: item.unitCost,
+                        })),
+                    },
+                },
+                include: { items: true, supplier: true },
+            });
+
+            // Auto-create Stock Move (Vendor -> Destination)
+            // Default destination to first warehouse input if not provided (simplified)
+            let destLocationId = data.destinationLocationId;
+            if (!destLocationId) {
+                // Try to find a default location (e.g. first warehouse stock/input)
+                const warehouse = await tx.warehouse.findFirst();
+                if (warehouse) {
+                    // Ideally check incomingSteps but for now default to View -> Stock or similar
+                    // Let's try to find a location named 'Input' or 'Stock' in this warehouse
+                    const loc = await tx.location.findFirst({
+                        where: { warehouseId: warehouse.id, name: { in: ['Input', 'Stock'] } }
+                    });
+                    destLocationId = loc?.id;
+                }
+            }
+
+            if (destLocationId) {
+                for (const item of po.items) {
+                    await this.inventoryService.createStockMove({
                         productId: item.productId,
                         quantity: item.quantity,
-                        unitCost: item.unitCost,
-                    })),
-                },
-            },
-            include: { items: true, supplier: true },
+                        sourceLocationId: undefined, // Vendor
+                        destinationLocationId: destLocationId,
+                        origin: po.id,
+                        status: 'WAITING', // Waiting for receipt
+                    }, tx);
+                }
+            }
+
+            return po;
         });
     }
 
     async getPurchaseOrders() {
         return this.prisma.purchaseOrder.findMany({
             include: { items: true, supplier: true, receipts: true },
+        });
+    }
+
+    async getPurchaseOrder(id: string) {
+        return this.prisma.purchaseOrder.findUnique({
+            where: { id },
+            include: { items: { include: { product: true } }, supplier: true, receipts: true },
         });
     }
 

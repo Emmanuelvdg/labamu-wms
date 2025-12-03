@@ -64,6 +64,54 @@ export declare class PurchaseOrderController {
         supplierId: string;
         expectedDate: Date | null;
     })[]>;
+    findOne(id: string): Promise<{
+        receipts: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: string;
+            destinationLocationId: string;
+            purchaseOrderId: string;
+        }[];
+        supplier: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            name: string;
+            contactInfo: string | null;
+        };
+        items: ({
+            product: {
+                id: string;
+                type: string | null;
+                name: string;
+                status: string;
+                sku: string;
+                category: string;
+                classification: string | null;
+                unitOfMeasure: string | null;
+                isStockable: boolean;
+                averageCost: number;
+                description: string | null;
+                tracking: string;
+                expiryDate: Date | null;
+                supplierId: string | null;
+            };
+        } & {
+            id: string;
+            productId: string;
+            quantity: number;
+            unitCost: number;
+            purchaseOrderId: string;
+        })[];
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: string;
+        supplierId: string;
+        expectedDate: Date | null;
+    }>;
     getSuppliers(): Promise<{
         id: string;
         createdAt: Date;

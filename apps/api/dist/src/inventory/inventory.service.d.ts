@@ -7,9 +7,20 @@ export declare class InventoryService {
     getProducts(): Promise<Product[]>;
     createWarehouse(data: {
         name: string;
+        shortName: string;
+        address: string;
+        companyId: string;
         location: any;
         type: string;
+        incomingSteps?: string;
+        outgoingSteps?: string;
+        dropshipSubcontractors?: boolean;
+        resupplySubcontractors?: boolean;
+        manufactureToResupply?: boolean;
+        manufactureSteps?: string;
+        buyToResupply?: boolean;
     }): Promise<Warehouse>;
+    updateWarehouse(id: string, data: any): Promise<Warehouse>;
     getWarehouses(): Promise<Warehouse[]>;
     addStock(data: {
         productId: string;
@@ -88,8 +99,17 @@ export declare class InventoryService {
             name: string;
             viewLocationId: string | null;
             shortName: string | null;
+            address: string | null;
+            companyId: string | null;
             location: string;
             partnerId: string | null;
+            incomingSteps: string | null;
+            outgoingSteps: string | null;
+            dropshipSubcontractors: boolean;
+            resupplySubcontractors: boolean;
+            manufactureToResupply: boolean;
+            manufactureSteps: string | null;
+            buyToResupply: boolean;
         };
     } & {
         id: string;
@@ -518,7 +538,7 @@ export declare class InventoryService {
         totalValue: number;
         products: any[];
     }>;
-    getStockMoves(): Promise<{
+    getStockTransactions(): Promise<{
         id: string;
         productId: string;
         batchId: string | null;
@@ -536,8 +556,17 @@ export declare class InventoryService {
             name: string;
             viewLocationId: string | null;
             shortName: string | null;
+            address: string | null;
+            companyId: string | null;
             location: string;
             partnerId: string | null;
+            incomingSteps: string | null;
+            outgoingSteps: string | null;
+            dropshipSubcontractors: boolean;
+            resupplySubcontractors: boolean;
+            manufactureToResupply: boolean;
+            manufactureSteps: string | null;
+            buyToResupply: boolean;
         };
     } & {
         id: string;
@@ -582,8 +611,17 @@ export declare class InventoryService {
             name: string;
             viewLocationId: string | null;
             shortName: string | null;
+            address: string | null;
+            companyId: string | null;
             location: string;
             partnerId: string | null;
+            incomingSteps: string | null;
+            outgoingSteps: string | null;
+            dropshipSubcontractors: boolean;
+            resupplySubcontractors: boolean;
+            manufactureToResupply: boolean;
+            manufactureSteps: string | null;
+            buyToResupply: boolean;
         };
     } & {
         id: string;
@@ -604,5 +642,87 @@ export declare class InventoryService {
     })[]>;
     createCycleCountAdjustments(locationIds: string[]): Promise<any[]>;
     private validateLocationForStock;
+    createStockMove(data: {
+        productId: string;
+        quantity: number;
+        sourceLocationId?: string;
+        destinationLocationId?: string;
+        ruleId?: string;
+        origin?: string;
+        batchId?: string;
+        status?: string;
+    }, tx?: any): Promise<any>;
+    checkProcurement(productId: string, quantity: number, locationId: string, tx?: any): Promise<void>;
+    getStockMoves(status?: string): Promise<({
+        product: {
+            id: string;
+            type: string | null;
+            name: string;
+            status: string;
+            sku: string;
+            category: string;
+            classification: string | null;
+            unitOfMeasure: string | null;
+            isStockable: boolean;
+            averageCost: number;
+            description: string | null;
+            tracking: string;
+            expiryDate: Date | null;
+            supplierId: string | null;
+        };
+        rule: {
+            id: string;
+            routeId: string;
+            action: string;
+            sourceLocationId: string | null;
+            destinationLocationId: string | null;
+            sequence: number;
+        };
+        sourceLocation: {
+            id: string;
+            type: string;
+            name: string;
+            removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
+            parentId: string | null;
+            warehouseId: string | null;
+        };
+        destinationLocation: {
+            id: string;
+            type: string;
+            name: string;
+            removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
+            parentId: string | null;
+            warehouseId: string | null;
+        };
+    } & {
+        id: string;
+        productId: string;
+        batchId: string | null;
+        quantity: number;
+        createdAt: Date;
+        updatedAt: Date;
+        status: string;
+        sourceLocationId: string | null;
+        destinationLocationId: string | null;
+        ruleId: string | null;
+        origin: string | null;
+    })[]>;
+    validateStockMove(id: string): Promise<{
+        id: string;
+        productId: string;
+        batchId: string | null;
+        quantity: number;
+        createdAt: Date;
+        updatedAt: Date;
+        status: string;
+        sourceLocationId: string | null;
+        destinationLocationId: string | null;
+        ruleId: string | null;
+        origin: string | null;
+    }>;
 }
 //# sourceMappingURL=inventory.service.d.ts.map

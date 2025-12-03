@@ -33,6 +33,7 @@ model Product {
   reorderingRules ReorderingRule[]
   routes          Route[]
   purchaseOrderItems PurchaseOrderItem[]
+  stockMoves      StockMove[]
 }
 
 model Route {
@@ -55,17 +56,30 @@ model Rule {
   destinationLocationId String?
   destinationLocation Location? @relation("DestLocation", fields: [destinationLocationId], references: [id])
   sequence            Int      @default(0)
+  stockMoves          StockMove[]
 }
 
 model Warehouse {
   id             String   @id @default(uuid())
   name           String
-  shortName      String?
+  shortName      String?  // Max 5 chars
+  address        String?
+  companyId      String?
   location       String   // JSON: { lat: number, lng: number }
   type           String
   partnerId      String?
   viewLocationId String?  @unique
   viewLocation   Location? @relation("WarehouseView", fields: [viewLocationId], references: [id])
+  
+  // Route Configuration
+  incomingSteps         String? // "1_step", "2_steps", "3_steps"
+  outgoingSteps         String? // "1_step", "2_steps", "3_steps"
+  dropshipSubcontractors Boolean @default(false)
+  resupplySubcontractors Boolean @default(false)
+  manufactureToResupply  Boolean @default(false)
+  manufactureSteps       String? // "1_step", "2_steps", "3_steps"
+  buyToResupply          Boolean @default(false)
+  
   inventory      ProductInventory[]
   batches        InventoryBatch[]
 }
@@ -94,6 +108,8 @@ model Location {
   destRules       Rule[] @relation("DestLocation")
   packages        Package[]
   receipts        Receipt[]
+  sourceMoves     StockMove[] @relation("MoveSource")
+  destMoves       StockMove[] @relation("MoveDest")
 }
 
 // Aggregate Inventory (Legacy/Fast Lookup)
@@ -130,6 +146,7 @@ model InventoryBatch {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   adjustments     InventoryAdjustment[]
+  stockMoves      StockMove[]
 }
 
 model Package {
@@ -324,4 +341,23 @@ model Receipt {
   destinationLocation Location  @relation(fields: [destinationLocationId], references: [id])
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+}
+
+model StockMove {
+  id                    String   @id @default(uuid())
+  productId             String
+  product               Product  @relation(fields: [productId], references: [id])
+  quantity              Int
+  status                String   @default("DRAFT") // DRAFT, WAITING, READY, DONE, CANCELLED
+  sourceLocationId      String?
+  sourceLocation        Location? @relation("MoveSource", fields: [sourceLocationId], references: [id])
+  destinationLocationId String?
+  destinationLocation   Location? @relation("MoveDest", fields: [destinationLocationId], references: [id])
+  ruleId                String?
+  rule                  Rule?    @relation(fields: [ruleId], references: [id])
+  origin                String?  // e.g. PO001, MO001
+  batchId               String?
+  batch                 InventoryBatch? @relation(fields: [batchId], references: [id])
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }

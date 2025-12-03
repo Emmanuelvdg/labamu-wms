@@ -17,8 +17,13 @@ export class InventoryController {
     }
 
     @Post('warehouses')
-    createWarehouse(@Body() data: { name: string; location: any; type: string }) {
+    createWarehouse(@Body() data: any) {
         return this.inventoryService.createWarehouse(data);
+    }
+
+    @Put('warehouses/:id')
+    updateWarehouse(@Param('id') id: string, @Body() data: any) {
+        return this.inventoryService.updateWarehouse(id, data);
     }
 
     @Get('warehouses')
@@ -100,9 +105,24 @@ export class InventoryController {
         return this.inventoryService.getValuation();
     }
 
+    @Get('transactions')
+    getStockTransactions() {
+        return this.inventoryService.getStockTransactions();
+    }
+
+    @Post('moves')
+    createStockMove(@Body() data: any) {
+        return this.inventoryService.createStockMove(data);
+    }
+
     @Get('moves')
-    getStockMoves() {
-        return this.inventoryService.getStockMoves();
+    getStockMoves(@Query('status') status?: string) {
+        return this.inventoryService.getStockMoves(status);
+    }
+
+    @Post('moves/:id/validate')
+    validateStockMove(@Param('id') id: string) {
+        return this.inventoryService.validateStockMove(id);
     }
 
     @Get('locations/tree')

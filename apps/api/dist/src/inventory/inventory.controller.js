@@ -28,6 +28,9 @@ let InventoryController = class InventoryController {
     createWarehouse(data) {
         return this.inventoryService.createWarehouse(data);
     }
+    updateWarehouse(id, data) {
+        return this.inventoryService.updateWarehouse(id, data);
+    }
     getWarehouses() {
         return this.inventoryService.getWarehouses();
     }
@@ -73,8 +76,17 @@ let InventoryController = class InventoryController {
     getValuation() {
         return this.inventoryService.getValuation();
     }
-    getStockMoves() {
-        return this.inventoryService.getStockMoves();
+    getStockTransactions() {
+        return this.inventoryService.getStockTransactions();
+    }
+    createStockMove(data) {
+        return this.inventoryService.createStockMove(data);
+    }
+    getStockMoves(status) {
+        return this.inventoryService.getStockMoves(status);
+    }
+    validateStockMove(id) {
+        return this.inventoryService.validateStockMove(id);
     }
     getLocationsTree(warehouseId) {
         return this.inventoryService.getLocationsTree(warehouseId);
@@ -143,6 +155,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], InventoryController.prototype, "createWarehouse", null);
+__decorate([
+    (0, common_1.Put)('warehouses/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "updateWarehouse", null);
 __decorate([
     (0, common_1.Get)('warehouses'),
     __metadata("design:type", Function),
@@ -244,11 +264,32 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], InventoryController.prototype, "getValuation", null);
 __decorate([
-    (0, common_1.Get)('moves'),
+    (0, common_1.Get)('transactions'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
+], InventoryController.prototype, "getStockTransactions", null);
+__decorate([
+    (0, common_1.Post)('moves'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "createStockMove", null);
+__decorate([
+    (0, common_1.Get)('moves'),
+    __param(0, (0, common_1.Query)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
 ], InventoryController.prototype, "getStockMoves", null);
+__decorate([
+    (0, common_1.Post)('moves/:id/validate'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], InventoryController.prototype, "validateStockMove", null);
 __decorate([
     (0, common_1.Get)('locations/tree'),
     __param(0, (0, common_1.Query)('warehouseId')),

@@ -14,6 +14,9 @@ const navigation = [
     { name: 'Purchase Orders', href: '/inventory/purchases' },
     { name: 'Suppliers', href: '/inventory/suppliers' },
     { name: 'Reports', href: '/reports' },
+    { name: 'Routes', href: '/inventory/routes' },
+    { name: 'Stock Moves', href: '/inventory/moves' },
+    { name: 'User Guide', href: '/user-guide' },
     { name: 'Settings', href: '/settings' },
 ];
 

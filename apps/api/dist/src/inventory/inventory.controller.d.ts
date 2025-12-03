@@ -34,18 +34,41 @@ export declare class InventoryController {
         expiryDate: Date | null;
         supplierId: string | null;
     }[]>;
-    createWarehouse(data: {
-        name: string;
-        location: any;
-        type: string;
-    }): Promise<{
+    createWarehouse(data: any): Promise<{
         id: string;
         type: string;
         name: string;
         viewLocationId: string | null;
         shortName: string | null;
+        address: string | null;
+        companyId: string | null;
         location: string;
         partnerId: string | null;
+        incomingSteps: string | null;
+        outgoingSteps: string | null;
+        dropshipSubcontractors: boolean;
+        resupplySubcontractors: boolean;
+        manufactureToResupply: boolean;
+        manufactureSteps: string | null;
+        buyToResupply: boolean;
+    }>;
+    updateWarehouse(id: string, data: any): Promise<{
+        id: string;
+        type: string;
+        name: string;
+        viewLocationId: string | null;
+        shortName: string | null;
+        address: string | null;
+        companyId: string | null;
+        location: string;
+        partnerId: string | null;
+        incomingSteps: string | null;
+        outgoingSteps: string | null;
+        dropshipSubcontractors: boolean;
+        resupplySubcontractors: boolean;
+        manufactureToResupply: boolean;
+        manufactureSteps: string | null;
+        buyToResupply: boolean;
     }>;
     getWarehouses(): Promise<{
         id: string;
@@ -53,8 +76,17 @@ export declare class InventoryController {
         name: string;
         viewLocationId: string | null;
         shortName: string | null;
+        address: string | null;
+        companyId: string | null;
         location: string;
         partnerId: string | null;
+        incomingSteps: string | null;
+        outgoingSteps: string | null;
+        dropshipSubcontractors: boolean;
+        resupplySubcontractors: boolean;
+        manufactureToResupply: boolean;
+        manufactureSteps: string | null;
+        buyToResupply: boolean;
     }[]>;
     addBatch(data: any): Promise<{
         id: string;
@@ -307,7 +339,7 @@ export declare class InventoryController {
         totalValue: number;
         products: any[];
     }>;
-    getStockMoves(): Promise<{
+    getStockTransactions(): Promise<{
         id: string;
         productId: string;
         batchId: string | null;
@@ -318,6 +350,78 @@ export declare class InventoryController {
         createdAt: Date;
         updatedAt: Date;
     }[]>;
+    createStockMove(data: any): Promise<any>;
+    getStockMoves(status?: string): Promise<({
+        product: {
+            id: string;
+            type: string | null;
+            name: string;
+            status: string;
+            sku: string;
+            category: string;
+            classification: string | null;
+            unitOfMeasure: string | null;
+            isStockable: boolean;
+            averageCost: number;
+            description: string | null;
+            tracking: string;
+            expiryDate: Date | null;
+            supplierId: string | null;
+        };
+        rule: {
+            id: string;
+            routeId: string;
+            action: string;
+            sourceLocationId: string | null;
+            destinationLocationId: string | null;
+            sequence: number;
+        };
+        sourceLocation: {
+            id: string;
+            type: string;
+            name: string;
+            removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
+            parentId: string | null;
+            warehouseId: string | null;
+        };
+        destinationLocation: {
+            id: string;
+            type: string;
+            name: string;
+            removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
+            parentId: string | null;
+            warehouseId: string | null;
+        };
+    } & {
+        id: string;
+        productId: string;
+        batchId: string | null;
+        quantity: number;
+        createdAt: Date;
+        updatedAt: Date;
+        status: string;
+        sourceLocationId: string | null;
+        destinationLocationId: string | null;
+        ruleId: string | null;
+        origin: string | null;
+    })[]>;
+    validateStockMove(id: string): Promise<{
+        id: string;
+        productId: string;
+        batchId: string | null;
+        quantity: number;
+        createdAt: Date;
+        updatedAt: Date;
+        status: string;
+        sourceLocationId: string | null;
+        destinationLocationId: string | null;
+        ruleId: string | null;
+        origin: string | null;
+    }>;
     getLocationsTree(warehouseId?: string): Promise<({
         children: ({
             children: {
@@ -357,8 +461,17 @@ export declare class InventoryController {
             name: string;
             viewLocationId: string | null;
             shortName: string | null;
+            address: string | null;
+            companyId: string | null;
             location: string;
             partnerId: string | null;
+            incomingSteps: string | null;
+            outgoingSteps: string | null;
+            dropshipSubcontractors: boolean;
+            resupplySubcontractors: boolean;
+            manufactureToResupply: boolean;
+            manufactureSteps: string | null;
+            buyToResupply: boolean;
         };
     } & {
         id: string;
@@ -570,8 +683,17 @@ export declare class InventoryController {
             name: string;
             viewLocationId: string | null;
             shortName: string | null;
+            address: string | null;
+            companyId: string | null;
             location: string;
             partnerId: string | null;
+            incomingSteps: string | null;
+            outgoingSteps: string | null;
+            dropshipSubcontractors: boolean;
+            resupplySubcontractors: boolean;
+            manufactureToResupply: boolean;
+            manufactureSteps: string | null;
+            buyToResupply: boolean;
         };
     } & {
         id: string;
@@ -619,8 +741,17 @@ export declare class InventoryController {
             name: string;
             viewLocationId: string | null;
             shortName: string | null;
+            address: string | null;
+            companyId: string | null;
             location: string;
             partnerId: string | null;
+            incomingSteps: string | null;
+            outgoingSteps: string | null;
+            dropshipSubcontractors: boolean;
+            resupplySubcontractors: boolean;
+            manufactureToResupply: boolean;
+            manufactureSteps: string | null;
+            buyToResupply: boolean;
         };
     } & {
         id: string;

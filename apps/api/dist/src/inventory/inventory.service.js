@@ -8,6 +8,17 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.InventoryService = void 0;
 const common_1 = require("@nestjs/common");
@@ -36,8 +47,113 @@ let InventoryService = class InventoryService {
         return this.prisma.product.findMany();
     }
     async createWarehouse(data) {
-        return this.prisma.warehouse.create({
-            data: Object.assign(Object.assign({}, data), { location: JSON.stringify(data.location) }),
+        return this.prisma.$transaction(async (tx) => {
+            const viewLocation = await tx.location.create({
+                data: {
+                    name: data.shortName || data.name,
+                    type: 'VIEW',
+                },
+            });
+            const stockLocation = await tx.location.create({
+                data: {
+                    name: 'Stock',
+                    parentId: viewLocation.id,
+                    type: 'INTERNAL',
+                },
+            });
+            const warehouse = await tx.warehouse.create({
+                data: Object.assign(Object.assign({}, data), { location: JSON.stringify(data.location), viewLocationId: viewLocation.id }),
+            });
+            await tx.location.update({
+                where: { id: viewLocation.id },
+                data: { warehouseId: warehouse.id },
+            });
+            await tx.location.update({
+                where: { id: stockLocation.id },
+                data: { warehouseId: warehouse.id },
+            });
+            const createRouteWithRules = async (name, rules) => {
+                const route = await tx.route.create({
+                    data: { name: `${data.shortName}: ${name}` }
+                });
+                for (const [index, rule] of rules.entries()) {
+                    await tx.rule.create({
+                        data: {
+                            routeId: route.id,
+                            action: rule.action,
+                            sourceLocationId: rule.sourceLocationId,
+                            destinationLocationId: rule.destinationLocationId,
+                            sequence: index,
+                        }
+                    });
+                }
+            };
+            if (data.incomingSteps === '2_steps') {
+                const inputLocation = await tx.location.create({
+                    data: { name: 'Input', parentId: viewLocation.id, type: 'INTERNAL', warehouseId: warehouse.id }
+                });
+                await createRouteWithRules('Receive in 2 steps', [
+                    { action: 'PULL', sourceLocationId: null, destinationLocationId: inputLocation.id },
+                    { action: 'PUSH', sourceLocationId: inputLocation.id, destinationLocationId: stockLocation.id }
+                ]);
+            }
+            else if (data.incomingSteps === '3_steps') {
+                const inputLocation = await tx.location.create({
+                    data: { name: 'Input', parentId: viewLocation.id, type: 'INTERNAL', warehouseId: warehouse.id }
+                });
+                const qualityLocation = await tx.location.create({
+                    data: { name: 'Quality Control', parentId: viewLocation.id, type: 'INTERNAL', warehouseId: warehouse.id }
+                });
+                await createRouteWithRules('Receive in 3 steps', [
+                    { action: 'PULL', sourceLocationId: null, destinationLocationId: inputLocation.id },
+                    { action: 'PUSH', sourceLocationId: inputLocation.id, destinationLocationId: qualityLocation.id },
+                    { action: 'PUSH', sourceLocationId: qualityLocation.id, destinationLocationId: stockLocation.id }
+                ]);
+            }
+            else {
+                await createRouteWithRules('Receive in 1 step', [
+                    { action: 'PULL', sourceLocationId: null, destinationLocationId: stockLocation.id }
+                ]);
+            }
+            if (data.outgoingSteps === '2_steps') {
+                const outputLocation = await tx.location.create({
+                    data: { name: 'Output', parentId: viewLocation.id, type: 'INTERNAL', warehouseId: warehouse.id }
+                });
+                await createRouteWithRules('Deliver in 2 steps', [
+                    { action: 'PULL', sourceLocationId: stockLocation.id, destinationLocationId: outputLocation.id },
+                    { action: 'PULL', sourceLocationId: outputLocation.id, destinationLocationId: null }
+                ]);
+            }
+            else if (data.outgoingSteps === '3_steps') {
+                const packingLocation = await tx.location.create({
+                    data: { name: 'Packing Zone', parentId: viewLocation.id, type: 'INTERNAL', warehouseId: warehouse.id }
+                });
+                const outputLocation = await tx.location.create({
+                    data: { name: 'Output', parentId: viewLocation.id, type: 'INTERNAL', warehouseId: warehouse.id }
+                });
+                await createRouteWithRules('Deliver in 3 steps', [
+                    { action: 'PULL', sourceLocationId: stockLocation.id, destinationLocationId: packingLocation.id },
+                    { action: 'PULL', sourceLocationId: packingLocation.id, destinationLocationId: outputLocation.id },
+                    { action: 'PULL', sourceLocationId: outputLocation.id, destinationLocationId: null }
+                ]);
+            }
+            else {
+                await createRouteWithRules('Deliver in 1 step', [
+                    { action: 'PULL', sourceLocationId: stockLocation.id, destinationLocationId: null }
+                ]);
+            }
+            return warehouse;
+        });
+    }
+    async updateWarehouse(id, data) {
+        const { location } = data, rest = __rest(data, ["location"]);
+        const updateData = Object.assign({}, rest);
+        if (location) {
+            updateData.location = JSON.stringify(location);
+        }
+        return this.prisma.warehouse.update({
+            where: { id },
+            data: updateData,
         });
     }
     async getWarehouses() {
@@ -516,23 +632,6 @@ let InventoryService = class InventoryService {
                 where: { id: sourceBatch.id },
                 data: { currentQuantity: { decrement: data.quantity } },
             });
-            const destLocation = await tx.location.findUnique({ where: { id: data.destinationLocationId } });
-            if (!destLocation || !destLocation.warehouseId)
-                throw new Error('Destination location must belong to a warehouse');
-            await tx.inventoryBatch.create({
-                data: {
-                    productId: data.productId,
-                    locationId: data.destinationLocationId,
-                    warehouseId: destLocation.warehouseId,
-                    initialQuantity: data.quantity,
-                    currentQuantity: data.quantity,
-                    costPerUnit: sourceBatch.costPerUnit,
-                    purchaseDate: sourceBatch.purchaseDate,
-                    expiryDate: sourceBatch.expiryDate,
-                    batchNumber: sourceBatch.batchNumber,
-                    status: 'Active',
-                },
-            });
             await tx.stockTransaction.create({
                 data: {
                     productId: data.productId,
@@ -629,7 +728,7 @@ let InventoryService = class InventoryService {
             products: Object.values(valuationByProduct),
         };
     }
-    async getStockMoves() {
+    async getStockTransactions() {
         return this.prisma.stockTransaction.findMany({
             orderBy: { date: 'desc' },
             include: {
@@ -695,6 +794,162 @@ let InventoryService = class InventoryService {
         if (location.type === 'VIEW') {
             throw new Error(`Cannot store stock in a VIEW location: ${location.name}`);
         }
+    }
+    async createStockMove(data, tx) {
+        const prisma = tx || this.prisma;
+        const move = await prisma.stockMove.create({
+            data: {
+                productId: data.productId,
+                quantity: data.quantity,
+                sourceLocationId: data.sourceLocationId,
+                destinationLocationId: data.destinationLocationId,
+                ruleId: data.ruleId,
+                origin: data.origin,
+                batchId: data.batchId,
+                status: data.status || 'DRAFT',
+            },
+        });
+        if (move.sourceLocationId) {
+            await this.checkProcurement(move.productId, move.quantity, move.sourceLocationId, prisma);
+        }
+        return move;
+    }
+    async checkProcurement(productId, quantity, locationId, tx) {
+        const prisma = tx || this.prisma;
+        const rules = await prisma.rule.findMany({
+            where: {
+                destinationLocationId: locationId,
+                action: 'PULL',
+            },
+            orderBy: { sequence: 'asc' }
+        });
+        for (const rule of rules) {
+            await this.createStockMove({
+                productId,
+                quantity,
+                sourceLocationId: rule.sourceLocationId,
+                destinationLocationId: locationId,
+                ruleId: rule.id,
+                status: 'WAITING',
+                origin: 'Procurement',
+            }, prisma);
+        }
+    }
+    async getStockMoves(status) {
+        const where = status ? { status } : {};
+        return this.prisma.stockMove.findMany({
+            where,
+            include: { product: true, sourceLocation: true, destinationLocation: true, rule: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+    async validateStockMove(id) {
+        return this.prisma.$transaction(async (tx) => {
+            const move = await tx.stockMove.findUnique({ where: { id } });
+            if (!move)
+                throw new Error('Stock move not found');
+            if (move.status === 'DONE')
+                throw new Error('Stock move already done');
+            if (move.sourceLocationId && move.destinationLocationId) {
+                const sourceBatch = await tx.inventoryBatch.findFirst({
+                    where: {
+                        productId: move.productId,
+                        locationId: move.sourceLocationId,
+                        currentQuantity: { gte: move.quantity },
+                        status: 'Active',
+                    },
+                    orderBy: { purchaseDate: 'asc' },
+                });
+                if (sourceBatch) {
+                    await tx.inventoryBatch.update({
+                        where: { id: sourceBatch.id },
+                        data: { currentQuantity: { decrement: move.quantity } },
+                    });
+                }
+                const destLocation = await tx.location.findUnique({ where: { id: move.destinationLocationId } });
+                if (destLocation && destLocation.warehouseId) {
+                    if (move.batchId) {
+                    }
+                    else {
+                        await tx.inventoryBatch.create({
+                            data: {
+                                productId: move.productId,
+                                locationId: move.destinationLocationId,
+                                warehouseId: destLocation.warehouseId,
+                                initialQuantity: move.quantity,
+                                currentQuantity: move.quantity,
+                                costPerUnit: sourceBatch ? sourceBatch.costPerUnit : 0,
+                                purchaseDate: sourceBatch ? sourceBatch.purchaseDate : new Date(),
+                                status: 'Active',
+                                batchNumber: `MOVE-${Date.now()}`
+                            }
+                        });
+                    }
+                }
+            }
+            else if (!move.sourceLocationId && move.destinationLocationId) {
+                const destLocation = await tx.location.findUnique({ where: { id: move.destinationLocationId } });
+                if (destLocation && destLocation.warehouseId) {
+                    await tx.inventoryBatch.create({
+                        data: {
+                            productId: move.productId,
+                            locationId: move.destinationLocationId,
+                            warehouseId: destLocation.warehouseId,
+                            initialQuantity: move.quantity,
+                            currentQuantity: move.quantity,
+                            costPerUnit: 0,
+                            purchaseDate: new Date(),
+                            status: 'Active',
+                            batchNumber: `REC-${Date.now()}`
+                        }
+                    });
+                }
+            }
+            else if (move.sourceLocationId && !move.destinationLocationId) {
+                const sourceBatch = await tx.inventoryBatch.findFirst({
+                    where: {
+                        productId: move.productId,
+                        locationId: move.sourceLocationId,
+                        currentQuantity: { gte: move.quantity },
+                        status: 'Active',
+                    },
+                    orderBy: { purchaseDate: 'asc' },
+                });
+                if (sourceBatch) {
+                    await tx.inventoryBatch.update({
+                        where: { id: sourceBatch.id },
+                        data: { currentQuantity: { decrement: move.quantity } },
+                    });
+                }
+            }
+            const updatedMove = await tx.stockMove.update({
+                where: { id },
+                data: { status: 'DONE' },
+            });
+            if (move.destinationLocationId) {
+                const pushRules = await tx.rule.findMany({
+                    where: {
+                        sourceLocationId: move.destinationLocationId,
+                        action: 'PUSH',
+                    },
+                    orderBy: { sequence: 'asc' }
+                });
+                for (const rule of pushRules) {
+                    await tx.stockMove.create({
+                        data: {
+                            productId: move.productId,
+                            quantity: move.quantity,
+                            sourceLocationId: move.destinationLocationId,
+                            destinationLocationId: rule.destinationLocationId,
+                            ruleId: rule.id,
+                            origin: move.origin,
+                            status: 'WAITING',
+                        }
+                    });
+                }
+            }
+            return updatedMove;
+        });
     }
 };
 exports.InventoryService = InventoryService;

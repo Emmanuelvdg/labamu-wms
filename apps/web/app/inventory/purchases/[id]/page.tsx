@@ -20,9 +20,11 @@ export default function PurchaseOrderDetailPage({ params }: { params: { id: stri
 
     async function loadData() {
         try {
-            const orders = await fetchPurchaseOrders(); // Ideally fetch single PO endpoint
-            const found = orders.find((o: any) => o.id === params.id);
-            setPo(found);
+            // Fetch single PO directly
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/purchase-orders/${params.id}`);
+            if (!res.ok) throw new Error('Failed to fetch PO');
+            const data = await res.json();
+            setPo(data);
 
             const locs = await fetchLocations();
             setLocations(locs);
@@ -31,6 +33,7 @@ export default function PurchaseOrderDetailPage({ params }: { params: { id: stri
             if (defaultLoc) setDestinationId(defaultLoc.id);
         } catch (e) {
             console.error(e);
+            setPo(null);
         } finally {
             setLoading(false);
         }

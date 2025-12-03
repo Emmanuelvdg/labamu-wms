@@ -1,0 +1,24 @@
+{
+  "id": "7ab1512b-a266-4cb3-986b-17b3fcbd1d3d",
+  "supplierId": "1d5eb90c-dbac-44dd-bc84-6b480732ef47",
+  "status": "ORDERED",
+  "expectedDate": null,
+  "createdAt": "2025-12-02T10:17:28.465Z",
+  "updatedAt": "2025-12-02T10:17:28.465Z",
+  "items": [
+    {
+      "id": "6ce6b6cf-d715-4eaa-91ea-ac5fd6b9aa9b",
+      "purchaseOrderId": "7ab1512b-a266-4cb3-986b-17b3fcbd1d3d",
+      "productId": "66b0803c-d5c9-481f-8609-88bc8703c936",
+      "quantity": 50,
+      "unitCost": 10
+    }
+  ],
+  "supplier": {
+    "id": "1d5eb90c-dbac-44dd-bc84-6b480732ef47",
+    "name": "Supplier 1764670648427",
+    "contactInfo": null,
+    "createdAt": "2025-12-02T10:17:28.440Z",
+    "updatedAt": "2025-12-02T10:17:28.440Z"
+  }
+}

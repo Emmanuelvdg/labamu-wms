@@ -6,22 +6,22 @@ export declare class SupplierController {
         name: string;
         contactInfo?: string;
     }): Promise<{
-        id: string;
         name: string;
-        contactInfo: string | null;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        contactInfo: string | null;
     }>;
     findAll(): Promise<({
         _count: {
             purchaseOrders: number;
         };
     } & {
-        id: string;
         name: string;
-        contactInfo: string | null;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        contactInfo: string | null;
     })[]>;
     getProductPriceHistory(productId: string): Promise<{
         date: Date;
@@ -37,50 +37,50 @@ export declare class SupplierController {
         };
         purchaseOrders: {
             id: string;
+            status: string;
+            supplierId: string;
             createdAt: Date;
             updatedAt: Date;
-            supplierId: string;
-            status: string;
             expectedDate: Date | null;
         }[];
-        id: string;
         name: string;
-        contactInfo: string | null;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        contactInfo: string | null;
     }>;
     update(id: string, data: {
         name?: string;
         contactInfo?: string;
     }): Promise<{
-        id: string;
         name: string;
-        contactInfo: string | null;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        contactInfo: string | null;
     }>;
     remove(id: string): Promise<{
-        id: string;
         name: string;
-        contactInfo: string | null;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        contactInfo: string | null;
     }>;
     getOrders(id: string): Promise<{
         totalAmount: number;
         totalItems: number;
         items: {
             id: string;
-            purchaseOrderId: string;
             productId: string;
             quantity: number;
             unitCost: number;
+            purchaseOrderId: string;
         }[];
         id: string;
+        status: string;
+        supplierId: string;
         createdAt: Date;
         updatedAt: Date;
-        supplierId: string;
-        status: string;
         expectedDate: Date | null;
     }[]>;
 }

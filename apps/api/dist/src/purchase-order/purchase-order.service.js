@@ -21,25 +21,56 @@ let PurchaseOrderService = class PurchaseOrderService {
         this.ruleService = ruleService;
     }
     async createPurchaseOrder(data) {
-        return this.prisma.purchaseOrder.create({
-            data: {
-                supplierId: data.supplierId,
-                status: 'ORDERED',
-                expectedDate: data.expectedDate,
-                items: {
-                    create: data.items.map(item => ({
+        return this.prisma.$transaction(async (tx) => {
+            const po = await tx.purchaseOrder.create({
+                data: {
+                    supplierId: data.supplierId,
+                    status: 'ORDERED',
+                    expectedDate: data.expectedDate,
+                    items: {
+                        create: data.items.map(item => ({
+                            productId: item.productId,
+                            quantity: item.quantity,
+                            unitCost: item.unitCost,
+                        })),
+                    },
+                },
+                include: { items: true, supplier: true },
+            });
+            let destLocationId = data.destinationLocationId;
+            if (!destLocationId) {
+                const warehouse = await tx.warehouse.findFirst();
+                if (warehouse) {
+                    const loc = await tx.location.findFirst({
+                        where: { warehouseId: warehouse.id, name: { in: ['Input', 'Stock'] } }
+                    });
+                    destLocationId = loc === null || loc === void 0 ? void 0 : loc.id;
+                }
+            }
+            if (destLocationId) {
+                for (const item of po.items) {
+                    await this.inventoryService.createStockMove({
                         productId: item.productId,
                         quantity: item.quantity,
-                        unitCost: item.unitCost,
-                    })),
-                },
-            },
-            include: { items: true, supplier: true },
+                        sourceLocationId: undefined,
+                        destinationLocationId: destLocationId,
+                        origin: po.id,
+                        status: 'WAITING',
+                    }, tx);
+                }
+            }
+            return po;
         });
     }
     async getPurchaseOrders() {
         return this.prisma.purchaseOrder.findMany({
             include: { items: true, supplier: true, receipts: true },
+        });
+    }
+    async getPurchaseOrder(id) {
+        return this.prisma.purchaseOrder.findUnique({
+            where: { id },
+            include: { items: { include: { product: true } }, supplier: true, receipts: true },
         });
     }
     async getSuppliers() {
