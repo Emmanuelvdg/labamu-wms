@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StrategyModule = void 0;
 const common_1 = require("@nestjs/common");
 const strategy_service_1 = require("./strategy.service");
+const picking_strategy_service_1 = require("./picking-strategy.service");
 const strategy_controller_1 = require("./strategy.controller");
 const prisma_service_1 = require("../prisma.service");
 let StrategyModule = class StrategyModule {
@@ -17,8 +18,8 @@ exports.StrategyModule = StrategyModule;
 exports.StrategyModule = StrategyModule = __decorate([
     (0, common_1.Module)({
         controllers: [strategy_controller_1.StrategyController],
-        providers: [strategy_service_1.StrategyService, prisma_service_1.PrismaService],
-        exports: [strategy_service_1.StrategyService],
+        providers: [strategy_service_1.StrategyService, picking_strategy_service_1.PickingStrategyService, prisma_service_1.PrismaService],
+        exports: [strategy_service_1.StrategyService, picking_strategy_service_1.PickingStrategyService],
     })
 ], StrategyModule);
 //# sourceMappingURL=strategy.module.js.map

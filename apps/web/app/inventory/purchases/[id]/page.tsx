@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { fetchPurchaseOrders, receivePurchaseOrder, fetchLocations } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 
-export default function PurchaseOrderDetailPage({ params }: { params: { id: string } }) {
+export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
+    const { id } = use(params);
     const [po, setPo] = useState<any>(null);
     const [locations, setLocations] = useState<any[]>([]);
     const [destinationId, setDestinationId] = useState('');
@@ -16,12 +17,15 @@ export default function PurchaseOrderDetailPage({ params }: { params: { id: stri
 
     useEffect(() => {
         loadData();
-    }, [params.id]);
+    }, [id]);
 
     async function loadData() {
         try {
             // Fetch single PO directly
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/purchase-orders/${params.id}`);
+            const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/purchase-orders/${id}`;
+            console.log(`Fetching PO from: ${url}`);
+            const res = await fetch(url);
+            console.log(`PO Fetch Status: ${res.status}`);
             if (!res.ok) throw new Error('Failed to fetch PO');
             const data = await res.json();
             setPo(data);

@@ -29,7 +29,8 @@ export default function RouteDetailPage() {
     const [route, setRoute] = useState<any>(null);
     const [locations, setLocations] = useState<any[]>([]);
     const [open, setOpen] = useState(false);
-    const [newRule, setNewRule] = useState({
+    const [editingRule, setEditingRule] = useState<any>(null);
+    const [formData, setFormData] = useState({
         action: 'PULL',
         sourceLocationId: '',
         destinationLocationId: '',
@@ -57,21 +58,47 @@ export default function RouteDetailPage() {
         }
     }
 
-    const handleCreateRule = async (e: React.FormEvent) => {
+    const handleOpenDialog = (rule?: any) => {
+        if (rule) {
+            setEditingRule(rule);
+            setFormData({
+                action: rule.action,
+                sourceLocationId: rule.sourceLocationId || '',
+                destinationLocationId: rule.destinationLocationId || '',
+                sequence: rule.sequence,
+            });
+        } else {
+            setEditingRule(null);
+            setFormData({
+                action: 'PULL',
+                sourceLocationId: '',
+                destinationLocationId: '',
+                sequence: 0,
+            });
+        }
+        setOpen(true);
+    };
+
+    const handleSaveRule = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await fetch(`${API_URL}/inventory/routes/${params.id}/rules`, {
-                method: 'POST',
+            const url = editingRule
+                ? `${API_URL}/inventory/rules/${editingRule.id}`
+                : `${API_URL}/inventory/routes/${params.id}/rules`;
+
+            const method = editingRule ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    ...newRule,
-                    sourceLocationId: newRule.sourceLocationId || undefined,
-                    destinationLocationId: newRule.destinationLocationId || undefined,
-                    sequence: Number(newRule.sequence),
+                    ...formData,
+                    sourceLocationId: formData.sourceLocationId || undefined,
+                    destinationLocationId: formData.destinationLocationId || undefined,
+                    sequence: Number(formData.sequence),
                 }),
             });
             setOpen(false);
-            setNewRule({ action: 'PULL', sourceLocationId: '', destinationLocationId: '', sequence: 0 });
             load();
         } catch (err) {
             console.error(err);
@@ -98,20 +125,20 @@ export default function RouteDetailPage() {
                 <h2 className="text-xl font-semibold">Rules</h2>
                 <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button onClick={() => handleOpenDialog()}>
                             <Plus className="mr-2 h-4 w-4" /> Add Rule
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Add Rule</DialogTitle>
+                            <DialogTitle>{editingRule ? 'Edit Rule' : 'Add Rule'}</DialogTitle>
                         </DialogHeader>
-                        <form onSubmit={handleCreateRule} className="space-y-4">
+                        <form onSubmit={handleSaveRule} className="space-y-4">
                             <div className="space-y-2">
                                 <Label>Action</Label>
                                 <Select
-                                    value={newRule.action}
-                                    onValueChange={(val) => setNewRule({ ...newRule, action: val })}
+                                    value={formData.action}
+                                    onValueChange={(val) => setFormData({ ...formData, action: val })}
                                 >
                                     <SelectTrigger>
                                         <SelectValue />
@@ -125,14 +152,14 @@ export default function RouteDetailPage() {
                             <div className="space-y-2">
                                 <Label>Source Location</Label>
                                 <Select
-                                    value={newRule.sourceLocationId}
-                                    onValueChange={(val) => setNewRule({ ...newRule, sourceLocationId: val })}
+                                    value={formData.sourceLocationId}
+                                    onValueChange={(val) => setFormData({ ...formData, sourceLocationId: val })}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select Source (Optional)" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">None (External/Vendor)</SelectItem>
+                                        <SelectItem value="none">None (External/Vendor)</SelectItem>
                                         {locations.map(loc => (
                                             <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                                         ))}
@@ -142,14 +169,14 @@ export default function RouteDetailPage() {
                             <div className="space-y-2">
                                 <Label>Destination Location</Label>
                                 <Select
-                                    value={newRule.destinationLocationId}
-                                    onValueChange={(val) => setNewRule({ ...newRule, destinationLocationId: val })}
+                                    value={formData.destinationLocationId}
+                                    onValueChange={(val) => setFormData({ ...formData, destinationLocationId: val })}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select Destination (Optional)" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">None (External/Customer)</SelectItem>
+                                        <SelectItem value="none">None (External/Customer)</SelectItem>
                                         {locations.map(loc => (
                                             <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                                         ))}
@@ -160,12 +187,12 @@ export default function RouteDetailPage() {
                                 <Label>Sequence</Label>
                                 <Input
                                     type="number"
-                                    value={newRule.sequence}
-                                    onChange={(e) => setNewRule({ ...newRule, sequence: Number(e.target.value) })}
+                                    value={formData.sequence}
+                                    onChange={(e) => setFormData({ ...formData, sequence: Number(e.target.value) })}
                                 />
                             </div>
                             <div className="flex justify-end">
-                                <Button type="submit">Add Rule</Button>
+                                <Button type="submit">{editingRule ? 'Save Changes' : 'Add Rule'}</Button>
                             </div>
                         </form>
                     </DialogContent>
@@ -195,6 +222,9 @@ export default function RouteDetailPage() {
                                     </span>
                                 </div>
                             </div>
+                            <Button variant="outline" size="sm" onClick={() => handleOpenDialog(rule)}>
+                                Edit
+                            </Button>
                         </CardContent>
                     </Card>
                 ))}

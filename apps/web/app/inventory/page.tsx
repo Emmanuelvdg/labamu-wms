@@ -39,10 +39,12 @@ export default function InventoryPage() {
 
     const handleCreateProduct = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('Creating product:', newProduct);
         try {
-            await createProduct(newProduct);
-            setShowCreateModal(false);
-            load(); // Refresh list
+            const res = await createProduct(newProduct);
+            console.log('Product created:', res);
+            setShowCreateModal(false); // Close immediately
+            await load(); // Refresh list and wait
             // Reset form
             setNewProduct({
                 sku: '',
@@ -55,7 +57,9 @@ export default function InventoryPage() {
                 status: 'Active',
                 tracking: 'none'
             });
+            alert('Product Created Successfully'); // Add feedback
         } catch (err) {
+            console.error('Failed to create product:', err);
             alert('Failed to create product');
         }
     };
@@ -72,6 +76,7 @@ export default function InventoryPage() {
                 <div className="space-x-4">
                     <button
                         onClick={() => setShowCreateModal(true)}
+                        data-testid="new-item-btn"
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                     >
                         + New Item
@@ -79,9 +84,11 @@ export default function InventoryPage() {
                     <button className="bg-white border text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">
                         Upload
                     </button>
-                    <button className="bg-white border text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">
-                        Settings
-                    </button>
+                    <Link href="/settings">
+                        <button className="bg-white border text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">
+                            Settings
+                        </button>
+                    </Link>
                 </div>
             </div>
 
@@ -171,6 +178,7 @@ export default function InventoryPage() {
                                     <input
                                         type="text"
                                         required
+                                        data-testid="product-sku-input"
                                         className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
                                         value={newProduct.sku}
                                         onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })}
@@ -181,6 +189,7 @@ export default function InventoryPage() {
                                     <input
                                         type="text"
                                         required
+                                        data-testid="product-name-input"
                                         className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
                                         value={newProduct.name}
                                         onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
@@ -191,6 +200,7 @@ export default function InventoryPage() {
                                     <input
                                         type="text"
                                         required
+                                        data-testid="product-category-input"
                                         className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
                                         value={newProduct.category}
                                         onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
@@ -254,6 +264,7 @@ export default function InventoryPage() {
                                 </button>
                                 <button
                                     type="submit"
+                                    data-testid="create-product-submit"
                                     className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
                                 >
                                     Create Item

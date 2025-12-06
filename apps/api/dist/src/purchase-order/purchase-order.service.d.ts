@@ -17,10 +17,10 @@ export declare class PurchaseOrderService {
         destinationLocationId?: string;
     }): Promise<{
         supplier: {
+            name: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            name: string;
             contactInfo: string | null;
         };
         items: {
@@ -32,28 +32,28 @@ export declare class PurchaseOrderService {
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         status: string;
         supplierId: string;
+        createdAt: Date;
+        updatedAt: Date;
         expectedDate: Date | null;
     }>;
     getPurchaseOrders(): Promise<({
-        receipts: {
+        supplier: {
+            name: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            contactInfo: string | null;
+        };
+        receipts: {
+            id: string;
             status: string;
+            createdAt: Date;
+            updatedAt: Date;
             destinationLocationId: string;
             purchaseOrderId: string;
         }[];
-        supplier: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            contactInfo: string | null;
-        };
         items: {
             id: string;
             productId: string;
@@ -63,43 +63,47 @@ export declare class PurchaseOrderService {
         }[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         status: string;
         supplierId: string;
+        createdAt: Date;
+        updatedAt: Date;
         expectedDate: Date | null;
     })[]>;
     getPurchaseOrder(id: string): Promise<{
-        receipts: {
+        supplier: {
+            name: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
+            contactInfo: string | null;
+        };
+        receipts: {
+            id: string;
             status: string;
+            createdAt: Date;
+            updatedAt: Date;
             destinationLocationId: string;
             purchaseOrderId: string;
         }[];
-        supplier: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string;
-            contactInfo: string | null;
-        };
         items: ({
             product: {
-                id: string;
-                type: string | null;
                 name: string;
-                status: string;
+                id: string;
                 sku: string;
                 category: string;
                 classification: string | null;
+                type: string | null;
                 unitOfMeasure: string | null;
                 isStockable: boolean;
+                status: string;
                 averageCost: number;
                 description: string | null;
                 tracking: string;
                 expiryDate: Date | null;
+                width: number | null;
+                height: number | null;
+                depth: number | null;
+                weight: number | null;
                 supplierId: string | null;
             };
         } & {
@@ -111,24 +115,24 @@ export declare class PurchaseOrderService {
         })[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         status: string;
         supplierId: string;
+        createdAt: Date;
+        updatedAt: Date;
         expectedDate: Date | null;
     }>;
     getSuppliers(): Promise<{
+        name: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
         contactInfo: string | null;
     }[]>;
     receiveGoods(purchaseOrderId: string, destinationLocationId: string): Promise<{
         id: string;
+        status: string;
         createdAt: Date;
         updatedAt: Date;
-        status: string;
         destinationLocationId: string;
         purchaseOrderId: string;
     }>;

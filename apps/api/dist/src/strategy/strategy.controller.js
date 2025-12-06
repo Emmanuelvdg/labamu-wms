@@ -15,9 +15,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StrategyController = void 0;
 const common_1 = require("@nestjs/common");
 const strategy_service_1 = require("./strategy.service");
+const picking_strategy_service_1 = require("./picking-strategy.service");
 let StrategyController = class StrategyController {
-    constructor(strategyService) {
+    constructor(strategyService, pickingStrategyService) {
         this.strategyService = strategyService;
+        this.pickingStrategyService = pickingStrategyService;
     }
     evaluatePicking(data) {
         return this.strategyService.evaluatePickingStrategy(data);
@@ -36,6 +38,33 @@ let StrategyController = class StrategyController {
     }
     toggleReservation(id, active) {
         return this.strategyService.toggleReservationStrategy(id, active);
+    }
+    createPickingStrategy(data) {
+        return this.strategyService.createPickingStrategy(data);
+    }
+    updatePickingStrategy(id, data) {
+        return this.strategyService.updatePickingStrategy(id, data);
+    }
+    deletePickingStrategy(id) {
+        return this.strategyService.deletePickingStrategy(id);
+    }
+    createReservationStrategy(data) {
+        return this.strategyService.createReservationStrategy(data);
+    }
+    updateReservationStrategy(id, data) {
+        return this.strategyService.updateReservationStrategy(id, data);
+    }
+    deleteReservationStrategy(id) {
+        return this.strategyService.deleteReservationStrategy(id);
+    }
+    createBatch(data) {
+        return this.pickingStrategyService.createBatch(data.criteria);
+    }
+    createCluster(data) {
+        return this.pickingStrategyService.createClusterBatch(data.size);
+    }
+    createWave(data) {
+        return this.pickingStrategyService.createWave(data.criteria);
     }
 };
 exports.StrategyController = StrategyController;
@@ -81,8 +110,74 @@ __decorate([
     __metadata("design:paramtypes", [String, Boolean]),
     __metadata("design:returntype", void 0)
 ], StrategyController.prototype, "toggleReservation", null);
+__decorate([
+    (0, common_1.Post)('picking/create'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], StrategyController.prototype, "createPickingStrategy", null);
+__decorate([
+    (0, common_1.Put)('picking/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], StrategyController.prototype, "updatePickingStrategy", null);
+__decorate([
+    (0, common_1.Delete)('picking/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], StrategyController.prototype, "deletePickingStrategy", null);
+__decorate([
+    (0, common_1.Post)('reservation/create'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], StrategyController.prototype, "createReservationStrategy", null);
+__decorate([
+    (0, common_1.Put)('reservation/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], StrategyController.prototype, "updateReservationStrategy", null);
+__decorate([
+    (0, common_1.Delete)('reservation/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], StrategyController.prototype, "deleteReservationStrategy", null);
+__decorate([
+    (0, common_1.Post)('picking/batch'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], StrategyController.prototype, "createBatch", null);
+__decorate([
+    (0, common_1.Post)('picking/cluster'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], StrategyController.prototype, "createCluster", null);
+__decorate([
+    (0, common_1.Post)('picking/wave'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], StrategyController.prototype, "createWave", null);
 exports.StrategyController = StrategyController = __decorate([
     (0, common_1.Controller)('strategy'),
-    __metadata("design:paramtypes", [strategy_service_1.StrategyService])
+    __metadata("design:paramtypes", [strategy_service_1.StrategyService,
+        picking_strategy_service_1.PickingStrategyService])
 ], StrategyController);
 //# sourceMappingURL=strategy.controller.js.map

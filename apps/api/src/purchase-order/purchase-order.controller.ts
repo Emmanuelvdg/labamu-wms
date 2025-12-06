@@ -15,14 +15,14 @@ export class PurchaseOrderController {
         return this.purchaseOrderService.getPurchaseOrders();
     }
 
-    @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.purchaseOrderService.getPurchaseOrder(id);
-    }
-
     @Get('suppliers')
     getSuppliers() {
         return this.purchaseOrderService.getSuppliers();
+    }
+
+    @Get(':id')
+    findOne(@Param('id') id: string) {
+        return this.purchaseOrderService.getPurchaseOrder(id);
     }
 
     @Post(':id/receive')

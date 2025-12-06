@@ -1,10 +1,43 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
@@ -23,7 +56,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.InventoryService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma.service");
+const fs = __importStar(require("fs"));
 let InventoryService = class InventoryService {
+    log(message) {
+        const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
+        fs.appendFileSync(logPath, `[InventoryService] ${message}\n`);
+    }
     constructor(prisma) {
         this.prisma = prisma;
     }
@@ -194,6 +232,13 @@ let InventoryService = class InventoryService {
             include: { warehouse: true },
         });
     }
+    async getInventory(productId) {
+        const where = productId ? { productId } : {};
+        return this.prisma.productInventory.findMany({
+            where,
+            include: { product: true, warehouse: true, location: true },
+        });
+    }
     async addBatch(data) {
         const product = await this.prisma.product.findUnique({ where: { id: data.productId } });
         if (!product)
@@ -278,6 +323,8 @@ let InventoryService = class InventoryService {
                         ? { product: { expiryDate: 'asc' } }
                         : { warehouse: { id: 'asc' } }
                 });
+                this.log(`[ReserveStock] Product: ${item.productId}, Qty: ${item.quantity}, Found Inventory Records: ${inventory.length}`);
+                inventory.forEach(i => this.log(` - ID: ${i.id}, Qty: ${i.quantity}, Reserved: ${i.reserved}, Warehouse: ${i.warehouseId}`));
                 let remainingQty = item.quantity;
                 for (const stock of inventory) {
                     if (remainingQty <= 0)
@@ -339,26 +386,33 @@ let InventoryService = class InventoryService {
         });
     }
     async createAdjustment(data) {
-        return this.prisma.$transaction(async (tx) => {
-            const quantity = data.countedQuantity - data.currentQuantity;
-            const status = data.status || 'DRAFT';
-            const adjustment = await tx.inventoryAdjustment.create({
-                data: {
-                    locationId: data.locationId,
-                    productId: data.productId,
-                    batchId: data.batchId,
-                    countedQuantity: data.countedQuantity,
-                    currentQuantity: data.currentQuantity,
-                    quantity: quantity,
-                    reason: data.reason,
-                    status: status,
-                },
+        try {
+            return await this.prisma.$transaction(async (tx) => {
+                const quantity = data.countedQuantity - data.currentQuantity;
+                const status = data.status || 'DRAFT';
+                this.log(`Creating Adjustment: ${JSON.stringify(data)}`);
+                const adjustment = await tx.inventoryAdjustment.create({
+                    data: {
+                        locationId: data.locationId,
+                        productId: data.productId,
+                        batchId: data.batchId,
+                        countedQuantity: data.countedQuantity,
+                        currentQuantity: data.currentQuantity,
+                        quantity: quantity,
+                        reason: data.reason,
+                        status: status,
+                    },
+                });
+                if (status === 'APPLIED') {
+                    await this._applyAdjustmentLogic(tx, adjustment);
+                }
+                return adjustment;
             });
-            if (status === 'APPLIED') {
-                await this._applyAdjustmentLogic(tx, adjustment);
-            }
-            return adjustment;
-        });
+        }
+        catch (error) {
+            this.log(`Error creating adjustment: ${error.message}`);
+            throw error;
+        }
     }
     async updateAdjustment(id, data) {
         return this.prisma.inventoryAdjustment.update({
@@ -456,6 +510,29 @@ let InventoryService = class InventoryService {
                     maxQuantity: data.quantity,
                 },
             });
+            let remainingQty = data.quantity;
+            const batches = await tx.inventoryBatch.findMany({
+                where: {
+                    productId: data.productId,
+                    locationId: data.locationId,
+                    status: 'Active',
+                    currentQuantity: { gt: 0 },
+                },
+                orderBy: { purchaseDate: 'asc' },
+            });
+            for (const batch of batches) {
+                if (remainingQty <= 0)
+                    break;
+                const qtyToTake = Math.min(batch.currentQuantity, remainingQty);
+                await tx.inventoryBatch.update({
+                    where: { id: batch.id },
+                    data: { currentQuantity: { decrement: qtyToTake } },
+                });
+                remainingQty -= qtyToTake;
+            }
+            if (remainingQty > 0) {
+                throw new Error('Insufficient stock in batches to scrap');
+            }
             const inventory = await tx.productInventory.findFirst({
                 where: {
                     productId: data.productId,
@@ -463,7 +540,7 @@ let InventoryService = class InventoryService {
                 },
             });
             if (!inventory || inventory.quantity < data.quantity) {
-                throw new Error('Insufficient stock to scrap');
+                throw new Error('Insufficient stock in aggregate inventory to scrap');
             }
             await tx.productInventory.update({
                 where: { id: inventory.id },
@@ -509,35 +586,53 @@ let InventoryService = class InventoryService {
                 productId: data.productId,
                 categoryId: data.categoryId,
                 locationId: data.locationId,
+                sourceLocationId: data.sourceLocationId,
                 priority: data.priority,
             },
         });
     }
     async getPutawayRules() {
         return this.prisma.putawayRule.findMany({
-            include: { product: true, location: true },
+            include: { product: true, location: true, sourceLocation: true },
             orderBy: { priority: 'desc' },
         });
     }
-    async applyPutawayStrategy(productId) {
+    async applyPutawayStrategy(productId, currentLocationId) {
         const product = await this.prisma.product.findUnique({ where: { id: productId } });
         if (!product)
             return null;
-        const productRule = await this.prisma.putawayRule.findFirst({
-            where: { productId: productId, active: true },
-            orderBy: { priority: 'desc' },
+        const rules = await this.prisma.putawayRule.findMany({
+            where: {
+                active: true,
+                AND: [
+                    {
+                        OR: [
+                            { productId: productId },
+                            { categoryId: product.category || '' }
+                        ]
+                    },
+                    {
+                        OR: [
+                            { sourceLocationId: currentLocationId || undefined },
+                            { sourceLocationId: null }
+                        ]
+                    }
+                ]
+            },
+            orderBy: { priority: 'desc' }
         });
-        if (productRule)
-            return productRule.locationId;
-        if (product.category) {
-            const categoryRule = await this.prisma.putawayRule.findFirst({
-                where: { categoryId: product.category, active: true },
-                orderBy: { priority: 'desc' },
-            });
-            if (categoryRule)
-                return categoryRule.locationId;
-        }
-        return null;
+        rules.sort((a, b) => {
+            const aSource = a.sourceLocationId ? 1 : 0;
+            const bSource = b.sourceLocationId ? 1 : 0;
+            if (aSource !== bSource)
+                return bSource - aSource;
+            const aProduct = a.productId ? 1 : 0;
+            const bProduct = b.productId ? 1 : 0;
+            if (aProduct !== bProduct)
+                return bProduct - aProduct;
+            return b.priority - a.priority;
+        });
+        return rules.length > 0 ? rules[0].locationId : null;
     }
     async suggestRemoval(locationId, productId, quantity) {
         const location = await this.prisma.location.findUnique({ where: { id: locationId } });
@@ -606,6 +701,17 @@ let InventoryService = class InventoryService {
         return this.prisma.rule.create({
             data: {
                 routeId: data.routeId,
+                action: data.action,
+                sourceLocationId: data.sourceLocationId,
+                destinationLocationId: data.destinationLocationId,
+                sequence: data.sequence,
+            },
+        });
+    }
+    async updateRule(id, data) {
+        return this.prisma.rule.update({
+            where: { id },
+            data: {
                 action: data.action,
                 sourceLocationId: data.sourceLocationId,
                 destinationLocationId: data.destinationLocationId,
@@ -797,12 +903,25 @@ let InventoryService = class InventoryService {
     }
     async createStockMove(data, tx) {
         const prisma = tx || this.prisma;
+        let finalDestinationId = data.destinationLocationId;
+        if (data.destinationLocationId) {
+            const redirectId = await this.applyPutawayStrategy(data.productId, data.destinationLocationId);
+            if (redirectId) {
+                finalDestinationId = redirectId;
+            }
+        }
+        if (!finalDestinationId && data.sourceLocationId) {
+            const putawayId = await this.applyPutawayStrategy(data.productId, data.sourceLocationId);
+            if (putawayId) {
+                finalDestinationId = putawayId;
+            }
+        }
         const move = await prisma.stockMove.create({
             data: {
                 productId: data.productId,
                 quantity: data.quantity,
                 sourceLocationId: data.sourceLocationId,
-                destinationLocationId: data.destinationLocationId,
+                destinationLocationId: finalDestinationId,
                 ruleId: data.ruleId,
                 origin: data.origin,
                 batchId: data.batchId,
@@ -867,6 +986,11 @@ let InventoryService = class InventoryService {
                     });
                 }
                 const destLocation = await tx.location.findUnique({ where: { id: move.destinationLocationId } });
+                console.log('Validate Move Debug:', {
+                    destLocationId: move.destinationLocationId,
+                    foundDestLocation: destLocation,
+                    warehouseId: destLocation === null || destLocation === void 0 ? void 0 : destLocation.warehouseId
+                });
                 if (destLocation && destLocation.warehouseId) {
                     if (move.batchId) {
                     }
@@ -883,6 +1007,28 @@ let InventoryService = class InventoryService {
                                 status: 'Active',
                                 batchNumber: `MOVE-${Date.now()}`
                             }
+                        });
+                    }
+                    const destInventory = await tx.productInventory.findFirst({
+                        where: {
+                            productId: move.productId,
+                            locationId: move.destinationLocationId,
+                        },
+                    });
+                    if (destInventory) {
+                        await tx.productInventory.update({
+                            where: { id: destInventory.id },
+                            data: { quantity: { increment: move.quantity } },
+                        });
+                    }
+                    else {
+                        await tx.productInventory.create({
+                            data: {
+                                productId: move.productId,
+                                locationId: move.destinationLocationId,
+                                warehouseId: destLocation.warehouseId,
+                                quantity: move.quantity,
+                            },
                         });
                     }
                 }
@@ -903,6 +1049,28 @@ let InventoryService = class InventoryService {
                             batchNumber: `REC-${Date.now()}`
                         }
                     });
+                    const destInventory = await tx.productInventory.findFirst({
+                        where: {
+                            productId: move.productId,
+                            locationId: move.destinationLocationId,
+                        },
+                    });
+                    if (destInventory) {
+                        await tx.productInventory.update({
+                            where: { id: destInventory.id },
+                            data: { quantity: { increment: move.quantity } },
+                        });
+                    }
+                    else {
+                        await tx.productInventory.create({
+                            data: {
+                                productId: move.productId,
+                                locationId: move.destinationLocationId,
+                                warehouseId: destLocation.warehouseId,
+                                quantity: move.quantity,
+                            },
+                        });
+                    }
                 }
             }
             else if (move.sourceLocationId && !move.destinationLocationId) {
@@ -921,6 +1089,13 @@ let InventoryService = class InventoryService {
                         data: { currentQuantity: { decrement: move.quantity } },
                     });
                 }
+                await tx.productInventory.updateMany({
+                    where: {
+                        productId: move.productId,
+                        locationId: move.sourceLocationId,
+                    },
+                    data: { quantity: { decrement: move.quantity } },
+                });
             }
             const updatedMove = await tx.stockMove.update({
                 where: { id },

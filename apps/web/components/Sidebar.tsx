@@ -11,6 +11,7 @@ const navigation = [
     { name: 'Adjustments', href: '/inventory/adjustments' },
     { name: 'Scrap', href: '/inventory/scrap' },
     { name: 'Orders', href: '/orders' },
+    { name: 'Picking', href: '/picking' },
     { name: 'Purchase Orders', href: '/inventory/purchases' },
     { name: 'Suppliers', href: '/inventory/suppliers' },
     { name: 'Reports', href: '/reports' },

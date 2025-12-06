@@ -2,8 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 @Injectable()
 export class InventoryService {
+    private log(message: string) {
+        const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
+        fs.appendFileSync(logPath, `[InventoryService] ${message}\n`);
+    }
+
     constructor(private prisma: PrismaService) { }
 
     async createProduct(data: any): Promise<Product> {
@@ -225,6 +233,14 @@ export class InventoryService {
         });
     }
 
+    async getInventory(productId?: string) {
+        const where = productId ? { productId } : {};
+        return this.prisma.productInventory.findMany({
+            where,
+            include: { product: true, warehouse: true, location: true },
+        });
+    }
+
     async addBatch(data: {
         productId: string;
         warehouseId: string;
@@ -334,6 +350,9 @@ export class InventoryService {
                         : { warehouse: { id: 'asc' } } // Default to location/FIFO (mock logic for now)
                 });
 
+                this.log(`[ReserveStock] Product: ${item.productId}, Qty: ${item.quantity}, Found Inventory Records: ${inventory.length}`);
+                inventory.forEach(i => this.log(` - ID: ${i.id}, Qty: ${i.quantity}, Reserved: ${i.reserved}, Warehouse: ${i.warehouseId}`));
+
                 let remainingQty = item.quantity;
 
                 for (const stock of inventory) {
@@ -425,31 +444,38 @@ export class InventoryService {
         reason: string;
         status?: string;
     }) {
-        return this.prisma.$transaction(async (tx) => {
-            const quantity = data.countedQuantity - data.currentQuantity;
-            const status = data.status || 'DRAFT';
+        try {
+            return await this.prisma.$transaction(async (tx) => {
+                const quantity = data.countedQuantity - data.currentQuantity;
+                const status = data.status || 'DRAFT';
 
-            // 1. Create Adjustment Record
-            const adjustment = await tx.inventoryAdjustment.create({
-                data: {
-                    locationId: data.locationId,
-                    productId: data.productId,
-                    batchId: data.batchId,
-                    countedQuantity: data.countedQuantity,
-                    currentQuantity: data.currentQuantity,
-                    quantity: quantity,
-                    reason: data.reason,
-                    status: status,
-                },
+                this.log(`Creating Adjustment: ${JSON.stringify(data)}`);
+
+                // 1. Create Adjustment Record
+                const adjustment = await tx.inventoryAdjustment.create({
+                    data: {
+                        locationId: data.locationId,
+                        productId: data.productId,
+                        batchId: data.batchId,
+                        countedQuantity: data.countedQuantity,
+                        currentQuantity: data.currentQuantity,
+                        quantity: quantity,
+                        reason: data.reason,
+                        status: status,
+                    },
+                });
+
+                // If status is APPLIED, update inventory immediately
+                if (status === 'APPLIED') {
+                    await this._applyAdjustmentLogic(tx, adjustment);
+                }
+
+                return adjustment;
             });
-
-            // If status is APPLIED, update inventory immediately
-            if (status === 'APPLIED') {
-                await this._applyAdjustmentLogic(tx, adjustment);
-            }
-
-            return adjustment;
-        });
+        } catch (error: any) {
+            this.log(`Error creating adjustment: ${error.message}`);
+            throw error;
+        }
     }
 
     async updateAdjustment(id: string, data: { countedQuantity?: number; locationId?: string; status?: string }) {
@@ -572,10 +598,34 @@ export class InventoryService {
             });
 
             // 2. Move Stock to "Inventory Loss" (Virtual Location)
-            // For now, we just decrement the stock from the source location.
-            // Ideally, we should move it to a specific "Scrap/Loss" location ID, but finding that ID dynamically is tricky without configuration.
-            // So we will just decrement and log it.
+            // FIFO Strategy for Batches
+            let remainingQty = data.quantity;
+            const batches = await tx.inventoryBatch.findMany({
+                where: {
+                    productId: data.productId,
+                    locationId: data.locationId,
+                    status: 'Active',
+                    currentQuantity: { gt: 0 },
+                },
+                orderBy: { purchaseDate: 'asc' },
+            });
 
+            for (const batch of batches) {
+                if (remainingQty <= 0) break;
+
+                const qtyToTake = Math.min(batch.currentQuantity, remainingQty);
+                await tx.inventoryBatch.update({
+                    where: { id: batch.id },
+                    data: { currentQuantity: { decrement: qtyToTake } },
+                });
+                remainingQty -= qtyToTake;
+            }
+
+            if (remainingQty > 0) {
+                throw new Error('Insufficient stock in batches to scrap');
+            }
+
+            // Update Aggregate Inventory
             const inventory = await tx.productInventory.findFirst({
                 where: {
                     productId: data.productId,
@@ -584,7 +634,7 @@ export class InventoryService {
             });
 
             if (!inventory || inventory.quantity < data.quantity) {
-                throw new Error('Insufficient stock to scrap');
+                throw new Error('Insufficient stock in aggregate inventory to scrap');
             }
 
             await tx.productInventory.update({
@@ -639,12 +689,13 @@ export class InventoryService {
         });
     }
 
-    async createPutawayRule(data: { productId?: string; categoryId?: string; locationId: string; priority: number }) {
+    async createPutawayRule(data: { productId?: string; categoryId?: string; locationId: string; sourceLocationId?: string; priority: number }) {
         return this.prisma.putawayRule.create({
             data: {
                 productId: data.productId,
                 categoryId: data.categoryId,
                 locationId: data.locationId,
+                sourceLocationId: data.sourceLocationId,
                 priority: data.priority,
             },
         });
@@ -652,32 +703,53 @@ export class InventoryService {
 
     async getPutawayRules() {
         return this.prisma.putawayRule.findMany({
-            include: { product: true, location: true },
+            include: { product: true, location: true, sourceLocation: true },
             orderBy: { priority: 'desc' },
         });
     }
 
-    async applyPutawayStrategy(productId: string): Promise<string | null> {
+    async applyPutawayStrategy(productId: string, currentLocationId?: string): Promise<string | null> {
         const product = await this.prisma.product.findUnique({ where: { id: productId } });
         if (!product) return null;
 
-        // 1. Check specific product rules
-        const productRule = await this.prisma.putawayRule.findFirst({
-            where: { productId: productId, active: true },
-            orderBy: { priority: 'desc' },
+        const rules = await this.prisma.putawayRule.findMany({
+            where: {
+                active: true,
+                AND: [
+                    {
+                        OR: [
+                            { productId: productId },
+                            { categoryId: product.category || '' }
+                        ]
+                    },
+                    {
+                        OR: [
+                            { sourceLocationId: currentLocationId || undefined },
+                            { sourceLocationId: null }
+                        ]
+                    }
+                ]
+            },
+            orderBy: { priority: 'desc' }
         });
-        if (productRule) return productRule.locationId;
 
-        // 2. Check category rules
-        if (product.category) {
-            const categoryRule = await this.prisma.putawayRule.findFirst({
-                where: { categoryId: product.category, active: true },
-                orderBy: { priority: 'desc' },
-            });
-            if (categoryRule) return categoryRule.locationId;
-        }
+        // Sort by specificity: Source Location > Product > Category
+        rules.sort((a, b) => {
+            // 1. Source Location Specificity (Specific > Global)
+            const aSource = a.sourceLocationId ? 1 : 0;
+            const bSource = b.sourceLocationId ? 1 : 0;
+            if (aSource !== bSource) return bSource - aSource;
 
-        return null; // No rule found
+            // 2. Product Specificity (Product > Category)
+            const aProduct = a.productId ? 1 : 0;
+            const bProduct = b.productId ? 1 : 0;
+            if (aProduct !== bProduct) return bProduct - aProduct;
+
+            // 3. Priority
+            return b.priority - a.priority;
+        });
+
+        return rules.length > 0 ? rules[0].locationId : null;
     }
 
     async suggestRemoval(locationId: string, productId: string, quantity: number) {
@@ -755,6 +827,18 @@ export class InventoryService {
         return this.prisma.rule.create({
             data: {
                 routeId: data.routeId,
+                action: data.action,
+                sourceLocationId: data.sourceLocationId,
+                destinationLocationId: data.destinationLocationId,
+                sequence: data.sequence,
+            },
+        });
+    }
+
+    async updateRule(id: string, data: { action?: string; sourceLocationId?: string; destinationLocationId?: string; sequence?: number }) {
+        return this.prisma.rule.update({
+            where: { id },
+            data: {
                 action: data.action,
                 sourceLocationId: data.sourceLocationId,
                 destinationLocationId: data.destinationLocationId,
@@ -998,12 +1082,37 @@ export class InventoryService {
         status?: string;
     }, tx?: any) {
         const prisma = tx || this.prisma;
+
+        // Apply Putaway Strategy
+        // 1. Direct Putaway: If arriving at a location that has a rule, redirect to the rule's destination.
+        // 2. Outgoing Putaway: If leaving a location (Source) and no destination specified, use rule's destination.
+
+        let finalDestinationId = data.destinationLocationId;
+
+        // Check Redirect (arriving at X -> move to Y)
+        if (data.destinationLocationId) {
+            const redirectId = await this.applyPutawayStrategy(data.productId, data.destinationLocationId);
+            if (redirectId) {
+                finalDestinationId = redirectId;
+            }
+        }
+
+        // Check Default Destination (leaving X -> move to Y)
+        // Only if destination is not yet set (or was not redirected? No, if we redirected, we have a dest).
+        // If we didn't have a dest, and didn't redirect, check source.
+        if (!finalDestinationId && data.sourceLocationId) {
+            const putawayId = await this.applyPutawayStrategy(data.productId, data.sourceLocationId);
+            if (putawayId) {
+                finalDestinationId = putawayId;
+            }
+        }
+
         const move = await prisma.stockMove.create({
             data: {
                 productId: data.productId,
                 quantity: data.quantity,
                 sourceLocationId: data.sourceLocationId,
-                destinationLocationId: data.destinationLocationId,
+                destinationLocationId: finalDestinationId,
                 ruleId: data.ruleId,
                 origin: data.origin,
                 batchId: data.batchId,
@@ -1087,6 +1196,12 @@ export class InventoryService {
 
                 // Increment Destination
                 const destLocation = await tx.location.findUnique({ where: { id: move.destinationLocationId } });
+                console.log('Validate Move Debug:', {
+                    destLocationId: move.destinationLocationId,
+                    foundDestLocation: destLocation,
+                    warehouseId: destLocation?.warehouseId
+                });
+
                 if (destLocation && destLocation.warehouseId) {
                     if (move.batchId) {
                         // Move specific batch logic could go here
@@ -1104,6 +1219,30 @@ export class InventoryService {
                                 status: 'Active',
                                 batchNumber: `MOVE-${Date.now()}`
                             }
+                        });
+                    }
+
+                    // Update Destination Aggregate Inventory
+                    const destInventory = await tx.productInventory.findFirst({
+                        where: {
+                            productId: move.productId,
+                            locationId: move.destinationLocationId,
+                        },
+                    });
+
+                    if (destInventory) {
+                        await tx.productInventory.update({
+                            where: { id: destInventory.id },
+                            data: { quantity: { increment: move.quantity } },
+                        });
+                    } else {
+                        await tx.productInventory.create({
+                            data: {
+                                productId: move.productId,
+                                locationId: move.destinationLocationId,
+                                warehouseId: destLocation.warehouseId,
+                                quantity: move.quantity,
+                            },
                         });
                     }
                 }
@@ -1124,6 +1263,30 @@ export class InventoryService {
                             batchNumber: `REC-${Date.now()}`
                         }
                     });
+
+                    // Update Destination Aggregate Inventory
+                    const destInventory = await tx.productInventory.findFirst({
+                        where: {
+                            productId: move.productId,
+                            locationId: move.destinationLocationId,
+                        },
+                    });
+
+                    if (destInventory) {
+                        await tx.productInventory.update({
+                            where: { id: destInventory.id },
+                            data: { quantity: { increment: move.quantity } },
+                        });
+                    } else {
+                        await tx.productInventory.create({
+                            data: {
+                                productId: move.productId,
+                                locationId: move.destinationLocationId,
+                                warehouseId: destLocation.warehouseId,
+                                quantity: move.quantity,
+                            },
+                        });
+                    }
                 }
             } else if (move.sourceLocationId && !move.destinationLocationId) {
                 // Delivery (Stock -> Customer)
@@ -1142,6 +1305,15 @@ export class InventoryService {
                         data: { currentQuantity: { decrement: move.quantity } },
                     });
                 }
+
+                // Decrement Source Aggregate Inventory
+                await tx.productInventory.updateMany({
+                    where: {
+                        productId: move.productId,
+                        locationId: move.sourceLocationId,
+                    },
+                    data: { quantity: { decrement: move.quantity } },
+                });
             }
 
             // 2. Update Move Status

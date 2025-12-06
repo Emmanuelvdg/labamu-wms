@@ -4,21 +4,30 @@ import { StrategyService } from '../strategy/strategy.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { Order } from '@labamu/database';
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 @Injectable()
 export class OrderService {
+    private log(message: string) {
+        const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
+        fs.appendFileSync(logPath, `[OrderService] ${message}\n`);
+    }
+
     constructor(
         private prisma: PrismaService,
         private strategyService: StrategyService,
         private inventoryService: InventoryService,
     ) { }
 
-    async createOrder(data: { customerId: string; priority: string; items: { productId: string; quantity: number }[] }): Promise<Order> {
+    async createOrder(data: { customerId: string; priority: string; items: { productId: string; quantity: number }[]; expectedDate?: Date }): Promise<Order> {
         // 1. Create Order
         const order = await this.prisma.order.create({
             data: {
                 customerId: data.customerId,
                 priority: data.priority,
                 status: 'PENDING',
+                expectedDate: data.expectedDate,
                 items: {
                     create: data.items.map(item => ({
                         productId: item.productId,
@@ -29,30 +38,80 @@ export class OrderService {
             include: { items: true },
         });
 
-        // 2. Determine Strategies
-        const pickingStrategy = await this.strategyService.evaluatePickingStrategy({
-            priority: data.priority,
-            itemCount: data.items.length,
-            items: [], // Mock items for now
-        });
+        // 2. Determine Reservation Strategy
+        const reservationStrategies = await this.strategyService.getReservationStrategies();
+        let activeStrategy = reservationStrategies.find(s => s.active);
 
-        // 3. Reserve Stock (using FEFO/FIFO based on product type - simplified here)
-        // In a real app, we'd check each product's perishability
-        const reservationStrategy = 'FIFO';
+        if (!activeStrategy) {
+            this.log('No active strategy found. Checking if any strategy exists...');
+            if (reservationStrategies.length > 0) {
+                // Fallback: Use the most recently created one or a default
+                this.log('Falling back to the most recent strategy.');
+                activeStrategy = reservationStrategies[reservationStrategies.length - 1];
+            } else {
+                this.log('No strategies defined at all.');
+            }
+        }
 
-        await this.inventoryService.reserveStock({
-            orderId: order.id,
-            items: data.items,
-            strategy: reservationStrategy,
-        });
+        this.log(`Active Strategy: ${activeStrategy?.name} (Active: ${activeStrategy?.active}) Rules: ${activeStrategy?.rules}`);
 
-        // 4. Update Order with Strategy info (mock update for now, or store in a separate table)
-        // For now, just update status
-        return this.prisma.order.update({
-            where: { id: order.id },
-            data: { status: 'RESERVED' },
-            include: { items: true },
-        });
+        let shouldReserve = true; // Default to true (e.g. At Confirmation)
+
+        if (activeStrategy) {
+            try {
+                const rules = JSON.parse(activeStrategy.rules);
+                this.log(`Parsed Rules: ${JSON.stringify(rules)}`);
+
+                if (rules.method === 'manually') {
+                    shouldReserve = false;
+                } else if (rules.method === 'before_date') {
+                    if (!data.expectedDate) {
+                        shouldReserve = true;
+                    } else {
+                        const daysBefore = rules.daysBefore || 0;
+                        const reservationDate = new Date(data.expectedDate);
+                        reservationDate.setDate(reservationDate.getDate() - daysBefore);
+
+                        this.log(`Expected: ${data.expectedDate} DaysBefore: ${daysBefore} ResDate: ${reservationDate} Now: ${new Date()}`);
+
+                        if (new Date() < reservationDate) {
+                            shouldReserve = false;
+                        }
+                    }
+                }
+            } catch (e) {
+                this.log('Invalid reservation strategy rules, defaulting to immediate reservation');
+            }
+        }
+
+        this.log(`Should Reserve: ${shouldReserve}`);
+
+        if (shouldReserve) {
+            // 3. Reserve Stock
+            // In a real app, we'd check each product's perishability for FEFO
+            const strategyName = activeStrategy?.name === 'FEFO' ? 'FEFO' : 'FIFO';
+
+            try {
+                await this.inventoryService.reserveStock({
+                    orderId: order.id,
+                    items: data.items,
+                    strategy: strategyName,
+                });
+
+                // 4. Update Order Status
+                return this.prisma.order.update({
+                    where: { id: order.id },
+                    data: { status: 'RESERVED' },
+                    include: { items: true },
+                });
+            } catch (error: any) {
+                // If reservation fails (e.g. no stock), keep as PENDING
+                this.log(`Reservation failed (insufficient stock?), keeping order as PENDING. Error: ${error.message}`);
+                return order;
+            }
+        }
+
+        return order;
     }
 
     async getOrders(): Promise<Order[]> {

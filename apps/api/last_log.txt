@@ -1,0 +1,100 @@
+﻿[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/warehouses, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/batch, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/batch/:productId, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/transactions/:productId, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/adjustments, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/adjustments/:id, PUT} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/adjustments/:id/apply, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/adjustments, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/scrap, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/scrap, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/transfer, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/reordering-rules, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/reordering-rules, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/reordering-rules/check, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/valuation, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/transactions, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/moves, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/moves, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/moves/:id/validate, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/locations/tree, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/locations, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/locations, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/locations/:id/move, PUT} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/putaway-rules, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/putaway-rules, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/packages, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/packages, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/packages/:packageId/assign, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/routes, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/routes, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/routes/:routeId/rules, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/rules/:id, PUT} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/cycle-counts, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/cycle-counts/start, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/inventory/transit, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mStrategyController {/strategy}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/strategy/picking, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/strategy/reservation, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/strategy/picking, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/strategy/reservation, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/strategy/picking/:id, PATCH} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/strategy/reservation/:id, PATCH} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mOrderController {/orders}:[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/orders, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/orders, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/orders/ship, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mIntegrationController {/integration}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/integration/sync/sales/:channel, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/integration/sync/logistics/:partner, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mReportingController {/reporting}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/reporting/compliance, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/reporting/analytics, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mPurchaseOrderController {/purchase-orders}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/purchase-orders, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/purchase-orders, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/purchase-orders/:id, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/purchase-orders/suppliers, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/purchase-orders/:id/receive, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mSupplierController {/suppliers}:[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/suppliers, POST} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/suppliers, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/suppliers/reports/price-history, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/suppliers/:id, GET} route[39m[38;5;3m +0ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/suppliers/:id, PATCH} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/suppliers/:id, DELETE} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/suppliers/:id/orders, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 6440  - [39m04/12/2025, 7:50:37 am [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +43ms[39m
+Application is running on: http://127.0.0.1:3001
+node : [31m[Nest] 6440  - 
+[39m04/12/2025, 7:51:03 am [31m  
+ERROR[39m [38;5;3m[ExceptionsHandler] 
+[39m[31mInsufficient stock in aggregate 
+inventory to scrap[39m
+At line:1 char:1
++ node dist/src/main.js > server.log 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified 
+   : ([31m[Nest] 644...y to scrap[39m:S  
+  tring) [], RemoteException
+    + FullyQualifiedErrorId : NativeComman 
+   dError
+ 
+Error: Insufficient stock in aggregate 
+inventory to scrap
+    at C:\Users\EmmanuelVanDeGeer\.gemini\a
+ntigravity\scratch\labamu-ims\apps\api\dist
+\src\inventory\inventory.service.js:489:23
+    at async 
+Proxy._transactionWithCallback (C:\Users\Em
+manuelVanDeGeer\.gemini\antigravity\scratch
+\labamu-ims\packages\database\node_modules\
+@prisma\client\runtime\library.js:130:8000)
+    at async C:\Users\EmmanuelVanDeGeer\.ge
+mini\antigravity\scratch\labamu-ims\node_mo
+dules\@nestjs\core\router\router-execution-
+context.js:46:28
+    at async C:\Users\EmmanuelVanDeGeer\.ge
+mini\antigravity\scratch\labamu-ims\node_mo
+dules\@nestjs\core\router\router-proxy.js:9
+:17

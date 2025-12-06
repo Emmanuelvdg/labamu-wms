@@ -9,23 +9,26 @@ export declare class OrderController {
             productId: string;
             quantity: number;
         }[];
+        expectedDate?: Date;
     }): Promise<{
         id: string;
+        status: string;
         createdAt: Date;
         updatedAt: Date;
-        status: string;
         priority: string;
         customerId: string;
         shippingCarrier: string | null;
+        expectedDate: Date | null;
     }>;
     getOrders(): Promise<{
         id: string;
+        status: string;
         createdAt: Date;
         updatedAt: Date;
-        status: string;
         priority: string;
         customerId: string;
         shippingCarrier: string | null;
+        expectedDate: Date | null;
     }[]>;
     createShipment(data: {
         orderId: string;
@@ -34,9 +37,9 @@ export declare class OrderController {
     }): Promise<{
         id: string;
         status: string;
+        orderId: string;
         carrier: string;
         trackingId: string;
-        orderId: string;
     }>;
 }
 //# sourceMappingURL=order.controller.d.ts.map

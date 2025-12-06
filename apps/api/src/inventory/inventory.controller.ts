@@ -2,8 +2,16 @@ import { Controller, Get, Post, Body, Param, Put, Query } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 import { Product, Warehouse, ProductInventory } from '@labamu/database';
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 @Controller('inventory')
 export class InventoryController {
+    private log(message: string) {
+        const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
+        fs.appendFileSync(logPath, `[InventoryController] ${message}\n`);
+    }
+
     constructor(private readonly inventoryService: InventoryService) { }
 
     @Post('products')
@@ -51,8 +59,14 @@ export class InventoryController {
     }
 
     @Post('adjustments')
-    createAdjustment(@Body() data: any) {
-        return this.inventoryService.createAdjustment(data);
+    async createAdjustment(@Body() data: any) {
+        this.log(`createAdjustment called with ${JSON.stringify(data)}`);
+        try {
+            return await this.inventoryService.createAdjustment(data);
+        } catch (e: any) {
+            this.log(`Error in controller createAdjustment: ${e.message}`);
+            throw e;
+        }
     }
 
     @Put('adjustments/:id')
@@ -146,7 +160,7 @@ export class InventoryController {
     }
 
     @Post('putaway-rules')
-    createPutawayRule(@Body() data: { productId?: string; categoryId?: string; locationId: string; priority: number }) {
+    createPutawayRule(@Body() data: { productId?: string; categoryId?: string; locationId: string; sourceLocationId?: string; priority: number }) {
         return this.inventoryService.createPutawayRule(data);
     }
 
@@ -185,6 +199,11 @@ export class InventoryController {
         return this.inventoryService.createRule({ ...data, routeId });
     }
 
+    @Put('rules/:id')
+    updateRule(@Param('id') id: string, @Body() data: any) {
+        return this.inventoryService.updateRule(id, data);
+    }
+
     @Get('cycle-counts')
     async checkCycleCounts() {
         return this.inventoryService.checkCycleCounts();
@@ -198,5 +217,10 @@ export class InventoryController {
     @Get('transit')
     getTransitItems() {
         return this.inventoryService.getTransitItems();
+    }
+
+    @Get()
+    getInventory(@Query('productId') productId?: string) {
+        return this.inventoryService.getInventory(productId);
     }
 }

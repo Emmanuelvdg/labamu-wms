@@ -2,7 +2,7 @@ export const API_URL = 'http://localhost:3001';
 
 async function fetchWithRetry(url: string, options?: RequestInit) {
     try {
-        const res = await fetch(url, options);
+        const res = await fetch(url, { ...options, cache: 'no-store' });
         if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
         return res.json();
     } catch (error) {
@@ -208,6 +208,52 @@ export async function toggleStrategy(type: 'picking' | 'reservation', id: string
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active }),
+    });
+}
+
+export async function createStrategy(type: 'picking' | 'reservation', data: any) {
+    return fetchWithRetry(`${API_URL}/strategy/${type}/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateStrategy(type: 'picking' | 'reservation', id: string, data: any) {
+    return fetchWithRetry(`${API_URL}/strategy/${type}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteStrategy(type: 'picking' | 'reservation', id: string) {
+    return fetchWithRetry(`${API_URL}/strategy/${type}/${id}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function createPickingBatch(criteria: 'contact' | 'carrier' | 'location') {
+    return fetchWithRetry(`${API_URL}/strategy/picking/batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ criteria }),
+    });
+}
+
+export async function createPickingCluster(size: number) {
+    return fetchWithRetry(`${API_URL}/strategy/picking/cluster`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ size }),
+    });
+}
+
+export async function createPickingWave(criteria: 'product' | 'category') {
+    return fetchWithRetry(`${API_URL}/strategy/picking/wave`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ criteria }),
     });
 }
 

@@ -2,6 +2,7 @@ import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
 export declare class InventoryService {
     private prisma;
+    private log;
     constructor(prisma: PrismaService);
     createProduct(data: any): Promise<Product>;
     getProducts(): Promise<Product[]>;
@@ -29,6 +30,65 @@ export declare class InventoryService {
         locationId?: string;
     }): Promise<ProductInventory>;
     getStock(productId: string): Promise<ProductInventory[]>;
+    getInventory(productId?: string): Promise<({
+        product: {
+            name: string;
+            id: string;
+            sku: string;
+            category: string;
+            classification: string | null;
+            type: string | null;
+            unitOfMeasure: string | null;
+            isStockable: boolean;
+            status: string;
+            averageCost: number;
+            description: string | null;
+            tracking: string;
+            expiryDate: Date | null;
+            width: number | null;
+            height: number | null;
+            depth: number | null;
+            weight: number | null;
+            supplierId: string | null;
+        };
+        warehouse: {
+            location: string;
+            name: string;
+            id: string;
+            type: string;
+            shortName: string | null;
+            address: string | null;
+            companyId: string | null;
+            partnerId: string | null;
+            viewLocationId: string | null;
+            incomingSteps: string | null;
+            outgoingSteps: string | null;
+            dropshipSubcontractors: boolean;
+            resupplySubcontractors: boolean;
+            manufactureToResupply: boolean;
+            manufactureSteps: string | null;
+            buyToResupply: boolean;
+        };
+        location: {
+            name: string;
+            id: string;
+            type: string;
+            removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
+            maxVolume: number | null;
+            maxWeight: number | null;
+            warehouseId: string | null;
+            parentId: string | null;
+        };
+    } & {
+        id: string;
+        warehouseId: string;
+        productId: string;
+        locationId: string | null;
+        quantity: number;
+        reserved: number;
+    })[]>;
     addBatch(data: {
         productId: string;
         warehouseId: string;
@@ -43,14 +103,14 @@ export declare class InventoryService {
     getBatches(productId: string): Promise<InventoryBatch[]>;
     getTransactions(productId: string): Promise<{
         id: string;
-        productId: string;
-        batchId: string | null;
         type: string;
+        productId: string;
         quantity: number;
-        date: Date;
-        referenceId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        batchId: string | null;
+        date: Date;
+        referenceId: string | null;
     }[]>;
     reserveStock(data: {
         orderId: string;
@@ -63,46 +123,52 @@ export declare class InventoryService {
     getLocationsTree(warehouseId?: string): Promise<({
         children: ({
             children: {
+                name: string;
                 id: string;
                 type: string;
-                name: string;
                 removalStrategy: string | null;
                 inventoryFrequency: number;
                 nextInventoryDate: Date | null;
-                parentId: string | null;
+                maxVolume: number | null;
+                maxWeight: number | null;
                 warehouseId: string | null;
+                parentId: string | null;
             }[];
         } & {
+            name: string;
             id: string;
             type: string;
-            name: string;
             removalStrategy: string | null;
             inventoryFrequency: number;
             nextInventoryDate: Date | null;
-            parentId: string | null;
+            maxVolume: number | null;
+            maxWeight: number | null;
             warehouseId: string | null;
+            parentId: string | null;
         })[];
     } & {
+        name: string;
         id: string;
         type: string;
-        name: string;
         removalStrategy: string | null;
         inventoryFrequency: number;
         nextInventoryDate: Date | null;
-        parentId: string | null;
+        maxVolume: number | null;
+        maxWeight: number | null;
         warehouseId: string | null;
+        parentId: string | null;
     })[]>;
     getLocations(warehouseId?: string): Promise<({
         warehouseView: {
+            location: string;
+            name: string;
             id: string;
             type: string;
-            name: string;
-            viewLocationId: string | null;
             shortName: string | null;
             address: string | null;
             companyId: string | null;
-            location: string;
             partnerId: string | null;
+            viewLocationId: string | null;
             incomingSteps: string | null;
             outgoingSteps: string | null;
             dropshipSubcontractors: boolean;
@@ -112,14 +178,16 @@ export declare class InventoryService {
             buyToResupply: boolean;
         };
     } & {
+        name: string;
         id: string;
         type: string;
-        name: string;
         removalStrategy: string | null;
         inventoryFrequency: number;
         nextInventoryDate: Date | null;
-        parentId: string | null;
+        maxVolume: number | null;
+        maxWeight: number | null;
         warehouseId: string | null;
+        parentId: string | null;
     })[]>;
     createLocation(data: {
         name: string;
@@ -128,14 +196,16 @@ export declare class InventoryService {
         type?: string;
         removalStrategy?: string;
     }): Promise<{
+        name: string;
         id: string;
         type: string;
-        name: string;
         removalStrategy: string | null;
         inventoryFrequency: number;
         nextInventoryDate: Date | null;
-        parentId: string | null;
+        maxVolume: number | null;
+        maxWeight: number | null;
         warehouseId: string | null;
+        parentId: string | null;
     }>;
     createAdjustment(data: {
         locationId: string;
@@ -147,16 +217,16 @@ export declare class InventoryService {
         status?: string;
     }): Promise<{
         id: string;
+        status: string;
         productId: string;
-        batchId: string | null;
+        locationId: string;
         quantity: number;
+        currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
+        batchId: string | null;
         countedQuantity: number;
-        currentQuantity: number;
         reason: string;
-        status: string;
-        locationId: string;
     }>;
     updateAdjustment(id: string, data: {
         countedQuantity?: number;
@@ -164,87 +234,93 @@ export declare class InventoryService {
         status?: string;
     }): Promise<{
         id: string;
+        status: string;
         productId: string;
-        batchId: string | null;
+        locationId: string;
         quantity: number;
+        currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
+        batchId: string | null;
         countedQuantity: number;
-        currentQuantity: number;
         reason: string;
-        status: string;
-        locationId: string;
     }>;
     applyAdjustment(id: string): Promise<{
         id: string;
+        status: string;
         productId: string;
-        batchId: string | null;
+        locationId: string;
         quantity: number;
+        currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
+        batchId: string | null;
         countedQuantity: number;
-        currentQuantity: number;
         reason: string;
-        status: string;
-        locationId: string;
     }>;
     private _applyAdjustmentLogic;
     getAdjustments(status?: string): Promise<({
         product: {
-            id: string;
-            type: string | null;
             name: string;
-            status: string;
+            id: string;
             sku: string;
             category: string;
             classification: string | null;
+            type: string | null;
             unitOfMeasure: string | null;
             isStockable: boolean;
+            status: string;
             averageCost: number;
             description: string | null;
             tracking: string;
             expiryDate: Date | null;
+            width: number | null;
+            height: number | null;
+            depth: number | null;
+            weight: number | null;
             supplierId: string | null;
         };
         location: {
+            name: string;
             id: string;
             type: string;
-            name: string;
             removalStrategy: string | null;
             inventoryFrequency: number;
             nextInventoryDate: Date | null;
-            parentId: string | null;
+            maxVolume: number | null;
+            maxWeight: number | null;
             warehouseId: string | null;
+            parentId: string | null;
         };
         batch: {
             id: string;
-            productId: string;
-            createdAt: Date;
-            updatedAt: Date;
-            warehouseId: string;
-            currentQuantity: number;
             status: string;
-            locationId: string | null;
             expiryDate: Date | null;
+            warehouseId: string;
+            productId: string;
+            locationId: string | null;
             batchNumber: string;
             packageId: string | null;
             initialQuantity: number;
+            currentQuantity: number;
             costPerUnit: number;
             purchaseDate: Date;
             vendor: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
     } & {
         id: string;
+        status: string;
         productId: string;
-        batchId: string | null;
+        locationId: string;
         quantity: number;
+        currentQuantity: number;
         createdAt: Date;
         updatedAt: Date;
+        batchId: string | null;
         countedQuantity: number;
-        currentQuantity: number;
         reason: string;
-        status: string;
-        locationId: string;
     })[]>;
     createScrapOrder(data: {
         locationId: string;
@@ -254,60 +330,69 @@ export declare class InventoryService {
     }): Promise<{
         id: string;
         productId: string;
-        quantity: number;
         locationId: string;
+        quantity: number;
         maxQuantity: number;
         active: boolean;
     }>;
     getScrapOrders(): Promise<({
         product: {
-            id: string;
-            type: string | null;
             name: string;
-            status: string;
+            id: string;
             sku: string;
             category: string;
             classification: string | null;
+            type: string | null;
             unitOfMeasure: string | null;
             isStockable: boolean;
+            status: string;
             averageCost: number;
             description: string | null;
             tracking: string;
             expiryDate: Date | null;
+            width: number | null;
+            height: number | null;
+            depth: number | null;
+            weight: number | null;
             supplierId: string | null;
         };
         location: {
+            name: string;
             id: string;
             type: string;
-            name: string;
             removalStrategy: string | null;
             inventoryFrequency: number;
             nextInventoryDate: Date | null;
-            parentId: string | null;
+            maxVolume: number | null;
+            maxWeight: number | null;
             warehouseId: string | null;
+            parentId: string | null;
         };
     } & {
         id: string;
         productId: string;
-        quantity: number;
         locationId: string;
+        quantity: number;
         maxQuantity: number;
         active: boolean;
     })[]>;
     moveLocation(locationId: string, newParentId: string | null): Promise<{
+        name: string;
         id: string;
         type: string;
-        name: string;
         removalStrategy: string | null;
         inventoryFrequency: number;
         nextInventoryDate: Date | null;
-        parentId: string | null;
+        maxVolume: number | null;
+        maxWeight: number | null;
         warehouseId: string | null;
+        parentId: string | null;
     }>;
     createPutawayRule(data: {
         productId?: string;
         categoryId?: string;
         locationId: string;
+        sourceLocationId?: string;
         priority: number;
     }): Promise<{
         id: string;
@@ -316,33 +401,52 @@ export declare class InventoryService {
         active: boolean;
         categoryId: string | null;
         priority: number;
+        sourceLocationId: string | null;
     }>;
     getPutawayRules(): Promise<({
         product: {
-            id: string;
-            type: string | null;
             name: string;
-            status: string;
+            id: string;
             sku: string;
             category: string;
             classification: string | null;
+            type: string | null;
             unitOfMeasure: string | null;
             isStockable: boolean;
+            status: string;
             averageCost: number;
             description: string | null;
             tracking: string;
             expiryDate: Date | null;
+            width: number | null;
+            height: number | null;
+            depth: number | null;
+            weight: number | null;
             supplierId: string | null;
         };
         location: {
+            name: string;
             id: string;
             type: string;
-            name: string;
             removalStrategy: string | null;
             inventoryFrequency: number;
             nextInventoryDate: Date | null;
-            parentId: string | null;
+            maxVolume: number | null;
+            maxWeight: number | null;
             warehouseId: string | null;
+            parentId: string | null;
+        };
+        sourceLocation: {
+            name: string;
+            id: string;
+            type: string;
+            removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
+            maxVolume: number | null;
+            maxWeight: number | null;
+            warehouseId: string | null;
+            parentId: string | null;
         };
     } & {
         id: string;
@@ -351,116 +455,123 @@ export declare class InventoryService {
         active: boolean;
         categoryId: string | null;
         priority: number;
+        sourceLocationId: string | null;
     })[]>;
-    applyPutawayStrategy(productId: string): Promise<string | null>;
+    applyPutawayStrategy(productId: string, currentLocationId?: string): Promise<string | null>;
     suggestRemoval(locationId: string, productId: string, quantity: number): Promise<any[]>;
     createPackage(data: {
         name: string;
         type: string;
         locationId?: string;
     }): Promise<{
+        name: string;
         id: string;
         type: string;
+        locationId: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
-        locationId: string | null;
     }>;
     getPackages(): Promise<({
         location: {
+            name: string;
             id: string;
             type: string;
-            name: string;
             removalStrategy: string | null;
             inventoryFrequency: number;
             nextInventoryDate: Date | null;
-            parentId: string | null;
+            maxVolume: number | null;
+            maxWeight: number | null;
             warehouseId: string | null;
+            parentId: string | null;
         };
         batches: ({
             product: {
-                id: string;
-                type: string | null;
                 name: string;
-                status: string;
+                id: string;
                 sku: string;
                 category: string;
                 classification: string | null;
+                type: string | null;
                 unitOfMeasure: string | null;
                 isStockable: boolean;
+                status: string;
                 averageCost: number;
                 description: string | null;
                 tracking: string;
                 expiryDate: Date | null;
+                width: number | null;
+                height: number | null;
+                depth: number | null;
+                weight: number | null;
                 supplierId: string | null;
             };
         } & {
             id: string;
-            productId: string;
-            createdAt: Date;
-            updatedAt: Date;
-            warehouseId: string;
-            currentQuantity: number;
             status: string;
-            locationId: string | null;
             expiryDate: Date | null;
+            warehouseId: string;
+            productId: string;
+            locationId: string | null;
             batchNumber: string;
             packageId: string | null;
             initialQuantity: number;
+            currentQuantity: number;
             costPerUnit: number;
             purchaseDate: Date;
             vendor: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         })[];
     } & {
+        name: string;
         id: string;
         type: string;
+        locationId: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
-        locationId: string | null;
     })[]>;
     assignBatchToPackage(batchId: string, packageId: string): Promise<{
         id: string;
-        productId: string;
-        createdAt: Date;
-        updatedAt: Date;
-        warehouseId: string;
-        currentQuantity: number;
         status: string;
-        locationId: string | null;
         expiryDate: Date | null;
+        warehouseId: string;
+        productId: string;
+        locationId: string | null;
         batchNumber: string;
         packageId: string | null;
         initialQuantity: number;
+        currentQuantity: number;
         costPerUnit: number;
         purchaseDate: Date;
         vendor: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     createRoute(data: {
         name: string;
         description?: string;
     }): Promise<{
+        name: string;
         id: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
-        description: string | null;
     }>;
     getRoutes(): Promise<({
         rules: {
             id: string;
-            routeId: string;
-            action: string;
             sourceLocationId: string | null;
-            destinationLocationId: string | null;
+            action: string;
             sequence: number;
+            routeId: string;
+            destinationLocationId: string | null;
         }[];
     } & {
+        name: string;
         id: string;
+        description: string | null;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
-        description: string | null;
     })[]>;
     createRule(data: {
         routeId: string;
@@ -470,11 +581,24 @@ export declare class InventoryService {
         sequence?: number;
     }): Promise<{
         id: string;
-        routeId: string;
-        action: string;
         sourceLocationId: string | null;
-        destinationLocationId: string | null;
+        action: string;
         sequence: number;
+        routeId: string;
+        destinationLocationId: string | null;
+    }>;
+    updateRule(id: string, data: {
+        action?: string;
+        sourceLocationId?: string;
+        destinationLocationId?: string;
+        sequence?: number;
+    }): Promise<{
+        id: string;
+        sourceLocationId: string | null;
+        action: string;
+        sequence: number;
+        routeId: string;
+        destinationLocationId: string | null;
     }>;
     createTransfer(data: {
         productId: string;
@@ -500,30 +624,36 @@ export declare class InventoryService {
     }>;
     getReorderingRules(): Promise<({
         product: {
-            id: string;
-            type: string | null;
             name: string;
-            status: string;
+            id: string;
             sku: string;
             category: string;
             classification: string | null;
+            type: string | null;
             unitOfMeasure: string | null;
             isStockable: boolean;
+            status: string;
             averageCost: number;
             description: string | null;
             tracking: string;
             expiryDate: Date | null;
+            width: number | null;
+            height: number | null;
+            depth: number | null;
+            weight: number | null;
             supplierId: string | null;
         };
         location: {
+            name: string;
             id: string;
             type: string;
-            name: string;
             removalStrategy: string | null;
             inventoryFrequency: number;
             nextInventoryDate: Date | null;
-            parentId: string | null;
+            maxVolume: number | null;
+            maxWeight: number | null;
             warehouseId: string | null;
+            parentId: string | null;
         };
     } & {
         id: string;
@@ -540,26 +670,26 @@ export declare class InventoryService {
     }>;
     getStockTransactions(): Promise<{
         id: string;
-        productId: string;
-        batchId: string | null;
         type: string;
+        productId: string;
         quantity: number;
-        date: Date;
-        referenceId: string | null;
         createdAt: Date;
         updatedAt: Date;
+        batchId: string | null;
+        date: Date;
+        referenceId: string | null;
     }[]>;
     checkCycleCounts(): Promise<({
         warehouseView: {
+            location: string;
+            name: string;
             id: string;
             type: string;
-            name: string;
-            viewLocationId: string | null;
             shortName: string | null;
             address: string | null;
             companyId: string | null;
-            location: string;
             partnerId: string | null;
+            viewLocationId: string | null;
             incomingSteps: string | null;
             outgoingSteps: string | null;
             dropshipSubcontractors: boolean;
@@ -569,52 +699,48 @@ export declare class InventoryService {
             buyToResupply: boolean;
         };
     } & {
+        name: string;
         id: string;
         type: string;
-        name: string;
         removalStrategy: string | null;
         inventoryFrequency: number;
         nextInventoryDate: Date | null;
-        parentId: string | null;
+        maxVolume: number | null;
+        maxWeight: number | null;
         warehouseId: string | null;
+        parentId: string | null;
     })[]>;
     getTransitItems(): Promise<({
         product: {
-            id: string;
-            type: string | null;
             name: string;
-            status: string;
+            id: string;
             sku: string;
             category: string;
             classification: string | null;
+            type: string | null;
             unitOfMeasure: string | null;
             isStockable: boolean;
+            status: string;
             averageCost: number;
             description: string | null;
             tracking: string;
             expiryDate: Date | null;
+            width: number | null;
+            height: number | null;
+            depth: number | null;
+            weight: number | null;
             supplierId: string | null;
         };
-        location: {
-            id: string;
-            type: string;
-            name: string;
-            removalStrategy: string | null;
-            inventoryFrequency: number;
-            nextInventoryDate: Date | null;
-            parentId: string | null;
-            warehouseId: string | null;
-        };
         warehouse: {
+            location: string;
+            name: string;
             id: string;
             type: string;
-            name: string;
-            viewLocationId: string | null;
             shortName: string | null;
             address: string | null;
             companyId: string | null;
-            location: string;
             partnerId: string | null;
+            viewLocationId: string | null;
             incomingSteps: string | null;
             outgoingSteps: string | null;
             dropshipSubcontractors: boolean;
@@ -623,22 +749,34 @@ export declare class InventoryService {
             manufactureSteps: string | null;
             buyToResupply: boolean;
         };
+        location: {
+            name: string;
+            id: string;
+            type: string;
+            removalStrategy: string | null;
+            inventoryFrequency: number;
+            nextInventoryDate: Date | null;
+            maxVolume: number | null;
+            maxWeight: number | null;
+            warehouseId: string | null;
+            parentId: string | null;
+        };
     } & {
         id: string;
-        productId: string;
-        createdAt: Date;
-        updatedAt: Date;
-        warehouseId: string;
-        currentQuantity: number;
         status: string;
-        locationId: string | null;
         expiryDate: Date | null;
+        warehouseId: string;
+        productId: string;
+        locationId: string | null;
         batchNumber: string;
         packageId: string | null;
         initialQuantity: number;
+        currentQuantity: number;
         costPerUnit: number;
         purchaseDate: Date;
         vendor: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     })[]>;
     createCycleCountAdjustments(locationIds: string[]): Promise<any[]>;
     private validateLocationForStock;
@@ -655,57 +793,65 @@ export declare class InventoryService {
     checkProcurement(productId: string, quantity: number, locationId: string, tx?: any): Promise<void>;
     getStockMoves(status?: string): Promise<({
         product: {
-            id: string;
-            type: string | null;
             name: string;
-            status: string;
+            id: string;
             sku: string;
             category: string;
             classification: string | null;
+            type: string | null;
             unitOfMeasure: string | null;
             isStockable: boolean;
+            status: string;
             averageCost: number;
             description: string | null;
             tracking: string;
             expiryDate: Date | null;
+            width: number | null;
+            height: number | null;
+            depth: number | null;
+            weight: number | null;
             supplierId: string | null;
         };
         rule: {
             id: string;
-            routeId: string;
-            action: string;
             sourceLocationId: string | null;
-            destinationLocationId: string | null;
+            action: string;
             sequence: number;
+            routeId: string;
+            destinationLocationId: string | null;
         };
         sourceLocation: {
+            name: string;
             id: string;
             type: string;
-            name: string;
             removalStrategy: string | null;
             inventoryFrequency: number;
             nextInventoryDate: Date | null;
-            parentId: string | null;
+            maxVolume: number | null;
+            maxWeight: number | null;
             warehouseId: string | null;
+            parentId: string | null;
         };
         destinationLocation: {
+            name: string;
             id: string;
             type: string;
-            name: string;
             removalStrategy: string | null;
             inventoryFrequency: number;
             nextInventoryDate: Date | null;
-            parentId: string | null;
+            maxVolume: number | null;
+            maxWeight: number | null;
             warehouseId: string | null;
+            parentId: string | null;
         };
     } & {
         id: string;
+        status: string;
         productId: string;
-        batchId: string | null;
         quantity: number;
         createdAt: Date;
         updatedAt: Date;
-        status: string;
+        batchId: string | null;
         sourceLocationId: string | null;
         destinationLocationId: string | null;
         ruleId: string | null;
@@ -713,12 +859,12 @@ export declare class InventoryService {
     })[]>;
     validateStockMove(id: string): Promise<{
         id: string;
+        status: string;
         productId: string;
-        batchId: string | null;
         quantity: number;
         createdAt: Date;
         updatedAt: Date;
-        status: string;
+        batchId: string | null;
         sourceLocationId: string | null;
         destinationLocationId: string | null;
         ruleId: string | null;

@@ -62,7 +62,7 @@ export default function SuppliersPage() {
                 <h1 className="text-3xl font-bold">Suppliers</h1>
                 <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                     <DialogTrigger asChild>
-                        <Button>Add Supplier</Button>
+                        <Button data-testid="add-supplier-btn">Add Supplier</Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
@@ -75,6 +75,7 @@ export default function SuppliersPage() {
                                 </Label>
                                 <Input
                                     id="name"
+                                    data-testid="supplier-name-input"
                                     value={newSupplier.name}
                                     onChange={(e) => setNewSupplier({ ...newSupplier, name: e.target.value })}
                                     className="col-span-3"
@@ -93,7 +94,7 @@ export default function SuppliersPage() {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleCreate}>Create</Button>
+                            <Button onClick={handleCreate} data-testid="create-supplier-submit">Create</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

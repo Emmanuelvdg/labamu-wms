@@ -69,10 +69,13 @@ export class PurchaseOrderService {
     }
 
     async getPurchaseOrder(id: string) {
-        return this.prisma.purchaseOrder.findUnique({
+        console.log(`[PurchaseOrderService] Getting PO: ${id}`);
+        const po = await this.prisma.purchaseOrder.findUnique({
             where: { id },
             include: { items: { include: { product: true } }, supplier: true, receipts: true },
         });
+        console.log(`[PurchaseOrderService] Found PO: ${po ? 'yes' : 'no'}`);
+        return po;
     }
 
     async getSuppliers() {
@@ -80,6 +83,7 @@ export class PurchaseOrderService {
     }
 
     async receiveGoods(purchaseOrderId: string, destinationLocationId: string) {
+        console.log(`[PurchaseOrderService] Receiving goods for PO: ${purchaseOrderId} to ${destinationLocationId}`);
         // 1. Perform Receipt (Transaction)
         const result = await this.prisma.$transaction(async (tx) => {
             const po = await tx.purchaseOrder.findUnique({
@@ -162,10 +166,12 @@ export class PurchaseOrderService {
             }
 
             // 3. Update PO Status
-            await tx.purchaseOrder.update({
+            console.log(`[PurchaseOrderService] Updating PO ${po.id} status to RECEIVED`);
+            const updatedPo = await tx.purchaseOrder.update({
                 where: { id: po.id },
                 data: { status: 'RECEIVED' },
             });
+            console.log(`[PurchaseOrderService] PO updated. New status: ${updatedPo.status}`);
 
             return { receipt, items: po.items };
         });

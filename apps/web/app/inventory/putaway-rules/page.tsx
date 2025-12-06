@@ -13,6 +13,7 @@ export default function PutawayRulesPage() {
         productId: '',
         categoryId: '',
         locationId: '',
+        sourceLocationId: '',
         priority: 10,
     });
 
@@ -60,9 +61,10 @@ export default function PutawayRulesPage() {
                 priority: parseInt(newRule.priority.toString()),
                 productId: newRule.productId || undefined,
                 categoryId: newRule.categoryId || undefined,
+                sourceLocationId: newRule.sourceLocationId || undefined,
             });
             setShowModal(false);
-            setNewRule({ productId: '', categoryId: '', locationId: '', priority: 10 });
+            setNewRule({ productId: '', categoryId: '', locationId: '', sourceLocationId: '', priority: 10 });
             loadData();
         } catch (error) {
             alert('Failed to create rule');
@@ -88,6 +90,7 @@ export default function PutawayRulesPage() {
                     <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product / Category</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">When Arriving At</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination Location</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
@@ -98,6 +101,9 @@ export default function PutawayRulesPage() {
                             <tr key={rule.id}>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     {rule.product ? rule.product.name : (rule.categoryId ? `Category: ${rule.categoryId}` : 'All Products')}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {rule.sourceLocation ? rule.sourceLocation.name : 'Any Location'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {rule.location?.name}
@@ -144,6 +150,19 @@ export default function PutawayRulesPage() {
                                         onChange={(e) => setNewRule({ ...newRule, categoryId: e.target.value })}
                                         placeholder="e.g. Electronics"
                                     />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">When Arriving At (Optional)</label>
+                                    <select
+                                        className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                        value={newRule.sourceLocationId}
+                                        onChange={(e) => setNewRule({ ...newRule, sourceLocationId: e.target.value })}
+                                    >
+                                        <option value="">-- Any Location --</option>
+                                        {locations.map(l => (
+                                            <option key={l.id} value={l.id}>{l.name} ({l.type})</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Destination Location</label>

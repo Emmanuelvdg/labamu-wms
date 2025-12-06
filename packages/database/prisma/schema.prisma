@@ -21,6 +21,12 @@ model Product {
   description     String?
   tracking        String   @default("none") // none, lot, serial
   expiryDate      DateTime? // Keep for legacy/simple use, but Batches are preferred
+  // Dimensions & Weight
+  width           Float?   // cm
+  height          Float?   // cm
+  depth           Float?   // cm
+  weight          Float?   // kg
+  
   supplierId      String?
   inventory       ProductInventory[] // Aggregate view
   batches         InventoryBatch[]   // Detailed view
@@ -91,6 +97,11 @@ model Location {
   removalStrategy String? // FIFO, LIFO, FEFO
   inventoryFrequency Int @default(0) // Days
   nextInventoryDate DateTime?
+  
+  // Capacity
+  maxVolume   Float?   // m3
+  maxWeight   Float?   // kg
+  
   parentId    String?
   parent      Location? @relation("LocationHierarchy", fields: [parentId], references: [id])
   children    Location[] @relation("LocationHierarchy")
@@ -103,6 +114,7 @@ model Location {
   adjustments InventoryAdjustment[]
   scrapOrders ScrapOrder[]
   putawayRules PutawayRule[]
+  sourcePutawayRules PutawayRule[] @relation("PutawaySource")
   reorderingRules ReorderingRule[]
   sourceRules     Rule[] @relation("SourceLocation")
   destRules       Rule[] @relation("DestLocation")
@@ -179,6 +191,7 @@ model Order {
   status          String   // PENDING, RESERVED, PICKING, SHIPPED, DELIVERED, CANCELLED
   priority        String   // HIGH, NORMAL, LOW
   shippingCarrier String?
+  expectedDate    DateTime? // For scheduled reservations
   items           OrderItem[]
   reservations    Reservation[]
   shipment        Shipment?
@@ -295,6 +308,8 @@ model PutawayRule {
   categoryId  String?  // Optional: Apply to entire category
   locationId  String
   location    Location @relation(fields: [locationId], references: [id])
+  sourceLocationId String? // Optional: Only apply if arriving at this location
+  sourceLocation   Location? @relation("PutawaySource", fields: [sourceLocationId], references: [id])
   priority    Int      @default(0)
   active      Boolean  @default(true)
 }

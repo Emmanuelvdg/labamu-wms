@@ -1,0 +1,439 @@
+[InventoryController] createAdjustment called with {"locationId":"7d284c7e-f762-4d7b-9538-f3672d1cc38c","productId":"9fcc40d5-6916-4675-9f97-6bf44961e4fd","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryController] createAdjustment called with {"locationId":"7d284c7e-f762-4d7b-9538-f3672d1cc38c","productId":"2b947850-6325-4de8-8e88-9da7e995cf41","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryController] createAdjustment called with {"locationId":"7d284c7e-f762-4d7b-9538-f3672d1cc38c","productId":"d6863362-d549-44c6-9f63-9310815d3d8c","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryController] Error in controller createAdjustment: Cannot store stock in a VIEW location: TW
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"33167b7f-544c-4c14-b1ea-43ebc88b8a95","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"aa7b65b4-120f-4db2-9136-2e6884cbd4c9","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"7341852c-64d2-4711-bb85-74353a64e8fb","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"7341852c-64d2-4711-bb85-74353a64e8fb","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 7341852c-64d2-4711-bb85-74353a64e8fb, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 781cb788-9681-4330-8b27-e72a1f3f1d75, Qty: 100, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 7341852c-64d2-4711-bb85-74353a64e8fb, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 781cb788-9681-4330-8b27-e72a1f3f1d75, Qty: 100, Reserved: 10, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 7341852c-64d2-4711-bb85-74353a64e8fb, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 781cb788-9681-4330-8b27-e72a1f3f1d75, Qty: 100, Reserved: 20, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 7341852c-64d2-4711-bb85-74353a64e8fb, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 781cb788-9681-4330-8b27-e72a1f3f1d75, Qty: 100, Reserved: 30, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"b8f96f75-bf18-4740-bac1-9833cb20c06c","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"b8f96f75-bf18-4740-bac1-9833cb20c06c","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: b8f96f75-bf18-4740-bac1-9833cb20c06c, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: a51970d9-fe5c-43a4-8eed-ec3523936626, Qty: 100, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: b8f96f75-bf18-4740-bac1-9833cb20c06c, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: a51970d9-fe5c-43a4-8eed-ec3523936626, Qty: 100, Reserved: 10, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: b8f96f75-bf18-4740-bac1-9833cb20c06c, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: a51970d9-fe5c-43a4-8eed-ec3523936626, Qty: 100, Reserved: 20, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: b8f96f75-bf18-4740-bac1-9833cb20c06c, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: a51970d9-fe5c-43a4-8eed-ec3523936626, Qty: 100, Reserved: 30, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"236d44ee-888d-43a5-93a5-722c983dafa9","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"236d44ee-888d-43a5-93a5-722c983dafa9","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 236d44ee-888d-43a5-93a5-722c983dafa9, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 05c7958e-ca45-4185-9523-6be59c52b772, Qty: 100, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 236d44ee-888d-43a5-93a5-722c983dafa9, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 05c7958e-ca45-4185-9523-6be59c52b772, Qty: 100, Reserved: 10, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 236d44ee-888d-43a5-93a5-722c983dafa9, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 05c7958e-ca45-4185-9523-6be59c52b772, Qty: 100, Reserved: 20, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 236d44ee-888d-43a5-93a5-722c983dafa9, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 05c7958e-ca45-4185-9523-6be59c52b772, Qty: 100, Reserved: 30, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"177b7186-fdd4-494c-9a9a-6329e1336fd4","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"177b7186-fdd4-494c-9a9a-6329e1336fd4","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[StrategyService] Found 3 strategies. Active: 
+[StrategyService] Found 3 strategies. Active: 
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 177b7186-fdd4-494c-9a9a-6329e1336fd4, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: d9e4ea8c-b9f4-4540-9593-6880effc37e6, Qty: 100, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies. Active: 
+[StrategyService] Found 3 strategies. Active: 
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 177b7186-fdd4-494c-9a9a-6329e1336fd4, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: d9e4ea8c-b9f4-4540-9593-6880effc37e6, Qty: 100, Reserved: 10, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies. Active: 
+[StrategyService] Found 3 strategies. Active: 
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 177b7186-fdd4-494c-9a9a-6329e1336fd4, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: d9e4ea8c-b9f4-4540-9593-6880effc37e6, Qty: 100, Reserved: 20, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies. Active: 
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 177b7186-fdd4-494c-9a9a-6329e1336fd4, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: d9e4ea8c-b9f4-4540-9593-6880effc37e6, Qty: 100, Reserved: 30, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"2154e6be-f522-4da7-8aff-75a3e92bccc1","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"2154e6be-f522-4da7-8aff-75a3e92bccc1","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[StrategyService] Found 3 strategies. Active: 
+[StrategyService] Found 3 strategies. Active: 
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 2154e6be-f522-4da7-8aff-75a3e92bccc1, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 0d3f7d42-530b-4e8e-bce5-ea7e234dcaab, Qty: 100, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies. Active: 
+[StrategyService] Found 3 strategies. Active: 
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 2154e6be-f522-4da7-8aff-75a3e92bccc1, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 0d3f7d42-530b-4e8e-bce5-ea7e234dcaab, Qty: 100, Reserved: 10, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies. Active: 
+[StrategyService] Found 3 strategies. Active: 
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 2154e6be-f522-4da7-8aff-75a3e92bccc1, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 0d3f7d42-530b-4e8e-bce5-ea7e234dcaab, Qty: 100, Reserved: 20, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies. Active: 
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 2154e6be-f522-4da7-8aff-75a3e92bccc1, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 0d3f7d42-530b-4e8e-bce5-ea7e234dcaab, Qty: 100, Reserved: 30, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"3eaf46c0-2ecf-4255-bdb9-7c15cbce52c9","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"3eaf46c0-2ecf-4255-bdb9-7c15cbce52c9","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Manual Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 3eaf46c0-2ecf-4255-bdb9-7c15cbce52c9, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 522e0936-100c-4cdb-aacc-3fe7ef87487e, Qty: 100, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Confirmation Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 3eaf46c0-2ecf-4255-bdb9-7c15cbce52c9, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 522e0936-100c-4cdb-aacc-3fe7ef87487e, Qty: 100, Reserved: 10, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Before Date Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Expected: 2025-12-15T01:13:14.457Z DaysBefore: 5 ResDate: Wed Dec 10 2025 08:13:14 GMT+0700 (Indochina Time) Now: Fri Dec 05 2025 08:13:14 GMT+0700 (Indochina Time)
+[OrderService] Should Reserve: false
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Expected: 2025-12-07T01:13:14.488Z DaysBefore: 5 ResDate: Tue Dec 02 2025 08:13:14 GMT+0700 (Indochina Time) Now: Fri Dec 05 2025 08:13:14 GMT+0700 (Indochina Time)
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 3eaf46c0-2ecf-4255-bdb9-7c15cbce52c9, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 522e0936-100c-4cdb-aacc-3fe7ef87487e, Qty: 100, Reserved: 20, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"5f33583e-26f9-4092-a0e1-c30600cd5fa7","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"5f33583e-26f9-4092-a0e1-c30600cd5fa7","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Manual Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 5f33583e-26f9-4092-a0e1-c30600cd5fa7, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: ef0f0e4d-f696-4b03-9daa-0502e764f365, Qty: 100, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Confirmation Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 5f33583e-26f9-4092-a0e1-c30600cd5fa7, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: ef0f0e4d-f696-4b03-9daa-0502e764f365, Qty: 100, Reserved: 10, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Before Date Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Expected: 2025-12-15T01:14:09.757Z DaysBefore: 5 ResDate: Wed Dec 10 2025 08:14:09 GMT+0700 (Indochina Time) Now: Fri Dec 05 2025 08:14:09 GMT+0700 (Indochina Time)
+[OrderService] Should Reserve: false
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Expected: 2025-12-07T01:14:09.880Z DaysBefore: 5 ResDate: Tue Dec 02 2025 08:14:09 GMT+0700 (Indochina Time) Now: Fri Dec 05 2025 08:14:09 GMT+0700 (Indochina Time)
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 5f33583e-26f9-4092-a0e1-c30600cd5fa7, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: ef0f0e4d-f696-4b03-9daa-0502e764f365, Qty: 100, Reserved: 20, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"1a104c18-f43b-4997-97ea-946851b7936c","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"1a104c18-f43b-4997-97ea-946851b7936c","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Manual Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 1a104c18-f43b-4997-97ea-946851b7936c, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: a418b9e1-3a44-4041-8319-6c0d0342d2fa, Qty: 100, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Confirmation Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 1a104c18-f43b-4997-97ea-946851b7936c, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: a418b9e1-3a44-4041-8319-6c0d0342d2fa, Qty: 100, Reserved: 10, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Before Date Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Expected: 2025-12-15T01:14:44.222Z DaysBefore: 5 ResDate: Wed Dec 10 2025 08:14:44 GMT+0700 (Indochina Time) Now: Fri Dec 05 2025 08:14:44 GMT+0700 (Indochina Time)
+[OrderService] Should Reserve: false
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] Falling back to the most recent strategy.
+[OrderService] Active Strategy: Before Date Strategy (Active: false) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Expected: 2025-12-07T01:14:44.257Z DaysBefore: 5 ResDate: Tue Dec 02 2025 08:14:44 GMT+0700 (Indochina Time) Now: Fri Dec 05 2025 08:14:44 GMT+0700 (Indochina Time)
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 1a104c18-f43b-4997-97ea-946851b7936c, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: a418b9e1-3a44-4041-8319-6c0d0342d2fa, Qty: 100, Reserved: 20, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"ee30fd8e-f302-4687-bad6-3305e5d30b51","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"ee30fd8e-f302-4687-bad6-3305e5d30b51","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Manual Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=true, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Manual Strategy (Active: true) Rules: {"method":"manually"}
+[OrderService] Parsed Rules: {"method":"manually"}
+[OrderService] Should Reserve: false
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=true, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Confirmation Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=true, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Confirmation Strategy (Active: true) Rules: {"method":"at_confirmation"}
+[OrderService] Parsed Rules: {"method":"at_confirmation"}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: ee30fd8e-f302-4687-bad6-3305e5d30b51, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: a8a16251-6584-46e9-8a2e-de719cc01260, Qty: 100, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=true, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=false, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Creating strategy: Before Date Strategy, active: true
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Expected: 2025-12-15T01:16:12.523Z DaysBefore: 5 ResDate: Wed Dec 10 2025 08:16:12 GMT+0700 (Indochina Time) Now: Fri Dec 05 2025 08:16:12 GMT+0700 (Indochina Time)
+[OrderService] Should Reserve: false
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Expected: 2025-12-07T01:16:12.547Z DaysBefore: 5 ResDate: Tue Dec 02 2025 08:16:12 GMT+0700 (Indochina Time) Now: Fri Dec 05 2025 08:16:12 GMT+0700 (Indochina Time)
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: ee30fd8e-f302-4687-bad6-3305e5d30b51, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: a8a16251-6584-46e9-8a2e-de719cc01260, Qty: 100, Reserved: 10, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[InventoryController] createAdjustment called with {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"56ce97c5-c386-4ed7-af0b-ccc7c15881b8","countedQuantity":50,"currentQuantity":0,"reason":"Manual AdjustmentInitial Stock Verification","status":"APPLIED"}
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"56ce97c5-c386-4ed7-af0b-ccc7c15881b8","countedQuantity":50,"currentQuantity":0,"reason":"Manual AdjustmentInitial Stock Verification","status":"APPLIED"}
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 56ce97c5-c386-4ed7-af0b-ccc7c15881b8, Qty: 15, Found Inventory Records: 1
+[InventoryService]  - ID: 83f94422-40e3-4e8d-af92-429ac3357f20, Qty: 175, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 56ce97c5-c386-4ed7-af0b-ccc7c15881b8, Qty: 11, Found Inventory Records: 1
+[InventoryService]  - ID: 83f94422-40e3-4e8d-af92-429ac3357f20, Qty: 175, Reserved: 15, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 245ef30c-f520-4e97-9604-e9881e5771c4, Qty: 5, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 245ef30c-f520-4e97-9604-e9881e5771c4
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 245ef30c-f520-4e97-9604-e9881e5771c4, Qty: 3, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 245ef30c-f520-4e97-9604-e9881e5771c4
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 245ef30c-f520-4e97-9604-e9881e5771c4, Qty: 2, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 245ef30c-f520-4e97-9604-e9881e5771c4
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 245ef30c-f520-4e97-9604-e9881e5771c4, Qty: 15, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 245ef30c-f520-4e97-9604-e9881e5771c4
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 245ef30c-f520-4e97-9604-e9881e5771c4, Qty: 15, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 245ef30c-f520-4e97-9604-e9881e5771c4
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 245ef30c-f520-4e97-9604-e9881e5771c4, Qty: 13, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 245ef30c-f520-4e97-9604-e9881e5771c4
+[StrategyService] Found 3 strategies.
+[StrategyService] - Manual Strategy: active=false, id=3734778d-cbf5-4dae-816e-7ba03da7544e
+[StrategyService] - Confirmation Strategy: active=false, id=4c2529e1-119a-40b4-b501-ddf6d6a46788
+[StrategyService] - Before Date Strategy: active=true, id=013840b1-879c-45e2-810c-d0ca257046f9
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 245ef30c-f520-4e97-9604-e9881e5771c4, Qty: 12, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 245ef30c-f520-4e97-9604-e9881e5771c4

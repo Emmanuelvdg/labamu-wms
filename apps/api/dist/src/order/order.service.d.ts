@@ -6,6 +6,7 @@ export declare class OrderService {
     private prisma;
     private strategyService;
     private inventoryService;
+    private log;
     constructor(prisma: PrismaService, strategyService: StrategyService, inventoryService: InventoryService);
     createOrder(data: {
         customerId: string;
@@ -14,6 +15,7 @@ export declare class OrderService {
             productId: string;
             quantity: number;
         }[];
+        expectedDate?: Date;
     }): Promise<Order>;
     getOrders(): Promise<Order[]>;
     createShipment(data: {
@@ -23,9 +25,9 @@ export declare class OrderService {
     }): Promise<{
         id: string;
         status: string;
+        orderId: string;
         carrier: string;
         trackingId: string;
-        orderId: string;
     }>;
 }
 //# sourceMappingURL=order.service.d.ts.map

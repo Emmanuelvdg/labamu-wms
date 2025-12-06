@@ -1,0 +1,40 @@
+[InventoryService] Creating Adjustment: {"locationId":"7d284c7e-f762-4d7b-9538-f3672d1cc38c","productId":"9fcc40d5-6916-4675-9f97-6bf44961e4fd","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Error creating adjustment: Cannot store stock in a VIEW location: TW
+[InventoryService] Creating Adjustment: {"locationId":"7d284c7e-f762-4d7b-9538-f3672d1cc38c","productId":"2b947850-6325-4de8-8e88-9da7e995cf41","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Error creating adjustment: Cannot store stock in a VIEW location: TW
+[InventoryService] Creating Adjustment: {"locationId":"7d284c7e-f762-4d7b-9538-f3672d1cc38c","productId":"d6863362-d549-44c6-9f63-9310815d3d8c","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[InventoryService] Error creating adjustment: Cannot store stock in a VIEW location: TW
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"33167b7f-544c-4c14-b1ea-43ebc88b8a95","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 33167b7f-544c-4c14-b1ea-43ebc88b8a95, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 76e55506-7278-4bb5-9d2c-3291f0acb74f, Qty: 100, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 33167b7f-544c-4c14-b1ea-43ebc88b8a95, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 76e55506-7278-4bb5-9d2c-3291f0acb74f, Qty: 100, Reserved: 10, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 33167b7f-544c-4c14-b1ea-43ebc88b8a95, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 76e55506-7278-4bb5-9d2c-3291f0acb74f, Qty: 100, Reserved: 20, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 33167b7f-544c-4c14-b1ea-43ebc88b8a95, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 76e55506-7278-4bb5-9d2c-3291f0acb74f, Qty: 100, Reserved: 30, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[InventoryService] Creating Adjustment: {"locationId":"58316310-45e9-4837-be05-cdc832318edf","productId":"aa7b65b4-120f-4db2-9136-2e6884cbd4c9","countedQuantity":100,"currentQuantity":0,"reason":"Initial Stock","status":"APPLIED"}
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: aa7b65b4-120f-4db2-9136-2e6884cbd4c9, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: ad20a9b5-7cb4-44e4-9e36-d791d6179d89, Qty: 100, Reserved: 0, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: aa7b65b4-120f-4db2-9136-2e6884cbd4c9, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: ad20a9b5-7cb4-44e4-9e36-d791d6179d89, Qty: 100, Reserved: 10, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: aa7b65b4-120f-4db2-9136-2e6884cbd4c9, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: ad20a9b5-7cb4-44e4-9e36-d791d6179d89, Qty: 100, Reserved: 20, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
+[OrderService] Active Strategy: undefined undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: aa7b65b4-120f-4db2-9136-2e6884cbd4c9, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: ad20a9b5-7cb4-44e4-9e36-d791d6179d89, Qty: 100, Reserved: 30, Warehouse: e5076243-7bb5-4cb4-9325-3d0ac004afd7
