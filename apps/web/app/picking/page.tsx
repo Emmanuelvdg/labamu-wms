@@ -16,13 +16,18 @@ import { createPickingBatch, createPickingCluster, createPickingWave, fetchWareh
 export default function PickingPage() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
-    const [activeStrategy, setActiveStrategy] = useState<'batch' | 'cluster' | 'wave' | null>(null);
-    const [session, setSession] = useState<any>(null);
+    const [activeSession, setActiveSession] = useState<any>(null);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         loadWarehouses();
     }, []);
+
+    useEffect(() => {
+        if (selectedWarehouseId) {
+            checkActiveSession();
+        }
+    }, [selectedWarehouseId]);
 
     async function loadWarehouses() {
         try {
@@ -36,86 +41,102 @@ export default function PickingPage() {
         }
     }
 
-    const startSession = async (strategy: 'batch' | 'cluster' | 'wave') => {
+    async function checkActiveSession() {
+        try {
+            const session = await import('@/lib/api').then(m => m.getActivePickingSession(selectedWarehouseId));
+            if (session) {
+                setActiveSession(session);
+            } else {
+                setActiveSession(null);
+            }
+        } catch (error) {
+            console.error('Failed to check active session', error);
+        }
+    }
+
+    const startSession = async (strategy: 'BATCH' | 'CLUSTER' | 'WAVE') => {
         if (!selectedWarehouseId) {
             alert('Please select a warehouse first');
             return;
         }
 
         setLoading(true);
-        setActiveStrategy(strategy);
-
         try {
-            let data;
-            if (strategy === 'batch') {
-                // Default to 'location' criteria for now, or read from settings if available
-                data = await createPickingBatch('location', selectedWarehouseId);
-
-                // Map API response to UI state
-                if (data.generatedBatches && data.generatedBatches.length > 0) {
-                    const batch = data.generatedBatches[0]; // Just take the first batch for demo
-                    setSession({
-                        id: `BATCH-${Date.now()}`,
-                        type: 'BATCH',
-                        orders: batch.orderIds.map((id: string) => ({
-                            id,
-                            customer: 'Unknown', // API doesn't return customer name yet in this view
-                            items: 'N/A' // API doesn't return item count per order in this view yet
-                        })),
-                        totalItems: batch.orderCount
-                    });
-                } else {
-                    alert('No pending orders to batch for this warehouse.');
-                    setActiveStrategy(null);
-                }
-            } else if (strategy === 'cluster') {
-                data = await createPickingCluster(4, selectedWarehouseId);
-
-                if (data.assignments && data.assignments.length > 0) {
-                    setSession({
-                        id: data.clusterId,
-                        type: 'CLUSTER',
-                        totes: data.assignments.map((a: any) => ({
-                            label: a.toteLabel,
-                            orderId: a.orderId,
-                            items: a.items.length
-                        }))
-                    });
-                } else {
-                    alert('No pending orders for cluster in this warehouse.');
-                    setActiveStrategy(null);
-                }
-            } else if (strategy === 'wave') {
-                data = await createPickingWave('product', selectedWarehouseId);
-
-                if (data.pickingList && data.pickingList.length > 0) {
-                    setSession({
-                        id: data.waveId,
-                        type: 'WAVE',
-                        lines: data.pickingList.map((item: any) => ({
-                            product: item.productName,
-                            sku: 'SKU-' + item.productId.substring(0, 4),
-                            qty: item.totalQty,
-                            locations: ['Zone-A'] // Placeholder
-                        }))
-                    });
-                } else {
-                    alert('No pending orders for wave in this warehouse.');
-                    setActiveStrategy(null);
-                }
-            }
+            const { createPickingSession } = await import('@/lib/api');
+            const session = await createPickingSession({
+                warehouseId: selectedWarehouseId,
+                strategy: strategy.toUpperCase(),
+                criteria: strategy === 'WAVE' ? 'product' : 'location'
+            });
+            setActiveSession(session);
         } catch (error) {
             console.error('Failed to start session:', error);
-            alert('Failed to start picking session');
-            setActiveStrategy(null);
+            alert('Failed to start picking session. Ensure there are RESERVED orders.');
         } finally {
             setLoading(false);
         }
     };
 
-    const completeSession = () => {
-        setSession(null);
-        setActiveStrategy(null);
+    const handleConfirmPick = async (task: any) => {
+        try {
+            const { updatePickingTask } = await import('@/lib/api');
+            await updatePickingTask(task.id, {
+                pickedQuantity: task.quantity,
+                status: 'PICKED'
+            });
+            // Refresh session to update UI
+            checkActiveSession();
+        } catch (error) {
+            console.error('Failed to confirm pick:', error);
+            alert('Failed to confirm pick');
+        }
+    };
+
+    const handleException = async (task: any) => {
+        const reason = prompt('Enter exception reason (e.g., Damaged, Missing):');
+        if (!reason) return;
+
+        const qtyStr = prompt(`Enter quantity actually picked (Max ${task.quantity}):`, '0');
+        const pickedQty = parseInt(qtyStr || '0');
+
+        if (isNaN(pickedQty) || pickedQty < 0 || pickedQty > task.quantity) {
+            alert('Invalid quantity');
+            return;
+        }
+
+        try {
+            const { updatePickingTask } = await import('@/lib/api');
+            await updatePickingTask(task.id, {
+                pickedQuantity: pickedQty,
+                status: pickedQty === 0 ? 'FAILED' : 'PARTIALLY_PICKED',
+                exceptionReason: reason
+            });
+            checkActiveSession();
+        } catch (error) {
+            console.error('Failed to report exception:', error);
+            alert('Failed to report exception');
+        }
+    };
+
+    const completeSession = async () => {
+        if (!activeSession) return;
+
+        // Check if all tasks are handled
+        const pendingTasks = activeSession.tasks.filter((t: any) => t.status === 'PENDING');
+        if (pendingTasks.length > 0) {
+            alert(`Please complete all ${pendingTasks.length} pending tasks first.`);
+            return;
+        }
+
+        try {
+            const { completePickingSession } = await import('@/lib/api');
+            await completePickingSession(activeSession.id);
+            setActiveSession(null);
+            alert('Session completed successfully!');
+        } catch (error) {
+            console.error('Failed to complete session:', error);
+            alert('Failed to complete session');
+        }
     };
 
     return (
@@ -143,37 +164,37 @@ export default function PickingPage() {
                 </div>
             </header>
 
-            {!session ? (
+            {!activeSession ? (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <StrategySelectionCard
                         title="Batch Picking"
                         description="Pick multiple orders for the same customer or route together."
                         icon={<Layers className="h-8 w-8 text-blue-600" />}
-                        onClick={() => startSession('batch')}
-                        loading={loading && activeStrategy === 'batch'}
+                        onClick={() => startSession('BATCH')}
+                        loading={loading}
                     />
                     <StrategySelectionCard
                         title="Cluster Picking"
                         description="Pick items into specific totes for multiple orders."
                         icon={<Box className="h-8 w-8 text-purple-600" />}
-                        onClick={() => startSession('cluster')}
-                        loading={loading && activeStrategy === 'cluster'}
+                        onClick={() => startSession('CLUSTER')}
+                        loading={loading}
                     />
                     <StrategySelectionCard
                         title="Wave Picking"
                         description="Pick all items of the same type for the entire shift."
                         icon={<Package className="h-8 w-8 text-orange-600" />}
-                        onClick={() => startSession('wave')}
-                        loading={loading && activeStrategy === 'wave'}
+                        onClick={() => startSession('WAVE')}
+                        loading={loading}
                     />
                 </div>
             ) : (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                         <div>
-                            <h2 className="text-lg font-semibold text-gray-900">Active Session: {session.id}</h2>
+                            <h2 className="text-lg font-semibold text-gray-900">Active Session: {activeSession.id.substring(0, 8)}</h2>
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                                {session.type} STRATEGY
+                                {activeSession.strategy} STRATEGY
                             </span>
                         </div>
                         <button
@@ -186,69 +207,59 @@ export default function PickingPage() {
                     </div>
 
                     <div className="p-6">
-                        {session.type === 'BATCH' && (
-                            <div className="space-y-4">
-                                <p className="text-gray-600 mb-4">You are picking the following orders together:</p>
-                                {session.orders.map((order: any) => (
-                                    <div key={order.id} className="border rounded-lg p-4 flex justify-between items-center bg-gray-50">
-                                        <div>
-                                            <p className="font-medium text-gray-900">Order #{order.id}</p>
-                                            <p className="text-sm text-gray-500">Customer: {order.customer}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-2xl font-bold text-gray-900">{order.items}</p>
-                                            <p className="text-xs text-gray-500">Items</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {session.type === 'CLUSTER' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {session.totes.map((tote: any) => (
-                                    <div key={tote.label} className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors bg-gray-50">
-                                        <Box className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                                        <h3 className="text-xl font-bold text-gray-900 mb-1">{tote.label}</h3>
-                                        <p className="text-sm text-gray-500 mb-4">Order: {tote.orderId}</p>
-                                        <div className="bg-white border rounded px-3 py-1 inline-block">
-                                            <span className="font-bold text-blue-600">{tote.items}</span> items to pick
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {session.type === 'WAVE' && (
-                            <div className="overflow-hidden border rounded-lg">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Qty</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                        <div className="overflow-hidden border rounded-lg">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {activeSession.tasks.map((task: any) => (
+                                        <tr key={task.id} className={task.status === 'PICKED' ? 'bg-green-50' : task.status === 'FAILED' ? 'bg-red-50' : ''}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{task.product.name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{task.sourceLocation.name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{task.order.id.substring(0, 8)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                                {task.status === 'PENDING' ? task.quantity : `${task.pickedQuantity}/${task.quantity}`}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                    ${task.status === 'PICKED' ? 'bg-green-100 text-green-800' :
+                                                        task.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                                                            task.status === 'PARTIALLY_PICKED' ? 'bg-yellow-100 text-yellow-800' :
+                                                                'bg-gray-100 text-gray-800'}`}>
+                                                    {task.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                {task.status === 'PENDING' && (
+                                                    <div className="flex justify-end gap-2">
+                                                        <button
+                                                            onClick={() => handleConfirmPick(task)}
+                                                            className="text-green-600 hover:text-green-900 font-medium"
+                                                        >
+                                                            Confirm
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleException(task)}
+                                                            className="text-red-600 hover:text-red-900 font-medium"
+                                                        >
+                                                            Exception
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {session.lines.map((line: any) => (
-                                            <tr key={line.sku}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{line.product}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{line.sku}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{line.locations.join(', ')}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">{line.qty}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <button className="text-blue-600 hover:text-blue-900 font-medium flex items-center justify-end gap-1 w-full">
-                                                        Pick <ArrowRight className="h-4 w-4" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             )}

@@ -4,7 +4,8 @@ export async function fetchWithRetry(url: string, options?: RequestInit) {
     try {
         const res = await fetch(url, { ...options, cache: 'no-store' });
         if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
-        return res.json();
+        const text = await res.text();
+        return text ? JSON.parse(text) : null;
     } catch (error) {
         console.error(`Failed to fetch ${url}:`, error);
         throw error;
@@ -15,6 +16,10 @@ export async function fetchWithRetry(url: string, options?: RequestInit) {
 
 export async function fetchInventory() {
     return fetchWithRetry(`${API_URL}/inventory/products`);
+}
+
+export async function getProduct(id: string) {
+    return fetchWithRetry(`${API_URL}/inventory/products/${id}`);
 }
 
 export async function fetchWarehouses() {
@@ -183,6 +188,10 @@ export async function fetchOrders() {
     return fetchWithRetry(`${API_URL}/orders`);
 }
 
+export async function fetchOrder(id: string) {
+    return fetchWithRetry(`${API_URL}/orders/${id}`);
+}
+
 export async function createShipment(data: any) {
     return fetchWithRetry(`${API_URL}/orders/ship`, {
         method: 'POST',
@@ -273,6 +282,34 @@ export async function createPickingWave(criteria: string, warehouseId?: string) 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ criteria, warehouseId }),
+    });
+}
+
+// --- Picking Session Management ---
+
+export async function createPickingSession(data: { warehouseId: string; strategy: string; criteria?: string; maxOrders?: number }) {
+    return fetchWithRetry(`${API_URL}/strategy/picking/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function getActivePickingSession(warehouseId: string) {
+    return fetchWithRetry(`${API_URL}/strategy/picking/sessions/active?warehouseId=${warehouseId}`);
+}
+
+export async function updatePickingTask(taskId: string, data: { pickedQuantity: number; status: string; exceptionReason?: string }) {
+    return fetchWithRetry(`${API_URL}/strategy/picking/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function completePickingSession(sessionId: string) {
+    return fetchWithRetry(`${API_URL}/strategy/picking/sessions/${sessionId}/complete`, {
+        method: 'POST',
     });
 }
 

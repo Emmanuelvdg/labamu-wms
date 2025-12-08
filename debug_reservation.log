@@ -437,3 +437,23 @@
 [OrderService] Should Reserve: true
 [InventoryService] [ReserveStock] Product: 245ef30c-f520-4e97-9604-e9881e5771c4, Qty: 12, Found Inventory Records: 0
 [OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 245ef30c-f520-4e97-9604-e9881e5771c4
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: a108f4e2-5dae-4a00-88bb-919f0244cb12, Qty: 5, Found Inventory Records: 1
+[InventoryService]  - ID: 281412b9-aa96-4403-bf8e-946207d338d4, Qty: 10, Reserved: 0, Warehouse: 8dbb8221-2243-4d80-82bf-de5defdb1890
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 66d25b94-5c0d-40b8-ab6d-2a71a9271318, Qty: 5, Found Inventory Records: 1
+[InventoryService]  - ID: b91f66eb-a6b2-49ec-bd8b-a37286b60ae7, Qty: 100, Reserved: 0, Warehouse: 8dbb8221-2243-4d80-82bf-de5defdb1890
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: d20a2921-af84-48c5-b795-a6261f8207dc, Qty: 5, Found Inventory Records: 1
+[InventoryService]  - ID: c152c225-0eee-42d7-93f0-6e1b02513642, Qty: 100, Reserved: 0, Warehouse: 8dbb8221-2243-4d80-82bf-de5defdb1890
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 1a9b668b-0fb8-4f60-b3a6-4c6cfba78db3, Qty: 5, Found Inventory Records: 1
+[InventoryService]  - ID: 80264eb2-c2a7-42d2-8d99-9233ed00d00d, Qty: 100, Reserved: 0, Warehouse: 8dbb8221-2243-4d80-82bf-de5defdb1890

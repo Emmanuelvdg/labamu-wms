@@ -219,6 +219,24 @@ export default function LocationDetailsPage() {
                                 </Select>
                             </div>
 
+                            {/* Color Attribute */}
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="color" className="text-right">Color Code</Label>
+                                <div className="col-span-3 flex items-center gap-2">
+                                    <Input
+                                        type="color"
+                                        id="color"
+                                        value={editForm.attributes?.color || '#000000'}
+                                        onChange={(e) => setEditForm({
+                                            ...editForm,
+                                            attributes: { ...editForm.attributes, color: e.target.value }
+                                        })}
+                                        className="w-12 h-10 p-1 cursor-pointer"
+                                    />
+                                    <span className="text-sm text-gray-500">{editForm.attributes?.color || 'No color set'}</span>
+                                </div>
+                            </div>
+
                             {/* Attributes based on Structure */}
                             {editForm.structuralType === 'ROOM' && (
                                 <div className="grid grid-cols-4 items-center gap-4">

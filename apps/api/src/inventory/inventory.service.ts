@@ -35,6 +35,10 @@ export class InventoryService {
         return this.prisma.product.findMany();
     }
 
+    async getProduct(id: string): Promise<Product | null> {
+        return this.prisma.product.findUnique({ where: { id } });
+    }
+
     async createWarehouse(data: {
         name: string;
         shortName: string;

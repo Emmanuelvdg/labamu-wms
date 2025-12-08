@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchInventory, fetchBatches, fetchTransactions, addBatch, fetchWarehouses } from '@/lib/api';
+import { getProduct, fetchBatches, fetchTransactions, addBatch, fetchWarehouses } from '@/lib/api';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -31,8 +31,7 @@ export default function MaterialDetailsPage() {
     useEffect(() => {
         async function load() {
             try {
-                const products = await fetchInventory();
-                const found = products.find((p: any) => p.id === id);
+                const found = await getProduct(id);
                 setProduct(found);
 
                 if (found) {

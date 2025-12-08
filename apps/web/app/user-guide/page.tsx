@@ -1,189 +1,269 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import Link from 'next/link';
+import { ArrowLeft, Book, Box, MapPin, Truck, ShoppingCart, LayoutGrid } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function UserGuidePage() {
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">User Guide</h1>
-                <p className="text-gray-500 mt-2">Comprehensive documentation for the Labamu Inventory Management System.</p>
+        <div className="container mx-auto py-8 max-w-5xl">
+            <div className="flex items-center mb-8 gap-4">
+                <Link href="/">
+                    <Button variant="ghost" size="icon">
+                        <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                </Link>
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">User Guide</h1>
+                    <p className="text-muted-foreground">Comprehensive documentation for the Inventory Management System.</p>
+                </div>
             </div>
 
-            <Tabs defaultValue="overview" className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="overview">System Overview</TabsTrigger>
-                    <TabsTrigger value="modules">Module Guides</TabsTrigger>
-                    <TabsTrigger value="howto">How-To Guides</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="overview" className="space-y-4">
-                    <Card>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                {/* Sidebar Navigation */}
+                <div className="md:col-span-1">
+                    <Card className="sticky top-8">
                         <CardHeader>
-                            <CardTitle>System Architecture</CardTitle>
-                            <CardDescription>How data flows through the system</CardDescription>
+                            <CardTitle className="text-lg">Table of Contents</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="flex flex-col items-center space-y-8 p-8 bg-slate-50 rounded-lg border">
-                                {/* External Entities */}
-                                <div className="flex justify-between w-full max-w-4xl">
-                                    <div className="p-4 bg-blue-100 rounded-lg border border-blue-200 text-center w-32 font-semibold">Suppliers</div>
-                                    <div className="p-4 bg-green-100 rounded-lg border border-green-200 text-center w-32 font-semibold">Customers</div>
-                                </div>
-
-                                {/* Flow Arrows */}
-                                <div className="flex justify-between w-full max-w-4xl px-12">
-                                    <div className="text-gray-400 text-2xl">↓</div>
-                                    <div className="text-gray-400 text-2xl">↑</div>
-                                </div>
-
-                                {/* Core System */}
-                                <div className="grid grid-cols-3 gap-8 w-full max-w-4xl">
-                                    <div className="col-span-1 space-y-4">
-                                        <div className="p-4 bg-white shadow rounded-lg border text-center">
-                                            <div className="font-bold text-gray-900">Purchase Orders</div>
-                                            <div className="text-xs text-gray-500 mt-1">Procurement</div>
-                                        </div>
+                        <CardContent className="p-0">
+                            <ScrollArea className="h-[calc(100vh-200px)]">
+                                <nav className="flex flex-col space-y-1 p-4">
+                                    <a href="#getting-started" className="text-sm font-medium hover:underline py-2 text-muted-foreground hover:text-primary">Getting Started</a>
+                                    <a href="#inventory-management" className="text-sm font-medium hover:underline py-2 text-muted-foreground hover:text-primary">Inventory Management</a>
+                                    <div className="pl-4 flex flex-col space-y-1 border-l ml-2">
+                                        <a href="#products" className="text-xs text-muted-foreground hover:text-primary py-1">Products</a>
+                                        <a href="#locations" className="text-xs text-muted-foreground hover:text-primary py-1">Locations</a>
+                                        <a href="#warehouses" className="text-xs text-muted-foreground hover:text-primary py-1">Warehouses</a>
                                     </div>
-                                    <div className="col-span-1 space-y-4">
-                                        <div className="p-6 bg-white shadow-lg rounded-lg border-2 border-indigo-100 text-center">
-                                            <div className="font-bold text-indigo-900 text-lg">Inventory</div>
-                                            <div className="text-sm text-gray-500 mt-2">Warehouses & Locations</div>
-                                            <div className="mt-4 flex justify-center gap-2 text-xs">
-                                                <span className="px-2 py-1 bg-gray-100 rounded">Stock Moves</span>
-                                                <span className="px-2 py-1 bg-gray-100 rounded">Routes</span>
-                                            </div>
-                                        </div>
+                                    <a href="#inbound-operations" className="text-sm font-medium hover:underline py-2 text-muted-foreground hover:text-primary">Inbound Operations</a>
+                                    <div className="pl-4 flex flex-col space-y-1 border-l ml-2">
+                                        <a href="#purchase-orders" className="text-xs text-muted-foreground hover:text-primary py-1">Purchase Orders</a>
+                                        <a href="#receiving-goods" className="text-xs text-muted-foreground hover:text-primary py-1">Receiving Goods</a>
                                     </div>
-                                    <div className="col-span-1 space-y-4">
-                                        <div className="p-4 bg-white shadow rounded-lg border text-center">
-                                            <div className="font-bold text-gray-900">Sales Orders</div>
-                                            <div className="text-xs text-gray-500 mt-1">Fulfillment</div>
-                                        </div>
+                                    <a href="#outbound-operations" className="text-sm font-medium hover:underline py-2 text-muted-foreground hover:text-primary">Outbound Operations</a>
+                                    <div className="pl-4 flex flex-col space-y-1 border-l ml-2">
+                                        <a href="#creating-orders" className="text-xs text-muted-foreground hover:text-primary py-1">Creating Orders</a>
+                                        <a href="#picking-strategies" className="text-xs text-muted-foreground hover:text-primary py-1">Picking Strategies</a>
+                                        <a href="#worker-interface" className="text-xs text-muted-foreground hover:text-primary py-1">Worker Interface</a>
                                     </div>
-                                </div>
+                                    <a href="#floor-plan-manager" className="text-sm font-medium hover:underline py-2 text-muted-foreground hover:text-primary">Floor Plan Manager</a>
+                                </nav>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                </div>
 
-                                {/* Legend */}
-                                <div className="text-sm text-gray-500 pt-8">
-                                    <p>The system connects Procurement (Suppliers) and Sales (Customers) through a central Inventory engine controlled by Routes and Rules.</p>
-                                </div>
+                {/* Main Content */}
+                <div className="md:col-span-3 space-y-12">
+
+                    {/* Getting Started */}
+                    <section id="getting-started" className="scroll-mt-20">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Book className="h-6 w-6 text-primary" />
+                            <h2 className="text-2xl font-semibold">Getting Started</h2>
+                        </div>
+                        <Card>
+                            <CardContent className="pt-6">
+                                <p className="mb-4">Welcome to the Inventory Management System. This guide covers the core functionalities for managing your warehouse operations.</p>
+                                <h3 className="text-lg font-medium mb-2">Dashboard</h3>
+                                <p className="text-muted-foreground mb-2">The Dashboard provides a real-time overview of your operations:</p>
+                                <ul className="list-disc pl-6 space-y-1 text-muted-foreground">
+                                    <li><strong>Key Metrics:</strong> Total Inventory Value, Pending Orders, Low Stock Alerts.</li>
+                                    <li><strong>Charts:</strong> Daily Sales Trend, Inventory Distribution.</li>
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </section>
+
+                    <Separator />
+
+                    {/* Inventory Management */}
+                    <section id="inventory-management" className="scroll-mt-20">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Box className="h-6 w-6 text-primary" />
+                            <h2 className="text-2xl font-semibold">Inventory Management</h2>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div id="products" className="scroll-mt-24">
+                                <h3 className="text-xl font-medium mb-3">Products</h3>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <p className="mb-2">Manage your item catalog at <Link href="/inventory/products" className="text-primary hover:underline">/inventory/products</Link>.</p>
+                                        <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                                            <li><strong>Create Product:</strong> Click "New Product" and fill in details (SKU, Name, Dimensions).</li>
+                                            <li>
+                                                <strong>Multi-Form Factor:</strong>
+                                                <ul className="list-circle pl-6 mt-1 space-y-1">
+                                                    <li>Go to a Product's details page.</li>
+                                                    <li>Click <strong>"Manage Packaging"</strong>.</li>
+                                                    <li>Define units like "Box of 10" or "Pallet of 100".</li>
+                                                    <li>These units can be used in Purchase Orders and Receiving.</li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
                             </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
 
-                <TabsContent value="modules" className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <ModuleCard
-                            title="Dashboard"
-                            description="Real-time overview of key metrics."
-                            details="Displays low stock alerts, recent activity, and inventory valuation summary."
-                        />
-                        <ModuleCard
-                            title="Inventory"
-                            description="Master product list and management."
-                            details="Create and edit products, view stock levels, and manage product categories."
-                        />
-                        <ModuleCard
-                            title="Warehouses"
-                            description="Physical storage facilities."
-                            details="Manage warehouses and configure their incoming/outgoing shipment steps (1, 2, or 3 steps)."
-                        />
-                        <ModuleCard
-                            title="Locations"
-                            description="Granular storage spots within warehouses."
-                            details="Hierarchical view of locations (e.g., Warehouse -> Stock -> Shelf A). Supports View, Internal, Vendor, and Customer location types."
-                        />
-                        <ModuleCard
-                            title="Stock Moves"
-                            description="The engine of inventory movement."
-                            details="Track every movement of stock. Moves are chained automatically based on Routes (e.g., Input -> Quality -> Stock)."
-                        />
-                        <ModuleCard
-                            title="Routes & Rules"
-                            description="Logic defining how stock moves."
-                            details="Configure Push/Pull rules to automate workflows. For example, a 'Pull' rule can trigger a move from Stock when a Customer Order is placed."
-                        />
-                        <ModuleCard
-                            title="Purchase Orders"
-                            description="Procurement management."
-                            details="Create POs for suppliers. Confirming a PO automatically generates incoming Stock Moves."
-                        />
-                        <ModuleCard
-                            title="Adjustments"
-                            description="Correcting stock levels."
-                            details="Perform cycle counts or manual adjustments to match physical inventory with system records."
-                        />
-                    </div>
-                </TabsContent>
+                            <div id="locations" className="scroll-mt-24">
+                                <h3 className="text-xl font-medium mb-3">Locations</h3>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <p className="mb-2">Manage your warehouse layout at <Link href="/inventory/locations" className="text-primary hover:underline">/inventory/locations</Link>.</p>
+                                        <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                                            <li><strong>Hierarchy:</strong> Locations are organized as Warehouse &rarr; Room &rarr; Row &rarr; Bay &rarr; Shelf &rarr; Position.</li>
+                                            <li>
+                                                <strong>Editing:</strong>
+                                                <ul className="list-circle pl-6 mt-1 space-y-1">
+                                                    <li>Click on a location to view details.</li>
+                                                    <li>Click <strong>"Edit Location"</strong> to modify attributes.</li>
+                                                    <li><strong>Color Coding:</strong> Set a "Color Code" in the edit dialog to visually distinguish locations in the Tree View and Floor Plan.</li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </div>
 
-                <TabsContent value="howto" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Common Workflows</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <HowToStep
-                                title="How to Receive Goods (3-Step Process)"
-                                steps={[
-                                    "Create a Purchase Order and confirm it.",
-                                    "Go to 'Stock Moves'. You will see a move from Vendor -> Input.",
-                                    "Validate the move when goods arrive at the dock.",
-                                    "The system automatically creates a new move: Input -> Quality.",
-                                    "Validate this move after quality check.",
-                                    "Finally, validate the Quality -> Stock move to put items away."
-                                ]}
-                            />
-                            <HowToStep
-                                title="How to Create a New Product"
-                                steps={[
-                                    "Navigate to 'Inventory'.",
-                                    "Click '+ New Item'.",
-                                    "Fill in details (SKU, Name, Cost, etc.).",
-                                    "Click 'Create Item'."
-                                ]}
-                            />
-                            <HowToStep
-                                title="How to Configure a Pull Rule"
-                                steps={[
-                                    "Go to 'Routes' and select or create a route.",
-                                    "Add a Rule with Action 'PULL'.",
-                                    "Set Destination (e.g., Customer) and Source (e.g., Stock).",
-                                    "Now, when a move is created for the Destination, the system will try to 'pull' from the Source."
-                                ]}
-                            />
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-        </div>
-    );
-}
+                            <div id="warehouses" className="scroll-mt-24">
+                                <h3 className="text-xl font-medium mb-3">Warehouses</h3>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <p className="mb-2">Manage warehouse-specific settings at <Link href="/inventory/warehouses" className="text-primary hover:underline">/inventory/warehouses</Link>.</p>
+                                        <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                                            <li><strong>Picking Strategy:</strong> Configure how orders are picked (Wave, Batch, Cluster) per warehouse.</li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+                    </section>
 
-function ModuleCard({ title, description, details }: { title: string, description: string, details: string }) {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
-                <CardDescription>{description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p className="text-sm text-gray-600">{details}</p>
-            </CardContent>
-        </Card>
-    );
-}
+                    <Separator />
 
-function HowToStep({ title, steps }: { title: string, steps: string[] }) {
-    return (
-        <div className="border-b pb-4 last:border-0">
-            <h3 className="font-semibold text-lg mb-2">{title}</h3>
-            <ol className="list-decimal list-inside space-y-1 text-gray-700">
-                {steps.map((step, i) => (
-                    <li key={i}>{step}</li>
-                ))}
-            </ol>
+                    {/* Inbound Operations */}
+                    <section id="inbound-operations" className="scroll-mt-20">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Truck className="h-6 w-6 text-primary" />
+                            <h2 className="text-2xl font-semibold">Inbound Operations</h2>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div id="purchase-orders" className="scroll-mt-24">
+                                <h3 className="text-xl font-medium mb-3">Purchase Orders</h3>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <p className="mb-2">Navigate to <Link href="/inventory/purchases" className="text-primary hover:underline">/inventory/purchases</Link>.</p>
+                                        <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                                            <li><strong>Create PO:</strong> Select a Supplier and add items.</li>
+                                            <li><strong>Ordering Units:</strong> You can select specific packaging units (e.g., "2 Pallets") instead of just base units.</li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div id="receiving-goods" className="scroll-mt-24">
+                                <h3 className="text-xl font-medium mb-3">Receiving Goods</h3>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                                            <li>Open a "Ordered" Purchase Order.</li>
+                                            <li>Click <strong>"Receive"</strong>.</li>
+                                            <li><strong>Auto-LPN:</strong> If you ordered packaged units (e.g., Pallets), the system automatically creates unique Package records (LPNs) for tracking.</li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+                    </section>
+
+                    <Separator />
+
+                    {/* Outbound Operations */}
+                    <section id="outbound-operations" className="scroll-mt-20">
+                        <div className="flex items-center gap-2 mb-4">
+                            <ShoppingCart className="h-6 w-6 text-primary" />
+                            <h2 className="text-2xl font-semibold">Outbound Operations</h2>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div id="creating-orders" className="scroll-mt-24">
+                                <h3 className="text-xl font-medium mb-3">Creating Orders</h3>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <p className="mb-2">Navigate to <Link href="/orders" className="text-primary hover:underline">/orders</Link>.</p>
+                                        <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                                            <li>Create orders for customers.</li>
+                                            <li>Orders are automatically assigned to a Warehouse based on availability (or manual selection).</li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div id="picking-strategies" className="scroll-mt-24">
+                                <h3 className="text-xl font-medium mb-3">Picking Strategies</h3>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <p className="mb-2">Configure these in <strong>Warehouse Details</strong>:</p>
+                                        <ol className="list-decimal pl-6 space-y-2 text-muted-foreground">
+                                            <li><strong>Standard:</strong> Pick orders one by one.</li>
+                                            <li><strong>Batch Picking:</strong> Group multiple orders into a single pick list.</li>
+                                            <li><strong>Cluster Picking:</strong> Pick for multiple orders simultaneously into sorted totes.</li>
+                                            <li><strong>Wave Picking:</strong> Aggregate demand for items across many orders for mass picking.</li>
+                                        </ol>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div id="worker-interface" className="scroll-mt-24">
+                                <h3 className="text-xl font-medium mb-3">Worker Interface</h3>
+                                <Card>
+                                    <CardContent className="pt-6">
+                                        <p className="mb-2">Navigate to <Link href="/picking" className="text-primary hover:underline">/picking</Link>.</p>
+                                        <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                                            <li>This is the mobile-friendly view for warehouse workers.</li>
+                                            <li>Workers select their active strategy and follow the guided picking steps.</li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+                    </section>
+
+                    <Separator />
+
+                    {/* Floor Plan Manager */}
+                    <section id="floor-plan-manager" className="scroll-mt-20">
+                        <div className="flex items-center gap-2 mb-4">
+                            <LayoutGrid className="h-6 w-6 text-primary" />
+                            <h2 className="text-2xl font-semibold">Floor Plan Manager</h2>
+                        </div>
+                        <Card>
+                            <CardContent className="pt-6">
+                                <p className="mb-2">Access via <strong>"Manage Floor Plan"</strong> on the Locations page.</p>
+                                <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                                    <li><strong>Visual Editor:</strong> Drag and drop Bays onto a canvas.</li>
+                                    <li><strong>Sidebar:</strong> Shows "Unmapped Bays" that need placement.</li>
+                                    <li><strong>Controls:</strong>
+                                        <ul className="list-circle pl-6 mt-1 space-y-1">
+                                            <li><strong>Drag:</strong> Move bays around.</li>
+                                            <li><strong>Rotate:</strong> Click the rotate icon on a selected bay.</li>
+                                            <li><strong>Save:</strong> Persist your layout.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Color Coding:</strong> Bays display their assigned color attribute.</li>
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </section>
+
+                </div>
+            </div>
         </div>
     );
 }

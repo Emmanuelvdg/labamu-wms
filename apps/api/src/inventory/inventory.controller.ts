@@ -24,6 +24,11 @@ export class InventoryController {
         return this.inventoryService.getProducts();
     }
 
+    @Get('products/:id')
+    getProduct(@Param('id') id: string) {
+        return this.inventoryService.getProduct(id);
+    }
+
     @Post('warehouses')
     createWarehouse(@Body() data: any) {
         return this.inventoryService.createWarehouse(data);

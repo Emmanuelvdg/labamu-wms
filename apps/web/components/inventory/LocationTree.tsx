@@ -20,6 +20,7 @@ interface LocationNode {
     name: string;
     type: string;
     structuralType?: string;
+    attributes?: { color?: string;[key: string]: any };
     children?: LocationNode[];
 }
 
@@ -33,16 +34,21 @@ const LocationTreeNode = ({ node, level = 0, onSelect }: { node: LocationNode; l
     const hasChildren = node.children && node.children.length > 0;
 
     const getIcon = (node: LocationNode) => {
-        if (node.type === 'VIEW') return <Folder className="h-4 w-4 mr-2 text-blue-500" />;
+        // @ts-ignore
+        const color = node.attributes?.color;
+        const style = color ? { color } : undefined;
+        const className = `h-4 w-4 mr-2 ${!color ? 'text-blue-500' : ''}`; // Default color class if no custom color
+
+        if (node.type === 'VIEW') return <Folder className={className} style={style} />;
 
         switch (node.structuralType) {
-            case 'WAREHOUSE': return <Factory className="h-4 w-4 mr-2 text-purple-600" />;
-            case 'ROOM': return <DoorOpen className="h-4 w-4 mr-2 text-orange-500" />;
-            case 'ROW': return <AlignJustify className="h-4 w-4 mr-2 text-yellow-600" />;
-            case 'BAY': return <Columns className="h-4 w-4 mr-2 text-cyan-600" />;
-            case 'SHELF': return <Layers className="h-4 w-4 mr-2 text-indigo-500" />;
-            case 'POSITION': return <Target className="h-4 w-4 mr-2 text-red-500" />;
-            default: return <MapPin className="h-4 w-4 mr-2 text-green-500" />;
+            case 'WAREHOUSE': return <Factory className={`h-4 w-4 mr-2 ${!color ? 'text-purple-600' : ''}`} style={style} />;
+            case 'ROOM': return <DoorOpen className={`h-4 w-4 mr-2 ${!color ? 'text-orange-500' : ''}`} style={style} />;
+            case 'ROW': return <AlignJustify className={`h-4 w-4 mr-2 ${!color ? 'text-yellow-600' : ''}`} style={style} />;
+            case 'BAY': return <Columns className={`h-4 w-4 mr-2 ${!color ? 'text-cyan-600' : ''}`} style={style} />;
+            case 'SHELF': return <Layers className={`h-4 w-4 mr-2 ${!color ? 'text-indigo-500' : ''}`} style={style} />;
+            case 'POSITION': return <Target className={`h-4 w-4 mr-2 ${!color ? 'text-red-500' : ''}`} style={style} />;
+            default: return <MapPin className={`h-4 w-4 mr-2 ${!color ? 'text-green-500' : ''}`} style={style} />;
         }
     };
 

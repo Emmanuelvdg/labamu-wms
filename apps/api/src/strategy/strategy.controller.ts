@@ -76,4 +76,26 @@ export class StrategyController {
     createWave(@Body() data: { criteria: 'product' | 'category'; warehouseId?: string }) {
         return this.pickingStrategyService.createWave(data.criteria, data.warehouseId);
     }
+
+    // --- Picking Session Management ---
+
+    @Post('picking/sessions')
+    createSession(@Body() data: { warehouseId: string; strategy: 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE'; criteria?: string; maxOrders?: number }) {
+        return this.pickingStrategyService.createSession(data);
+    }
+
+    @Get('picking/sessions/active')
+    getActiveSession(@Query('warehouseId') warehouseId: string) {
+        return this.pickingStrategyService.getActiveSession(warehouseId);
+    }
+
+    @Patch('picking/tasks/:id')
+    updateTask(@Param('id') id: string, @Body() data: { pickedQuantity: number; status: string; exceptionReason?: string }) {
+        return this.pickingStrategyService.updateTask(id, data);
+    }
+
+    @Post('picking/sessions/:id/complete')
+    completeSession(@Param('id') id: string) {
+        return this.pickingStrategyService.completeSession(id);
+    }
 }

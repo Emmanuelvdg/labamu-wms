@@ -57,7 +57,11 @@ export default function OrdersPage() {
                             </tr>
                         ) : (
                             orders.map((order) => (
-                                <tr key={order.id} className="hover:bg-gray-50">
+                                <tr
+                                    key={order.id}
+                                    className="hover:bg-gray-50 cursor-pointer"
+                                    onDoubleClick={() => window.location.href = `/orders/${order.id}`}
+                                >
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {order.id.substring(0, 8)}
                                     </td>

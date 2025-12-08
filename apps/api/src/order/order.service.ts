@@ -20,7 +20,7 @@ export class OrderService {
         private inventoryService: InventoryService,
     ) { }
 
-    async createOrder(data: { customerId: string; priority: string; items: { productId: string; quantity: number }[]; expectedDate?: Date }): Promise<Order> {
+    async createOrder(data: { customerId: string; priority: string; items: { productId: string; quantity: number }[]; expectedDate?: Date; warehouseId?: string }): Promise<Order> {
         // 1. Create Order
         const order = await this.prisma.order.create({
             data: {
@@ -28,6 +28,7 @@ export class OrderService {
                 priority: data.priority,
                 status: 'PENDING',
                 expectedDate: data.expectedDate,
+                warehouseId: data.warehouseId,
                 items: {
                     create: data.items.map(item => ({
                         productId: item.productId,
@@ -117,6 +118,20 @@ export class OrderService {
     async getOrders(): Promise<Order[]> {
         return this.prisma.order.findMany({
             include: { items: true, reservations: true, shipment: true },
+        });
+    }
+
+    async getOrder(id: string): Promise<Order | null> {
+        return this.prisma.order.findUnique({
+            where: { id },
+            include: {
+                items: { include: { product: true } },
+                reservations: true,
+                shipment: true,
+                pickingTasks: {
+                    include: { sourceLocation: true }
+                }
+            },
         });
     }
 

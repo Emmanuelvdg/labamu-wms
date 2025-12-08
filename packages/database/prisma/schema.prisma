@@ -41,6 +41,7 @@ model Product {
   purchaseOrderItems PurchaseOrderItem[]
   stockMoves      StockMove[]
   packaging       ProductPackaging[]
+  pickingTasks    PickingTask[]
 }
 
 model Route {
@@ -91,6 +92,7 @@ model Warehouse {
   batches        InventoryBatch[]
   pickingStrategies PickingStrategy[]
   orders         Order[]
+  pickingSessions PickingSession[]
 }
 
 model Location {
@@ -134,6 +136,7 @@ model Location {
   receipts        Receipt[]
   sourceMoves     StockMove[] @relation("MoveSource")
   destMoves       StockMove[] @relation("MoveDest")
+  pickingTasks    PickingTask[]
 }
 
 model ProductPackaging {
@@ -235,6 +238,7 @@ model Order {
   warehouse       Warehouse? @relation(fields: [warehouseId], references: [id])
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  pickingTasks    PickingTask[]
 }
 
 model OrderItem {
@@ -266,6 +270,36 @@ model PickingStrategy {
   warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
 
   @@unique([warehouseId, name]) // Unique per warehouse
+}
+
+model PickingSession {
+  id          String        @id @default(uuid())
+  warehouseId String
+  warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
+  strategy    String        // BATCH, WAVE, CLUSTER, SINGLE
+  status      String        @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+  pickerId    String?       // Link to User (optional)
+  tasks       PickingTask[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model PickingTask {
+  id               String         @id @default(uuid())
+  sessionId        String
+  session          PickingSession @relation(fields: [sessionId], references: [id])
+  orderId          String
+  order            Order          @relation(fields: [orderId], references: [id])
+  productId        String
+  product          Product        @relation(fields: [productId], references: [id])
+  sourceLocationId String
+  sourceLocation   Location       @relation(fields: [sourceLocationId], references: [id])
+  quantity         Int
+  pickedQuantity   Int            @default(0)
+  status           String         @default("PENDING") // PENDING, PICKED, PARTIALLY_PICKED, FAILED
+  exceptionReason  String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }
 
 model ReservationStrategy {

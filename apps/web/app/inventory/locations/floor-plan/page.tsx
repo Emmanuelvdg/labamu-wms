@@ -22,6 +22,7 @@ interface Location {
     height?: number;
     rotation?: number;
     warehouseId?: string;
+    attributes?: { color?: string;[key: string]: any };
 }
 
 export default function FloorPlanPage() {
@@ -350,6 +351,7 @@ export default function FloorPlanPage() {
                                     width: bay.width || 50,
                                     height: bay.height || 50,
                                     transform: `rotate(${bay.rotation || 0}deg)`,
+                                    backgroundColor: bay.attributes?.color || '#2563eb'
                                 }}
                                 title={bay.name}
                             >
