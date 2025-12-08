@@ -1,23 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     ClipboardList,
     Box,
     Layers,
     CheckCircle2,
     ArrowRight,
-    Package
+    Package,
+    Building
 } from 'lucide-react';
 
-import { createPickingBatch, createPickingCluster, createPickingWave } from '@/lib/api';
+import { createPickingBatch, createPickingCluster, createPickingWave, fetchWarehouses } from '@/lib/api';
 
 export default function PickingPage() {
+    const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
     const [activeStrategy, setActiveStrategy] = useState<'batch' | 'cluster' | 'wave' | null>(null);
     const [session, setSession] = useState<any>(null);
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        loadWarehouses();
+    }, []);
+
+    async function loadWarehouses() {
+        try {
+            const data = await fetchWarehouses();
+            setWarehouses(data);
+            if (data.length > 0) {
+                setSelectedWarehouseId(data[0].id);
+            }
+        } catch (err) {
+            console.error('Failed to load warehouses', err);
+        }
+    }
+
     const startSession = async (strategy: 'batch' | 'cluster' | 'wave') => {
+        if (!selectedWarehouseId) {
+            alert('Please select a warehouse first');
+            return;
+        }
+
         setLoading(true);
         setActiveStrategy(strategy);
 
@@ -25,7 +49,7 @@ export default function PickingPage() {
             let data;
             if (strategy === 'batch') {
                 // Default to 'location' criteria for now, or read from settings if available
-                data = await createPickingBatch('location');
+                data = await createPickingBatch('location', selectedWarehouseId);
 
                 // Map API response to UI state
                 if (data.generatedBatches && data.generatedBatches.length > 0) {
@@ -41,11 +65,11 @@ export default function PickingPage() {
                         totalItems: batch.orderCount
                     });
                 } else {
-                    alert('No pending orders to batch.');
+                    alert('No pending orders to batch for this warehouse.');
                     setActiveStrategy(null);
                 }
             } else if (strategy === 'cluster') {
-                data = await createPickingCluster(4);
+                data = await createPickingCluster(4, selectedWarehouseId);
 
                 if (data.assignments && data.assignments.length > 0) {
                     setSession({
@@ -58,11 +82,11 @@ export default function PickingPage() {
                         }))
                     });
                 } else {
-                    alert('No pending orders for cluster.');
+                    alert('No pending orders for cluster in this warehouse.');
                     setActiveStrategy(null);
                 }
             } else if (strategy === 'wave') {
-                data = await createPickingWave('product');
+                data = await createPickingWave('product', selectedWarehouseId);
 
                 if (data.pickingList && data.pickingList.length > 0) {
                     setSession({
@@ -76,7 +100,7 @@ export default function PickingPage() {
                         }))
                     });
                 } else {
-                    alert('No pending orders for wave.');
+                    alert('No pending orders for wave in this warehouse.');
                     setActiveStrategy(null);
                 }
             }
@@ -96,12 +120,27 @@ export default function PickingPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 p-8">
-            <header className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                    <ClipboardList className="h-8 w-8 text-blue-600" />
-                    Picking Operations
-                </h1>
-                <p className="text-gray-600 mt-1">Select a picking strategy to begin your work session.</p>
+            <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <ClipboardList className="h-8 w-8 text-blue-600" />
+                        Picking Operations
+                    </h1>
+                    <p className="text-gray-600 mt-1">Select a picking strategy to begin your work session.</p>
+                </div>
+
+                <div className="flex items-center gap-2 bg-white p-2 rounded-lg border shadow-sm">
+                    <Building className="h-5 w-5 text-gray-500 ml-2" />
+                    <select
+                        value={selectedWarehouseId}
+                        onChange={(e) => setSelectedWarehouseId(e.target.value)}
+                        className="border-none focus:ring-0 text-sm font-medium text-gray-700 bg-transparent cursor-pointer min-w-[200px]"
+                    >
+                        {warehouses.map(w => (
+                            <option key={w.id} value={w.id}>{w.name}</option>
+                        ))}
+                    </select>
+                </div>
             </header>
 
             {!session ? (

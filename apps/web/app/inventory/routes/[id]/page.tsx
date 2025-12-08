@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Plus, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { API_URL } from '@/lib/api';
+import { API_URL, fetchLocationsTree } from '@/lib/api';
 import {
     Dialog,
     DialogContent,
@@ -23,11 +23,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { LocationSelector } from '@/components/inventory/LocationSelector';
 
 export default function RouteDetailPage() {
     const params = useParams();
     const [route, setRoute] = useState<any>(null);
-    const [locations, setLocations] = useState<any[]>([]);
+    const [locationsTree, setLocationsTree] = useState<any[]>([]);
     const [open, setOpen] = useState(false);
     const [editingRule, setEditingRule] = useState<any>(null);
     const [formData, setFormData] = useState({
@@ -43,16 +44,15 @@ export default function RouteDetailPage() {
 
     async function load() {
         try {
-            const [routesRes, locsRes] = await Promise.all([
+            const [routesRes, locsData] = await Promise.all([
                 fetch(`${API_URL}/inventory/routes`),
-                fetch(`${API_URL}/inventory/locations`)
+                fetchLocationsTree()
             ]);
             const routesData = await routesRes.json();
-            const locsData = await locsRes.json();
 
             const currentRoute = routesData.find((r: any) => r.id === params.id);
             setRoute(currentRoute);
-            setLocations(locsData);
+            setLocationsTree(locsData);
         } catch (err) {
             console.error(err);
         }
@@ -105,6 +105,23 @@ export default function RouteDetailPage() {
         }
     };
 
+    // Helper to find location name in tree (recursive)
+    const findLocationName = (nodes: any[], id: string): string | null => {
+        for (const node of nodes) {
+            if (node.id === id) return node.name;
+            if (node.children) {
+                const found = findLocationName(node.children, id);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
+    const getLocationName = (id?: string) => {
+        if (!id) return 'External';
+        return findLocationName(locationsTree, id) || 'Unknown Location';
+    };
+
     if (!route) return <div className="p-8">Loading...</div>;
 
     return (
@@ -150,38 +167,24 @@ export default function RouteDetailPage() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Source Location</Label>
-                                <Select
+                                <Label className="mb-1 block">Source Location</Label>
+                                <LocationSelector
+                                    locations={locationsTree}
                                     value={formData.sourceLocationId}
-                                    onValueChange={(val) => setFormData({ ...formData, sourceLocationId: val })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Source (Optional)" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">None (External/Vendor)</SelectItem>
-                                        {locations.map(loc => (
-                                            <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    onChange={(id) => setFormData({ ...formData, sourceLocationId: id })}
+                                    placeholder="Select Source (Optional)"
+                                />
+                                <p className="text-xs text-muted-foreground">Leave empty for External/Vendor source.</p>
                             </div>
                             <div className="space-y-2">
-                                <Label>Destination Location</Label>
-                                <Select
+                                <Label className="mb-1 block">Destination Location</Label>
+                                <LocationSelector
+                                    locations={locationsTree}
                                     value={formData.destinationLocationId}
-                                    onValueChange={(val) => setFormData({ ...formData, destinationLocationId: val })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Destination (Optional)" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">None (External/Customer)</SelectItem>
-                                        {locations.map(loc => (
-                                            <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    onChange={(id) => setFormData({ ...formData, destinationLocationId: id })}
+                                    placeholder="Select Destination (Optional)"
+                                />
+                                <p className="text-xs text-muted-foreground">Leave empty for External/Customer destination.</p>
                             </div>
                             <div className="space-y-2">
                                 <Label>Sequence</Label>
@@ -213,12 +216,12 @@ export default function RouteDetailPage() {
                                 <div className="flex items-center space-x-2 text-sm">
                                     <span className="text-muted-foreground">From:</span>
                                     <span className="font-medium">
-                                        {locations.find(l => l.id === rule.sourceLocationId)?.name || 'External'}
+                                        {getLocationName(rule.sourceLocationId)}
                                     </span>
                                     <ArrowRight className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-muted-foreground">To:</span>
                                     <span className="font-medium">
-                                        {locations.find(l => l.id === rule.destinationLocationId)?.name || 'External'}
+                                        {getLocationName(rule.destinationLocationId)}
                                     </span>
                                 </div>
                             </div>

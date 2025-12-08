@@ -11,7 +11,7 @@ export class PurchaseOrderService {
         private ruleService: RuleService,
     ) { }
 
-    async createPurchaseOrder(data: { supplierId: string; expectedDate?: Date; items: { productId: string; quantity: number; unitCost: number }[]; destinationLocationId?: string }) {
+    async createPurchaseOrder(data: { supplierId: string; expectedDate?: Date; items: { productId: string; quantity: number; unitCost: number; packagingId?: string }[]; destinationLocationId?: string }) {
         return this.prisma.$transaction(async (tx) => {
             const po = await tx.purchaseOrder.create({
                 data: {
@@ -23,6 +23,7 @@ export class PurchaseOrderService {
                             productId: item.productId,
                             quantity: item.quantity,
                             unitCost: item.unitCost,
+                            packagingId: item.packagingId,
                         })),
                     },
                 },
@@ -72,7 +73,7 @@ export class PurchaseOrderService {
         console.log(`[PurchaseOrderService] Getting PO: ${id}`);
         const po = await this.prisma.purchaseOrder.findUnique({
             where: { id },
-            include: { items: { include: { product: true } }, supplier: true, receipts: true },
+            include: { items: { include: { product: true, packaging: true } }, supplier: true, receipts: true },
         });
         console.log(`[PurchaseOrderService] Found PO: ${po ? 'yes' : 'no'}`);
         return po;
@@ -88,7 +89,7 @@ export class PurchaseOrderService {
         const result = await this.prisma.$transaction(async (tx) => {
             const po = await tx.purchaseOrder.findUnique({
                 where: { id: purchaseOrderId },
-                include: { items: true },
+                include: { items: { include: { packaging: true } } },
             });
 
             if (!po) throw new Error('Purchase Order not found');
@@ -109,30 +110,68 @@ export class PurchaseOrderService {
             if (!location || !location.warehouseId) throw new Error('Destination location must belong to a warehouse');
 
             for (const item of po.items) {
-                // Create Inventory Batch
-                // Create Inventory Batch (Directly via Prisma to avoid service limitations)
+                // Determine quantity and packaging
+                let quantityToReceive = item.quantity;
+                let unitQuantity = item.quantity; // Base units per batch
+                let isPackaged = false;
 
-                // Wait, InventoryService.createBatch doesn't exist in the previous context. 
-                // I should check InventoryService again or implement the logic here.
-                // Let's implement logic here for now to avoid modifying InventoryService too much.
+                if (item.packaging) {
+                    // If packaged, item.quantity is number of PACKAGES.
+                    // We need to create item.quantity PACKAGES, each containing item.packaging.quantity UNITS.
+                    quantityToReceive = item.quantity * item.packaging.quantity;
+                    unitQuantity = item.packaging.quantity;
+                    isPackaged = true;
+                }
 
-                const batchNumber = `BATCH-${Date.now()}-${item.productId.substring(0, 4)}`;
+                if (isPackaged) {
+                    // Create multiple packages (LPNs)
+                    for (let i = 0; i < item.quantity; i++) {
+                        // Create Package LPN
+                        const pkg = await tx.package.create({
+                            data: {
+                                name: `${item.packaging?.type.toUpperCase()}-${Date.now()}-${i}`,
+                                type: item.packaging?.type || 'BOX',
+                                locationId: destinationLocationId,
+                                packagingId: item.packagingId
+                            }
+                        });
 
-                await tx.inventoryBatch.create({
-                    data: {
-                        productId: item.productId,
-                        warehouseId: location.warehouseId,
-                        locationId: destinationLocationId,
-                        batchNumber: batchNumber,
-                        initialQuantity: item.quantity,
-                        currentQuantity: item.quantity,
-                        costPerUnit: item.unitCost,
-                        purchaseDate: new Date(),
-                        status: 'Active',
-                    },
-                });
+                        // Create Batch inside Package
+                        const batchNumber = `BATCH-${Date.now()}-${item.productId.substring(0, 4)}-${i}`;
+                        await tx.inventoryBatch.create({
+                            data: {
+                                productId: item.productId,
+                                warehouseId: location.warehouseId,
+                                locationId: destinationLocationId,
+                                packageId: pkg.id,
+                                batchNumber: batchNumber,
+                                initialQuantity: unitQuantity,
+                                currentQuantity: unitQuantity,
+                                costPerUnit: item.unitCost,
+                                purchaseDate: new Date(),
+                                status: 'Active',
+                            },
+                        });
+                    }
+                } else {
+                    // Standard Item Receipt
+                    const batchNumber = `BATCH-${Date.now()}-${item.productId.substring(0, 4)}`;
+                    await tx.inventoryBatch.create({
+                        data: {
+                            productId: item.productId,
+                            warehouseId: location.warehouseId,
+                            locationId: destinationLocationId,
+                            batchNumber: batchNumber,
+                            initialQuantity: quantityToReceive,
+                            currentQuantity: quantityToReceive,
+                            costPerUnit: item.unitCost,
+                            purchaseDate: new Date(),
+                            status: 'Active',
+                        },
+                    });
+                }
 
-                // Update Aggregate Inventory
+                // Update Aggregate Inventory (Always in base units)
                 const existingInventory = await tx.productInventory.findFirst({
                     where: { productId: item.productId, warehouseId: location.warehouseId, locationId: destinationLocationId },
                 });
@@ -140,7 +179,7 @@ export class PurchaseOrderService {
                 if (existingInventory) {
                     await tx.productInventory.update({
                         where: { id: existingInventory.id },
-                        data: { quantity: { increment: item.quantity } },
+                        data: { quantity: { increment: quantityToReceive } },
                     });
                 } else {
                     await tx.productInventory.create({
@@ -148,7 +187,7 @@ export class PurchaseOrderService {
                             productId: item.productId,
                             warehouseId: location.warehouseId,
                             locationId: destinationLocationId,
-                            quantity: item.quantity,
+                            quantity: quantityToReceive,
                         },
                     });
                 }
@@ -158,7 +197,7 @@ export class PurchaseOrderService {
                     data: {
                         productId: item.productId,
                         type: 'IN',
-                        quantity: item.quantity,
+                        quantity: quantityToReceive,
                         referenceId: receipt.id,
                         date: new Date(),
                     },

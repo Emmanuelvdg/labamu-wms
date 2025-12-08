@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Patch, Param, Put, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch, Param, Put, Delete, Query } from '@nestjs/common';
 import { StrategyService } from './strategy.service';
 import { PickingStrategyService } from './picking-strategy.service';
 
@@ -10,7 +10,7 @@ export class StrategyController {
     ) { }
 
     @Post('picking')
-    evaluatePicking(@Body() data: { priority: string; itemCount: number; items: any[] }) {
+    evaluatePicking(@Body() data: { priority: string; itemCount: number; items: any[]; warehouseId: string }) {
         return this.strategyService.evaluatePickingStrategy(data);
     }
 
@@ -20,29 +20,16 @@ export class StrategyController {
     }
 
     @Get('picking')
-    getPickingStrategies() {
-        return this.strategyService.getPickingStrategies();
+    getPickingStrategies(@Query('warehouseId') warehouseId: string) {
+        return this.strategyService.getPickingStrategies(warehouseId);
     }
 
-    @Get('reservation')
-    getReservationStrategies() {
-        return this.strategyService.getReservationStrategies();
-    }
-
-    @Patch('picking/:id')
-    togglePicking(@Param('id') id: string, @Body('active') active: boolean) {
-        return this.strategyService.togglePickingStrategy(id, active);
-    }
-
-    @Patch('reservation/:id')
-    toggleReservation(@Param('id') id: string, @Body('active') active: boolean) {
-        return this.strategyService.toggleReservationStrategy(id, active);
-    }
+    // ...
 
     // --- Picking CRUD ---
 
     @Post('picking/create')
-    createPickingStrategy(@Body() data: { name: string; rules?: string }) {
+    createPickingStrategy(@Body() data: { name: string; rules?: string; warehouseId: string }) {
         return this.strategyService.createPickingStrategy(data);
     }
 
@@ -76,17 +63,17 @@ export class StrategyController {
     // --- Advanced Picking Strategies (Batch, Cluster, Wave) ---
 
     @Post('picking/batch')
-    createBatch(@Body() data: { criteria: 'contact' | 'carrier' | 'location' }) {
-        return this.pickingStrategyService.createBatch(data.criteria);
+    createBatch(@Body() data: { criteria: 'contact' | 'carrier' | 'location'; warehouseId?: string }) {
+        return this.pickingStrategyService.createBatch(data.criteria, data.warehouseId);
     }
 
     @Post('picking/cluster')
-    createCluster(@Body() data: { size: number }) {
-        return this.pickingStrategyService.createClusterBatch(data.size);
+    createCluster(@Body() data: { size: number; warehouseId?: string }) {
+        return this.pickingStrategyService.createClusterBatch(data.size, data.warehouseId);
     }
 
     @Post('picking/wave')
-    createWave(@Body() data: { criteria: 'product' | 'category' }) {
-        return this.pickingStrategyService.createWave(data.criteria);
+    createWave(@Body() data: { criteria: 'product' | 'category'; warehouseId?: string }) {
+        return this.pickingStrategyService.createWave(data.criteria, data.warehouseId);
     }
 }

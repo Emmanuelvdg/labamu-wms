@@ -393,20 +393,32 @@ export class InventoryService {
     }
 
     async getLocationsTree(warehouseId?: string) {
-        // If warehouseId is provided, find the root view location for that warehouse
-        if (warehouseId) {
-            const warehouse = await this.prisma.warehouse.findUnique({
-                where: { id: warehouseId },
-                include: { viewLocation: { include: { children: { include: { children: true } } } } }, // Simplified recursive include
-            });
-            return warehouse?.viewLocation ? [warehouse.viewLocation] : [];
-        }
-
-        // Otherwise return all root locations (no parent)
-        return this.prisma.location.findMany({
-            where: { parentId: null },
-            include: { children: { include: { children: true } } },
+        const locations = await this.prisma.location.findMany({
+            where: warehouseId ? { warehouseId } : {},
+            orderBy: { name: 'asc' }
         });
+
+        const locationMap = new Map();
+        const roots: any[] = [];
+
+        // 1. Initialize map
+        locations.forEach(loc => {
+            locationMap.set(loc.id, { ...loc, children: [] });
+        });
+
+        // 2. Build tree
+        locations.forEach(loc => {
+            if (loc.parentId && locationMap.has(loc.parentId)) {
+                locationMap.get(loc.parentId).children.push(locationMap.get(loc.id));
+            } else {
+                // If no parent, or parent not found (e.g. filtered out), treat as root
+                // But if we are filtering by warehouse, we should only return the warehouse view as root if possible
+                // For now, just pushing to roots is fine.
+                roots.push(locationMap.get(loc.id));
+            }
+        });
+
+        return roots;
     }
 
     async getLocations(warehouseId?: string) {
@@ -422,17 +434,146 @@ export class InventoryService {
         warehouseId?: string;
         parentId?: string;
         type?: string; // LocationType
+        structuralType?: string; // WAREHOUSE, ROOM, ROW, BAY, SHELF, POSITION
+        attributes?: any;
         removalStrategy?: string;
+        x?: number;
+        y?: number;
+        width?: number;
+        height?: number;
+        rotation?: number;
     }) {
+        if (data.structuralType && data.parentId) {
+            await this.validateHierarchy(data.structuralType, data.parentId);
+        }
+
         return this.prisma.location.create({
             data: {
                 name: data.name,
                 warehouseId: data.warehouseId,
                 parentId: data.parentId,
                 type: data.type || 'INTERNAL',
+                structuralType: data.structuralType,
+                attributes: data.attributes ? JSON.stringify(data.attributes) : undefined,
                 removalStrategy: data.removalStrategy,
+                x: data.x,
+                y: data.y,
+                width: data.width,
+                height: data.height,
+                rotation: data.rotation,
             },
         });
+    }
+
+    async updateLocation(id: string, data: {
+        name?: string;
+        parentId?: string | null;
+        type?: string;
+        structuralType?: string;
+        attributes?: any;
+        removalStrategy?: string;
+        inventoryFrequency?: number;
+        x?: number;
+        y?: number;
+        width?: number;
+        height?: number;
+        rotation?: number;
+    }) {
+        // Validation
+        if (data.structuralType && data.parentId) {
+            await this.validateHierarchy(data.structuralType, data.parentId);
+        } else if (data.structuralType) {
+            // If only structural type is changing, check against existing parent
+            const current = await this.prisma.location.findUnique({ where: { id } });
+            if (current?.parentId) {
+                await this.validateHierarchy(data.structuralType, current.parentId);
+            }
+        } else if (data.parentId) {
+            // If only parent is changing, check against existing structural type
+            const current = await this.prisma.location.findUnique({ where: { id } });
+            if (current?.structuralType) {
+                await this.validateHierarchy(current.structuralType, data.parentId);
+            }
+        }
+
+        return this.prisma.location.update({
+            where: { id },
+            data: {
+                name: data.name,
+                parentId: data.parentId,
+                type: data.type,
+                structuralType: data.structuralType,
+                attributes: data.attributes ? JSON.stringify(data.attributes) : undefined,
+                removalStrategy: data.removalStrategy,
+                inventoryFrequency: data.inventoryFrequency,
+                x: data.x,
+                y: data.y,
+                width: data.width,
+                height: data.height,
+                rotation: data.rotation,
+            },
+        });
+    }
+
+    private async validateHierarchy(childType: string, parentId: string) {
+        const parent = await this.prisma.location.findUnique({ where: { id: parentId } });
+        if (!parent) throw new Error('Parent location not found');
+
+        const parentType = parent.structuralType;
+        if (!parentType) return; // If parent has no structural type, assume it's flexible (migration support)
+
+        // Strict Hierarchy: Child -> Allowed Parent
+        const validParents: { [key: string]: string[] } = {
+            'POSITION': ['SHELF'],
+            'SHELF': ['BAY'],
+            'BAY': ['ROW'],
+            'ROW': ['ROOM'],
+            'ROOM': ['WAREHOUSE'],
+        };
+
+        const allowedParents = validParents[childType];
+        if (allowedParents && !allowedParents.includes(parentType)) {
+            throw new Error(`Invalid hierarchy: ${childType} must be a child of ${allowedParents.join(' or ')}. Found parent type: ${parentType}`);
+        }
+    }
+
+    async getLocationDetails(id: string) {
+        const location = await this.prisma.location.findUnique({
+            where: { id },
+            include: { parent: true }
+        });
+        if (!location) throw new Error('Location not found');
+
+        // Resolve inherited properties
+        const inheritedAttributes = await this.resolveProperties(location);
+
+        return {
+            ...location,
+            attributes: location.attributes ? JSON.parse(location.attributes) : {},
+            inheritedAttributes
+        };
+    }
+
+    private async resolveProperties(location: any): Promise<any> {
+        let current = location;
+        let mergedAttributes = {};
+
+        // Traverse up to root
+        while (current && current.parentId) {
+            current = await this.prisma.location.findUnique({ where: { id: current.parentId } });
+            if (current && current.attributes) {
+                try {
+                    const attrs = JSON.parse(current.attributes);
+                    // Merge attributes (parent attributes are defaults, child overrides if needed, but here we want to show what is inherited)
+                    // For "inheritance", we usually mean properties that apply to children.
+                    // Let's accumulate them.
+                    mergedAttributes = { ...mergedAttributes, ...attrs };
+                } catch (e) {
+                    // Ignore parse errors
+                }
+            }
+        }
+        return mergedAttributes;
     }
 
     async createAdjustment(data: {
@@ -785,12 +926,13 @@ export class InventoryService {
         return suggestions;
     }
 
-    async createPackage(data: { name: string; type: string; locationId?: string }) {
+    async createPackage(data: { name: string; type: string; locationId?: string; packagingId?: string }) {
         return this.prisma.package.create({
             data: {
                 name: data.name,
                 type: data.type,
                 locationId: data.locationId,
+                packagingId: data.packagingId
             },
         });
     }
@@ -1349,6 +1491,32 @@ export class InventoryService {
             }
 
             return updatedMove;
+        });
+    }
+    // --- Product Packaging ---
+
+    async createProductPackaging(data: {
+        name: string;
+        type: string;
+        productId: string;
+        quantity: number;
+        width?: number;
+        height?: number;
+        depth?: number;
+        weight?: number;
+        barcode?: number;
+    }) {
+        return this.prisma.productPackaging.create({
+            data: {
+                ...data,
+                barcode: data.barcode ? data.barcode.toString() : undefined
+            }
+        });
+    }
+
+    async getProductPackaging(productId: string) {
+        return this.prisma.productPackaging.findMany({
+            where: { productId }
         });
     }
 }

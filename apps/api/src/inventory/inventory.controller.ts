@@ -154,6 +154,16 @@ export class InventoryController {
         return this.inventoryService.createLocation(data);
     }
 
+    @Get('locations/:id')
+    getLocationDetails(@Param('id') id: string) {
+        return this.inventoryService.getLocationDetails(id);
+    }
+
+    @Put('locations/:id')
+    updateLocation(@Param('id') id: string, @Body() data: any) {
+        return this.inventoryService.updateLocation(id, data);
+    }
+
     @Put('locations/:id/move')
     moveLocation(@Param('id') id: string, @Body() data: { newParentId: string | null }) {
         return this.inventoryService.moveLocation(id, data.newParentId);
@@ -169,8 +179,18 @@ export class InventoryController {
         return this.inventoryService.getPutawayRules();
     }
 
+    @Post('products/:id/packaging')
+    createProductPackaging(@Param('id') id: string, @Body() data: any) {
+        return this.inventoryService.createProductPackaging({ ...data, productId: id });
+    }
+
+    @Get('products/:id/packaging')
+    getProductPackaging(@Param('id') id: string) {
+        return this.inventoryService.getProductPackaging(id);
+    }
+
     @Post('packages')
-    createPackage(@Body() data: { name: string; type: string; locationId?: string }) {
+    createPackage(@Body() data: { name: string; type: string; locationId?: string; packagingId?: string }) {
         return this.inventoryService.createPackage(data);
     }
 

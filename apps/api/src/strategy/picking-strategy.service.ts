@@ -7,10 +7,13 @@ export class PickingStrategyService {
 
     // --- Batch Picking ---
     // Groups whole orders together based on criteria
-    async createBatch(criteria: 'contact' | 'carrier' | 'location' = 'location') {
+    async createBatch(criteria: 'contact' | 'carrier' | 'location' = 'location', warehouseId?: string) {
         // 1. Find all PENDING orders
+        const whereClause: any = { status: 'PENDING' };
+        if (warehouseId) whereClause.warehouseId = warehouseId;
+
         const pendingOrders = await this.prisma.order.findMany({
-            where: { status: 'PENDING' },
+            where: whereClause,
             include: { items: true }
         });
 
@@ -54,9 +57,12 @@ export class PickingStrategyService {
 
     // --- Cluster Picking ---
     // Groups orders into a "Cluster" where each order is assigned a specific tote/box
-    async createClusterBatch(maxSize: number = 4) {
+    async createClusterBatch(maxSize: number = 4, warehouseId?: string) {
+        const whereClause: any = { status: 'PENDING' };
+        if (warehouseId) whereClause.warehouseId = warehouseId;
+
         const pendingOrders = await this.prisma.order.findMany({
-            where: { status: 'PENDING' },
+            where: whereClause,
             take: maxSize,
             orderBy: { createdAt: 'asc' },
             include: { items: true }
@@ -80,9 +86,12 @@ export class PickingStrategyService {
 
     // --- Wave Picking ---
     // Groups line items from multiple orders to pick them all at once
-    async createWave(criteria: 'product' | 'category' = 'product') {
+    async createWave(criteria: 'product' | 'category' = 'product', warehouseId?: string) {
+        const whereClause: any = { status: 'PENDING' };
+        if (warehouseId) whereClause.warehouseId = warehouseId;
+
         const pendingOrders = await this.prisma.order.findMany({
-            where: { status: 'PENDING' },
+            where: whereClause,
             include: { items: { include: { product: true } } }
         });
 

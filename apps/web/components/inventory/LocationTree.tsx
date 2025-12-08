@@ -1,12 +1,25 @@
 import { useState } from 'react';
-import { ChevronRight, ChevronDown, Folder, MapPin } from 'lucide-react';
+import {
+    ChevronRight,
+    ChevronDown,
+    Folder,
+    MapPin,
+    Factory,
+    DoorOpen,
+    AlignJustify,
+    Columns,
+    Layers,
+    Target
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface LocationNode {
     id: string;
     name: string;
     type: string;
+    structuralType?: string;
     children?: LocationNode[];
 }
 
@@ -16,8 +29,22 @@ interface LocationTreeProps {
 }
 
 const LocationTreeNode = ({ node, level = 0, onSelect }: { node: LocationNode; level?: number; onSelect?: (node: LocationNode) => void }) => {
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(true); // Default to open to show full tree
     const hasChildren = node.children && node.children.length > 0;
+
+    const getIcon = (node: LocationNode) => {
+        if (node.type === 'VIEW') return <Folder className="h-4 w-4 mr-2 text-blue-500" />;
+
+        switch (node.structuralType) {
+            case 'WAREHOUSE': return <Factory className="h-4 w-4 mr-2 text-purple-600" />;
+            case 'ROOM': return <DoorOpen className="h-4 w-4 mr-2 text-orange-500" />;
+            case 'ROW': return <AlignJustify className="h-4 w-4 mr-2 text-yellow-600" />;
+            case 'BAY': return <Columns className="h-4 w-4 mr-2 text-cyan-600" />;
+            case 'SHELF': return <Layers className="h-4 w-4 mr-2 text-indigo-500" />;
+            case 'POSITION': return <Target className="h-4 w-4 mr-2 text-red-500" />;
+            default: return <MapPin className="h-4 w-4 mr-2 text-green-500" />;
+        }
+    };
 
     return (
         <div className="select-none">
@@ -43,12 +70,14 @@ const LocationTreeNode = ({ node, level = 0, onSelect }: { node: LocationNode; l
                         <span className="w-3" />
                     )}
                 </Button>
-                {node.type === 'VIEW' ? (
-                    <Folder className="h-4 w-4 mr-2 text-blue-500" />
-                ) : (
-                    <MapPin className="h-4 w-4 mr-2 text-green-500" />
-                )}
-                <span className="text-sm">{node.name}</span>
+                {getIcon(node)}
+                <Link
+                    href={`/inventory/locations/${node.id}`}
+                    className="text-sm hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {node.name}
+                </Link>
                 <span className="ml-2 text-xs text-muted-foreground">({node.type})</span>
             </div>
             {isOpen && hasChildren && (

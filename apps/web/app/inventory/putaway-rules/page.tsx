@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchPutawayRules, createPutawayRule, fetchLocations, fetchProducts } from '../../../lib/api';
+import { fetchPutawayRules, createPutawayRule, fetchLocationsTree, fetchProducts } from '../../../lib/api';
+import { LocationSelector } from '@/components/inventory/LocationSelector';
 
 export default function PutawayRulesPage() {
     const [rules, setRules] = useState<any[]>([]);
-    const [locations, setLocations] = useState<any[]>([]);
+    const [locationsTree, setLocationsTree] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -25,32 +26,17 @@ export default function PutawayRulesPage() {
         try {
             const [rulesData, locationsData, productsData] = await Promise.all([
                 fetchPutawayRules(),
-                fetchLocations(),
+                fetchLocationsTree(), // Fetch tree structure
                 fetchProducts(),
             ]);
             setRules(rulesData);
-            // Flatten locations for dropdown if needed, or just use raw list if API returns flat
-            // Assuming fetchLocations returns a tree, we might need to flatten it or just pick leaf nodes.
-            // For simplicity, let's assume we can pick any location.
-            // If fetchLocations returns a tree, we need a helper to flatten it.
-            setLocations(flattenLocations(locationsData));
+            setLocationsTree(locationsData);
             setProducts(productsData);
         } catch (error) {
             console.error('Failed to load data:', error);
         } finally {
             setLoading(false);
         }
-    };
-
-    const flattenLocations = (nodes: any[]): any[] => {
-        let flat: any[] = [];
-        nodes.forEach(node => {
-            flat.push(node);
-            if (node.children) {
-                flat = flat.concat(flattenLocations(node.children));
-            }
-        });
-        return flat;
     };
 
     const handleCreate = async (e: React.FormEvent) => {
@@ -152,31 +138,22 @@ export default function PutawayRulesPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">When Arriving At (Optional)</label>
-                                    <select
-                                        className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">When Arriving At (Optional)</label>
+                                    <LocationSelector
+                                        locations={locationsTree}
                                         value={newRule.sourceLocationId}
-                                        onChange={(e) => setNewRule({ ...newRule, sourceLocationId: e.target.value })}
-                                    >
-                                        <option value="">-- Any Location --</option>
-                                        {locations.map(l => (
-                                            <option key={l.id} value={l.id}>{l.name} ({l.type})</option>
-                                        ))}
-                                    </select>
+                                        onChange={(id) => setNewRule({ ...newRule, sourceLocationId: id })}
+                                        placeholder="Select Source Location"
+                                    />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Destination Location</label>
-                                    <select
-                                        required
-                                        className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Destination Location</label>
+                                    <LocationSelector
+                                        locations={locationsTree}
                                         value={newRule.locationId}
-                                        onChange={(e) => setNewRule({ ...newRule, locationId: e.target.value })}
-                                    >
-                                        <option value="">-- Select Location --</option>
-                                        {locations.map(l => (
-                                            <option key={l.id} value={l.id}>{l.name} ({l.type})</option>
-                                        ))}
-                                    </select>
+                                        onChange={(id) => setNewRule({ ...newRule, locationId: id })}
+                                        placeholder="Select Destination Location"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Priority</label>

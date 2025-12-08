@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Plus, MapPin, Building } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 export default function WarehousesPage() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
@@ -219,33 +220,35 @@ export default function WarehousesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {warehouses.map((warehouse) => (
-                    <Card key={warehouse.id} className="hover:shadow-lg transition-shadow">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <div className="flex flex-col">
-                                <CardTitle className="text-xl font-bold">
-                                    {warehouse.name}
-                                </CardTitle>
-                                <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded mt-1 w-fit">
-                                    {warehouse.shortName || 'N/A'}
-                                </span>
-                            </div>
-                            <Building className="h-5 w-5 text-gray-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center text-sm text-gray-500 mt-2">
-                                <MapPin className="w-4 h-4 mr-1" />
-                                {warehouse.address || warehouse.location?.address || 'No address'}
-                            </div>
-                            <div className="mt-4 flex gap-2">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${warehouse.type === 'PHYSICAL'
-                                    ? 'bg-blue-100 text-blue-800'
-                                    : 'bg-purple-100 text-purple-800'
-                                    }`}>
-                                    {warehouse.type}
-                                </span>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <Link href={`/inventory/warehouses/${warehouse.id}`} key={warehouse.id}>
+                        <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <div className="flex flex-col">
+                                    <CardTitle className="text-xl font-bold">
+                                        {warehouse.name}
+                                    </CardTitle>
+                                    <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded mt-1 w-fit">
+                                        {warehouse.shortName || 'N/A'}
+                                    </span>
+                                </div>
+                                <Building className="h-5 w-5 text-gray-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex items-center text-sm text-gray-500 mt-2">
+                                    <MapPin className="w-4 h-4 mr-1" />
+                                    {warehouse.address || warehouse.location?.address || 'No address'}
+                                </div>
+                                <div className="mt-4 flex gap-2">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${warehouse.type === 'PHYSICAL'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-purple-100 text-purple-800'
+                                        }`}>
+                                        {warehouse.type}
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 ))}
             </div>
         </div>

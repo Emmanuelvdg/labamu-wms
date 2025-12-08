@@ -12,14 +12,17 @@ export class StrategyService {
 
     constructor(private prisma: PrismaService) { }
 
-    async evaluatePickingStrategy(orderData: { priority: string; itemCount: number; items: any[] }): Promise<string> {
-        // Check for active override
+    async evaluatePickingStrategy(orderData: { priority: string; itemCount: number; items: any[]; warehouseId: string }): Promise<string> {
+        // Check for active override for this warehouse
         const activeStrategy = await this.prisma.pickingStrategy.findFirst({
-            where: { active: true },
+            where: {
+                active: true,
+                warehouseId: orderData.warehouseId
+            },
         });
-        if (activeStrategy && activeStrategy.name !== 'Wave') { // Assume Wave is default/fallback
-            // In a real app, we'd evaluate rules here. For now, if a specific one is forced active, use it.
-            // But usually multiple can be active. Let's stick to the logic but allow "disabling" strategies.
+
+        if (activeStrategy) {
+            return activeStrategy.name;
         }
 
         // Logic:
@@ -36,37 +39,42 @@ export class StrategyService {
         return 'Wave';
     }
 
-    async evaluateReservationStrategy(productData: { isPerishable: boolean; location: any }): Promise<string> {
-        // Check if FEFO is active
-        const fefo = await this.prisma.reservationStrategy.findUnique({ where: { name: 'FEFO' } });
+    async evaluateReservationStrategy(data: { isPerishable: boolean; location: any }): Promise<string> {
+        // Check for active override
+        const activeStrategy = await this.prisma.reservationStrategy.findFirst({
+            where: { active: true },
+        });
 
-        if (productData.isPerishable && fefo?.active) {
-            return 'FEFO';
+        if (activeStrategy) {
+            return activeStrategy.name;
         }
 
+        // Default Logic:
+        // 1. Perishable -> FEFO (First Expired First Out)
+        if (data.isPerishable) return 'FEFO';
+
+        // 2. Default -> FIFO
         return 'FIFO';
     }
 
-    async getPickingStrategies() {
-        return this.prisma.pickingStrategy.findMany();
-    }
+    // ... Reservation Strategy methods unchanged ...
 
-    async getReservationStrategies() {
-        const strategies = await this.prisma.reservationStrategy.findMany();
-        this.log(`Found ${strategies.length} strategies.`);
-        strategies.forEach(s => this.log(`- ${s.name}: active=${s.active}, id=${s.id}`));
-        return strategies;
-    }
-
-    async togglePickingStrategy(id: string, active: boolean) {
-        return this.prisma.pickingStrategy.update({
-            where: { id },
-            data: { active },
+    async getPickingStrategies(warehouseId: string) {
+        return this.prisma.pickingStrategy.findMany({
+            where: { warehouseId }
         });
     }
 
-    async toggleReservationStrategy(id: string, active: boolean) {
-        return this.prisma.reservationStrategy.update({
+    // ...
+
+    async getReservationStrategies() {
+        return this.prisma.reservationStrategy.findMany();
+    }
+
+    async togglePickingStrategy(id: string, active: boolean) {
+        // Ensure only one strategy is active per warehouse if we want strict single-strategy
+        // For now, just toggle.
+        return this.prisma.pickingStrategy.update({
             where: { id },
             data: { active },
         });
@@ -74,12 +82,16 @@ export class StrategyService {
 
     // --- CRUD for Picking Strategies ---
 
-    async createPickingStrategy(data: { name: string; rules?: string }) {
+    async createPickingStrategy(data: { name: string; rules?: string; warehouseId: string }) {
+        // Deactivate others if we want single active strategy
+        // await this.prisma.pickingStrategy.updateMany({ where: { warehouseId: data.warehouseId }, data: { active: false } });
+
         return this.prisma.pickingStrategy.create({
             data: {
                 name: data.name,
                 rules: data.rules || '{}',
                 active: true,
+                warehouseId: data.warehouseId,
             },
         });
     }

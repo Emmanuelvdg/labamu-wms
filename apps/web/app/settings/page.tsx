@@ -51,8 +51,8 @@ export default function SettingsPage() {
                             <button
                                 onClick={() => setActiveTab('general')}
                                 className={`px-4 py-3 text-left text-sm font-medium border-l-4 transition-colors ${activeTab === 'general'
-                                        ? 'border-blue-600 bg-blue-50 text-blue-700'
-                                        : 'border-transparent text-gray-600 hover:bg-gray-50'
+                                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                    : 'border-transparent text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
                                 General
@@ -60,8 +60,8 @@ export default function SettingsPage() {
                             <button
                                 onClick={() => setActiveTab('picking')}
                                 className={`px-4 py-3 text-left text-sm font-medium border-l-4 transition-colors ${activeTab === 'picking'
-                                        ? 'border-blue-600 bg-blue-50 text-blue-700'
-                                        : 'border-transparent text-gray-600 hover:bg-gray-50'
+                                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                    : 'border-transparent text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
                                 Picking Strategies
@@ -69,8 +69,8 @@ export default function SettingsPage() {
                             <button
                                 onClick={() => setActiveTab('users')}
                                 className={`px-4 py-3 text-left text-sm font-medium border-l-4 transition-colors ${activeTab === 'users'
-                                        ? 'border-blue-600 bg-blue-50 text-blue-700'
-                                        : 'border-transparent text-gray-600 hover:bg-gray-50'
+                                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                                    : 'border-transparent text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
                                 Users & Permissions
@@ -81,149 +81,18 @@ export default function SettingsPage() {
 
                 {/* Content Area */}
                 <div className="flex-1">
-                    {activeTab === 'picking' && (
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <div className="mb-6">
-                                <h2 className="text-xl font-semibold text-gray-900">Picking Strategy Configuration</h2>
-                                <p className="text-gray-500 text-sm mt-1">
-                                    Select how orders should be grouped and processed by warehouse workers.
-                                </p>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                                <StrategyCard
-                                    id="standard"
-                                    title="Standard"
-                                    description="Pick orders one by one. Best for low volume or bulky items."
-                                    icon={<CheckCircle2 className="h-6 w-6" />}
-                                    selected={pickingStrategy === 'standard'}
-                                    onSelect={setPickingStrategy}
-                                />
-                                <StrategyCard
-                                    id="batch"
-                                    title="Batch Picking"
-                                    description="Group multiple orders to pick them together in one go."
-                                    icon={<Layers className="h-6 w-6" />}
-                                    selected={pickingStrategy === 'batch'}
-                                    onSelect={setPickingStrategy}
-                                />
-                                <StrategyCard
-                                    id="cluster"
-                                    title="Cluster Picking"
-                                    description="Pick items for multiple orders into specific totes/boxes."
-                                    icon={<Box className="h-6 w-6" />}
-                                    selected={pickingStrategy === 'cluster'}
-                                    onSelect={setPickingStrategy}
-                                />
-                                <StrategyCard
-                                    id="wave"
-                                    title="Wave Picking"
-                                    description="Pick all items of the same type for many orders at once."
-                                    icon={<Truck className="h-6 w-6" />}
-                                    selected={pickingStrategy === 'wave'}
-                                    onSelect={setPickingStrategy}
-                                />
-                            </div>
-
+                    {activeTab === 'picking' ? (
+                        <div>
                             {/* Configuration Details */}
                             <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                                {pickingStrategy === 'standard' && (
-                                    <div>
-                                        <h3 className="font-medium text-gray-900 mb-2">Standard Configuration</h3>
-                                        <p className="text-sm text-gray-600">No additional configuration required. Orders will be assigned individually.</p>
-                                    </div>
-                                )}
-
-                                {pickingStrategy === 'batch' && (
-                                    <div>
-                                        <h3 className="font-medium text-gray-900 mb-4">Batch Configuration</h3>
-                                        <div className="space-y-3">
-                                            <label className="block text-sm font-medium text-gray-700">Group Batches By:</label>
-                                            <div className="flex gap-4">
-                                                {['contact', 'carrier', 'location'].map((criteria) => (
-                                                    <label key={criteria} className="flex items-center gap-2 cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={batchCriteria.includes(criteria)}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setBatchCriteria([...batchCriteria, criteria]);
-                                                                } else {
-                                                                    setBatchCriteria(batchCriteria.filter(c => c !== criteria));
-                                                                }
-                                                            }}
-                                                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                        />
-                                                        <span className="capitalize text-sm text-gray-700">{criteria}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {pickingStrategy === 'cluster' && (
-                                    <div>
-                                        <h3 className="font-medium text-gray-900 mb-4">Cluster Configuration</h3>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Max Orders per Cluster</label>
-                                            <input
-                                                type="number"
-                                                value={clusterSize}
-                                                onChange={(e) => setClusterSize(parseInt(e.target.value))}
-                                                min={1}
-                                                max={20}
-                                                className="block w-32 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
-                                            />
-                                            <p className="text-xs text-gray-500 mt-1">Number of totes/boxes a picker can handle at once.</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {pickingStrategy === 'wave' && (
-                                    <div>
-                                        <h3 className="font-medium text-gray-900 mb-4">Wave Configuration</h3>
-                                        <div className="space-y-3">
-                                            <label className="block text-sm font-medium text-gray-700">Group Waves By:</label>
-                                            <div className="flex gap-4">
-                                                {['product', 'category'].map((criteria) => (
-                                                    <label key={criteria} className="flex items-center gap-2 cursor-pointer">
-                                                        <input
-                                                            type="radio"
-                                                            name="waveCriteria"
-                                                            checked={waveCriteria === criteria}
-                                                            onChange={() => setWaveCriteria(criteria)}
-                                                            className="border-gray-300 text-blue-600 focus:ring-blue-500"
-                                                        />
-                                                        <span className="capitalize text-sm text-gray-700">{criteria}</span>
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mt-6 flex items-center justify-end gap-4">
-                                {success && (
-                                    <span className="text-green-600 text-sm font-medium flex items-center gap-1 animate-fade-in">
-                                        <CheckCircle2 className="h-4 w-4" />
-                                        Settings Saved
-                                    </span>
-                                )}
-                                <button
-                                    onClick={handleSave}
-                                    disabled={loading}
-                                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                                >
-                                    <Save className="h-4 w-4" />
-                                    {loading ? 'Saving...' : 'Save Changes'}
-                                </button>
+                                <p className="text-gray-500 italic">
+                                    Picking strategies are now configured per warehouse. Please go to
+                                    <a href="/inventory/warehouses" className="text-blue-600 hover:underline ml-1">Warehouses</a>
+                                    to configure them.
+                                </p>
                             </div>
                         </div>
-                    )}
-
-                    {activeTab !== 'picking' && (
+                    ) : (
                         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                             <p className="text-gray-500">This section is under development.</p>
                         </div>
@@ -239,8 +108,8 @@ function StrategyCard({ id, title, description, icon, selected, onSelect }: any)
         <div
             onClick={() => onSelect(id)}
             className={`cursor-pointer rounded-lg border p-4 transition-all ${selected
-                    ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600'
-                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600'
+                : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                 }`}
         >
             <div className={`mb-3 ${selected ? 'text-blue-600' : 'text-gray-500'}`}>

@@ -31,14 +31,37 @@ export default function NewPurchaseOrderPage() {
         }
     }
 
+    const [packagingOptions, setPackagingOptions] = useState<Record<string, any[]>>({});
+
+    // ... (existing loadData)
+
     function addItem() {
-        setItems([...items, { productId: '', quantity: 1, unitCost: 0 }]);
+        setItems([...items, { productId: '', quantity: 1, unitCost: 0, packagingId: undefined }]);
     }
 
     function updateItem(index: number, field: string, value: any) {
         const newItems = [...items];
+        // @ts-ignore
         newItems[index] = { ...newItems[index], [field]: value };
         setItems(newItems);
+    }
+
+    async function handleProductChange(index: number, productId: string) {
+        updateItem(index, 'productId', productId);
+        updateItem(index, 'packagingId', undefined); // Reset packaging
+
+        if (productId && !packagingOptions[productId]) {
+            // Fetch packaging
+            try {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/inventory/products/${productId}/packaging`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setPackagingOptions(prev => ({ ...prev, [productId]: data }));
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
     }
 
     function removeItem(index: number) {
@@ -58,6 +81,7 @@ export default function NewPurchaseOrderPage() {
                     productId: i.productId,
                     quantity: Number(i.quantity),
                     unitCost: Number(i.unitCost),
+                    packagingId: i.packagingId || undefined,
                 })),
             });
             router.push('/inventory/purchases');
@@ -102,18 +126,34 @@ export default function NewPurchaseOrderPage() {
 
                     <div className="space-y-3">
                         {items.map((item, index) => (
-                            <div key={index} className="flex gap-4 items-end border p-3 rounded">
-                                <div className="flex-1">
+                            <div key={index} className="flex gap-4 items-end border p-3 rounded flex-wrap">
+                                <div className="flex-1 min-w-[200px]">
                                     <label className="block text-xs font-medium text-gray-500">Product</label>
                                     <select
                                         className="w-full border rounded p-2 text-sm"
                                         value={item.productId}
-                                        onChange={e => updateItem(index, 'productId', e.target.value)}
+                                        onChange={e => handleProductChange(index, e.target.value)}
                                         required
                                     >
                                         <option value="">Select Product</option>
                                         {products.map(p => (
                                             <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="w-40">
+                                    <label className="block text-xs font-medium text-gray-500">Unit</label>
+                                    <select
+                                        className="w-full border rounded p-2 text-sm"
+                                        // @ts-ignore
+                                        value={item.packagingId || ''}
+                                        onChange={e => updateItem(index, 'packagingId', e.target.value || undefined)}
+                                    >
+                                        <option value="">Base Unit</option>
+                                        {item.productId && packagingOptions[item.productId]?.map((pkg: any) => (
+                                            <option key={pkg.id} value={pkg.id}>
+                                                {pkg.name} ({pkg.quantity} units)
+                                            </option>
                                         ))}
                                     </select>
                                 </div>

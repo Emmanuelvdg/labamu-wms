@@ -40,6 +40,7 @@ model Product {
   routes          Route[]
   purchaseOrderItems PurchaseOrderItem[]
   stockMoves      StockMove[]
+  packaging       ProductPackaging[]
 }
 
 model Route {
@@ -88,12 +89,16 @@ model Warehouse {
   
   inventory      ProductInventory[]
   batches        InventoryBatch[]
+  pickingStrategies PickingStrategy[]
+  orders         Order[]
 }
 
 model Location {
   id          String   @id @default(uuid())
   name        String
   type        String   // VIEW, INTERNAL, VENDOR, CUSTOMER, INVENTORY_LOSS, PRODUCTION, TRANSIT
+  structuralType String? // WAREHOUSE, ROOM, ROW, BAY, SHELF, POSITION
+  attributes  String?  // JSON: { temperature: 'refrigerated', loadBearing: true, ... }
   removalStrategy String? // FIFO, LIFO, FEFO
   inventoryFrequency Int @default(0) // Days
   nextInventoryDate DateTime?
@@ -101,6 +106,13 @@ model Location {
   // Capacity
   maxVolume   Float?   // m3
   maxWeight   Float?   // kg
+
+  // Floor Plan Coordinates (for Bays)
+  x           Float?   @default(0)
+  y           Float?   @default(0)
+  width       Float?   @default(1)
+  height      Float?   @default(1)
+  rotation    Float?   @default(0)
   
   parentId    String?
   parent      Location? @relation("LocationHierarchy", fields: [parentId], references: [id])
@@ -122,6 +134,28 @@ model Location {
   receipts        Receipt[]
   sourceMoves     StockMove[] @relation("MoveSource")
   destMoves       StockMove[] @relation("MoveDest")
+}
+
+model ProductPackaging {
+  id          String   @id @default(uuid())
+  name        String   // e.g. "Box of 12", "Pallet"
+  type        String   // BOX, PALLET, UNIT
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int      // Quantity of base units
+  
+  // Dimensions & Weight
+  width       Float?   // cm
+  height      Float?   // cm
+  depth       Float?   // cm
+  weight      Float?   // kg
+  
+  barcode     String?
+  
+  packages    Package[]
+  purchaseOrderItems PurchaseOrderItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 // Aggregate Inventory (Legacy/Fast Lookup)
@@ -164,7 +198,9 @@ model InventoryBatch {
 model Package {
   id          String   @id @default(uuid())
   name        String   @unique // Barcode / LPN
-  type        String   // Box, Pallet, etc.
+  type        String   // Box, Pallet, etc. (Legacy/Simple)
+  packagingId String?
+  packaging   ProductPackaging? @relation(fields: [packagingId], references: [id])
   locationId  String?
   location    Location? @relation(fields: [locationId], references: [id])
   batches     InventoryBatch[]
@@ -195,6 +231,8 @@ model Order {
   items           OrderItem[]
   reservations    Reservation[]
   shipment        Shipment?
+  warehouseId     String? // Optional for now to support existing orders, but should be required
+  warehouse       Warehouse? @relation(fields: [warehouseId], references: [id])
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -220,10 +258,14 @@ model Reservation {
 }
 
 model PickingStrategy {
-  id     String  @id @default(uuid())
-  name   String  @unique // Single, Cluster, Wave, Batch
-  rules  String  // JSON
-  active Boolean @default(true)
+  id          String    @id @default(uuid())
+  name        String    // Single, Cluster, Wave, Batch
+  rules       String    // JSON
+  active      Boolean   @default(true)
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+
+  @@unique([warehouseId, name]) // Unique per warehouse
 }
 
 model ReservationStrategy {
@@ -345,6 +387,8 @@ model PurchaseOrderItem {
   product         Product       @relation(fields: [productId], references: [id])
   quantity        Int
   unitCost        Float         @default(0)
+  packagingId     String?
+  packaging       ProductPackaging? @relation(fields: [packagingId], references: [id])
 }
 
 model Receipt {

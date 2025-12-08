@@ -1,6 +1,6 @@
 export const API_URL = 'http://localhost:3001';
 
-async function fetchWithRetry(url: string, options?: RequestInit) {
+export async function fetchWithRetry(url: string, options?: RequestInit) {
     try {
         const res = await fetch(url, { ...options, cache: 'no-store' });
         if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
@@ -63,9 +63,23 @@ export async function fetchStockMoves() {
 
 // --- Locations ---
 
+export async function getLocationDetails(id: string) {
+    const res = await fetch(`${API_URL}/inventory/locations/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch location details');
+    return res.json();
+}
+
 export async function createLocation(data: any) {
     return fetchWithRetry(`${API_URL}/inventory/locations`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateLocation(id: string, data: any) {
+    return fetchWithRetry(`${API_URL}/inventory/locations/${id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
@@ -84,6 +98,8 @@ export async function fetchLocationsTree(warehouseId?: string) {
         : `${API_URL}/inventory/locations/tree`;
     return fetchWithRetry(url);
 }
+
+
 
 export async function moveLocation(locationId: string, newParentId: string | null) {
     return fetchWithRetry(`${API_URL}/inventory/locations/${locationId}/move`, {
@@ -199,8 +215,11 @@ export async function receivePurchaseOrder(id: string, destinationLocationId: st
 
 // --- Rules & Strategies ---
 
-export async function fetchStrategies(type: 'picking' | 'reservation') {
-    return fetchWithRetry(`${API_URL}/strategy/${type}`);
+export async function fetchStrategies(type: 'picking' | 'reservation', warehouseId?: string) {
+    const url = type === 'picking' && warehouseId
+        ? `${API_URL}/strategy/${type}?warehouseId=${warehouseId}`
+        : `${API_URL}/strategy/${type}`;
+    return fetchWithRetry(url);
 }
 
 export async function toggleStrategy(type: 'picking' | 'reservation', id: string, active: boolean) {
@@ -233,27 +252,27 @@ export async function deleteStrategy(type: 'picking' | 'reservation', id: string
     });
 }
 
-export async function createPickingBatch(criteria: 'contact' | 'carrier' | 'location') {
+export async function createPickingBatch(criteria: string, warehouseId?: string) {
     return fetchWithRetry(`${API_URL}/strategy/picking/batch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ criteria }),
+        body: JSON.stringify({ criteria, warehouseId }),
     });
 }
 
-export async function createPickingCluster(size: number) {
+export async function createPickingCluster(size: number, warehouseId?: string) {
     return fetchWithRetry(`${API_URL}/strategy/picking/cluster`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ size }),
+        body: JSON.stringify({ size, warehouseId }),
     });
 }
 
-export async function createPickingWave(criteria: 'product' | 'category') {
+export async function createPickingWave(criteria: string, warehouseId?: string) {
     return fetchWithRetry(`${API_URL}/strategy/picking/wave`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ criteria }),
+        body: JSON.stringify({ criteria, warehouseId }),
     });
 }
 
@@ -378,3 +397,7 @@ export const fetchSupplierOrders = async (id: string) => {
 export const fetchProductPriceHistory = async (productId: string) => {
     return fetchWithRetry(`${API_URL}/suppliers/reports/price-history?productId=${productId}`);
 };
+
+export async function fetchProducts() {
+    return fetchWithRetry(`${API_URL}/inventory/products`);
+}
