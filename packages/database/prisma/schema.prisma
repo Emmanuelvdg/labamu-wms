@@ -8,207 +8,218 @@ datasource db {
 }
 
 model Product {
-  id              String   @id @default(uuid())
-  sku             String   @unique
-  name            String
-  category        String
-  classification  String?  // ABC Classification: A, B, C
-  type            String?  // Raw, Finished, Semi-finished
-  unitOfMeasure   String?  // Centimeter, Piece, etc.
-  isStockable     Boolean  @default(true)
-  status          String   @default("Active")
-  averageCost     Float    @default(0)
-  description     String?
-  tracking        String   @default("none") // none, lot, serial
-  expiryDate      DateTime? // Keep for legacy/simple use, but Batches are preferred
+  id             String    @id @default(uuid())
+  sku            String    @unique
+  name           String
+  category       String
+  classification String? // ABC Classification: A, B, C
+  type           String? // Raw, Finished, Semi-finished
+  unitOfMeasure  String? // Centimeter, Piece, etc.
+  isStockable    Boolean   @default(true)
+  status         String    @default("Active")
+  averageCost    Float     @default(0)
+  description    String?
+  tracking       String    @default("none") // none, lot, serial
+  expiryDate     DateTime? // Keep for legacy/simple use, but Batches are preferred
   // Dimensions & Weight
-  width           Float?   // cm
-  height          Float?   // cm
-  depth           Float?   // cm
-  weight          Float?   // kg
-  
-  supplierId      String?
-  inventory       ProductInventory[] // Aggregate view
-  batches         InventoryBatch[]   // Detailed view
-  orderItems      OrderItem[]
-  reservations    Reservation[]
-  transactions    StockTransaction[]
-  putawayRules    PutawayRule[]
+  width          Float? // cm
+  height         Float? // cm
+  depth          Float? // cm
+  weight         Float? // kg
+
+  supplierId           String?
+  inventory            ProductInventory[] // Aggregate view
+  batches              InventoryBatch[] // Detailed view
+  orderItems           OrderItem[]
+  reservations         Reservation[]
+  transactions         StockTransaction[]
+  putawayRules         PutawayRule[]
   inventoryAdjustments InventoryAdjustment[]
-  scrapOrders     ScrapOrder[]
-  reorderingRules ReorderingRule[]
-  routes          Route[]
-  purchaseOrderItems PurchaseOrderItem[]
-  stockMoves      StockMove[]
-  packaging       ProductPackaging[]
-  pickingTasks    PickingTask[]
+  scrapOrders          ScrapOrder[]
+  reorderingRules      ReorderingRule[]
+  routes               Route[]
+  purchaseOrderItems   PurchaseOrderItem[]
+  stockMoves           StockMove[]
+  packaging            ProductPackaging[]
+  pickingTasks         PickingTask[]
+  TransferOrderItem    TransferOrderItem[]
+  receiptItems         ReceiptItem[]
 }
 
 model Route {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
   description String?
   rules       Rule[]
   products    Product[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Rule {
-  id                  String   @id @default(uuid())
-  routeId             String
-  route               Route    @relation(fields: [routeId], references: [id])
-  action              String   // PULL, PUSH
-  sourceLocationId    String?
-  sourceLocation      Location? @relation("SourceLocation", fields: [sourceLocationId], references: [id])
+  id                    String      @id @default(uuid())
+  routeId               String
+  route                 Route       @relation(fields: [routeId], references: [id])
+  action                String // PULL, PUSH
+  sourceLocationId      String?
+  sourceLocation        Location?   @relation("SourceLocation", fields: [sourceLocationId], references: [id])
   destinationLocationId String?
-  destinationLocation Location? @relation("DestLocation", fields: [destinationLocationId], references: [id])
-  sequence            Int      @default(0)
-  stockMoves          StockMove[]
+  destinationLocation   Location?   @relation("DestLocation", fields: [destinationLocationId], references: [id])
+  sequence              Int         @default(0)
+  stockMoves            StockMove[]
 }
 
 model Warehouse {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   name           String
-  shortName      String?  // Max 5 chars
+  shortName      String? // Max 5 chars
   address        String?
   companyId      String?
-  location       String   // JSON: { lat: number, lng: number }
+  location       String // JSON: { lat: number, lng: number }
   type           String
   partnerId      String?
-  viewLocationId String?  @unique
+  viewLocationId String?   @unique
   viewLocation   Location? @relation("WarehouseView", fields: [viewLocationId], references: [id])
-  
+
   // Route Configuration
-  incomingSteps         String? // "1_step", "2_steps", "3_steps"
-  outgoingSteps         String? // "1_step", "2_steps", "3_steps"
+  incomingSteps          String? // "1_step", "2_steps", "3_steps"
+  outgoingSteps          String? // "1_step", "2_steps", "3_steps"
   dropshipSubcontractors Boolean @default(false)
   resupplySubcontractors Boolean @default(false)
   manufactureToResupply  Boolean @default(false)
   manufactureSteps       String? // "1_step", "2_steps", "3_steps"
   buyToResupply          Boolean @default(false)
-  
-  inventory      ProductInventory[]
-  batches        InventoryBatch[]
+
+  inventory         ProductInventory[]
+  batches           InventoryBatch[]
   pickingStrategies PickingStrategy[]
-  orders         Order[]
-  pickingSessions PickingSession[]
+  orders            Order[]
+  pickingSessions   PickingSession[]
+
+  users            User[]
+  fulfillmentRules FulfillmentRule[]
+  sourceTransfers  TransferOrder[]   @relation("TransferSource")
+  destTransfers    TransferOrder[]   @relation("TransferDest")
 }
 
 model Location {
-  id          String   @id @default(uuid())
-  name        String
-  type        String   // VIEW, INTERNAL, VENDOR, CUSTOMER, INVENTORY_LOSS, PRODUCTION, TRANSIT
-  structuralType String? // WAREHOUSE, ROOM, ROW, BAY, SHELF, POSITION
-  attributes  String?  // JSON: { temperature: 'refrigerated', loadBearing: true, ... }
-  removalStrategy String? // FIFO, LIFO, FEFO
-  inventoryFrequency Int @default(0) // Days
-  nextInventoryDate DateTime?
-  
+  id                 String    @id @default(uuid())
+  name               String
+  type               String // VIEW, INTERNAL, VENDOR, CUSTOMER, INVENTORY_LOSS, PRODUCTION, TRANSIT
+  structuralType     String? // WAREHOUSE, ROOM, ROW, BAY, SHELF, POSITION
+  attributes         String? // JSON: { temperature: 'refrigerated', loadBearing: true, ... }
+  supportedPackaging String? // JSON: ["PALLET", "BOX"]
+  removalStrategy    String? // FIFO, LIFO, FEFO
+  inventoryFrequency Int       @default(0) // Days
+  nextInventoryDate  DateTime?
+
   // Capacity
-  maxVolume   Float?   // m3
-  maxWeight   Float?   // kg
+  maxVolume Float? // m3
+  maxWeight Float? // kg
 
   // Floor Plan Coordinates (for Bays)
-  x           Float?   @default(0)
-  y           Float?   @default(0)
-  width       Float?   @default(1)
-  height      Float?   @default(1)
-  rotation    Float?   @default(0)
-  
-  parentId    String?
-  parent      Location? @relation("LocationHierarchy", fields: [parentId], references: [id])
-  children    Location[] @relation("LocationHierarchy")
-  warehouseId String?
+  x        Float? @default(0)
+  y        Float? @default(0)
+  width    Float? @default(1)
+  height   Float? @default(1)
+  rotation Float? @default(0)
+
+  parentId      String?
+  parent        Location?  @relation("LocationHierarchy", fields: [parentId], references: [id])
+  children      Location[] @relation("LocationHierarchy")
+  warehouseId   String?
   warehouseView Warehouse? @relation("WarehouseView")
-  
+
   // Relations
-  inventory   ProductInventory[]
-  batches     InventoryBatch[]
-  adjustments InventoryAdjustment[]
-  scrapOrders ScrapOrder[]
-  putawayRules PutawayRule[]
-  sourcePutawayRules PutawayRule[] @relation("PutawaySource")
-  reorderingRules ReorderingRule[]
-  sourceRules     Rule[] @relation("SourceLocation")
-  destRules       Rule[] @relation("DestLocation")
-  packages        Package[]
-  receipts        Receipt[]
-  sourceMoves     StockMove[] @relation("MoveSource")
-  destMoves       StockMove[] @relation("MoveDest")
-  pickingTasks    PickingTask[]
+  inventory          ProductInventory[]
+  batches            InventoryBatch[]
+  adjustments        InventoryAdjustment[]
+  scrapOrders        ScrapOrder[]
+  putawayRules       PutawayRule[]
+  sourcePutawayRules PutawayRule[]         @relation("PutawaySource")
+  reorderingRules    ReorderingRule[]
+  sourceRules        Rule[]                @relation("SourceLocation")
+  destRules          Rule[]                @relation("DestLocation")
+  packages           Package[]
+  receipts           Receipt[]
+  sourceMoves        StockMove[]           @relation("MoveSource")
+  destMoves          StockMove[]           @relation("MoveDest")
+  pickingTasks       PickingTask[]
 }
 
 model ProductPackaging {
-  id          String   @id @default(uuid())
-  name        String   // e.g. "Box of 12", "Pallet"
-  type        String   // BOX, PALLET, UNIT
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
-  quantity    Int      // Quantity of base units
-  
+  id        String  @id @default(uuid())
+  name      String // e.g. "Box of 12", "Pallet"
+  type      String // BOX, PALLET, UNIT
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int // Quantity of base units
+
   // Dimensions & Weight
-  width       Float?   // cm
-  height      Float?   // cm
-  depth       Float?   // cm
-  weight      Float?   // kg
-  
-  barcode     String?
-  
-  packages    Package[]
+  width  Float? // cm
+  height Float? // cm
+  depth  Float? // cm
+  weight Float? // kg
+
+  barcode String?
+
+  storageRequirements String? // JSON: ["refrigerated", "heavy_duty"]
+  maxStacking         Int     @default(1)
+
+  packages           Package[]
   purchaseOrderItems PurchaseOrderItem[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 // Aggregate Inventory (Legacy/Fast Lookup)
 model ProductInventory {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   productId   String
-  product     Product  @relation(fields: [productId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
   warehouseId String
   warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
   locationId  String?
   location    Location? @relation(fields: [locationId], references: [id])
   quantity    Int
-  reserved    Int      @default(0)
+  reserved    Int       @default(0)
 }
 
 model InventoryBatch {
-  id              String   @id @default(uuid())
-  batchNumber     String   @unique
+  id              String                @id @default(uuid())
+  batchNumber     String                @unique
   productId       String
-  product         Product  @relation(fields: [productId], references: [id])
+  product         Product               @relation(fields: [productId], references: [id])
   warehouseId     String
-  warehouse       Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouse       Warehouse             @relation(fields: [warehouseId], references: [id])
   locationId      String?
-  location        Location? @relation(fields: [locationId], references: [id])
+  location        Location?             @relation(fields: [locationId], references: [id])
   packageId       String?
-  package         Package? @relation(fields: [packageId], references: [id])
+  package         Package?              @relation(fields: [packageId], references: [id])
   initialQuantity Int
   currentQuantity Int
   costPerUnit     Float
   purchaseDate    DateTime
   expiryDate      DateTime?
-  status          String   // Active, Expired, Depleted
+  status          String // Active, Expired, Depleted
   vendor          String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
   adjustments     InventoryAdjustment[]
   stockMoves      StockMove[]
 }
 
 model Package {
-  id          String   @id @default(uuid())
-  name        String   @unique // Barcode / LPN
-  type        String   // Box, Pallet, etc. (Legacy/Simple)
+  id          String            @id @default(uuid())
+  name        String            @unique // Barcode / LPN
+  type        String // Box, Pallet, etc. (Legacy/Simple)
   packagingId String?
   packaging   ProductPackaging? @relation(fields: [packagingId], references: [id])
   locationId  String?
-  location    Location? @relation(fields: [locationId], references: [id])
+  location    Location?         @relation(fields: [locationId], references: [id])
   batches     InventoryBatch[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 }
 
 model StockTransaction {
@@ -216,7 +227,7 @@ model StockTransaction {
   productId   String
   product     Product  @relation(fields: [productId], references: [id])
   batchId     String?
-  type        String   // IN, OUT, ADJUSTMENT, RESERVATION
+  type        String // IN, OUT, ADJUSTMENT, RESERVATION
   quantity    Int
   date        DateTime @default(now())
   referenceId String?
@@ -225,29 +236,32 @@ model StockTransaction {
 }
 
 model Order {
-  id              String   @id @default(uuid())
-  customerId      String
-  status          String   // PENDING, RESERVED, PICKING, SHIPPED, DELIVERED, CANCELLED
-  priority        String   // HIGH, NORMAL, LOW
-  shippingCarrier String?
-  expectedDate    DateTime? // For scheduled reservations
-  items           OrderItem[]
-  reservations    Reservation[]
-  shipment        Shipment?
-  warehouseId     String? // Optional for now to support existing orders, but should be required
-  warehouse       Warehouse? @relation(fields: [warehouseId], references: [id])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  pickingTasks    PickingTask[]
+  id                String          @id @default(uuid())
+  customerId        String
+  customer          Customer?       @relation(fields: [customerId], references: [id]) // Optional for migration safety
+  status            String // PENDING, RESERVED, PICKING, SHIPPED, DELIVERED, CANCELLED
+  fulfillmentStatus String          @default("UNALLOCATED") // UNALLOCATED, ALLOCATED, PARTIAL
+  priority          String // HIGH, NORMAL, LOW
+  shippingCarrier   String?
+  expectedDate      DateTime? // For scheduled reservations
+  items             OrderItem[]
+  reservations      Reservation[]
+  shipment          Shipment?
+  warehouseId       String? // Optional for now to support existing orders, but should be required
+  warehouse         Warehouse?      @relation(fields: [warehouseId], references: [id])
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  pickingTasks      PickingTask[]
+  transferOrders    TransferOrder[]
 }
 
 model OrderItem {
-  id          String   @id @default(uuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id])
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
-  quantity    Int
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
 }
 
 model Reservation {
@@ -257,15 +271,15 @@ model Reservation {
   orderId             String
   order               Order    @relation(fields: [orderId], references: [id])
   quantity            Int
-  reservationStrategy String   // FIFO, FEFO, LOCATION
+  reservationStrategy String // FIFO, FEFO, LOCATION
   createdAt           DateTime @default(now())
 }
 
 model PickingStrategy {
-  id          String    @id @default(uuid())
-  name        String    // Single, Cluster, Wave, Batch
-  rules       String    // JSON
-  active      Boolean   @default(true)
+  id          String     @id @default(uuid())
+  name        String // Single, Cluster, Wave, Batch
+  rules       String // JSON
+  active      Boolean    @default(true)
   warehouseId String?
   warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
 
@@ -276,12 +290,22 @@ model PickingSession {
   id          String        @id @default(uuid())
   warehouseId String
   warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
-  strategy    String        // BATCH, WAVE, CLUSTER, SINGLE
+  strategy    String // BATCH, WAVE, CLUSTER, SINGLE
   status      String        @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
-  pickerId    String?       // Link to User (optional)
+  pickerId    String? // Link to User (optional)
+  picker      User?         @relation(fields: [pickerId], references: [id])
   tasks       PickingTask[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+}
+
+model LocationAttributeDefinition {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  type      String   // SELECT, TEXT, NUMBER, BOOLEAN
+  options   String?  // JSON array for SELECT options
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PickingTask {
@@ -305,14 +329,14 @@ model PickingTask {
 model ReservationStrategy {
   id     String  @id @default(uuid())
   name   String  @unique // FIFO, FEFO, Location
-  rules  String  // JSON
+  rules  String // JSON
   active Boolean @default(true)
 }
 
 model Shipment {
-  id         String   @id @default(uuid())
-  orderId    String   @unique
-  order      Order    @relation(fields: [orderId], references: [id])
+  id         String @id @default(uuid())
+  orderId    String @unique
+  order      Order  @relation(fields: [orderId], references: [id])
   carrier    String
   trackingId String
   status     String
@@ -320,7 +344,7 @@ model Shipment {
 
 model ComplianceReport {
   id        String   @id @default(uuid())
-  type      String   // VAT, SAF-T
+  type      String // VAT, SAF-T
   period    String
   data      String // JSON
   createdAt DateTime @default(now())
@@ -378,79 +402,233 @@ model ReorderingRule {
 }
 
 model PutawayRule {
-  id          String   @id @default(uuid())
-  productId   String?
-  product     Product? @relation(fields: [productId], references: [id])
-  categoryId  String?  // Optional: Apply to entire category
-  locationId  String
-  location    Location @relation(fields: [locationId], references: [id])
+  id               String    @id @default(uuid())
+  productId        String?
+  product          Product?  @relation(fields: [productId], references: [id])
+  categoryId       String? // Optional: Apply to entire category
+  locationId       String
+  location         Location  @relation(fields: [locationId], references: [id])
   sourceLocationId String? // Optional: Only apply if arriving at this location
   sourceLocation   Location? @relation("PutawaySource", fields: [sourceLocationId], references: [id])
-  priority    Int      @default(0)
-  active      Boolean  @default(true)
+  priority         Int       @default(0)
+  active           Boolean   @default(true)
 }
 
 // --- Inbound / Purchase Order Models ---
 
 model Supplier {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  contactInfo String?  // JSON or text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String          @id @default(uuid())
+  name           String          @unique
+  contactInfo    String? // JSON or text
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   purchaseOrders PurchaseOrder[]
+  invoices       Invoice[]
 }
 
 model PurchaseOrder {
-  id            String   @id @default(uuid())
-  supplierId    String
-  supplier      Supplier @relation(fields: [supplierId], references: [id])
-  status        String   @default("DRAFT") // DRAFT, ORDERED, RECEIVED, CANCELLED
-  expectedDate  DateTime?
-  items         PurchaseOrderItem[]
-  receipts      Receipt[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String              @id @default(uuid())
+  poNumber     String              @unique @default(cuid()) // Temporary default to avoid migration issues
+  supplierId   String
+  supplier     Supplier            @relation(fields: [supplierId], references: [id])
+  status       String              @default("DRAFT") // DRAFT, ORDERED, RECEIVED, CANCELLED
+  approvalStatus String            @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
+  approvedBy   String?
+  approvedAt   DateTime?
+  rejectionReason String?
+
+  orderDate    DateTime            @default(now())
+  expectedDate DateTime?
+
+  // Header Info
+  buyerName    String?
+  buyerAddress String?
+  buyerContact String?
+
+  shipToAddress String?
+  billToAddress String?
+
+  // Financials
+  taxAmount    Float               @default(0)
+  shippingCost Float               @default(0)
+  totalAmount  Float               @default(0)
+
+  // Footer Info
+  paymentTerms  String?
+  deliveryTerms String?
+  notes         String?
+
+  items        PurchaseOrderItem[]
+  receipts     Receipt[]
+  invoices     Invoice[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
 }
 
 model PurchaseOrderItem {
-  id              String        @id @default(uuid())
+  id              String            @id @default(uuid())
   purchaseOrderId String
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrder   PurchaseOrder     @relation(fields: [purchaseOrderId], references: [id])
   productId       String
-  product         Product       @relation(fields: [productId], references: [id])
+  product         Product           @relation(fields: [productId], references: [id])
   quantity        Int
-  unitCost        Float         @default(0)
+  unitCost        Float             @default(0)
   packagingId     String?
   packaging       ProductPackaging? @relation(fields: [packagingId], references: [id])
+  receiptItems    ReceiptItem[]
 }
 
 model Receipt {
-  id              String        @id @default(uuid())
-  purchaseOrderId String
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
-  status          String        @default("READY") // READY, DONE
+  id                    String        @id @default(uuid())
+  purchaseOrderId       String
+  purchaseOrder         PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  status                String        @default("DONE") // DONE, CANCELLED
+  receivedAt            DateTime      @default(now())
   destinationLocationId String
-  destinationLocation Location  @relation(fields: [destinationLocationId], references: [id])
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  destinationLocation   Location      @relation(fields: [destinationLocationId], references: [id])
+
+  items ReceiptItem[]
+
+  // Link to Invoice (optional, for 3-way match)
+  invoiceId String?
+  // invoice      Invoice? ...
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
+model ReceiptItem {
+  id        String  @id @default(uuid())
+  receiptId String
+  receipt   Receipt @relation(fields: [receiptId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int // Quantity received in this specific receipt
+
+  // Link to PO Item for tracking
+  poItemId String
+  poItem   PurchaseOrderItem @relation(fields: [poItemId], references: [id])
+}
+
+model Invoice {
+  id              String         @id @default(uuid())
+  invoiceNumber   String // Vendor's invoice #
+  vendorId        String
+  vendor          Supplier       @relation(fields: [vendorId], references: [id])
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+
+  status      String   @default("DRAFT") // DRAFT, POSTED, PAID, CANCELLED
+  totalAmount Float
+  issueDate   DateTime
+  dueDate     DateTime
+
+  items     InvoiceItem[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+  productId   String?
+  description String
+  quantity    Int
+  unitPrice   Float
+  totalPrice  Float
+
+  // 3-Way Match Links
+  poItemId      String?
+  receiptItemId String?
+}
+
+model User {
+  id          String     @id @default(uuid())
+  name        String
+  role        String // ADMIN, MANAGER, WORKER
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+
+  initiatedTransfers TransferOrder[]  @relation("TransferInitiator")
+  approvedTransfers  TransferOrder[]  @relation("TransferApprover")
+  pickingSessions    PickingSession[]
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  latitude  Float?
+  longitude Float?
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FulfillmentRule {
+  id          String     @id @default(uuid())
+  name        String
+  priority    Int        @default(0)
+  strategy    String // PRIMARY, HIGHEST_STOCK, CLOSEST
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model TransferOrder {
+  id                     String    @id @default(uuid())
+  sourceWarehouseId      String
+  sourceWarehouse        Warehouse @relation("TransferSource", fields: [sourceWarehouseId], references: [id])
+  destinationWarehouseId String
+  destinationWarehouse   Warehouse @relation("TransferDest", fields: [destinationWarehouseId], references: [id])
+
+  status String @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, IN_TRANSIT, RECEIVED, CANCELLED
+
+  initiatorId String
+  initiator   User   @relation("TransferInitiator", fields: [initiatorId], references: [id])
+
+  approverId String?
+  approver   User?   @relation("TransferApprover", fields: [approverId], references: [id])
+
+  items TransferOrderItem[]
+
+  relatedOrderId String?
+  relatedOrder   Order?  @relation(fields: [relatedOrderId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TransferOrderItem {
+  id               String        @id @default(uuid())
+  transferOrderId  String
+  transferOrder    TransferOrder @relation(fields: [transferOrderId], references: [id])
+  productId        String
+  product          Product       @relation(fields: [productId], references: [id])
+  quantity         Int
+  receivedQuantity Int           @default(0)
+}
+
+// --- Existing Models Updates ---
+
 model StockMove {
-  id                    String   @id @default(uuid())
+  id                    String          @id @default(uuid())
   productId             String
-  product               Product  @relation(fields: [productId], references: [id])
+  product               Product         @relation(fields: [productId], references: [id])
   quantity              Int
-  status                String   @default("DRAFT") // DRAFT, WAITING, READY, DONE, CANCELLED
+  status                String          @default("DRAFT") // DRAFT, WAITING, READY, DONE, CANCELLED
   sourceLocationId      String?
-  sourceLocation        Location? @relation("MoveSource", fields: [sourceLocationId], references: [id])
+  sourceLocation        Location?       @relation("MoveSource", fields: [sourceLocationId], references: [id])
   destinationLocationId String?
-  destinationLocation   Location? @relation("MoveDest", fields: [destinationLocationId], references: [id])
+  destinationLocation   Location?       @relation("MoveDest", fields: [destinationLocationId], references: [id])
   ruleId                String?
-  rule                  Rule?    @relation(fields: [ruleId], references: [id])
-  origin                String?  // e.g. PO001, MO001
+  rule                  Rule?           @relation(fields: [ruleId], references: [id])
+  origin                String? // e.g. PO001, MO001
   batchId               String?
   batch                 InventoryBatch? @relation(fields: [batchId], references: [id])
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 }

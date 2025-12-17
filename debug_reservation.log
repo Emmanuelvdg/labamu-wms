@@ -457,3 +457,57 @@
 [OrderService] Should Reserve: true
 [InventoryService] [ReserveStock] Product: 1a9b668b-0fb8-4f60-b3a6-4c6cfba78db3, Qty: 5, Found Inventory Records: 1
 [InventoryService]  - ID: 80264eb2-c2a7-42d2-8d99-9233ed00d00d, Qty: 100, Reserved: 0, Warehouse: 8dbb8221-2243-4d80-82bf-de5defdb1890
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Expected: 2025-12-10T00:00:00.000Z DaysBefore: 5 ResDate: Fri Dec 05 2025 07:00:00 GMT+0700 (Indochina Time) Now: Tue Dec 09 2025 08:53:48 GMT+0700 (Indochina Time)
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: a4b3961d-4a96-4fc4-a382-ab4f761fa2e5, Qty: 1, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product a4b3961d-4a96-4fc4-a382-ab4f761fa2e5
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: b495749f-09d8-4368-ad74-66fb914e11e7, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 467f8abd-c021-4bea-8ff1-6d0df887472c, Qty: 50, Reserved: 0, Warehouse: 4de8d0f6-0f26-4f78-a3db-89327c4ef2a8
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 935b7855-efa5-4e0c-8ea6-a5e4d49b0686, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 4f91d90e-1e0a-4daa-97f9-ed311bfb2546, Qty: 50, Reserved: 0, Warehouse: 1e3f7818-37fc-44bf-b674-ca939589f7e6
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: ab08c2c3-c0ba-4c2a-a66e-33f972f169e1, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 46e059fb-a4c9-466f-b106-1fe553466dc3, Qty: 50, Reserved: 0, Warehouse: 6faf888b-e144-4a1d-bf26-cf309eefe32e
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 4a22c9c9-bf0a-4611-b593-f8f0a994d43a, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 0b4d301e-a228-401d-8bb9-838421c8a0cf, Qty: 50, Reserved: 0, Warehouse: 581e31fc-11bb-40b5-a9d5-f8d316007d56
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 1326c62a-b95a-4ed1-8ef3-1443451cb463, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: f557b257-1c19-48bc-b26a-d6c514a31edf, Qty: 50, Reserved: 0, Warehouse: 7be2c15d-b9b0-4a71-a005-5c614b96335d
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 752bd314-869e-483a-bd14-b378f952766c, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 3cdfed6e-d311-4d54-8528-13c6453cf119, Qty: 50, Reserved: 0, Warehouse: 5efd9b9c-7eb3-4663-a752-0b4671d7c051
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 00a649ca-4622-41d8-acde-ed7b0eaaad9e, Qty: 10, Found Inventory Records: 1
+[InventoryService]  - ID: 1bb8e087-e2af-444e-a56a-1dde68c1f9fc, Qty: 50, Reserved: 0, Warehouse: 412c93f9-0c62-4382-aee0-dcf36ce1b6f5
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 2d68b94f-f468-4680-8b51-f52b19733d9f, Qty: 15, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 2d68b94f-f468-4680-8b51-f52b19733d9f
+[InventoryService] Error creating location: Location of type ROOM must have a parent.
+[InventoryService] Error creating location: Invalid hierarchy: ROW must be a child of ROOM. Found parent type: WAREHOUSE
+[OrderService] Active Strategy: Before Date Strategy (Active: true) Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Parsed Rules: {"method":"before_date","daysBefore":5}
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: a108f4e2-5dae-4a00-88bb-919f0244cb12, Qty: 11, Found Inventory Records: 1
+[InventoryService]  - ID: 281412b9-aa96-4403-bf8e-946207d338d4, Qty: 5, Reserved: 0, Warehouse: 8dbb8221-2243-4d80-82bf-de5defdb1890
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product a108f4e2-5dae-4a00-88bb-919f0244cb12

@@ -28,6 +28,8 @@ import { toast } from 'sonner';
 
 export default function LocationsPage() {
     const { data: locations, mutate } = useSWR('locations-tree', () => fetchLocationsTree());
+    const { data: attributesData } = useSWR('http://localhost:3001/settings/attributes', (url) => fetch(url).then(res => res.json()));
+    const attributeDefinitions = Array.isArray(attributesData) ? attributesData : [];
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [newLocation, setNewLocation] = useState({
         name: '',
@@ -93,7 +95,12 @@ export default function LocationsPage() {
 
         if (requiredParentTypes.length === 0) return []; // Should be root
 
-        return flatLocations.filter((loc: any) => requiredParentTypes.includes(loc.structuralType));
+        return flatLocations.filter((loc: any) => {
+            if (requiredParentTypes.includes(loc.structuralType)) return true;
+            // Allow if parent has no structural type (legacy warehouse) AND we are looking for a WAREHOUSE parent
+            if (!loc.structuralType && requiredParentTypes.includes('WAREHOUSE')) return true;
+            return false;
+        });
     };
 
     return (
@@ -189,6 +196,92 @@ export default function LocationsPage() {
                                     </div>
                                 )}
 
+                                {/* Supported Packaging */}
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="supportedPackaging" className="text-right">Supported Pkg</Label>
+                                    <Input
+                                        id="supportedPackaging"
+                                        placeholder="e.g. PALLET, BOX"
+                                        value={newLocation.attributes.supportedPackaging ? JSON.parse(newLocation.attributes.supportedPackaging).join(', ') : ''}
+                                        onChange={(e) => setNewLocation({
+                                            ...newLocation,
+                                            attributes: {
+                                                ...newLocation.attributes,
+                                                supportedPackaging: JSON.stringify(e.target.value.split(',').map(s => s.trim()))
+                                            }
+                                        })}
+                                        className="col-span-3"
+                                    />
+                                </div>
+
+                                {/* Dynamic Attributes */}
+                                {attributeDefinitions?.map((attr: any) => (
+                                    <div key={attr.id} className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor={`attr-${attr.id}`} className="text-right">{attr.name}</Label>
+                                        {attr.type === 'SELECT' ? (
+                                            <Select
+                                                value={newLocation.attributes[attr.name] || ''}
+                                                onValueChange={(value) => setNewLocation({
+                                                    ...newLocation,
+                                                    attributes: { ...newLocation.attributes, [attr.name]: value }
+                                                })}
+                                            >
+                                                <SelectTrigger className="col-span-3">
+                                                    <SelectValue placeholder={`Select ${attr.name}`} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {attr.options?.split(',').map((opt: string) => (
+                                                        <SelectItem key={opt.trim()} value={opt.trim()}>{opt.trim()}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        ) : attr.type === 'BOOLEAN' ? (
+                                            <div className="col-span-3 flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    id={`attr-${attr.id}`}
+                                                    checked={newLocation.attributes[attr.name] || false}
+                                                    onChange={(e) => setNewLocation({
+                                                        ...newLocation,
+                                                        attributes: { ...newLocation.attributes, [attr.name]: e.target.checked }
+                                                    })}
+                                                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <label htmlFor={`attr-${attr.id}`} className="text-sm text-gray-700">Yes</label>
+                                            </div>
+                                        ) : (
+                                            <Input
+                                                id={`attr-${attr.id}`}
+                                                type={attr.type === 'NUMBER' ? 'number' : 'text'}
+                                                value={newLocation.attributes[attr.name] || ''}
+                                                onChange={(e) => setNewLocation({
+                                                    ...newLocation,
+                                                    attributes: { ...newLocation.attributes, [attr.name]: attr.type === 'NUMBER' ? parseFloat(e.target.value) : e.target.value }
+                                                })}
+                                                className="col-span-3"
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+
+                                {/* Generic Attributes (JSON) */}
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="genericAttributes" className="text-right">Other Attributes (JSON)</Label>
+                                    <Input
+                                        id="genericAttributes"
+                                        placeholder='JSON: {"refrigerated": true}'
+                                        onChange={(e) => {
+                                            try {
+                                                const parsed = JSON.parse(e.target.value);
+                                                setNewLocation({ ...newLocation, attributes: { ...newLocation.attributes, ...parsed } });
+                                            } catch (err) {
+                                                // Ignore invalid JSON while typing
+                                            }
+                                        }}
+                                        className="col-span-3"
+                                    />
+                                </div>
+
                                 {/* Parent Selection */}
                                 <div className="grid grid-cols-4 items-center gap-4">
                                     <Label htmlFor="parent" className="text-right">Parent</Label>
@@ -240,11 +333,13 @@ export default function LocationsPage() {
                 </div>
             </div>
 
-            {locations ? (
-                <LocationTree locations={locations} />
-            ) : (
-                <div>Loading...</div>
-            )}
-        </div>
+            {
+                locations ? (
+                    <LocationTree locations={locations} />
+                ) : (
+                    <div>Loading...</div>
+                )
+            }
+        </div >
     );
 }

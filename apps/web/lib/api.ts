@@ -14,8 +14,19 @@ export async function fetchWithRetry(url: string, options?: RequestInit) {
 
 // --- Inventory ---
 
-export async function fetchInventory() {
-    return fetchWithRetry(`${API_URL}/inventory/products`);
+export async function fetchInventory(filters?: {
+    search?: string;
+    category?: string;
+    classification?: string;
+    warehouseId?: string;
+}) {
+    const params = new URLSearchParams();
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.classification) params.append('classification', filters.classification);
+    if (filters?.warehouseId) params.append('warehouseId', filters.warehouseId);
+
+    return fetchWithRetry(`${API_URL}/inventory/products?${params.toString()}`);
 }
 
 export async function getProduct(id: string) {
@@ -174,6 +185,34 @@ export const startCycleCount = async (locationIds: string[]) => {
     });
 };
 
+// --- Packaging ---
+
+export async function createPackaging(data: any) {
+    return fetchWithRetry(`${API_URL}/inventory/packaging`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function fetchPackaging(productId: string) {
+    return fetchWithRetry(`${API_URL}/inventory/packaging/${productId}`);
+}
+
+// --- Customers ---
+
+export async function fetchCustomers() {
+    return fetchWithRetry(`${API_URL}/customers`);
+}
+
+export async function createCustomer(data: any) {
+    return fetchWithRetry(`${API_URL}/customers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
 // --- Orders & Shipping ---
 
 export async function createOrder(order: any) {
@@ -287,7 +326,7 @@ export async function createPickingWave(criteria: string, warehouseId?: string) 
 
 // --- Picking Session Management ---
 
-export async function createPickingSession(data: { warehouseId: string; strategy: string; criteria?: string; maxOrders?: number }) {
+export async function createPickingSession(data: { warehouseId: string; strategy?: string; criteria?: string; maxOrders?: number }) {
     return fetchWithRetry(`${API_URL}/strategy/picking/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -437,4 +476,52 @@ export const fetchProductPriceHistory = async (productId: string) => {
 
 export async function fetchProducts() {
     return fetchWithRetry(`${API_URL}/inventory/products`);
+}
+
+// --- Fulfillment & IWT ---
+
+export async function fetchFulfillmentRules() {
+    return fetchWithRetry(`${API_URL}/fulfillment/rules`);
+}
+
+export async function createFulfillmentRule(data: any) {
+    return fetchWithRetry(`${API_URL}/fulfillment/rules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateFulfillmentRule(id: string, data: any) {
+    return fetchWithRetry(`${API_URL}/fulfillment/rules/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteFulfillmentRule(id: string) {
+    return fetchWithRetry(`${API_URL}/fulfillment/rules/${id}`, {
+        method: 'DELETE',
+    });
+}
+
+export async function fetchTransfers() {
+    return fetchWithRetry(`${API_URL}/fulfillment/transfers`);
+}
+
+export async function createTransferRequest(data: any) {
+    return fetchWithRetry(`${API_URL}/fulfillment/transfers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function approveTransfer(id: string, approverId: string) {
+    return fetchWithRetry(`${API_URL}/fulfillment/transfers/${id}/approve`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approverId }),
+    });
 }

@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, Param, Put, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Query, Delete } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
+import { PackagingService } from './packaging.service';
 import { Product, Warehouse, ProductInventory } from '@labamu/database';
 
 import * as fs from 'fs';
@@ -12,7 +13,25 @@ export class InventoryController {
         fs.appendFileSync(logPath, `[InventoryController] ${message}\n`);
     }
 
-    constructor(private readonly inventoryService: InventoryService) { }
+    constructor(
+        private readonly inventoryService: InventoryService,
+        private readonly packagingService: PackagingService
+    ) { }
+
+    @Post('packaging')
+    createPackaging(@Body() data: any) {
+        return this.packagingService.createPackaging(data);
+    }
+
+    @Get('packaging/:productId')
+    getPackaging(@Param('productId') productId: string) {
+        return this.packagingService.getPackaging(productId);
+    }
+
+    @Delete('packaging/:id')
+    deletePackaging(@Param('id') id: string) {
+        return this.packagingService.deletePackaging(id);
+    }
 
     @Post('products')
     createProduct(@Body() data: any) {
@@ -20,8 +39,13 @@ export class InventoryController {
     }
 
     @Get('products')
-    getProducts() {
-        return this.inventoryService.getProducts();
+    getProducts(
+        @Query('search') search?: string,
+        @Query('category') category?: string,
+        @Query('classification') classification?: string,
+        @Query('warehouseId') warehouseId?: string,
+    ) {
+        return this.inventoryService.getProducts({ search, category, classification, warehouseId });
     }
 
     @Get('products/:id')
@@ -186,7 +210,7 @@ export class InventoryController {
 
     @Post('products/:id/packaging')
     createProductPackaging(@Param('id') id: string, @Body() data: any) {
-        return this.inventoryService.createProductPackaging({ ...data, productId: id });
+        return this.packagingService.createPackaging({ ...data, productId: id });
     }
 
     @Get('products/:id/packaging')

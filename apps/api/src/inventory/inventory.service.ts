@@ -31,8 +31,48 @@ export class InventoryService {
         });
     }
 
-    async getProducts(): Promise<Product[]> {
-        return this.prisma.product.findMany();
+    async createSupplier(data: { name: string; contactInfo?: string }) {
+        return this.prisma.supplier.create({
+            data: {
+                name: data.name,
+                contactInfo: data.contactInfo,
+            },
+        });
+    }
+
+    async getProducts(filters?: {
+        search?: string;
+        category?: string;
+        classification?: string;
+        warehouseId?: string;
+    }): Promise<Product[]> {
+        const where: any = {};
+
+        if (filters?.search) {
+            where.OR = [
+                { name: { contains: filters.search } }, // Case-insensitive by default in SQLite? No, usually need mode: 'insensitive' but let's check DB type. It's SQLite.
+                { sku: { contains: filters.search } },
+            ];
+        }
+
+        if (filters?.category) {
+            where.category = filters.category;
+        }
+
+        if (filters?.classification) {
+            where.classification = filters.classification;
+        }
+
+        if (filters?.warehouseId) {
+            where.inventory = {
+                some: {
+                    warehouseId: filters.warehouseId,
+                    quantity: { gt: 0 } // Only show products with stock in that warehouse? Or just any record? Let's say any record for now, or maybe > 0.
+                }
+            };
+        }
+
+        return this.prisma.product.findMany({ where });
     }
 
     async getProduct(id: string): Promise<Product | null> {
@@ -55,22 +95,32 @@ export class InventoryService {
         manufactureSteps?: string;
         buyToResupply?: boolean;
     }): Promise<Warehouse> {
+        // Check for duplicate name
+        const existing = await this.prisma.warehouse.findFirst({
+            where: { name: data.name }
+        });
+
+        if (existing) {
+            throw new Error('Warehouse with this name already exists');
+        }
+
         return this.prisma.$transaction(async (tx) => {
             // 1. Create View Location (Root)
             const viewLocation = await tx.location.create({
                 data: {
-                    name: data.shortName || data.name,
+                    name: data.name,
                     type: 'VIEW',
-                },
+                    structuralType: 'WAREHOUSE',
+                }
             });
 
-            // 2. Create Stock Location (Internal)
+            // 2. Create Stock Location (Default storage)
             const stockLocation = await tx.location.create({
                 data: {
                     name: 'Stock',
                     parentId: viewLocation.id,
                     type: 'INTERNAL',
-                },
+                }
             });
 
             // 3. Create Warehouse linked to View Location
@@ -407,7 +457,13 @@ export class InventoryService {
 
         // 1. Initialize map
         locations.forEach(loc => {
-            locationMap.set(loc.id, { ...loc, children: [] });
+            let parsedAttributes = {};
+            try {
+                parsedAttributes = loc.attributes ? JSON.parse(loc.attributes) : {};
+            } catch (e) {
+                // ignore
+            }
+            locationMap.set(loc.id, { ...loc, attributes: parsedAttributes, children: [] });
         });
 
         // 2. Build tree
@@ -447,26 +503,36 @@ export class InventoryService {
         height?: number;
         rotation?: number;
     }) {
-        if (data.structuralType && data.parentId) {
-            await this.validateHierarchy(data.structuralType, data.parentId);
-        }
+        try {
+            if (data.structuralType) {
+                if (data.structuralType !== 'WAREHOUSE' && !data.parentId) {
+                    throw new Error(`Location of type ${data.structuralType} must have a parent.`);
+                }
+                if (data.parentId) {
+                    await this.validateHierarchy(data.structuralType, data.parentId);
+                }
+            }
 
-        return this.prisma.location.create({
-            data: {
-                name: data.name,
-                warehouseId: data.warehouseId,
-                parentId: data.parentId,
-                type: data.type || 'INTERNAL',
-                structuralType: data.structuralType,
-                attributes: data.attributes ? JSON.stringify(data.attributes) : undefined,
-                removalStrategy: data.removalStrategy,
-                x: data.x,
-                y: data.y,
-                width: data.width,
-                height: data.height,
-                rotation: data.rotation,
-            },
-        });
+            return await this.prisma.location.create({
+                data: {
+                    name: data.name,
+                    warehouseId: data.warehouseId,
+                    parentId: data.parentId,
+                    type: data.type || 'INTERNAL',
+                    structuralType: data.structuralType,
+                    attributes: data.attributes ? JSON.stringify(data.attributes) : undefined,
+                    removalStrategy: data.removalStrategy,
+                    x: data.x,
+                    y: data.y,
+                    width: data.width,
+                    height: data.height,
+                    rotation: data.rotation,
+                },
+            });
+        } catch (e: any) {
+            this.log(`Error creating location: ${e.message}`);
+            throw e;
+        }
     }
 
     async updateLocation(id: string, data: {
@@ -484,19 +550,21 @@ export class InventoryService {
         rotation?: number;
     }) {
         // Validation
-        if (data.structuralType && data.parentId) {
-            await this.validateHierarchy(data.structuralType, data.parentId);
-        } else if (data.structuralType) {
-            // If only structural type is changing, check against existing parent
-            const current = await this.prisma.location.findUnique({ where: { id } });
-            if (current?.parentId) {
-                await this.validateHierarchy(data.structuralType, current.parentId);
-            }
-        } else if (data.parentId) {
-            // If only parent is changing, check against existing structural type
-            const current = await this.prisma.location.findUnique({ where: { id } });
-            if (current?.structuralType) {
-                await this.validateHierarchy(current.structuralType, data.parentId);
+        const current = await this.prisma.location.findUnique({ where: { id } });
+        if (!current) throw new Error('Location not found');
+
+        const newStructuralType = data.structuralType !== undefined ? data.structuralType : current.structuralType;
+        const newParentId = data.parentId !== undefined ? data.parentId : current.parentId;
+
+        if (newStructuralType && newStructuralType !== 'WAREHOUSE' && !newParentId) {
+            throw new Error(`Location of type ${newStructuralType} must have a parent.`);
+        }
+
+        if (newStructuralType && newParentId) {
+            // Only validate if something changed or if we just want to be safe. 
+            // Optimization: only if type or parent changed.
+            if (data.structuralType || data.parentId) {
+                await this.validateHierarchy(newStructuralType, newParentId);
             }
         }
 
@@ -1522,5 +1590,49 @@ export class InventoryService {
         return this.prisma.productPackaging.findMany({
             where: { productId }
         });
+    }
+    async findPutawayLocation(warehouseId: string, productId: string, packagingId?: string): Promise<any> {
+        const product = await this.prisma.product.findUnique({ where: { id: productId } });
+        let packaging = null;
+        if (packagingId) {
+            packaging = await this.prisma.productPackaging.findUnique({ where: { id: packagingId } });
+        }
+
+        const locations = await this.prisma.location.findMany({
+            where: {
+                warehouseId,
+                type: 'INTERNAL',
+                structuralType: { in: ['SHELF', 'BAY', 'POSITION', 'ROOM'] } // Only storage locations
+            }
+        });
+
+        // Filter candidates
+        const candidates = locations.filter(loc => {
+            // 1. Check Packaging Support
+            if (packaging && loc.supportedPackaging) {
+                const supported = JSON.parse(loc.supportedPackaging);
+                if (Array.isArray(supported) && !supported.includes(packaging.type)) {
+                    return false;
+                }
+            }
+
+            // 2. Check Storage Requirements
+            if (packaging && packaging.storageRequirements) {
+                const reqs = JSON.parse(packaging.storageRequirements);
+                const attrs = loc.attributes ? JSON.parse(loc.attributes) : {};
+
+                // Check if all requirements are met
+                // Example: reqs=["refrigerated"], attrs={"refrigerated": true}
+                for (const req of reqs) {
+                    if (!attrs[req]) return false;
+                }
+            }
+
+            return true;
+        });
+
+        // Sort candidates (Simple heuristic: locations with same product first, then empty)
+        // For now, just return the first valid one
+        return candidates.length > 0 ? candidates[0] : null;
     }
 }

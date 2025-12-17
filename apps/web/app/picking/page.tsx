@@ -54,7 +54,7 @@ export default function PickingPage() {
         }
     }
 
-    const startSession = async (strategy: 'BATCH' | 'CLUSTER' | 'WAVE') => {
+    const startSession = async () => {
         if (!selectedWarehouseId) {
             alert('Please select a warehouse first');
             return;
@@ -63,10 +63,9 @@ export default function PickingPage() {
         setLoading(true);
         try {
             const { createPickingSession } = await import('@/lib/api');
+            // Strategy is now auto-resolved by backend
             const session = await createPickingSession({
-                warehouseId: selectedWarehouseId,
-                strategy: strategy.toUpperCase(),
-                criteria: strategy === 'WAVE' ? 'product' : 'location'
+                warehouseId: selectedWarehouseId
             });
             setActiveSession(session);
         } catch (error) {
@@ -165,28 +164,32 @@ export default function PickingPage() {
             </header>
 
             {!activeSession ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <StrategySelectionCard
-                        title="Batch Picking"
-                        description="Pick multiple orders for the same customer or route together."
-                        icon={<Layers className="h-8 w-8 text-blue-600" />}
-                        onClick={() => startSession('BATCH')}
-                        loading={loading}
-                    />
-                    <StrategySelectionCard
-                        title="Cluster Picking"
-                        description="Pick items into specific totes for multiple orders."
-                        icon={<Box className="h-8 w-8 text-purple-600" />}
-                        onClick={() => startSession('CLUSTER')}
-                        loading={loading}
-                    />
-                    <StrategySelectionCard
-                        title="Wave Picking"
-                        description="Pick all items of the same type for the entire shift."
-                        icon={<Package className="h-8 w-8 text-orange-600" />}
-                        onClick={() => startSession('WAVE')}
-                        loading={loading}
-                    />
+                <div className="flex flex-col items-center justify-center p-12 bg-white rounded-xl shadow-sm border border-gray-200 text-center">
+                    <div className="bg-blue-50 p-6 rounded-full mb-6">
+                        <ClipboardList className="h-12 w-12 text-blue-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Ready to Start Picking?</h2>
+                    <p className="text-gray-500 max-w-md mb-8">
+                        The system will automatically assign tasks based on the warehouse's configured strategy (Default: Single Order).
+                    </p>
+
+                    <button
+                        onClick={() => startSession()}
+                        disabled={loading || !selectedWarehouseId}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
+                    >
+                        {loading ? (
+                            <>
+                                <div className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                                Starting Session...
+                            </>
+                        ) : (
+                            <>
+                                <ArrowRight className="h-6 w-6" />
+                                Start Picking Session
+                            </>
+                        )}
+                    </button>
                 </div>
             ) : (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -267,18 +270,4 @@ export default function PickingPage() {
     );
 }
 
-function StrategySelectionCard({ title, description, icon, onClick, loading }: any) {
-    return (
-        <button
-            onClick={onClick}
-            disabled={loading}
-            className="flex flex-col items-center text-center p-8 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all group disabled:opacity-70"
-        >
-            <div className="p-4 bg-gray-50 rounded-full mb-4 group-hover:bg-blue-50 transition-colors">
-                {loading ? <div className="h-8 w-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" /> : icon}
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
-            <p className="text-gray-500">{description}</p>
-        </button>
-    );
-}
+

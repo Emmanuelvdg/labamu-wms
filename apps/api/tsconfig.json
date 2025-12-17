@@ -19,6 +19,11 @@
         "forceConsistentCasingInFileNames": false,
         "noFallthroughCasesInSwitch": false
     },
+    "exclude": [
+        "test",
+        "**/*.spec.ts",
+        "dist"
+    ],
     "ts-node": {
         "ignore": [
             "/node_modules/(?!@labamu/database)"

@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: 'Inventory Management System',
 };
 
+import { Toaster } from 'sonner';
+
 export default function RootLayout({
   children,
 }: {
@@ -24,6 +26,7 @@ export default function RootLayout({
             {children}
           </main>
         </div>
+        <Toaster />
       </body>
     </html>
   );

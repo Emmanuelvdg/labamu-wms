@@ -9,7 +9,17 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+
+const STORAGE_OPTIONS = [
+    { value: 'refrigerated', label: 'Refrigerated' },
+    { value: 'climate_controlled', label: 'Climate Controlled' },
+    { value: 'load_bearing', label: 'Load Bearing' },
+    { value: 'hazardous', label: 'Hazardous' },
+    { value: 'fragile', label: 'Fragile' },
+    { value: 'secure', label: 'Secure Storage' }
+];
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -23,6 +33,8 @@ interface Packaging {
     depth?: number;
     weight?: number;
     barcode?: string;
+    maxStacking?: number;
+    storageRequirements?: string[];
 }
 
 export default function ProductPackagingPage() {
@@ -86,6 +98,23 @@ export default function ProductPackagingPage() {
         }
     };
 
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this packaging unit?')) return;
+
+        try {
+            const res = await fetch(`${API_URL}/inventory/packaging/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!res.ok) throw new Error('Failed to delete');
+
+            toast.success('Packaging unit deleted');
+            fetchPackaging();
+        } catch (error) {
+            toast.error('Failed to delete packaging unit');
+        }
+    };
+
     return (
         <div className="p-8 space-y-6">
             <div className="flex items-center gap-4">
@@ -140,6 +169,64 @@ export default function ProductPackagingPage() {
 
                         <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-2">
+                                <Label>Max Stacking</Label>
+                                <Input
+                                    type="number"
+                                    value={newPackaging.maxStacking || 1}
+                                    onChange={e => setNewPackaging({ ...newPackaging, maxStacking: Number(e.target.value) })}
+                                />
+                            </div>
+
+
+                            <div className="space-y-2">
+                                <Label>Storage Requirements</Label>
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                    {newPackaging.storageRequirements?.map((req) => (
+                                        <Badge key={req} variant="secondary" className="gap-1">
+                                            {STORAGE_OPTIONS.find(o => o.value === req)?.label || req}
+                                            <button
+                                                onClick={() => setNewPackaging({
+                                                    ...newPackaging,
+                                                    storageRequirements: newPackaging.storageRequirements?.filter(r => r !== req)
+                                                })}
+                                                className="hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                                            >
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </Badge>
+                                    ))}
+                                </div>
+                                <Select
+                                    onValueChange={(value) => {
+                                        const current = newPackaging.storageRequirements || [];
+                                        if (!current.includes(value)) {
+                                            setNewPackaging({
+                                                ...newPackaging,
+                                                storageRequirements: [...current, value]
+                                            });
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Add Requirement" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {STORAGE_OPTIONS.map(opt => (
+                                            <SelectItem
+                                                key={opt.value}
+                                                value={opt.value}
+                                                disabled={newPackaging.storageRequirements?.includes(opt.value)}
+                                            >
+                                                {opt.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-2">
                                 <Label>Width (cm)</Label>
                                 <Input
                                     type="number"
@@ -173,7 +260,7 @@ export default function ProductPackagingPage() {
                             </div>
                         </div>
 
-                        <Button className="w-full" onClick={handleCreate}>
+                        <Button className="w-full mt-6 relative z-10" onClick={handleCreate}>
                             <Plus className="w-4 h-4 mr-2" />
                             Add Unit
                         </Button>
@@ -203,7 +290,7 @@ export default function ProductPackagingPage() {
                                                 {pkg.width}x{pkg.height}x{pkg.depth}cm • {pkg.weight}kg
                                             </div>
                                         </div>
-                                        <Button variant="ghost" size="icon" className="text-destructive">
+                                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(pkg.id)}>
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </div>

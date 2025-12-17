@@ -8,7 +8,8 @@ async function bootstrap() {
         console.log(`[REQUEST] ${req.method} ${req.url}`);
         next();
     });
-    await app.listen(3001, '0.0.0.0');
+    const port = process.env.PORT || 3001;
+    await app.listen(port, '0.0.0.0');
     console.log(`Application is running on: ${await app.getUrl()}`);
     console.log('--- SERVER STARTED WITH RESERVATION LOGIC ---');
 }

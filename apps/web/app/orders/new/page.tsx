@@ -2,14 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchInventory, createOrder } from '@/lib/api';
+import { fetchInventory, createOrder, fetchCustomers, createCustomer } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 
 export default function NewOrderPage() {
     const router = useRouter();
     const [products, setProducts] = useState<any[]>([]);
+    const [customers, setCustomers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+
+    // Customer Creation State
+    const [showCustomerModal, setShowCustomerModal] = useState(false);
+    const [newCustomerName, setNewCustomerName] = useState('');
+    const [creatingCustomer, setCreatingCustomer] = useState(false);
 
     const [formData, setFormData] = useState({
         customerId: '',
@@ -21,11 +27,15 @@ export default function NewOrderPage() {
     useEffect(() => {
         async function loadData() {
             try {
-                const prods = await fetchInventory();
-                setProducts(prods);
+                const [prods, custs] = await Promise.all([
+                    fetchInventory(),
+                    fetchCustomers()
+                ]);
+                setProducts(prods || []);
+                setCustomers(custs || []);
             } catch (error) {
-                console.error('Failed to load products:', error);
-                alert('Failed to load products');
+                console.error('Failed to load data:', error);
+                alert('Failed to load data');
             } finally {
                 setLoading(false);
             }
@@ -50,6 +60,23 @@ export default function NewOrderPage() {
         const newItems = [...formData.items];
         newItems[index] = { ...newItems[index], [field]: value };
         setFormData({ ...formData, items: newItems });
+    };
+
+    const handleCreateCustomer = async () => {
+        if (!newCustomerName.trim()) return;
+        setCreatingCustomer(true);
+        try {
+            const newCustomer = await createCustomer({ name: newCustomerName });
+            setCustomers([newCustomer, ...customers]);
+            setFormData({ ...formData, customerId: newCustomer.id });
+            setShowCustomerModal(false);
+            setNewCustomerName('');
+        } catch (error) {
+            console.error('Failed to create customer:', error);
+            alert('Failed to create customer');
+        } finally {
+            setCreatingCustomer(false);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -78,14 +105,25 @@ export default function NewOrderPage() {
 
             <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name/ID</label>
-                    <input
-                        type="text"
-                        className="w-full border border-gray-300 rounded-md p-2"
-                        value={formData.customerId}
-                        onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
-                        required
-                    />
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+                    <div className="flex gap-2">
+                        <select
+                            className="w-full border border-gray-300 rounded-md p-2"
+                            value={formData.customerId}
+                            onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
+                            required
+                        >
+                            <option value="">Select Customer</option>
+                            {customers.map((cust) => (
+                                <option key={cust.id} value={cust.id}>
+                                    {cust.name}
+                                </option>
+                            ))}
+                        </select>
+                        <Button type="button" variant="outline" onClick={() => setShowCustomerModal(true)}>
+                            + New
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -174,6 +212,34 @@ export default function NewOrderPage() {
                     </Button>
                 </div>
             </form>
+
+            {/* Customer Creation Modal */}
+            {showCustomerModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+                        <h2 className="text-lg font-bold mb-4">Create New Customer</h2>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                            <input
+                                type="text"
+                                className="w-full border border-gray-300 rounded-md p-2"
+                                value={newCustomerName}
+                                onChange={(e) => setNewCustomerName(e.target.value)}
+                                placeholder="Enter customer name"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setShowCustomerModal(false)}>
+                                Cancel
+                            </Button>
+                            <Button onClick={handleCreateCustomer} disabled={creatingCustomer || !newCustomerName.trim()}>
+                                {creatingCustomer ? 'Creating...' : 'Create'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

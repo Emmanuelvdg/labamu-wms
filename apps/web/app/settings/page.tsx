@@ -75,6 +75,12 @@ export default function SettingsPage() {
                             >
                                 Users & Permissions
                             </button>
+                            <a
+                                href="/settings/attributes"
+                                className="px-4 py-3 text-left text-sm font-medium border-l-4 border-transparent text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                Location Attributes
+                            </a>
                         </nav>
                     </div>
                 </div>

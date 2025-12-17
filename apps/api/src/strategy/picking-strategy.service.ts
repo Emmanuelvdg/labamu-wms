@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
 @Injectable()
@@ -133,16 +133,28 @@ export class PickingStrategyService {
 
     async createSession(data: {
         warehouseId: string;
-        strategy: 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE';
+        strategy?: 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE';
         criteria?: string;
         maxOrders?: number;
     }) {
-        const { warehouseId, strategy, criteria, maxOrders } = data;
+        const { warehouseId, criteria, maxOrders } = data;
+        let { strategy } = data;
+
+        // Auto-resolve strategy if not provided
+        if (!strategy) {
+            // In a real implementation, we would fetch the active strategy for this warehouse
+            // const activeStrategy = await this.prisma.pickingStrategy.findFirst({ where: { warehouseId, active: true } });
+            // strategy = activeStrategy?.name as any || 'SINGLE';
+            strategy = 'SINGLE';
+        }
 
         // 1. Find Candidate Orders (RESERVED)
         const orders = await this.prisma.order.findMany({
             where: {
-                warehouseId,
+                OR: [
+                    { warehouseId },
+                    { warehouseId: null }
+                ],
                 status: 'RESERVED',
             },
             take: maxOrders || 50, // Default limit
@@ -154,7 +166,7 @@ export class PickingStrategyService {
         });
 
         if (orders.length === 0) {
-            throw new Error('No orders available for picking');
+            throw new HttpException('No orders available for picking', HttpStatus.BAD_REQUEST);
         }
 
         // 2. Create Session

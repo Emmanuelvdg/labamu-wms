@@ -29,4 +29,19 @@ export class PurchaseOrderController {
     receive(@Param('id') id: string, @Body() data: { destinationLocationId: string }) {
         return this.purchaseOrderService.receiveGoods(id, data.destinationLocationId);
     }
+
+    @Post(':id/submit')
+    submit(@Param('id') id: string) {
+        return this.purchaseOrderService.submitForApproval(id);
+    }
+
+    @Post(':id/approve')
+    approve(@Param('id') id: string, @Body() data: { userId: string }) {
+        return this.purchaseOrderService.approvePurchaseOrder(id, data.userId);
+    }
+
+    @Post(':id/reject')
+    reject(@Param('id') id: string, @Body() data: { userId: string; reason: string }) {
+        return this.purchaseOrderService.rejectPurchaseOrder(id, data.userId, data.reason);
+    }
 }

@@ -4,9 +4,10 @@ import { OrderController } from './order.controller';
 import { PrismaService } from '../prisma.service';
 import { StrategyModule } from '../strategy/strategy.module';
 import { InventoryModule } from '../inventory/inventory.module';
+import { FulfillmentModule } from '../fulfillment/fulfillment.module';
 
 @Module({
-    imports: [StrategyModule, InventoryModule],
+    imports: [StrategyModule, InventoryModule, FulfillmentModule],
     controllers: [OrderController],
     providers: [OrderService, PrismaService],
 })

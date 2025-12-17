@@ -97,12 +97,13 @@ export default function UserGuidePage() {
                                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                                             <li><strong>Create Product:</strong> Click "New Product" and fill in details (SKU, Name, Dimensions).</li>
                                             <li>
-                                                <strong>Multi-Form Factor:</strong>
+                                                <strong>Multi-Form Factor & Storage Requirements:</strong>
                                                 <ul className="list-circle pl-6 mt-1 space-y-1">
                                                     <li>Go to a Product's details page.</li>
                                                     <li>Click <strong>"Manage Packaging"</strong>.</li>
                                                     <li>Define units like "Box of 10" or "Pallet of 100".</li>
-                                                    <li>These units can be used in Purchase Orders and Receiving.</li>
+                                                    <li><strong>Storage Requirements:</strong> Use the multi-select dropdown to add requirements like "Refrigerated", "Fragile", etc.</li>
+                                                    <li><strong>Max Stacking:</strong> Define how many units can be stacked vertically.</li>
                                                 </ul>
                                             </li>
                                         </ul>
@@ -118,11 +119,12 @@ export default function UserGuidePage() {
                                         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                                             <li><strong>Hierarchy:</strong> Locations are organized as Warehouse &rarr; Room &rarr; Row &rarr; Bay &rarr; Shelf &rarr; Position.</li>
                                             <li>
-                                                <strong>Editing:</strong>
+                                                <strong>Configuration:</strong>
                                                 <ul className="list-circle pl-6 mt-1 space-y-1">
-                                                    <li>Click on a location to view details.</li>
-                                                    <li>Click <strong>"Edit Location"</strong> to modify attributes.</li>
-                                                    <li><strong>Color Coding:</strong> Set a "Color Code" in the edit dialog to visually distinguish locations in the Tree View and Floor Plan.</li>
+                                                    <li>Click <strong>"New Location"</strong> or edit an existing one.</li>
+                                                    <li><strong>Supported Packaging:</strong> Define what types of packaging this location accepts (e.g., "PALLET", "BOX").</li>
+                                                    <li><strong>Attributes:</strong> Define capabilities like <code>{`{"refrigerated": true}`}</code>.</li>
+                                                    <li><strong>Smart Putaway:</strong> The system will automatically suggest locations that match a product's storage requirements and packaging type.</li>
                                                 </ul>
                                             </li>
                                         </ul>

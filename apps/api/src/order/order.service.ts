@@ -7,6 +7,8 @@ import { Order } from '@labamu/database';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { FulfillmentService } from '../fulfillment/fulfillment.service';
+
 @Injectable()
 export class OrderService {
     private log(message: string) {
@@ -18,6 +20,7 @@ export class OrderService {
         private prisma: PrismaService,
         private strategyService: StrategyService,
         private inventoryService: InventoryService,
+        private fulfillmentService: FulfillmentService,
     ) { }
 
     async createOrder(data: { customerId: string; priority: string; items: { productId: string; quantity: number }[]; expectedDate?: Date; warehouseId?: string }): Promise<Order> {
@@ -38,6 +41,15 @@ export class OrderService {
             },
             include: { items: true },
         });
+
+        // 1.5 Allocate Order (Fulfillment Logic)
+        if (!data.warehouseId) {
+            try {
+                await this.fulfillmentService.allocateOrder(order.id);
+            } catch (e: any) {
+                this.log(`Allocation failed: ${e.message}`);
+            }
+        }
 
         // 2. Determine Reservation Strategy
         const reservationStrategies = await this.strategyService.getReservationStrategies();

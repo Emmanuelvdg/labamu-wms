@@ -11,13 +11,58 @@ export class PurchaseOrderService {
         private ruleService: RuleService,
     ) { }
 
-    async createPurchaseOrder(data: { supplierId: string; expectedDate?: Date; items: { productId: string; quantity: number; unitCost: number; packagingId?: string }[]; destinationLocationId?: string }) {
+    async createPurchaseOrder(data: {
+        supplierId: string;
+        expectedDate?: Date;
+        items: { productId: string; quantity: number; unitCost: number; packagingId?: string }[];
+        destinationLocationId?: string;
+        // New Fields
+        poNumber?: string;
+        orderDate?: Date;
+        buyerName?: string;
+        buyerAddress?: string;
+        buyerContact?: string;
+        shipToAddress?: string;
+        billToAddress?: string;
+        paymentTerms?: string;
+        deliveryTerms?: string;
+        notes?: string;
+        taxAmount?: number;
+        shippingCost?: number;
+    }) {
         return this.prisma.$transaction(async (tx) => {
+            // Auto-generate PO Number if not provided
+            let poNumber = data.poNumber;
+            if (!poNumber) {
+                const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                const count = await tx.purchaseOrder.count();
+                poNumber = `PO-${dateStr}-${(count + 1).toString().padStart(3, '0')}`;
+            }
+
+            // Calculate Totals
+            const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
+            const taxAmount = data.taxAmount || 0;
+            const shippingCost = data.shippingCost || 0;
+            const totalAmount = subtotal + taxAmount + shippingCost;
+
             const po = await tx.purchaseOrder.create({
                 data: {
                     supplierId: data.supplierId,
                     status: 'ORDERED',
                     expectedDate: data.expectedDate,
+                    poNumber,
+                    orderDate: data.orderDate || new Date(),
+                    buyerName: data.buyerName,
+                    buyerAddress: data.buyerAddress,
+                    buyerContact: data.buyerContact,
+                    shipToAddress: data.shipToAddress,
+                    billToAddress: data.billToAddress,
+                    paymentTerms: data.paymentTerms,
+                    deliveryTerms: data.deliveryTerms,
+                    notes: data.notes,
+                    taxAmount,
+                    shippingCost,
+                    totalAmount,
                     items: {
                         create: data.items.map(item => ({
                             productId: item.productId,
@@ -209,6 +254,7 @@ export class PurchaseOrderService {
             const updatedPo = await tx.purchaseOrder.update({
                 where: { id: po.id },
                 data: { status: 'RECEIVED' },
+
             });
             console.log(`[PurchaseOrderService] PO updated. New status: ${updatedPo.status}`);
 
@@ -222,5 +268,33 @@ export class PurchaseOrderService {
         }
 
         return result.receipt;
+    }
+    async submitForApproval(id: string) {
+        return this.prisma.purchaseOrder.update({
+            where: { id },
+            data: { approvalStatus: 'PENDING_APPROVAL' },
+        });
+    }
+
+    async approvePurchaseOrder(id: string, userId: string) {
+        return this.prisma.purchaseOrder.update({
+            where: { id },
+            data: {
+                approvalStatus: 'APPROVED',
+                status: 'ORDERED', // Auto-issue for now
+                approvedBy: userId,
+                approvedAt: new Date(),
+            },
+        });
+    }
+
+    async rejectPurchaseOrder(id: string, userId: string, reason: string) {
+        return this.prisma.purchaseOrder.update({
+            where: { id },
+            data: {
+                approvalStatus: 'REJECTED',
+                rejectionReason: reason,
+            },
+        });
     }
 }

@@ -1,13 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchInventory, createProduct } from '@/lib/api';
+import { fetchInventory, createProduct, fetchWarehouses } from '@/lib/api';
 import Link from 'next/link';
 
 export default function InventoryPage() {
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [warehouses, setWarehouses] = useState<any[]>([]);
+
+    // Filter State
+    const [filters, setFilters] = useState({
+        search: '',
+        category: '',
+        classification: '',
+        warehouseId: ''
+    });
 
     // New Product Form State
     const [newProduct, setNewProduct] = useState({
@@ -24,16 +33,38 @@ export default function InventoryPage() {
 
     useEffect(() => {
         load();
+        loadWarehouses();
     }, []);
 
+    // Debounce search or just load on effect?
+    // For simplicity, let's load when filters change, but maybe debounce search input.
+    // Or just add a "Search" button or "Apply Filters".
+    // Let's use useEffect on filters with a small debounce for search if possible, or just simple effect.
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            load();
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [filters]);
+
     async function load() {
+        setLoading(true);
         try {
-            const data = await fetchInventory();
+            const data = await fetchInventory(filters);
             setProducts(data);
         } catch (err) {
             console.error(err);
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function loadWarehouses() {
+        try {
+            const data = await fetchWarehouses();
+            setWarehouses(data);
+        } catch (err) {
+            console.error('Failed to load warehouses', err);
         }
     }
 
@@ -64,7 +95,20 @@ export default function InventoryPage() {
         }
     };
 
-    if (loading) return <div className="p-8">Loading...</div>;
+    const handleFilterChange = (key: string, value: string) => {
+        setFilters(prev => ({ ...prev, [key]: value }));
+    };
+
+    const resetFilters = () => {
+        setFilters({
+            search: '',
+            category: '',
+            classification: '',
+            warehouseId: ''
+        });
+    };
+
+    if (loading && products.length === 0) return <div className="p-8">Loading...</div>;
 
     return (
         <div className="min-h-screen bg-gray-50 p-8">
@@ -92,20 +136,53 @@ export default function InventoryPage() {
                 </div>
             </div>
 
-            {/* Filters (Mock) */}
-            <div className="bg-white p-4 rounded-lg shadow mb-6 flex gap-4">
+            {/* Filters */}
+            <div className="bg-white p-4 rounded-lg shadow mb-6 flex gap-4 flex-wrap">
                 <input
                     type="text"
                     placeholder="Search inventory by Name or SKU"
-                    className="flex-1 border rounded-lg px-4 py-2"
+                    className="flex-1 border rounded-lg px-4 py-2 min-w-[200px]"
+                    value={filters.search}
+                    onChange={(e) => handleFilterChange('search', e.target.value)}
                 />
-                <select className="border rounded-lg px-4 py-2">
-                    <option>Select category</option>
+                <select
+                    className="border rounded-lg px-4 py-2"
+                    value={filters.category}
+                    onChange={(e) => handleFilterChange('category', e.target.value)}
+                >
+                    <option value="">All Categories</option>
+                    {/* Ideally populate dynamically, but for now hardcode common ones or fetch distinct */}
+                    <option value="Electronics">Electronics</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Furniture">Furniture</option>
+                    <option value="Raw Material">Raw Material</option>
                 </select>
-                <select className="border rounded-lg px-4 py-2">
-                    <option>Select classification</option>
+                <select
+                    className="border rounded-lg px-4 py-2"
+                    value={filters.classification}
+                    onChange={(e) => handleFilterChange('classification', e.target.value)}
+                >
+                    <option value="">All Classifications</option>
+                    <option value="A">Class A</option>
+                    <option value="B">Class B</option>
+                    <option value="C">Class C</option>
                 </select>
-                <button className="text-red-600 font-medium">Reset</button>
+                <select
+                    className="border rounded-lg px-4 py-2"
+                    value={filters.warehouseId}
+                    onChange={(e) => handleFilterChange('warehouseId', e.target.value)}
+                >
+                    <option value="">All Warehouses</option>
+                    {warehouses.map(w => (
+                        <option key={w.id} value={w.id}>{w.name}</option>
+                    ))}
+                </select>
+                <button
+                    onClick={resetFilters}
+                    className="text-red-600 font-medium px-4 py-2 hover:bg-red-50 rounded-lg"
+                >
+                    Reset
+                </button>
             </div>
 
             {/* Table */}
