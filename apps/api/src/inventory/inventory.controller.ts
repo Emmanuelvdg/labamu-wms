@@ -1,4 +1,6 @@
-import { Controller, Get, Post, Body, Param, Put, Query, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Query, Delete, UseGuards } from '@nestjs/common';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
+import { RequirePermission } from '../common/auth/permissions.decorator';
 import { InventoryService } from './inventory.service';
 import { PackagingService } from './packaging.service';
 import { Product, Warehouse, ProductInventory } from '@labamu/database';
@@ -7,6 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 @Controller('inventory')
+@UseGuards(PermissionsGuard)
 export class InventoryController {
     private log(message: string) {
         const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
@@ -34,11 +37,13 @@ export class InventoryController {
     }
 
     @Post('products')
+    @RequirePermission('INVENTORY', 'CREATE')
     createProduct(@Body() data: any) {
         return this.inventoryService.createProduct(data);
     }
 
     @Get('products')
+    @RequirePermission('INVENTORY', 'READ')
     getProducts(
         @Query('search') search?: string,
         @Query('category') category?: string,

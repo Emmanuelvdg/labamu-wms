@@ -112,6 +112,7 @@ export default function NewOrderPage() {
                             value={formData.customerId}
                             onChange={(e) => setFormData({ ...formData, customerId: e.target.value })}
                             required
+                            data-testid="order-customer-select"
                         >
                             <option value="">Select Customer</option>
                             {customers.map((cust) => (
@@ -120,7 +121,7 @@ export default function NewOrderPage() {
                                 </option>
                             ))}
                         </select>
-                        <Button type="button" variant="outline" onClick={() => setShowCustomerModal(true)}>
+                        <Button type="button" variant="outline" onClick={() => setShowCustomerModal(true)} data-testid="new-customer-btn">
                             + New
                         </Button>
                     </div>
@@ -133,6 +134,7 @@ export default function NewOrderPage() {
                             className="w-full border border-gray-300 rounded-md p-2"
                             value={formData.priority}
                             onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                            data-testid="order-priority-select"
                         >
                             <option value="LOW">Low</option>
                             <option value="NORMAL">Normal</option>
@@ -146,6 +148,7 @@ export default function NewOrderPage() {
                             className="w-full border border-gray-300 rounded-md p-2"
                             value={formData.expectedDate}
                             onChange={(e) => setFormData({ ...formData, expectedDate: e.target.value })}
+                            data-testid="order-expected-date-input"
                         />
                     </div>
                 </div>
@@ -153,7 +156,7 @@ export default function NewOrderPage() {
                 <div>
                     <div className="flex justify-between items-center mb-2">
                         <label className="block text-sm font-medium text-gray-700">Items</label>
-                        <Button type="button" variant="outline" size="sm" onClick={handleAddItem}>
+                        <Button type="button" variant="outline" size="sm" onClick={handleAddItem} data-testid="add-order-item-btn">
                             + Add Item
                         </Button>
                     </div>
@@ -168,6 +171,7 @@ export default function NewOrderPage() {
                                         value={item.productId}
                                         onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
                                         required
+                                        data-testid={`order-item-product-select-${index}`}
                                     >
                                         <option value="">Select Product</option>
                                         {products.map((prod) => (
@@ -186,6 +190,7 @@ export default function NewOrderPage() {
                                         onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
                                         min="1"
                                         required
+                                        data-testid={`order-item-quantity-input-${index}`}
                                     />
                                 </div>
                                 {formData.items.length > 1 && (
@@ -207,7 +212,7 @@ export default function NewOrderPage() {
                     <Button type="button" variant="outline" onClick={() => router.back()}>
                         Cancel
                     </Button>
-                    <Button type="submit" disabled={submitting}>
+                    <Button type="submit" disabled={submitting} data-testid="submit-order-btn">
                         {submitting ? 'Creating...' : 'Create Order'}
                     </Button>
                 </div>

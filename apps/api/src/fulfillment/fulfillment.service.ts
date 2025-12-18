@@ -146,8 +146,15 @@ export class FulfillmentService {
         items: { productId: string; quantity: number }[];
         initiatorId: string;
     }) {
-        const initiator = await this.prisma.user.findUnique({ where: { id: data.initiatorId } });
-        const status = (initiator?.role === 'MANAGER' || initiator?.role === 'ADMIN') ? 'APPROVED' : 'PENDING_APPROVAL';
+        const initiator = await this.prisma.user.findUnique({
+            where: { id: data.initiatorId },
+            include: { roles: true }
+        });
+
+        const hasPrivilegedRole = initiator?.roles?.some(role =>
+            ['MANAGER', 'ADMIN'].includes(role.name.toUpperCase())
+        );
+        const status = hasPrivilegedRole ? 'APPROVED' : 'PENDING_APPROVAL';
 
         return this.prisma.transferOrder.create({
             data: {

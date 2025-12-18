@@ -6,8 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+import { useAuth } from '@/lib/auth';
+
 export default function LoginPage() {
     const router = useRouter();
+    const { refreshUser } = useAuth();
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -30,13 +33,15 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (res.ok && data.success) {
+                await refreshUser();
                 router.push('/');
                 router.refresh(); // Ensure middleware re-runs
             } else {
                 setError(data.error || 'Login failed');
             }
-        } catch (err) {
-            setError('An error occurred');
+        } catch (err: any) {
+            console.error('Login error:', err);
+            setError(err.message || 'An error occurred');
         } finally {
             setLoading(false);
         }

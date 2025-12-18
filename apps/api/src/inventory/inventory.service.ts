@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
 
@@ -614,14 +614,27 @@ export class InventoryService {
             where: { id },
             include: { parent: true }
         });
-        if (!location) throw new Error('Location not found');
+        if (!location) throw new NotFoundException('Location not found');
 
         // Resolve inherited properties
         const inheritedAttributes = await this.resolveProperties(location);
 
+        let attributes = {};
+        if (location.attributes) {
+            if (typeof location.attributes === 'string') {
+                try {
+                    attributes = JSON.parse(location.attributes);
+                } catch (e) {
+                    // console.warn('Failed to parse attributes:', location.attributes);
+                }
+            } else {
+                attributes = location.attributes;
+            }
+        }
+
         return {
             ...location,
-            attributes: location.attributes ? JSON.parse(location.attributes) : {},
+            attributes,
             inheritedAttributes
         };
     }

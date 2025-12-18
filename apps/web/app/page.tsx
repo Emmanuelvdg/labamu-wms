@@ -39,8 +39,12 @@ export default function Dashboard() {
         ]);
         setAnalytics(analyticsData);
         setProducts(productsData);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+        if (err.message && (err.message.includes('Unauthorized') || err.message.includes('Forbidden'))) {
+          window.location.href = '/login';
+          return;
+        }
         setError('Failed to connect to the backend. Please ensure the API server is running.');
       } finally {
         setLoading(false);
@@ -61,12 +65,28 @@ export default function Dashboard() {
     );
   }
 
-  if (loading || !analytics) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center">
           <div className="h-8 w-8 bg-blue-600 rounded-full animate-bounce mb-4"></div>
           <p className="text-gray-500 font-medium">Loading Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500 font-medium">No dashboard data available.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 text-blue-600 hover:underline"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );

@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { fetchInventory, createProduct, fetchWarehouses } from '@/lib/api';
 import Link from 'next/link';
+import { useAuth } from '@/lib/auth';
 
 export default function InventoryPage() {
+    const { hasPermission } = useAuth();
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -118,13 +120,15 @@ export default function InventoryPage() {
                     <p className="text-gray-500">Manage your inventory items and stock levels</p>
                 </div>
                 <div className="space-x-4">
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        data-testid="new-item-btn"
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                    >
-                        + New Item
-                    </button>
+                    {hasPermission('INVENTORY', 'CREATE') && (
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            data-testid="new-item-btn"
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                        >
+                            + New Item
+                        </button>
+                    )}
                     <button className="bg-white border text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">
                         Upload
                     </button>

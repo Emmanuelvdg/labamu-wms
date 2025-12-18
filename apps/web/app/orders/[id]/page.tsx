@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { fetchOrder } from '@/lib/api';
+import { fetchOrder, checkAvailability } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Package, Truck, AlertCircle } from 'lucide-react';
@@ -26,6 +26,16 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
             setLoading(false);
         }
     }
+
+    const handleCheckAvailability = async () => {
+        try {
+            await checkAvailability(id);
+            loadOrder();
+        } catch (error) {
+            console.error('Failed to check availability:', error);
+            alert('Failed to check availability');
+        }
+    };
 
     if (loading) return <div className="p-8">Loading...</div>;
     if (!order) return <div className="p-8">Order not found</div>;
@@ -77,6 +87,14 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                         )}
                     </div>
                 </div>
+
+                {order.status === 'PENDING' && (
+                    <div className="mt-4 flex justify-end">
+                        <Button onClick={handleCheckAvailability}>
+                            Check Availability
+                        </Button>
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -205,6 +223,6 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     </tbody>
                 </table>
             </div>
-        </div>
+        </div >
     );
 }

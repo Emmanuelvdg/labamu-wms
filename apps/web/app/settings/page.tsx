@@ -66,20 +66,23 @@ export default function SettingsPage() {
                             >
                                 Picking Strategies
                             </button>
-                            <button
-                                onClick={() => setActiveTab('users')}
-                                className={`px-4 py-3 text-left text-sm font-medium border-l-4 transition-colors ${activeTab === 'users'
-                                    ? 'border-blue-600 bg-blue-50 text-blue-700'
-                                    : 'border-transparent text-gray-600 hover:bg-gray-50'
-                                    }`}
+                            <a
+                                href="/settings/roles"
+                                className="px-4 py-3 text-left text-sm font-medium border-l-4 border-transparent text-gray-600 hover:bg-gray-50 transition-colors"
                             >
-                                Users & Permissions
-                            </button>
+                                Roles & Permissions
+                            </a>
                             <a
                                 href="/settings/attributes"
                                 className="px-4 py-3 text-left text-sm font-medium border-l-4 border-transparent text-gray-600 hover:bg-gray-50 transition-colors"
                             >
                                 Location Attributes
+                            </a>
+                            <a
+                                href="/settings/users"
+                                className="px-4 py-3 text-left text-sm font-medium border-l-4 border-transparent text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                Users
                             </a>
                         </nav>
                     </div>

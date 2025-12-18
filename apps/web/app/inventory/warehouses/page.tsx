@@ -94,7 +94,7 @@ export default function WarehousesPage() {
                 </div>
                 <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button data-testid="create-warehouse-btn">
                             <Plus className="w-4 h-4 mr-2" />
                             Add Warehouse
                         </Button>
@@ -112,6 +112,7 @@ export default function WarehousesPage() {
                                         value={newWarehouse.name}
                                         onChange={(e) => setNewWarehouse({ ...newWarehouse, name: e.target.value })}
                                         placeholder="e.g., Main Warehouse"
+                                        data-testid="warehouse-name-input"
                                     />
                                 </div>
                                 <div>
@@ -122,6 +123,7 @@ export default function WarehousesPage() {
                                         value={newWarehouse.shortName}
                                         onChange={(e) => setNewWarehouse({ ...newWarehouse, shortName: e.target.value })}
                                         placeholder="e.g., WH-01"
+                                        data-testid="warehouse-shortname-input"
                                     />
                                 </div>
                             </div>
@@ -133,6 +135,7 @@ export default function WarehousesPage() {
                                     value={newWarehouse.address}
                                     onChange={(e) => setNewWarehouse({ ...newWarehouse, address: e.target.value })}
                                     placeholder="Full Address"
+                                    data-testid="warehouse-address-input"
                                 />
                             </div>
 
@@ -144,6 +147,7 @@ export default function WarehousesPage() {
                                         value={newWarehouse.companyId}
                                         onChange={(e) => setNewWarehouse({ ...newWarehouse, companyId: e.target.value })}
                                         placeholder="Company Name/ID"
+                                        data-testid="warehouse-company-input"
                                     />
                                 </div>
                                 <div>
@@ -152,6 +156,7 @@ export default function WarehousesPage() {
                                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                         value={newWarehouse.type}
                                         onChange={(e) => setNewWarehouse({ ...newWarehouse, type: e.target.value })}
+                                        data-testid="warehouse-type-select"
                                     >
                                         <option value="PHYSICAL">Physical</option>
                                         <option value="VIRTUAL">Virtual</option>
@@ -212,7 +217,7 @@ export default function WarehousesPage() {
                                 </div>
                             </div>
 
-                            <Button type="submit" className="w-full">Create Warehouse</Button>
+                            <Button type="submit" className="w-full" data-testid="submit-warehouse-btn">Create Warehouse</Button>
                         </form>
                     </DialogContent>
                 </Dialog>

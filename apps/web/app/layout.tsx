@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from 'sonner';
+import { AuthProvider } from '@/lib/auth';
 
 export default function RootLayout({
   children,
@@ -20,13 +21,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <div className="flex h-screen overflow-hidden">
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto bg-gray-50">
-            {children}
-          </main>
-        </div>
-        <Toaster />
+        <AuthProvider>
+          <div className="flex h-screen overflow-hidden">
+            <Sidebar />
+            <main className="flex-1 overflow-y-auto bg-gray-50">
+              {children}
+            </main>
+          </div>
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   );

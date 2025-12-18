@@ -511,3 +511,47 @@
 [InventoryService] [ReserveStock] Product: a108f4e2-5dae-4a00-88bb-919f0244cb12, Qty: 11, Found Inventory Records: 1
 [InventoryService]  - ID: 281412b9-aa96-4403-bf8e-946207d338d4, Qty: 5, Reserved: 0, Warehouse: 8dbb8221-2243-4d80-82bf-de5defdb1890
 [OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product a108f4e2-5dae-4a00-88bb-919f0244cb12
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] No strategies defined at all.
+[OrderService] Active Strategy: undefined (Active: undefined) Rules: undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 26d5e60b-17d8-4657-ba04-543eedf3f409, Qty: 10, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 26d5e60b-17d8-4657-ba04-543eedf3f409
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] No strategies defined at all.
+[OrderService] Active Strategy: undefined (Active: undefined) Rules: undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 26d5e60b-17d8-4657-ba04-543eedf3f409, Qty: 10, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 26d5e60b-17d8-4657-ba04-543eedf3f409
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] No strategies defined at all.
+[OrderService] Active Strategy: undefined (Active: undefined) Rules: undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 26d5e60b-17d8-4657-ba04-543eedf3f409, Qty: 10, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 26d5e60b-17d8-4657-ba04-543eedf3f409
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] No strategies defined at all.
+[OrderService] Active Strategy: undefined (Active: undefined) Rules: undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 26d5e60b-17d8-4657-ba04-543eedf3f409, Qty: 10, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 26d5e60b-17d8-4657-ba04-543eedf3f409
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] No strategies defined at all.
+[OrderService] Active Strategy: undefined (Active: undefined) Rules: undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 26d5e60b-17d8-4657-ba04-543eedf3f409, Qty: 10, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 26d5e60b-17d8-4657-ba04-543eedf3f409
+[OrderService] No active strategy found. Checking if any strategy exists...
+[OrderService] No strategies defined at all.
+[OrderService] Active Strategy: undefined (Active: undefined) Rules: undefined
+[OrderService] Should Reserve: true
+[InventoryService] [ReserveStock] Product: 26d5e60b-17d8-4657-ba04-543eedf3f409, Qty: 10, Found Inventory Records: 0
+[OrderService] Reservation failed (insufficient stock?), keeping order as PENDING. Error: Insufficient stock for product 26d5e60b-17d8-4657-ba04-543eedf3f409
+[InventoryService] [ReserveStock] Product: 26d5e60b-17d8-4657-ba04-543eedf3f409, Qty: 10, Found Inventory Records: 0
+[OrderService] Check Availability failed: Insufficient stock for product 26d5e60b-17d8-4657-ba04-543eedf3f409
+[InventoryService] [ReserveStock] Product: 26d5e60b-17d8-4657-ba04-543eedf3f409, Qty: 10, Found Inventory Records: 0
+[OrderService] Check Availability failed: Insufficient stock for product 26d5e60b-17d8-4657-ba04-543eedf3f409
+[InventoryService] [ReserveStock] Product: 26d5e60b-17d8-4657-ba04-543eedf3f409, Qty: 10, Found Inventory Records: 0
+[OrderService] Check Availability failed: Insufficient stock for product 26d5e60b-17d8-4657-ba04-543eedf3f409
+[InventoryService] [ReserveStock] Product: 26d5e60b-17d8-4657-ba04-543eedf3f409, Qty: 10, Found Inventory Records: 0
+[OrderService] Check Availability failed: Insufficient stock for product 26d5e60b-17d8-4657-ba04-543eedf3f409

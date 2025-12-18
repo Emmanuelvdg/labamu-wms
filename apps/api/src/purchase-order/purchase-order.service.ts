@@ -128,17 +128,50 @@ export class PurchaseOrderService {
         return this.prisma.supplier.findMany();
     }
 
-    async receiveGoods(purchaseOrderId: string, destinationLocationId: string) {
+    async getReceipts(purchaseOrderId: string) {
+        return this.prisma.receipt.findMany({
+            where: { purchaseOrderId },
+            include: { items: { include: { product: true } } },
+            orderBy: { receivedAt: 'desc' }
+        });
+    }
+
+    async receiveGoods(purchaseOrderId: string, destinationLocationId: string, itemsToReceive?: { poItemId: string; quantity: number }[]) {
         console.log(`[PurchaseOrderService] Receiving goods for PO: ${purchaseOrderId} to ${destinationLocationId}`);
-        // 1. Perform Receipt (Transaction)
-        const result = await this.prisma.$transaction(async (tx) => {
+
+        return this.prisma.$transaction(async (tx) => {
             const po = await tx.purchaseOrder.findUnique({
                 where: { id: purchaseOrderId },
-                include: { items: { include: { packaging: true } } },
+                include: { items: { include: { packaging: true, receiptItems: true } } },
             });
 
             if (!po) throw new Error('Purchase Order not found');
-            if (po.status === 'RECEIVED') throw new Error('Purchase Order already received');
+            if (po.status === 'RECEIVED' || po.status === 'CANCELLED') throw new Error(`Purchase Order is ${po.status}`);
+
+            // Determine items to process
+            let itemsToProcess: { poItem: any; quantity: number }[] = [];
+
+            if (itemsToReceive && itemsToReceive.length > 0) {
+                // Validate and map provided items
+                for (const reqItem of itemsToReceive) {
+                    const poItem = po.items.find(i => i.id === reqItem.poItemId);
+                    if (!poItem) throw new Error(`PO Item ${reqItem.poItemId} not found in PO ${purchaseOrderId}`);
+                    itemsToProcess.push({ poItem, quantity: reqItem.quantity });
+                }
+            } else {
+                // Receive ALL remaining quantity
+                for (const poItem of po.items) {
+                    const receivedSoFar = poItem.receiptItems.reduce((sum, ri) => sum + ri.quantity, 0);
+                    const remaining = poItem.quantity - receivedSoFar;
+                    if (remaining > 0) {
+                        itemsToProcess.push({ poItem, quantity: remaining });
+                    }
+                }
+            }
+
+            if (itemsToProcess.length === 0) {
+                throw new Error('No items to receive');
+            }
 
             // 1. Create Receipt
             const receipt = await tx.receipt.create({
@@ -146,93 +179,103 @@ export class PurchaseOrderService {
                     purchaseOrderId: po.id,
                     destinationLocationId: destinationLocationId,
                     status: 'DONE',
+                    items: {
+                        create: itemsToProcess.map(item => ({
+                            productId: item.poItem.productId,
+                            quantity: item.quantity,
+                            poItemId: item.poItem.id,
+                        }))
+                    }
                 },
+                include: { items: true }
             });
 
-            // 2. Process Items (Create Inventory Batches)
-            // We need to fetch the warehouse ID from the location
+            // 2. Process Inventory (Batches)
             const location = await tx.location.findUnique({ where: { id: destinationLocationId } });
             if (!location || !location.warehouseId) throw new Error('Destination location must belong to a warehouse');
 
-            for (const item of po.items) {
-                // Determine quantity and packaging
-                let quantityToReceive = item.quantity;
-                let unitQuantity = item.quantity; // Base units per batch
-                let isPackaged = false;
+            for (const item of itemsToProcess) {
+                const poItem = item.poItem;
+                const quantityToReceive = item.quantity;
 
-                if (item.packaging) {
-                    // If packaged, item.quantity is number of PACKAGES.
-                    // We need to create item.quantity PACKAGES, each containing item.packaging.quantity UNITS.
-                    quantityToReceive = item.quantity * item.packaging.quantity;
-                    unitQuantity = item.packaging.quantity;
+                // Handle Packaging (if applicable)
+                // Note: Assuming quantityToReceive is in the same unit as PO Item (e.g. Boxes if PO was for Boxes)
+                let unitQuantity = quantityToReceive;
+                let isPackaged = false;
+                let totalBaseUnits = quantityToReceive;
+
+                if (poItem.packaging) {
+                    // PO Item quantity is in Packages
+                    // So quantityToReceive is number of Packages
+                    totalBaseUnits = quantityToReceive * poItem.packaging.quantity;
+                    unitQuantity = poItem.packaging.quantity;
                     isPackaged = true;
                 }
 
                 if (isPackaged) {
-                    // Create multiple packages (LPNs)
-                    for (let i = 0; i < item.quantity; i++) {
+                    for (let i = 0; i < quantityToReceive; i++) {
                         // Create Package LPN
                         const pkg = await tx.package.create({
                             data: {
-                                name: `${item.packaging?.type.toUpperCase()}-${Date.now()}-${i}`,
-                                type: item.packaging?.type || 'BOX',
+                                name: `${poItem.packaging?.type.toUpperCase()}-${Date.now()}-${i}`,
+                                type: poItem.packaging?.type || 'BOX',
                                 locationId: destinationLocationId,
-                                packagingId: item.packagingId
+                                packagingId: poItem.packagingId
                             }
                         });
 
-                        // Create Batch inside Package
-                        const batchNumber = `BATCH-${Date.now()}-${item.productId.substring(0, 4)}-${i}`;
+                        // Create Batch
+                        const batchNumber = `BATCH-${Date.now()}-${poItem.productId.substring(0, 4)}-${i}`;
                         await tx.inventoryBatch.create({
                             data: {
-                                productId: item.productId,
+                                productId: poItem.productId,
                                 warehouseId: location.warehouseId,
                                 locationId: destinationLocationId,
                                 packageId: pkg.id,
                                 batchNumber: batchNumber,
                                 initialQuantity: unitQuantity,
                                 currentQuantity: unitQuantity,
-                                costPerUnit: item.unitCost,
+                                costPerUnit: poItem.unitCost,
                                 purchaseDate: new Date(),
                                 status: 'Active',
                             },
                         });
                     }
                 } else {
-                    // Standard Item Receipt
-                    const batchNumber = `BATCH-${Date.now()}-${item.productId.substring(0, 4)}`;
+                    // Standard Item
+                    const batchNumber = `BATCH-${Date.now()}-${poItem.productId.substring(0, 4)}`;
                     await tx.inventoryBatch.create({
                         data: {
-                            productId: item.productId,
+                            productId: poItem.productId,
                             warehouseId: location.warehouseId,
                             locationId: destinationLocationId,
                             batchNumber: batchNumber,
                             initialQuantity: quantityToReceive,
                             currentQuantity: quantityToReceive,
-                            costPerUnit: item.unitCost,
+                            costPerUnit: poItem.unitCost,
                             purchaseDate: new Date(),
                             status: 'Active',
                         },
                     });
                 }
 
-                // Update Aggregate Inventory (Always in base units)
+                // Update Aggregate Inventory
                 const existingInventory = await tx.productInventory.findFirst({
-                    where: { productId: item.productId, warehouseId: location.warehouseId, locationId: destinationLocationId },
+                    where: { productId: poItem.productId, warehouseId: location.warehouseId, locationId: destinationLocationId },
                 });
 
                 if (existingInventory) {
                     await tx.productInventory.update({
                         where: { id: existingInventory.id },
-                        data: { quantity: { increment: quantityToReceive } },
+                        data: { quantity: { increment: totalBaseUnits } },
                     });
                 } else {
                     await tx.productInventory.create({
                         data: {
-                            productId: item.productId,
+                            productId: poItem.productId,
                             warehouseId: location.warehouseId,
                             locationId: destinationLocationId,
-                            quantity: quantityToReceive,
+                            quantity: totalBaseUnits,
                         },
                     });
                 }
@@ -240,9 +283,9 @@ export class PurchaseOrderService {
                 // Log Transaction
                 await tx.stockTransaction.create({
                     data: {
-                        productId: item.productId,
+                        productId: poItem.productId,
                         type: 'IN',
-                        quantity: quantityToReceive,
+                        quantity: totalBaseUnits,
                         referenceId: receipt.id,
                         date: new Date(),
                     },
@@ -250,24 +293,32 @@ export class PurchaseOrderService {
             }
 
             // 3. Update PO Status
-            console.log(`[PurchaseOrderService] Updating PO ${po.id} status to RECEIVED`);
-            const updatedPo = await tx.purchaseOrder.update({
-                where: { id: po.id },
-                data: { status: 'RECEIVED' },
+            // Check if fully received
+            // We need to re-fetch or calculate totals
+            let allReceived = true;
+            let anyReceived = false;
 
-            });
-            console.log(`[PurchaseOrderService] PO updated. New status: ${updatedPo.status}`);
+            for (const poItem of po.items) {
+                // Include the just-received items
+                const justReceived = itemsToProcess.find(i => i.poItem.id === poItem.id)?.quantity || 0;
+                const previouslyReceived = poItem.receiptItems.reduce((sum, ri) => sum + ri.quantity, 0);
+                const totalReceived = previouslyReceived + justReceived;
 
-            return { receipt, items: po.items };
+                if (totalReceived > 0) anyReceived = true;
+                if (totalReceived < poItem.quantity) allReceived = false;
+            }
+
+            const newStatus = allReceived ? 'RECEIVED' : (anyReceived ? 'PARTIALLY_RECEIVED' : 'ORDERED');
+
+            if (po.status !== newStatus) {
+                await tx.purchaseOrder.update({
+                    where: { id: po.id },
+                    data: { status: newStatus },
+                });
+            }
+
+            return receipt;
         });
-
-        // 2. Trigger Rules (Outside Transaction to avoid locking/complexity if rules fail or are async)
-        // Note: If rule fails, receipt is still committed. This is usually acceptable as stock is physically there.
-        for (const item of result.items) {
-            await this.ruleService.applyPushRules(item.productId, destinationLocationId, item.quantity);
-        }
-
-        return result.receipt;
     }
     async submitForApproval(id: string) {
         return this.prisma.purchaseOrder.update({

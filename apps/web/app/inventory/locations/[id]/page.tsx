@@ -43,15 +43,9 @@ export default function LocationDetailsPage() {
 
     const loadAllLocations = async () => {
         try {
-            const res = await fetch('/api/inventory/locations'); // Assuming this endpoint exists or similar
-            // Actually we need a way to get potential parents. 
-            // The existing `fetchLocations` in `api.ts` might return a tree or list.
-            // Let's assume we can fetch a flat list or flatten the tree.
-            // For now, let's try to fetch all locations. 
-            // If the API returns a tree, we'll need to flatten it.
-            // Given the previous `LocationsPage` implementation, it seems `fetchLocations` returns a tree.
-            // We need a flat list of potential parents.
-            // Let's try to use the `fetchLocations` from api.ts
+            const { fetchLocations: fetchLocationsApi } = await import('@/lib/api');
+            const data = await fetchLocationsApi();
+            setAllLocations(flattenLocations(Array.isArray(data) ? data : []));
         } catch (e) {
             console.error("Failed to load locations for parent selection", e);
         }
@@ -73,26 +67,30 @@ export default function LocationDetailsPage() {
         try {
             const data = await getLocationDetails(id);
             setLocation(data);
+
+            // Convert attributes object to array for editing
+            const customAttributes = Object.entries(data.attributes || {})
+                .filter(([key]) => !['color', 'temperature', 'loadBearing', 'supportedPackaging'].includes(key)) // Exclude known keys if managed separately
+                .map(([key, value]) => ({ key, value }));
+
             setEditForm({
                 name: data.name,
                 type: data.type,
                 structuralType: data.structuralType,
-                parentId: data.parentId, // Ensure parentId is set
+                parentId: data.parentId,
                 attributes: data.attributes || {},
+                customAttributes: customAttributes,
                 removalStrategy: data.removalStrategy,
                 inventoryFrequency: data.inventoryFrequency
             });
-
-            // Fetch all locations for parent selection
-            // We can reuse fetchLocations from api.ts
-            // But we need to import it. 
-            // Let's assume we can get it.
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
         }
     };
+
+    // ... useEffect ...
 
     // We need to fetch locations to populate the parent dropdown
     // Let's add a useEffect for that when edit opens
@@ -135,7 +133,23 @@ export default function LocationDetailsPage() {
 
     const handleUpdate = async () => {
         try {
-            await updateLocation(location.id, editForm);
+            // Merge custom attributes back into attributes object
+            const mergedAttributes = { ...editForm.attributes };
+
+            // First remove old custom attributes (simplistic approach: just rebuild from separate UI sections?)
+            // A safer way is to trust `editForm.attributes` contains the specific ones (color, etc.)
+            // and `editForm.customAttributes` contains the generic ones.
+
+            if (editForm.customAttributes) {
+                editForm.customAttributes.forEach((attr: any) => {
+                    if (attr.key) mergedAttributes[attr.key] = attr.value;
+                });
+            }
+
+            await updateLocation(location.id, {
+                ...editForm,
+                attributes: mergedAttributes
+            });
             toast.success('Location updated');
             setIsEditOpen(false);
             loadLocation(location.id);
@@ -299,6 +313,60 @@ export default function LocationDetailsPage() {
                                         <SelectItem value="TRANSIT">Transit</SelectItem>
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            {/* Custom Attributes */}
+                            <div className="grid grid-cols-4 items-start gap-4 border-t pt-4 mt-4">
+                                <Label className="text-right pt-2">Custom Attributes</Label>
+                                <div className="col-span-3 space-y-2">
+                                    {(editForm.customAttributes || []).map((attr: any, index: number) => (
+                                        <div key={index} className="flex gap-2">
+                                            <Input
+                                                placeholder="Key"
+                                                value={attr.key}
+                                                onChange={(e) => {
+                                                    const newAttrs = [...(editForm.customAttributes || [])];
+                                                    newAttrs[index].key = e.target.value;
+                                                    setEditForm({ ...editForm, customAttributes: newAttrs });
+                                                }}
+                                                className="w-1/2"
+                                            />
+                                            <Input
+                                                placeholder="Value"
+                                                value={attr.value}
+                                                onChange={(e) => {
+                                                    const newAttrs = [...(editForm.customAttributes || [])];
+                                                    newAttrs[index].value = e.target.value;
+                                                    setEditForm({ ...editForm, customAttributes: newAttrs });
+                                                }}
+                                                className="w-1/2"
+                                            />
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-red-500"
+                                                onClick={() => {
+                                                    const newAttrs = [...(editForm.customAttributes || [])];
+                                                    newAttrs.splice(index, 1);
+                                                    setEditForm({ ...editForm, customAttributes: newAttrs });
+                                                }}
+                                            >
+                                                x
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            const newAttrs = [...(editForm.customAttributes || [])];
+                                            newAttrs.push({ key: '', value: '' });
+                                            setEditForm({ ...editForm, customAttributes: newAttrs });
+                                        }}
+                                    >
+                                        Add Attribute
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                         <DialogFooter>

@@ -115,7 +115,7 @@ export default function LocationsPage() {
                     </Link>
                     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                         <DialogTrigger asChild>
-                            <Button><Plus className="mr-2 h-4 w-4" /> New Location</Button>
+                            <Button data-testid="create-location-btn"><Plus className="mr-2 h-4 w-4" /> New Location</Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                             <DialogHeader>
@@ -130,6 +130,7 @@ export default function LocationsPage() {
                                         value={newLocation.name}
                                         onChange={(e) => setNewLocation({ ...newLocation, name: e.target.value })}
                                         className="col-span-3"
+                                        data-testid="location-name-input"
                                     />
                                 </div>
 
@@ -140,7 +141,7 @@ export default function LocationsPage() {
                                         value={newLocation.structuralType}
                                         onValueChange={(value) => setNewLocation({ ...newLocation, structuralType: value, parentId: 'null' })}
                                     >
-                                        <SelectTrigger className="col-span-3">
+                                        <SelectTrigger className="col-span-3" data-testid="location-structure-select">
                                             <SelectValue placeholder="Select structure type" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -289,7 +290,7 @@ export default function LocationsPage() {
                                         value={newLocation.parentId}
                                         onValueChange={(value) => setNewLocation({ ...newLocation, parentId: value })}
                                     >
-                                        <SelectTrigger className="col-span-3">
+                                        <SelectTrigger className="col-span-3" data-testid="location-parent-select">
                                             <SelectValue placeholder="Select parent" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -326,7 +327,7 @@ export default function LocationsPage() {
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button onClick={handleCreate}>Create</Button>
+                                <Button onClick={handleCreate} data-testid="create-location-submit-btn">Create</Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>

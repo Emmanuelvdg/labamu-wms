@@ -1,0 +1,114 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]: Labamu IMS
+      - navigation [ref=e6]:
+        - link "Dashboard" [ref=e7] [cursor=pointer]:
+          - /url: /
+        - link "Inventory" [ref=e8] [cursor=pointer]:
+          - /url: /inventory
+        - link "Warehouses" [ref=e9] [cursor=pointer]:
+          - /url: /inventory/warehouses
+        - link "Locations" [ref=e10] [cursor=pointer]:
+          - /url: /inventory/locations
+        - link "Adjustments" [ref=e11] [cursor=pointer]:
+          - /url: /inventory/adjustments
+        - link "Stock Transfers" [ref=e12] [cursor=pointer]:
+          - /url: /inventory/transfers
+        - link "Scrap Orders" [ref=e13] [cursor=pointer]:
+          - /url: /inventory/scrap
+        - link "Orders" [ref=e14] [cursor=pointer]:
+          - /url: /orders
+        - link "Picking" [ref=e15] [cursor=pointer]:
+          - /url: /picking
+        - link "Purchase Orders" [ref=e16] [cursor=pointer]:
+          - /url: /inventory/purchases
+        - link "Suppliers" [ref=e17] [cursor=pointer]:
+          - /url: /inventory/suppliers
+        - link "Invoices" [ref=e18] [cursor=pointer]:
+          - /url: /invoices
+        - link "Reports" [ref=e19] [cursor=pointer]:
+          - /url: /reports
+        - link "Routes" [ref=e20] [cursor=pointer]:
+          - /url: /inventory/routes
+        - link "Stock Moves" [ref=e21] [cursor=pointer]:
+          - /url: /inventory/moves
+        - link "User Guide" [ref=e22] [cursor=pointer]:
+          - /url: /user-guide
+        - link "Settings" [ref=e23] [cursor=pointer]:
+          - /url: /settings
+      - link "Sign Out" [ref=e25] [cursor=pointer]:
+        - /url: /login
+    - main [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - link "Back to Orders" [ref=e29] [cursor=pointer]:
+            - /url: /orders
+            - img [ref=e30]
+            - text: Back to Orders
+          - generic [ref=e32]:
+            - generic [ref=e33]:
+              - 'heading "Order #78af6b03 PENDING" [level=1] [ref=e34]':
+                - text: "Order #78af6b03"
+                - generic [ref=e35]: PENDING
+              - paragraph [ref=e36]: "Customer: 859ef5f2-5ce8-48c5-9973-3c7a36d658a3"
+            - paragraph [ref=e38]: "Created: December 17th, 2025"
+          - button "Check Availability" [active] [ref=e40]
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - heading "Order Summary" [level=3] [ref=e43]:
+              - img [ref=e44]
+              - text: Order Summary
+            - generic [ref=e48]:
+              - generic [ref=e49]:
+                - generic [ref=e50]: Priority
+                - generic [ref=e51]: NORMAL
+              - generic [ref=e52]:
+                - generic [ref=e53]: Total Items
+                - generic [ref=e54]: "1"
+              - generic [ref=e55]:
+                - generic [ref=e56]: Warehouse
+                - generic [ref=e57]: N/A
+          - generic [ref=e58]:
+            - heading "Shipping Info" [level=3] [ref=e59]:
+              - img [ref=e60]
+              - text: Shipping Info
+            - paragraph [ref=e65]: No shipment details yet.
+        - generic [ref=e66]:
+          - heading "Line Items & Fulfillment" [level=2] [ref=e68]
+          - table [ref=e69]:
+            - rowgroup [ref=e70]:
+              - row "Product SKU Ordered Reserved Picked Progress" [ref=e71]:
+                - columnheader "Product" [ref=e72]
+                - columnheader "SKU" [ref=e73]
+                - columnheader "Ordered" [ref=e74]
+                - columnheader "Reserved" [ref=e75]
+                - columnheader "Picked" [ref=e76]
+                - columnheader "Progress" [ref=e77]
+            - rowgroup [ref=e78]:
+              - row "Test Product A TEST-SKU-001 10 0 0 0%" [ref=e79]:
+                - cell "Test Product A" [ref=e80]:
+                  - generic [ref=e81]: Test Product A
+                - cell "TEST-SKU-001" [ref=e82]
+                - cell "10" [ref=e83]
+                - cell "0" [ref=e84]
+                - cell "0" [ref=e85]
+                - cell "0%" [ref=e86]:
+                  - paragraph [ref=e88]: 0%
+  - region "Notifications alt+T"
+  - generic [ref=e93] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e94]:
+      - img [ref=e95]
+    - generic [ref=e98]:
+      - button "Open issues overlay" [ref=e99]:
+        - generic [ref=e100]:
+          - generic [ref=e101]: "0"
+          - generic [ref=e102]: "1"
+        - generic [ref=e103]: Issue
+      - button "Collapse issues badge" [ref=e104]:
+        - img [ref=e105]
+  - alert [ref=e107]
+```

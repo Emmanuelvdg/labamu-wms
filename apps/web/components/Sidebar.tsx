@@ -2,18 +2,20 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
+import { useAuth } from '@/lib/auth';
 const navigation = [
     { name: 'Dashboard', href: '/' },
     { name: 'Inventory', href: '/inventory' },
     { name: 'Warehouses', href: '/inventory/warehouses' },
     { name: 'Locations', href: '/inventory/locations' },
     { name: 'Adjustments', href: '/inventory/adjustments' },
-    { name: 'Scrap', href: '/inventory/scrap' },
+    { name: 'Stock Transfers', href: '/inventory/transfers' },
+    { name: 'Scrap Orders', href: '/inventory/scrap' },
     { name: 'Orders', href: '/orders' },
     { name: 'Picking', href: '/picking' },
     { name: 'Purchase Orders', href: '/inventory/purchases' },
     { name: 'Suppliers', href: '/inventory/suppliers' },
+    { name: 'Invoices', href: '/invoices' },
     { name: 'Reports', href: '/reports' },
     { name: 'Routes', href: '/inventory/routes' },
     { name: 'Stock Moves', href: '/inventory/moves' },
@@ -23,6 +25,38 @@ const navigation = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const { hasPermission } = useAuth();
+
+    const filteredNavigation = navigation.filter(item => {
+        // Public/Common items
+        if (item.href === '/' || item.href === '/user-guide') return true;
+
+        // Inventory
+        if (item.href.startsWith('/inventory')) {
+            if (item.href === '/inventory/purchases') return hasPermission('PURCHASE_ORDERS', 'READ');
+            if (item.href === '/inventory/suppliers') return hasPermission('SUPPLIERS', 'READ');
+            if (item.href === '/inventory/routes') return hasPermission('INVENTORY', 'READ'); // Assuming Routes falls under Inventory for now
+            if (item.href === '/inventory/moves') return hasPermission('INVENTORY', 'READ');
+            if (item.href === '/inventory/adjustments') return hasPermission('INVENTORY', 'UPDATE');
+            if (item.href === '/inventory/scrap') return hasPermission('INVENTORY', 'UPDATE');
+            return hasPermission('INVENTORY', 'READ');
+        }
+
+        // Invoices
+        if (item.href === '/invoices') return hasPermission('INVOICES', 'READ');
+
+        // Orders
+        if (item.href === '/orders') return hasPermission('ORDERS', 'READ');
+        if (item.href === '/picking') return hasPermission('ORDERS', 'UPDATE'); // Picking requires update
+
+        // Reports
+        if (item.href === '/reports') return hasPermission('REPORTS', 'READ');
+
+        // Settings
+        if (item.href === '/settings') return hasPermission('SETTINGS', 'READ');
+
+        return true;
+    });
 
     return (
         <div className="flex flex-col w-64 bg-gray-800 min-h-screen text-white">
@@ -30,7 +64,7 @@ export default function Sidebar() {
                 <span className="text-xl font-bold">Labamu IMS</span>
             </div>
             <nav className="flex-1 px-2 py-4 space-y-1">
-                {navigation.map((item) => {
+                {filteredNavigation.map((item) => {
                     const isActive = pathname === item.href;
                     return (
                         <Link

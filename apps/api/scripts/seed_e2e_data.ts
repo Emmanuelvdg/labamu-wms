@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 import { InventoryService } from '../src/inventory/inventory.service';
 import { PurchaseOrderService } from '../src/purchase-order/purchase-order.service';
+import { CustomerService } from '../src/customer/customer.service';
 
 async function seed() {
     const app = await NestFactory.createApplicationContext(AppModule);
@@ -58,6 +59,36 @@ async function seed() {
             });
         } else {
             console.log('Product exists.');
+        }
+
+        // 3a. Add Stock explicitly for E2E Product if needed
+        const stock = await inventoryService.getStock(e2eProduct.id || products.find(p => p.sku === 'E2E-PROD-001').id);
+        const totalStock = stock.reduce((sum, s) => sum + s.quantity, 0);
+
+        if (totalStock < 10) {
+            console.log('Adding Stock to E2E Product...');
+            // Find warehouse to add stock to
+            const w = (await inventoryService.getWarehouses()).find(w => w.name === 'E2E Warehouse');
+            if (w) {
+                await inventoryService.addStock({
+                    productId: e2eProduct.id || products.find(p => p.sku === 'E2E-PROD-001').id,
+                    warehouseId: w.id,
+                    quantity: 100
+                });
+            }
+        }
+
+        // 4. Customer
+        const customerService = app.get(CustomerService);
+        let customers = await customerService.getCustomers();
+        if (customers.length === 0) {
+            console.log('Creating Customer...');
+            await customerService.createCustomer({
+                name: 'E2E Customer',
+                address: '123 E2E Lane'
+            });
+        } else {
+            console.log('Customer exists.');
         }
 
         console.log('SUCCESS: Data Seeded.');

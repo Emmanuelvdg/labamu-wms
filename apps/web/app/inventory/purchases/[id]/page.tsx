@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { fetchPurchaseOrders, receivePurchaseOrder, fetchLocations } from '@/lib/api';
+import { fetchPurchaseOrders, receivePurchaseOrder, fetchLocations, fetchPurchaseOrderReceipts } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -28,6 +28,15 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
             console.log(`PO Fetch Status: ${res.status}`);
             if (!res.ok) throw new Error('Failed to fetch PO');
             const data = await res.json();
+
+            // Fetch receipts
+            try {
+                const receipts = await fetchPurchaseOrderReceipts(id);
+                data.receipts = receipts;
+            } catch (err) {
+                console.error('Failed to fetch receipts', err);
+            }
+
             setPo(data);
 
             const locs = await fetchLocations();
@@ -211,26 +220,44 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
                 </div>
             </div>
 
+            {/* Receipt History */}
+            {po.receipts && po.receipts.length > 0 && (
+                <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
+                    <h3 className="text-lg font-medium p-6 border-b">Receipt History</h3>
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Items Received</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {po.receipts.map((receipt: any) => (
+                                <tr key={receipt.id}>
+                                    <td className="px-6 py-4 text-sm text-gray-900">
+                                        {format(new Date(receipt.receivedAt), 'MMM d, yyyy HH:mm')}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">{receipt.status}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-500 text-right">
+                                        {receipt.items?.length || 0}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
             {po.status !== 'RECEIVED' && (
-                <div className="bg-gray-50 p-6 rounded-lg border">
-                    <h3 className="text-lg font-medium mb-4">Receive Goods</h3>
-                    <div className="flex gap-4 items-end">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Destination Location</label>
-                            <select
-                                className="w-full border rounded p-2"
-                                value={destinationId}
-                                onChange={e => setDestinationId(e.target.value)}
-                            >
-                                {locations.map((l: any) => (
-                                    <option key={l.id} value={l.id}>{l.name} ({l.type})</option>
-                                ))}
-                            </select>
-                        </div>
-                        <Button onClick={handleReceive} disabled={receiving}>
-                            {receiving ? 'Receiving...' : 'Receive Products'}
-                        </Button>
+                <div className="bg-gray-50 p-6 rounded-lg border flex justify-between items-center">
+                    <div>
+                        <h3 className="text-lg font-medium">Receive Goods</h3>
+                        <p className="text-sm text-gray-500">Process incoming shipments for this order.</p>
                     </div>
+                    <Button onClick={() => router.push(`/purchase-orders/${po.id}/receive`)}>
+                        Go to Receiving
+                    </Button>
                 </div>
             )}
         </div>

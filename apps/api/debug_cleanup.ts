@@ -60,8 +60,7 @@ async function main() {
                     console.log(` - Deleted ${transferIds.length} transfers and items`);
                 }
                 // Users
-                await prisma.user.updateMany({ where: { warehouseId: w.id }, data: { warehouseId: null } });
-                console.log(' - Unlinked users');
+
 
                 // Get all location IDs
                 const locations = await prisma.location.findMany({ where: { warehouseId: w.id }, select: { id: true } });

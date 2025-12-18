@@ -1,3 +1,4 @@
+
 import { Module } from '@nestjs/common';
 import { InventoryModule } from './inventory/inventory.module';
 import { StrategyModule } from './strategy/strategy.module';
@@ -10,12 +11,29 @@ import { SupplierModule } from './supplier/supplier.module';
 import { FulfillmentModule } from './fulfillment/fulfillment.module';
 import { CustomerModule } from './customer/customer.module';
 import { SettingsModule } from './settings/settings.module';
+
 import { InvoiceModule } from './invoice/invoice.module';
+import { AuthModule } from './auth/auth.module';
+import { StoModule } from './sto/sto.module';
 
 @Module({
-    imports: [InventoryModule, StrategyModule, OrderModule, IntegrationModule, ReportingModule, PurchaseOrderModule, RuleModule, SupplierModule, FulfillmentModule, CustomerModule, SettingsModule, InvoiceModule],
+    imports: [
+        InventoryModule,
+        StrategyModule,
+        OrderModule,
+        IntegrationModule,
+        ReportingModule,
+        PurchaseOrderModule,
+        RuleModule,
+        SupplierModule,
+        FulfillmentModule,
+        CustomerModule,
+        SettingsModule,
+        InvoiceModule,
+        AuthModule,
+        StoModule,
+    ],
     controllers: [],
     providers: [],
 })
 export class AppModule { }
-// Force rebuild

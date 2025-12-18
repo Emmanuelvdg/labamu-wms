@@ -1,9 +1,27 @@
+import Cookies from 'js-cookie';
+
 export const API_URL = 'http://localhost:3001';
 
 export async function fetchWithRetry(url: string, options?: RequestInit) {
     try {
-        const res = await fetch(url, { ...options, cache: 'no-store' });
-        if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
+        const userId = Cookies.get('user_id');
+        const headers = {
+            ...options?.headers,
+            ...(userId ? { 'x-user-id': userId } : {}),
+        };
+
+        const res = await fetch(url, { ...options, headers, cache: 'no-store' });
+        if (!res.ok) {
+            const errorText = await res.text();
+            let errorMessage = res.statusText;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMessage = errorJson.message || errorJson.error || res.statusText;
+            } catch (e) {
+                errorMessage = errorText || res.statusText;
+            }
+            throw new Error(errorMessage);
+        }
         const text = await res.text();
         return text ? JSON.parse(text) : null;
     } catch (error) {
@@ -239,6 +257,12 @@ export async function createShipment(data: any) {
     });
 }
 
+export async function checkAvailability(id: string) {
+    return fetchWithRetry(`${API_URL}/orders/${id}/check-availability`, {
+        method: 'POST',
+    });
+}
+
 // --- Purchase Orders ---
 
 export async function fetchPurchaseOrders() {
@@ -253,12 +277,16 @@ export async function createPurchaseOrder(data: any) {
     });
 }
 
-export async function receivePurchaseOrder(id: string, destinationLocationId: string) {
+export async function receivePurchaseOrder(id: string, items: { productId: string; quantity: number; locationId: string }[]) {
     return fetchWithRetry(`${API_URL}/purchase-orders/${id}/receive`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ destinationLocationId }),
+        body: JSON.stringify({ items }),
     });
+}
+
+export async function fetchPurchaseOrderReceipts(id: string) {
+    return fetchWithRetry(`${API_URL}/purchase-orders/${id}/receipts`);
 }
 
 // --- Rules & Strategies ---
@@ -523,5 +551,85 @@ export async function approveTransfer(id: string, approverId: string) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ approverId }),
+    });
+}
+
+// Roles & Permissions
+export async function fetchRoles() {
+    return fetchWithRetry(`${API_URL}/settings/roles`);
+}
+
+export async function getRole(id: string) {
+    return fetchWithRetry(`${API_URL}/settings/roles/${id}`);
+}
+
+export async function createRole(data: any) {
+    return fetchWithRetry(`${API_URL}/settings/roles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateRole(id: string, data: any) {
+    return fetchWithRetry(`${API_URL}/settings/roles/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteRole(id: string) {
+    return fetchWithRetry(`${API_URL}/settings/roles/${id}`, {
+        method: 'DELETE',
+    });
+}
+
+// --- Invoices ---
+
+export async function fetchInvoices() {
+    return fetchWithRetry(`${API_URL}/invoices`);
+}
+
+export async function getInvoice(id: string) {
+    return fetchWithRetry(`${API_URL}/invoices/${id}`);
+}
+
+export async function createInvoice(data: any) {
+    return fetchWithRetry(`${API_URL}/invoices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function matchInvoice(id: string) {
+    return fetchWithRetry(`${API_URL}/invoices/${id}/match`, {
+        method: 'POST',
+    });
+}
+
+// Users
+export async function fetchUsers() {
+    return fetchWithRetry(`${API_URL}/settings/users`);
+}
+
+export async function createUser(data: any) {
+    return fetchWithRetry(`${API_URL}/settings/users`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateUser(id: string, data: any) {
+    return fetchWithRetry(`${API_URL}/settings/users/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteUser(id: string) {
+    return fetchWithRetry(`${API_URL}/settings/users/${id}`, {
+        method: 'DELETE',
     });
 }

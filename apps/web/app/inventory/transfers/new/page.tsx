@@ -1,148 +1,170 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchInventory, fetchLocations, createTransfer } from '@/lib/api';
+import useSWR from 'swr';
+import { fetchWarehouses, fetchProducts, createTransferRequest } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { toast } from 'sonner';
+import { Plus, Trash } from 'lucide-react';
 
 export default function NewTransferPage() {
     const router = useRouter();
-    const [locations, setLocations] = useState<any[]>([]);
-    const [products, setProducts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
+    const { data: warehouses } = useSWR('warehouses', fetchWarehouses);
+    const { data: products } = useSWR('products', fetchProducts);
 
     const [formData, setFormData] = useState({
-        productId: '',
-        sourceLocationId: '',
-        destinationLocationId: '',
-        quantity: 0,
-        reason: 'Internal Transfer'
+        sourceWarehouseId: '',
+        destinationWarehouseId: '',
+        items: [{ productId: '', quantity: 1 }]
     });
 
-    useEffect(() => {
-        async function loadData() {
-            try {
-                const [locs, prods] = await Promise.all([
-                    fetchLocations(),
-                    fetchInventory()
-                ]);
-                setLocations(locs);
-                setProducts(prods);
-            } catch (error) {
-                console.error('Failed to load data:', error);
-                alert('Failed to load locations or products');
-            } finally {
-                setLoading(false);
-            }
-        }
-        loadData();
-    }, []);
+    const handleAddItem = () => {
+        setFormData({
+            ...formData,
+            items: [...formData.items, { productId: '', quantity: 1 }]
+        });
+    };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setSubmitting(true);
+    const handleRemoveItem = (index: number) => {
+        const newItems = [...formData.items];
+        newItems.splice(index, 1);
+        setFormData({ ...formData, items: newItems });
+    };
+
+    const handleItemChange = (index: number, field: string, value: any) => {
+        const newItems = [...formData.items];
+        newItems[index] = { ...newItems[index], [field]: value };
+        setFormData({ ...formData, items: newItems });
+    };
+
+    const handleSubmit = async () => {
         try {
-            await createTransfer(formData);
-            alert('Transfer created successfully');
-            router.push('/inventory'); // Redirect to inventory dashboard
-        } catch (error) {
-            console.error('Failed to create transfer:', error);
-            alert('Failed to create transfer');
-        } finally {
-            setSubmitting(false);
+            if (!formData.sourceWarehouseId || !formData.destinationWarehouseId) {
+                toast.error('Please select source and destination warehouses');
+                return;
+            }
+            if (formData.sourceWarehouseId === formData.destinationWarehouseId) {
+                toast.error('Source and destination must be different');
+                return;
+            }
+
+            await createTransferRequest({
+                sourceWarehouseId: formData.sourceWarehouseId,
+                destinationWarehouseId: formData.destinationWarehouseId,
+                items: formData.items
+            });
+
+            toast.success('Transfer request created');
+            router.push('/inventory/transfers');
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to create transfer');
         }
     };
 
-    if (loading) return <div className="p-8">Loading...</div>;
-
     return (
-        <div className="p-8 max-w-2xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6">New Internal Transfer</h1>
+        <div className="p-8 max-w-4xl mx-auto">
+            <h1 className="text-3xl font-bold mb-8">New Stock Transfer</h1>
 
-            <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
-                    <select
-                        className="w-full border border-gray-300 rounded-md p-2"
-                        value={formData.productId}
-                        onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-                        required
-                    >
-                        <option value="">Select Product</option>
-                        {products.map((prod) => (
-                            <option key={prod.id} value={prod.id}>
-                                {prod.name} ({prod.sku})
-                            </option>
-                        ))}
-                    </select>
+            <div className="bg-white p-6 rounded-lg shadow space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label>Source Warehouse</Label>
+                        <Select
+                            value={formData.sourceWarehouseId}
+                            onValueChange={(val) => setFormData({ ...formData, sourceWarehouseId: val })}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Source" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {warehouses?.map((w: any) => (
+                                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Destination Warehouse</Label>
+                        <Select
+                            value={formData.destinationWarehouseId}
+                            onValueChange={(val) => setFormData({ ...formData, destinationWarehouseId: val })}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Destination" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {warehouses?.map((w: any) => (
+                                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Source Location</label>
-                    <select
-                        className="w-full border border-gray-300 rounded-md p-2"
-                        value={formData.sourceLocationId}
-                        onChange={(e) => setFormData({ ...formData, sourceLocationId: e.target.value })}
-                        required
-                    >
-                        <option value="">Select Source Location</option>
-                        {locations.map((loc) => (
-                            <option key={loc.id} value={loc.id}>
-                                {loc.name} ({loc.type})
-                            </option>
-                        ))}
-                    </select>
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold">Items</h3>
+                        <Button variant="outline" size="sm" onClick={handleAddItem}>
+                            <Plus className="h-4 w-4 mr-2" /> Add Item
+                        </Button>
+                    </div>
+
+                    {formData.items.map((item, index) => (
+                        <div key={index} className="flex gap-4 items-end border p-4 rounded-md bg-gray-50">
+                            <div className="flex-1 space-y-2">
+                                <Label>Product</Label>
+                                <Select
+                                    value={item.productId}
+                                    onValueChange={(val) => handleItemChange(index, 'productId', val)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Product" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {products?.map((p: any) => (
+                                            <SelectItem key={p.id} value={p.id}>{p.name} ({p.sku})</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="w-32 space-y-2">
+                                <Label>Quantity</Label>
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    value={item.quantity}
+                                    onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value))}
+                                />
+                            </div>
+                            <Button
+                                variant="destructive"
+                                size="icon"
+                                onClick={() => handleRemoveItem(index)}
+                                disabled={formData.items.length === 1}
+                            >
+                                <Trash className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))}
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Destination Location</label>
-                    <select
-                        className="w-full border border-gray-300 rounded-md p-2"
-                        value={formData.destinationLocationId}
-                        onChange={(e) => setFormData({ ...formData, destinationLocationId: e.target.value })}
-                        required
-                    >
-                        <option value="">Select Destination Location</option>
-                        {locations.map((loc) => (
-                            <option key={loc.id} value={loc.id}>
-                                {loc.name} ({loc.type})
-                            </option>
-                        ))}
-                    </select>
+                <div className="flex justify-end gap-4 pt-4 border-t">
+                    <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+                    <Button onClick={handleSubmit}>Create Transfer</Button>
                 </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                    <input
-                        type="number"
-                        className="w-full border border-gray-300 rounded-md p-2"
-                        value={formData.quantity}
-                        onChange={(e) => setFormData({ ...formData, quantity: Number(e.target.value) })}
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
-                    <input
-                        type="text"
-                        className="w-full border border-gray-300 rounded-md p-2"
-                        value={formData.reason}
-                        onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                        required
-                    />
-                </div>
-
-                <div className="flex justify-end gap-4 pt-4">
-                    <Button type="button" variant="outline" onClick={() => router.back()}>
-                        Cancel
-                    </Button>
-                    <Button type="submit" disabled={submitting}>
-                        {submitting ? 'Creating...' : 'Create Transfer'}
-                    </Button>
-                </div>
-            </form>
+            </div>
         </div>
     );
 }

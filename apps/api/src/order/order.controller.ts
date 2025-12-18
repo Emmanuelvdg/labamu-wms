@@ -1,27 +1,40 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards } from '@nestjs/common';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
+import { RequirePermission } from '../common/auth/permissions.decorator';
 import { OrderService } from './order.service';
 
 @Controller('orders')
+@UseGuards(PermissionsGuard)
 export class OrderController {
     constructor(private readonly orderService: OrderService) { }
 
     @Post()
+    @RequirePermission('ORDERS', 'CREATE')
     createOrder(@Body() data: { customerId: string; priority: string; items: { productId: string; quantity: number }[]; expectedDate?: Date; warehouseId?: string }) {
         return this.orderService.createOrder(data);
     }
 
     @Get()
+    @RequirePermission('ORDERS', 'READ')
     getOrders() {
         return this.orderService.getOrders();
     }
 
     @Get(':id')
+    @RequirePermission('ORDERS', 'READ')
     getOrder(@Param('id') id: string) {
         return this.orderService.getOrder(id);
     }
 
     @Post('ship')
+    @RequirePermission('ORDERS', 'UPDATE')
     createShipment(@Body() data: { orderId: string; carrier: string; trackingId: string }) {
         return this.orderService.createShipment(data);
+    }
+
+    @Post(':id/check-availability')
+    @RequirePermission('ORDERS', 'UPDATE')
+    checkAvailability(@Param('id') id: string) {
+        return this.orderService.checkAvailability(id);
     }
 }

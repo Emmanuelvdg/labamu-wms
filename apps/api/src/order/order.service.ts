@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { StrategyService } from '../strategy/strategy.service';
 import { InventoryService } from '../inventory/inventory.service';
@@ -209,5 +209,33 @@ export class OrderService {
 
             return shipment;
         });
+    }
+    async checkAvailability(id: string): Promise<Order> {
+        const order = await this.getOrder(id) as any;
+        if (!order) throw new Error('Order not found');
+
+        // 1. Get Strategy
+        const reservationStrategies = await this.strategyService.getReservationStrategies();
+        const activeStrategy = reservationStrategies.find(s => s.active) || reservationStrategies[reservationStrategies.length - 1];
+
+        // 2. Reserve
+        const strategyName = activeStrategy?.name === 'FEFO' ? 'FEFO' : 'FIFO';
+        try {
+            await this.inventoryService.reserveStock({
+                orderId: order.id,
+                items: order.items.map(i => ({ productId: i.productId, quantity: i.quantity })),
+                strategy: strategyName,
+            });
+
+            // 3. Update Status
+            return this.prisma.order.update({
+                where: { id: order.id },
+                data: { status: 'RESERVED' },
+                include: { items: true },
+            });
+        } catch (error: any) {
+            this.log(`Check Availability failed: ${error.message}`);
+            throw new BadRequestException(error.message);
+        }
     }
 }

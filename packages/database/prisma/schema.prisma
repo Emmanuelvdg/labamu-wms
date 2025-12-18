@@ -545,10 +545,12 @@ model InvoiceItem {
 
 model User {
   id          String     @id @default(uuid())
+  email       String     @unique
+  password    String?    // Hashed password
   name        String
-  role        String // ADMIN, MANAGER, WORKER
-  warehouseId String?
-  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+  
+  roles       Role[]
+  warehouses  Warehouse[]
 
   initiatedTransfers TransferOrder[]  @relation("TransferInitiator")
   approvedTransfers  TransferOrder[]  @relation("TransferApprover")
@@ -631,4 +633,27 @@ model StockMove {
   batch                 InventoryBatch? @relation(fields: [batchId], references: [id])
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique // e.g., "Warehouse Manager", "Picker"
+  description String?
+  isSystem    Boolean      @default(false) // System roles cannot be deleted
+  permissions Permission[]
+  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  resource  String   // e.g., "INVENTORY", "ORDERS", "PURCHASE_ORDERS"
+  action    String   // CREATE, READ, UPDATE, DELETE, APPROVE
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([roleId, resource, action])
 }

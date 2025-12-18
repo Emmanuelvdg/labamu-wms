@@ -76,7 +76,7 @@ async function main() {
                             await prisma.transferOrder.deleteMany({ where: { id: { in: transferIds } } });
                         }
                         // Users
-                        await prisma.user.updateMany({ where: { warehouseId: w.id }, data: { warehouseId: null } });
+
 
                         // Get all location IDs
                         const locations = await prisma.location.findMany({ where: { warehouseId: w.id }, select: { id: true } });

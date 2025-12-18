@@ -1,0 +1,71 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]: Labamu IMS
+      - navigation [ref=e6]:
+        - link "Dashboard" [ref=e7] [cursor=pointer]:
+          - /url: /
+        - link "Inventory" [ref=e8] [cursor=pointer]:
+          - /url: /inventory
+        - link "Warehouses" [active] [ref=e9] [cursor=pointer]:
+          - /url: /inventory/warehouses
+        - link "Locations" [ref=e10] [cursor=pointer]:
+          - /url: /inventory/locations
+        - link "Adjustments" [ref=e11] [cursor=pointer]:
+          - /url: /inventory/adjustments
+        - link "Stock Transfers" [ref=e12] [cursor=pointer]:
+          - /url: /inventory/transfers
+        - link "Scrap Orders" [ref=e13] [cursor=pointer]:
+          - /url: /inventory/scrap
+        - link "Orders" [ref=e14] [cursor=pointer]:
+          - /url: /orders
+        - link "Picking" [ref=e15] [cursor=pointer]:
+          - /url: /picking
+        - link "Purchase Orders" [ref=e16] [cursor=pointer]:
+          - /url: /inventory/purchases
+        - link "Suppliers" [ref=e17] [cursor=pointer]:
+          - /url: /inventory/suppliers
+        - link "Invoices" [ref=e18] [cursor=pointer]:
+          - /url: /invoices
+        - link "Reports" [ref=e19] [cursor=pointer]:
+          - /url: /reports
+        - link "Routes" [ref=e20] [cursor=pointer]:
+          - /url: /inventory/routes
+        - link "Stock Moves" [ref=e21] [cursor=pointer]:
+          - /url: /inventory/moves
+        - link "User Guide" [ref=e22] [cursor=pointer]:
+          - /url: /user-guide
+        - link "Settings" [ref=e23] [cursor=pointer]:
+          - /url: /settings
+      - link "Sign Out" [ref=e25] [cursor=pointer]:
+        - /url: /login
+    - main [ref=e26]:
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - heading "Warehouses" [level=1] [ref=e30]
+            - paragraph [ref=e31]: Manage your physical and virtual warehouses.
+          - button "Add Warehouse" [ref=e32]:
+            - img [ref=e33]
+            - text: Add Warehouse
+        - link "Central DC CDC 123 Main St PHYSICAL" [ref=e35] [cursor=pointer]:
+          - /url: /inventory/warehouses/726847bd-5b28-48c2-b172-6956aaa4d44f
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - generic [ref=e38]:
+                - heading "Central DC" [level=3] [ref=e39]
+                - generic [ref=e40]: CDC
+              - img [ref=e41]
+            - generic [ref=e44]:
+              - generic [ref=e45]:
+                - img [ref=e46]
+                - text: 123 Main St
+              - generic [ref=e50]: PHYSICAL
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e56] [cursor=pointer]:
+    - img [ref=e57]
+  - alert [ref=e60]
+```
