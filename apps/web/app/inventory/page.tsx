@@ -25,13 +25,26 @@ export default function InventoryPage() {
         sku: '',
         name: '',
         category: '',
-        classification: 'A',
+        velocity: 'A',
         type: 'Raw',
         unitOfMeasure: 'Piece',
         averageCost: 0,
         status: 'Active',
         tracking: 'none'
     });
+
+    useEffect(() => {
+        load();
+        loadWarehouses();
+    }, []);
+
+
+
+
+
+
+
+
 
     useEffect(() => {
         load();
@@ -83,7 +96,7 @@ export default function InventoryPage() {
                 sku: '',
                 name: '',
                 category: '',
-                classification: 'A',
+                velocity: 'A',
                 type: 'Raw',
                 unitOfMeasure: 'Piece',
                 averageCost: 0,
@@ -196,7 +209,7 @@ export default function InventoryPage() {
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ABC Class</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ABC Class (Velocity)</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Cost</th>
@@ -221,7 +234,7 @@ export default function InventoryPage() {
                                     <td className="px-6 py-4 text-sm text-gray-500">{product.category}</td>
                                     <td className="px-6 py-4">
                                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                            {product.classification || 'N/A'}
+                                            {product.velocity || product.classification || 'N/A'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-500">{product.type || 'Raw'}</td>
@@ -253,7 +266,7 @@ export default function InventoryPage() {
                     <div className="bg-white rounded-lg p-6 max-w-md w-full">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Inventory Item</h3>
                         <form onSubmit={handleCreateProduct}>
-                            <div className="space-y-4">
+                            <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">SKU</label>
                                     <input
@@ -265,28 +278,40 @@ export default function InventoryPage() {
                                         onChange={(e) => setNewProduct({ ...newProduct, sku: e.target.value })}
                                     />
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Name</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        data-testid="product-name-input"
-                                        className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
-                                        value={newProduct.name}
-                                        onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                                    />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            data-testid="product-name-input"
+                                            className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                            value={newProduct.name}
+                                            onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Category</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            data-testid="product-category-input"
+                                            className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                            value={newProduct.category}
+                                            onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Unit of Measure</label>
+                                        <input
+                                            type="text"
+                                            className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                            value={newProduct.unitOfMeasure}
+                                            onChange={(e) => setNewProduct({ ...newProduct, unitOfMeasure: e.target.value })}
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Category</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        data-testid="product-category-input"
-                                        className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
-                                        value={newProduct.category}
-                                        onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                                    />
-                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">Type</label>
@@ -301,27 +326,19 @@ export default function InventoryPage() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700">ABC Class</label>
+                                        <label className="block text-sm font-medium text-gray-700">Velocity (ABC)</label>
                                         <select
                                             className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
-                                            value={newProduct.classification}
-                                            onChange={(e) => setNewProduct({ ...newProduct, classification: e.target.value })}
+                                            value={newProduct.velocity}
+                                            onChange={(e) => setNewProduct({ ...newProduct, velocity: e.target.value })}
                                         >
-                                            <option value="A">A</option>
-                                            <option value="B">B</option>
-                                            <option value="C">C</option>
+                                            <option value="A">A (Fast)</option>
+                                            <option value="B">B (Medium)</option>
+                                            <option value="C">C (Slow)</option>
                                         </select>
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Unit of Measure</label>
-                                    <input
-                                        type="text"
-                                        className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
-                                        value={newProduct.unitOfMeasure}
-                                        onChange={(e) => setNewProduct({ ...newProduct, unitOfMeasure: e.target.value })}
-                                    />
-                                </div>
+
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Tracking</label>
                                     <select
@@ -334,8 +351,123 @@ export default function InventoryPage() {
                                         <option value="serial">By Unique Serial Number</option>
                                     </select>
                                 </div>
+
+                                {/* Storage Requirements */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Storage Requirement</label>
+                                    <select
+                                        className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                        value={(newProduct as any).requiredAttributeId || ''}
+                                        onChange={(e) => setNewProduct({ ...newProduct, requiredAttributeId: e.target.value } as any)}
+                                    >
+                                        <option value="">None</option>
+                                        <option value="cold-storage">Cold Storage</option>
+                                        <option value="hazardous">Hazardous Area</option>
+                                        <option value="secure">Secure Storage</option>
+                                    </select>
+                                </div>
+
+                                {/* Packaging & Dimensions */}
+                                <div className="border-t pt-4">
+                                    <h4 className="text-sm font-bold text-gray-900 mb-2">Packaging & Dimensions</h4>
+
+                                    {/* Unit Dimensions */}
+                                    <div className="grid grid-cols-4 gap-2 mb-4 bg-gray-50 p-2 rounded">
+                                        <div className="col-span-4 text-xs font-semibold text-gray-500 mb-1">Base Unit Dimensions</div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Width (cm)</label>
+                                            <input type="number" className="w-full border rounded px-1" value={(newProduct as any).width || ''} onChange={e => setNewProduct({ ...newProduct, width: e.target.value } as any)} />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Height (cm)</label>
+                                            <input type="number" className="w-full border rounded px-1" value={(newProduct as any).height || ''} onChange={e => setNewProduct({ ...newProduct, height: e.target.value } as any)} />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Depth (cm)</label>
+                                            <input type="number" className="w-full border rounded px-1" value={(newProduct as any).depth || ''} onChange={e => setNewProduct({ ...newProduct, depth: e.target.value } as any)} />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-gray-500">Weight (kg)</label>
+                                            <input type="number" className="w-full border rounded px-1" value={(newProduct as any).weight || ''} onChange={e => setNewProduct({ ...newProduct, weight: e.target.value } as any)} />
+                                        </div>
+                                    </div>
+
+                                    {/* Tabs or List for Packaging */}
+                                    <div className="space-y-3">
+                                        {['INDIVIDUAL', 'BOX', 'PALLET'].map((type) => {
+                                            const pkgIndex = ((newProduct as any).packaging || []).findIndex((p: any) => p.unitType === type);
+                                            const isEnabled = pkgIndex !== -1;
+                                            const pkg = isEnabled ? (newProduct as any).packaging[pkgIndex] : { unitType: type, quantity: 1, length: 0, width: 0, height: 0, weight: 0 };
+
+                                            const toggleType = (checked: boolean) => {
+                                                const currentList = (newProduct as any).packaging || [];
+                                                if (checked) {
+                                                    // Add with defaults
+                                                    setNewProduct({ ...newProduct, packaging: [...currentList, { unitType: type, quantity: 1, length: 0, width: 0, height: 0, weight: 0 }] } as any);
+                                                } else {
+                                                    // Remove
+                                                    setNewProduct({ ...newProduct, packaging: currentList.filter((p: any) => p.unitType !== type) } as any);
+                                                }
+                                            };
+
+                                            const updatePkg = (field: string, val: any) => {
+                                                const currentList = (newProduct as any).packaging || [];
+                                                const updatedList = currentList.map((p: any) => p.unitType === type ? { ...p, [field]: parseFloat(val) || 0 } : p);
+                                                setNewProduct({ ...newProduct, packaging: updatedList } as any);
+                                            };
+
+                                            // Calculate Container Capacity
+                                            const vol = (pkg.length || 1) * (pkg.width || 1) * (pkg.height || 1);
+                                            const cap20 = Math.floor((589 * 235 * 239) / (vol || 1));
+                                            const cap40 = Math.floor((1203 * 235 * 239) / (vol || 1));
+
+                                            return (
+                                                <div key={type} className={`border rounded p-3 text-xs ${isEnabled ? 'bg-gray-50' : 'bg-white dashed border-gray-300'}`}>
+                                                    <div className="font-semibold mb-1 flex justify-between items-center">
+                                                        <label className="flex items-center space-x-2 cursor-pointer select-none">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                                checked={isEnabled}
+                                                                onChange={(e) => toggleType(e.target.checked)}
+                                                            />
+                                                            <span>{type === 'INDIVIDUAL' ? 'Individual Unit' : type === 'BOX' ? 'Box / Case' : 'Pallet'}</span>
+                                                        </label>
+                                                        {isEnabled && vol > 1 && <span className="text-gray-500 font-normal">20ft: {cap20.toLocaleString()} | 40ft: {cap40.toLocaleString()}</span>}
+                                                    </div>
+
+                                                    {isEnabled && (
+                                                        <div className="grid grid-cols-5 gap-2 mt-2">
+                                                            <div>
+                                                                <label>Qty (Units)</label>
+                                                                <input type="number" className="w-full border p-1 rounded" placeholder="1" value={pkg.quantity} onChange={e => updatePkg('quantity', e.target.value)} />
+                                                            </div>
+                                                            <div>
+                                                                <label>L (cm)</label>
+                                                                <input type="number" className="w-full border p-1 rounded" placeholder="0" value={pkg.length} onChange={e => updatePkg('length', e.target.value)} />
+                                                            </div>
+                                                            <div>
+                                                                <label>W (cm)</label>
+                                                                <input type="number" className="w-full border p-1 rounded" placeholder="0" value={pkg.width} onChange={e => updatePkg('width', e.target.value)} />
+                                                            </div>
+                                                            <div>
+                                                                <label>H (cm)</label>
+                                                                <input type="number" className="w-full border p-1 rounded" placeholder="0" value={pkg.height} onChange={e => updatePkg('height', e.target.value)} />
+                                                            </div>
+                                                            <div>
+                                                                <label>Wgt (kg)</label>
+                                                                <input type="number" className="w-full border p-1 rounded" placeholder="0" value={pkg.weight} onChange={e => updatePkg('weight', e.target.value)} />
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
                             </div>
-                            <div className="mt-6 flex justify-end space-x-3">
+                            <div className="mt-6 flex justify-end space-x-3 pt-4 border-t">
                                 <button
                                     type="button"
                                     onClick={() => setShowCreateModal(false)}

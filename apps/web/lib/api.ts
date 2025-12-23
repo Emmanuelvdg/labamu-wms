@@ -633,3 +633,18 @@ export async function deleteUser(id: string) {
         method: 'DELETE',
     });
 }
+
+export const api = {
+    get: (url: string) => fetchWithRetry(`${API_URL}${url}`),
+    post: (url: string, data?: any) => fetchWithRetry(`${API_URL}${url}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),
+    put: (url: string, data?: any) => fetchWithRetry(`${API_URL}${url}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),
+    delete: (url: string) => fetchWithRetry(`${API_URL}${url}`, { method: 'DELETE' }),
+};

@@ -8,118 +8,157 @@ export class FulfillmentService {
 
     constructor(
         private prisma: PrismaService,
-        private inventoryService: InventoryService,
+        private inventoryService: InventoryService
     ) { }
-
-    // --- Order Allocation ---
 
     async allocateOrder(orderId: string) {
         this.logger.log(`Allocating order ${orderId}...`);
 
         const order = await this.prisma.order.findUnique({
             where: { id: orderId },
-            include: {
-                items: true,
-                customer: true
-            }
+            include: { items: true, customer: true }
         });
 
-        if (!order) {
-            this.logger.error(`Order ${orderId} not found`);
-            return;
-        }
+        if (!order) { this.logger.error(`Order ${orderId} not found`); return; }
+        if (order.warehouseId) { this.logger.log(`Order ${orderId} already assigned to ${order.warehouseId}`); return; }
 
-        if (order.warehouseId) {
-            this.logger.log(`Order ${orderId} already assigned to warehouse ${order.warehouseId}`);
-            return;
-        }
-
-        // 1. Get Active Rules
-        const rules = await this.prisma.fulfillmentRule.findMany({
-            where: { active: true },
-            orderBy: { priority: 'asc' }
-        });
+        // 1. Get Active Rules (Route Engine)
+        const rules = await this.prisma.fulfillmentRule.findMany({ where: { active: true }, orderBy: { priority: 'asc' }, include: { warehouse: true } });
 
         if (rules.length === 0) {
-            this.logger.warn('No active fulfillment rules found. Defaulting to PRIMARY or ANY.');
-            // Fallback logic could go here
+            this.logger.warn('No active fulfillment rules. Using default fallback.');
+            return this.simpleScanFallback(order);
         }
 
         let bestWarehouseId: string | null = null;
+        let requiresTransfer = false;
+        let transferSourceConfig: any = null;
 
-        // 2. Evaluate Rules
+        // 2. Evaluate Rules (Interpreter Loop)
         for (const rule of rules) {
-            this.logger.log(`Evaluating rule: ${rule.name} (${rule.strategy})`);
+            this.logger.log(`Evaluating Rule: ${rule.name} (Strategy: ${rule.strategy}, Action: ${rule.actionIfUnavailable})`);
 
-            if (rule.strategy === 'PRIMARY' && rule.warehouseId) {
-                // Check if Primary has stock
-                const hasStock = await this.checkStock(rule.warehouseId, order.items);
-                if (hasStock) {
-                    bestWarehouseId = rule.warehouseId;
+            let targetWarehouseId = rule.warehouseId;
+
+            // Resolve Dynamic Targets
+            if (rule.strategy === 'CLOSEST' && order.customer?.latitude) {
+                targetWarehouseId = await this.findClosestWarehouseId(order.customer);
+            } else if (rule.strategy === 'HIGHEST_STOCK') {
+                targetWarehouseId = await this.findHighestStockWarehouseId(order.items);
+            }
+
+            if (!targetWarehouseId) continue;
+
+            // Check Stock
+            const hasStock = await this.checkStock(targetWarehouseId, order.items);
+
+            if (hasStock) {
+                // Success!
+                bestWarehouseId = targetWarehouseId;
+                break;
+            } else {
+                // Failure Handling
+                if (rule.actionIfUnavailable === 'TRIGGER_TRANSFER') {
+                    // Stop chaining, force assignment here, trigger IWT
+                    bestWarehouseId = targetWarehouseId;
+                    requiresTransfer = true;
+                    transferSourceConfig = rule.transferSourceRule ? JSON.parse(rule.transferSourceRule) : null;
+                    break;
+                } else if (rule.actionIfUnavailable === 'BACKORDER') {
+                    // Stop chaining, assign here, wait.
+                    bestWarehouseId = targetWarehouseId;
                     break;
                 }
-            } else if (rule.strategy === 'CLOSEST' && order.customer?.latitude && order.customer?.longitude) {
-                const warehouses = await this.prisma.warehouse.findMany();
-                // Calculate distances
-                const sortedWarehouses = warehouses.map(w => {
-                    const dist = this.calculateDistance(
-                        order.customer!.latitude!,
-                        order.customer!.longitude!,
-                        this.parseLocation(w.location).lat,
-                        this.parseLocation(w.location).lng
-                    );
-                    return { ...w, distance: dist };
-                }).sort((a, b) => a.distance - b.distance);
-
-                for (const w of sortedWarehouses) {
-                    const hasStock = await this.checkStock(w.id, order.items);
-                    if (hasStock) {
-                        bestWarehouseId = w.id;
-                        break;
-                    }
-                }
-                if (bestWarehouseId) break;
-
-            } else if (rule.strategy === 'HIGHEST_STOCK') {
-                // Simplified: Find warehouse with most items available
-                // For now, just check if any has ALL items
-                const warehouses = await this.prisma.warehouse.findMany();
-                for (const w of warehouses) {
-                    const hasStock = await this.checkStock(w.id, order.items);
-                    if (hasStock) {
-                        bestWarehouseId = w.id;
-                        break;
-                    }
-                }
-                if (bestWarehouseId) break;
+                // If NEXT_RULE (default), continue loop
             }
         }
 
-        // 3. Assign Warehouse or Create Transfer
+        // 3. Execution
         if (bestWarehouseId) {
-            this.logger.log(`Allocating order to warehouse ${bestWarehouseId}`);
+            this.logger.log(`Allocating to ${bestWarehouseId} (Transfer Required: ${requiresTransfer})`);
+
             await this.prisma.order.update({
                 where: { id: orderId },
                 data: {
                     warehouseId: bestWarehouseId,
-                    fulfillmentStatus: 'ALLOCATED'
+                    fulfillmentStatus: requiresTransfer ? 'PARTIAL' : 'ALLOCATED'
                 }
             });
+
+            if (requiresTransfer) {
+                await this.handleDeficitsAndCreateIWT(orderId, bestWarehouseId, order.items, transferSourceConfig);
+            }
+
         } else {
-            this.logger.warn(`Could not find a single warehouse with full stock for order ${orderId}`);
-            // Logic for IWT would go here:
-            // 1. Pick a destination (e.g. Closest)
-            // 2. Find missing items in other warehouses
-            // 3. Create TransferOrder
-
-            // For MVP, let's just assign to the Closest (or first) and mark as PARTIAL/UNALLOCATED
-            // and let the user manually handle transfers for now, or implement basic IWT
-
-            await this.prisma.order.update({
-                where: { id: orderId },
-                data: { fulfillmentStatus: 'UNALLOCATED' }
-            });
+            this.logger.error('Allocation failed: No rules matched or all failed.');
+            await this.prisma.order.update({ where: { id: orderId }, data: { fulfillmentStatus: 'UNALLOCATED' } });
         }
+    }
+
+    // Helper: Dynamic Source Finding for IWT
+    private async handleDeficitsAndCreateIWT(orderId: string, destinationId: string, items: any[], config: any) {
+        for (const item of items) {
+            const localStock = await this.prisma.productInventory.findFirst({
+                where: { warehouseId: destinationId, productId: item.productId }
+            });
+            const localAvailable = (localStock?.quantity || 0) - (localStock?.reserved || 0);
+
+            if (localAvailable < item.quantity) {
+                const deficit = item.quantity - localAvailable;
+
+                // Find Source logic
+                let sourceId: string | null = null;
+
+                if (config && config.warehouseId) {
+                    sourceId = config.warehouseId;
+                } else {
+                    // Default / Fallback: Find any with stock
+                    const sources = await this.inventoryService.findProductStockLocations(item.productId);
+                    const validSource = sources.find(s => s.warehouseId !== destinationId && s.available >= deficit);
+                    sourceId = validSource?.warehouseId || null;
+                }
+
+                if (sourceId) {
+                    this.logger.log(`Creating IWT from ${sourceId} to ${destinationId}`);
+                    await this.createTransferRequest({
+                        sourceWarehouseId: sourceId,
+                        destinationWarehouseId: destinationId,
+                        items: [{ productId: item.productId, quantity: deficit }],
+                        initiatorId: 'system-auto-allocation',
+                        parentOrderId: orderId
+                    });
+                } else {
+                    this.logger.warn(`No valid IWT source found for ${item.productId}`);
+                }
+            }
+        }
+    }
+
+    private async simpleScanFallback(order: any) {
+        // Simple fallback: Check all warehouses, take first full match
+        const warehouses = await this.prisma.warehouse.findMany();
+        for (const w of warehouses) {
+            if (await this.checkStock(w.id, order.items)) {
+                await this.prisma.order.update({ where: { id: order.id }, data: { warehouseId: w.id, fulfillmentStatus: 'ALLOCATED' } });
+                return;
+            }
+        }
+    }
+
+    // Helpers for dynamic resolution
+    private async findClosestWarehouseId(customer: any): Promise<string | null> {
+        const warehouses = await this.prisma.warehouse.findMany();
+        if (!warehouses.length) return null;
+        return warehouses.sort((a, b) => {
+            const dA = this.calculateDistance(customer.latitude, customer.longitude, this.parseLocation(a.location).lat, this.parseLocation(a.location).lng);
+            const dB = this.calculateDistance(customer.latitude, customer.longitude, this.parseLocation(b.location).lat, this.parseLocation(b.location).lng);
+            return dA - dB;
+        })[0].id;
+    }
+
+    private async findHighestStockWarehouseId(items: any[]): Promise<string | null> {
+        // Iterate warehouses, sum stock for items, return max
+        return null; // TODO: Implement if needed
     }
 
     private async checkStock(warehouseId: string, items: any[]): Promise<boolean> {
@@ -145,33 +184,30 @@ export class FulfillmentService {
         destinationWarehouseId: string;
         items: { productId: string; quantity: number }[];
         initiatorId: string;
+        parentOrderId?: string;
     }) {
-        const initiator = await this.prisma.user.findUnique({
-            where: { id: data.initiatorId },
-            include: { roles: true }
-        });
-
-        const hasPrivilegedRole = initiator?.roles?.some(role =>
-            ['MANAGER', 'ADMIN'].includes(role.name.toUpperCase())
-        );
-        const status = hasPrivilegedRole ? 'APPROVED' : 'PENDING_APPROVAL';
-
-        return this.prisma.transferOrder.create({
+        // Use generic Order model for transfers
+        return this.prisma.order.create({
             data: {
-                sourceWarehouseId: data.sourceWarehouseId,
-                destinationWarehouseId: data.destinationWarehouseId,
-                initiatorId: data.initiatorId,
-                status,
+                type: 'TRANSFER',
+                status: 'PENDING',
+                priority: 'NORMAL',
+                warehouseId: data.sourceWarehouseId, // Ship FROM source
+                destinationWarehouseId: data.destinationWarehouseId, // Ship TO dest
+                customerId: '', // generic system customer or empty
+                parentOrderId: data.parentOrderId,
+
                 items: {
                     create: data.items.map(item => ({
                         productId: item.productId,
-                        quantity: item.quantity
+                        quantity: item.quantity,
                     }))
                 }
             },
             include: { items: true }
         });
     }
+
 
     async approveTransfer(transferId: string, approverId: string) {
         return this.prisma.transferOrder.update({

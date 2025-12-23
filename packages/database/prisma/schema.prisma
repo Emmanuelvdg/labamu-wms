@@ -26,6 +26,10 @@ model Product {
   height         Float? // cm
   depth          Float? // cm
   weight         Float? // kg
+  
+  // Advanced Warehouse Attributes
+  velocity       String?   @default("C") // A, B, C (Fast, Medium, Slow)
+  abcClass       String?   // A, B, C (Cost based)
 
   supplierId           String?
   inventory            ProductInventory[] // Aggregate view
@@ -44,6 +48,11 @@ model Product {
   pickingTasks         PickingTask[]
   TransferOrderItem    TransferOrderItem[]
   receiptItems         ReceiptItem[]
+
+  // Storage
+  requiredAttributeId String?
+  requiredAttribute   LocationAttributeDefinition? @relation(fields: [requiredAttributeId], references: [id])
+  rotationRules       RotationRule[]
 }
 
 model Route {
@@ -90,16 +99,18 @@ model Warehouse {
   manufactureSteps       String? // "1_step", "2_steps", "3_steps"
   buyToResupply          Boolean @default(false)
 
-  inventory         ProductInventory[]
-  batches           InventoryBatch[]
-  pickingStrategies PickingStrategy[]
-  orders            Order[]
-  pickingSessions   PickingSession[]
+  inventory          ProductInventory[]
+  batches            InventoryBatch[]
+  pickingStrategies  PickingStrategy[]
+  orders             Order[]
+  transferDestOrders Order[]            @relation("OrderDestination")
+  pickingSessions    PickingSession[]
 
   users            User[]
   fulfillmentRules FulfillmentRule[]
   sourceTransfers  TransferOrder[]   @relation("TransferSource")
   destTransfers    TransferOrder[]   @relation("TransferDest")
+  rotationRules    RotationRule[]
 }
 
 model Location {
@@ -123,6 +134,10 @@ model Location {
   width    Float? @default(1)
   height   Float? @default(1)
   rotation Float? @default(0)
+
+  // Optimization
+  zonePriority   Int       @default(100) // Lower = Higher Priority (e.g. 1 = Golden Zone, 100 = Back of house)
+  putawaySequence Int      @default(0)   // Order to traverse within the zone
 
   parentId      String?
   parent        Location?  @relation("LocationHierarchy", fields: [parentId], references: [id])
@@ -148,18 +163,16 @@ model Location {
 }
 
 model ProductPackaging {
-  id        String  @id @default(uuid())
-  name      String // e.g. "Box of 12", "Pallet"
-  type      String // BOX, PALLET, UNIT
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int // Quantity of base units
+  id       String @id @default(uuid())
+  name     String // e.g. "Box of 12", "Pallet"
+  unitType String @default("UNIT") // INDIVIDUAL, BOX, PALLET
+  quantity Int    @default(1)
 
   // Dimensions & Weight
-  width  Float? // cm
-  height Float? // cm
-  depth  Float? // cm
-  weight Float? // kg
+  width  Float @default(0) // cm
+  height Float @default(0) // cm
+  length Float @default(0) // cm matches depth
+  weight Float @default(0) // kg
 
   barcode String?
 
@@ -170,6 +183,8 @@ model ProductPackaging {
   purchaseOrderItems PurchaseOrderItem[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+  Product            Product?            @relation(fields: [productId], references: [id])
+  productId          String?
 }
 
 // Aggregate Inventory (Legacy/Fast Lookup)
@@ -198,6 +213,7 @@ model InventoryBatch {
   package         Package?              @relation(fields: [packageId], references: [id])
   initialQuantity Int
   currentQuantity Int
+  reserved        Int       @default(0)
   costPerUnit     Float
   purchaseDate    DateTime
   expiryDate      DateTime?
@@ -237,7 +253,7 @@ model StockTransaction {
 
 model Order {
   id                String          @id @default(uuid())
-  customerId        String
+  customerId        String?
   customer          Customer?       @relation(fields: [customerId], references: [id]) // Optional for migration safety
   status            String // PENDING, RESERVED, PICKING, SHIPPED, DELIVERED, CANCELLED
   fulfillmentStatus String          @default("UNALLOCATED") // UNALLOCATED, ALLOCATED, PARTIAL
@@ -253,6 +269,20 @@ model Order {
   updatedAt         DateTime        @updatedAt
   pickingTasks      PickingTask[]
   transferOrders    TransferOrder[]
+
+  // Unified Order Fields
+  type                   String     @default("SALES") // SALES, TRANSFER
+  destinationWarehouseId String?
+  destinationWarehouse   Warehouse? @relation("OrderDestination", fields: [destinationWarehouseId], references: [id])
+  parentOrderId          String?
+  parentOrder            Order?     @relation("OrderHierarchy", fields: [parentOrderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childOrders            Order[]    @relation("OrderHierarchy")
+
+  // Shipping Logic
+  deliveryMethodId   String?
+  deliveryMethod     DeliveryMethod? @relation(fields: [deliveryMethodId], references: [id])
+  shippingCost       Float           @default(0)
+  shippingCostInCOGS Boolean         @default(false)
 }
 
 model OrderItem {
@@ -291,7 +321,7 @@ model PickingSession {
   warehouseId String
   warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
   strategy    String // BATCH, WAVE, CLUSTER, SINGLE
-  status      String        @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+  status      String        @default("PLANNED") // PLANNED, ASSIGNED, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED
   pickerId    String? // Link to User (optional)
   picker      User?         @relation(fields: [pickerId], references: [id])
   tasks       PickingTask[]
@@ -300,12 +330,13 @@ model PickingSession {
 }
 
 model LocationAttributeDefinition {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  type      String   // SELECT, TEXT, NUMBER, BOOLEAN
-  options   String?  // JSON array for SELECT options
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String    @id @default(uuid())
+  name      String    @unique
+  type      String // SELECT, TEXT, NUMBER, BOOLEAN
+  options   String? // JSON array for SELECT options
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Product   Product[]
 }
 
 model PickingTask {
@@ -320,7 +351,7 @@ model PickingTask {
   sourceLocation   Location       @relation(fields: [sourceLocationId], references: [id])
   quantity         Int
   pickedQuantity   Int            @default(0)
-  status           String         @default("PENDING") // PENDING, PICKED, PARTIALLY_PICKED, FAILED
+  status           String         @default("PENDING") // PENDING, ASSIGNED, IN_PROGRESS, PICKED, BLOCKED, FAILED
   exceptionReason  String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -427,17 +458,17 @@ model Supplier {
 }
 
 model PurchaseOrder {
-  id           String              @id @default(uuid())
-  poNumber     String              @unique @default(cuid()) // Temporary default to avoid migration issues
-  supplierId   String
-  supplier     Supplier            @relation(fields: [supplierId], references: [id])
-  status       String              @default("DRAFT") // DRAFT, ORDERED, RECEIVED, CANCELLED
-  approvalStatus String            @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
-  approvedBy   String?
-  approvedAt   DateTime?
+  id              String    @id @default(uuid())
+  poNumber        String    @unique @default(cuid()) // Temporary default to avoid migration issues
+  supplierId      String
+  supplier        Supplier  @relation(fields: [supplierId], references: [id])
+  status          String    @default("DRAFT") // DRAFT, ORDERED, RECEIVED, CANCELLED
+  approvalStatus  String    @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
+  approvedBy      String?
+  approvedAt      DateTime?
   rejectionReason String?
 
-  orderDate    DateTime            @default(now())
+  orderDate    DateTime  @default(now())
   expectedDate DateTime?
 
   // Header Info
@@ -449,20 +480,20 @@ model PurchaseOrder {
   billToAddress String?
 
   // Financials
-  taxAmount    Float               @default(0)
-  shippingCost Float               @default(0)
-  totalAmount  Float               @default(0)
+  taxAmount    Float @default(0)
+  shippingCost Float @default(0)
+  totalAmount  Float @default(0)
 
   // Footer Info
   paymentTerms  String?
   deliveryTerms String?
   notes         String?
 
-  items        PurchaseOrderItem[]
-  receipts     Receipt[]
-  invoices     Invoice[]
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
+  items     PurchaseOrderItem[]
+  receipts  Receipt[]
+  invoices  Invoice[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
 }
 
 model PurchaseOrderItem {
@@ -544,13 +575,13 @@ model InvoiceItem {
 }
 
 model User {
-  id          String     @id @default(uuid())
-  email       String     @unique
-  password    String?    // Hashed password
-  name        String
-  
-  roles       Role[]
-  warehouses  Warehouse[]
+  id       String  @id @default(uuid())
+  email    String  @unique
+  password String? // Hashed password
+  name     String
+
+  roles      Role[]
+  warehouses Warehouse[]
 
   initiatedTransfers TransferOrder[]  @relation("TransferInitiator")
   approvedTransfers  TransferOrder[]  @relation("TransferApprover")
@@ -564,6 +595,7 @@ model Customer {
   latitude  Float?
   longitude Float?
   orders    Order[]
+  rotationRules RotationRule[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -575,9 +607,14 @@ model FulfillmentRule {
   strategy    String // PRIMARY, HIGHEST_STOCK, CLOSEST
   warehouseId String?
   warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
-  active      Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+
+  // Logic Config
+  actionIfUnavailable String  @default("NEXT_RULE") // NEXT_RULE, TRIGGER_TRANSFER, BACKORDER
+  transferSourceRule  String? // JSON: { "strategy": "CLOSEST" } or { "warehouseId": "abc" }
+
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model TransferOrder {
@@ -646,14 +683,74 @@ model Role {
   updatedAt   DateTime     @updatedAt
 }
 
+model DeliveryMethod {
+  id         String  @id @default(uuid())
+  name       String
+  active     Boolean @default(true)
+  provider   String // FIXED_PRICE, BASED_ON_RULES
+  fixedPrice Float   @default(0)
+
+  // Link to external carrier (optional integration)
+  carrier String? // FedEx, UPS, etc.
+
+  rules  ShippingRule[]
+  orders Order[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ShippingRule {
+  id               String         @id @default(uuid())
+  deliveryMethodId String
+  deliveryMethod   DeliveryMethod @relation(fields: [deliveryMethodId], references: [id])
+
+  // Conditions (Null means no limit)
+  minWeight Float?
+  maxWeight Float?
+  minVolume Float?
+  maxVolume Float?
+  minPrice  Float?
+  maxPrice  Float?
+
+  // Cost
+  price Float
+
+  sequence Int @default(0) // Evaluation order
+}
+
 model Permission {
   id        String   @id @default(uuid())
   roleId    String
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  resource  String   // e.g., "INVENTORY", "ORDERS", "PURCHASE_ORDERS"
-  action    String   // CREATE, READ, UPDATE, DELETE, APPROVE
+  resource  String // e.g., "INVENTORY", "ORDERS", "PURCHASE_ORDERS"
+  action    String // CREATE, READ, UPDATE, DELETE, APPROVE
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([roleId, resource, action])
+}
+
+model RotationRule {
+  id               String     @id @default(uuid())
+  priority         Int        @default(0) // Higher number = higher priority
+  
+  // Scope Scenarios (Nullable)
+  customerId       String?
+  customer         Customer?  @relation(fields: [customerId], references: [id])
+  orderTypeId      String?    // e.g. "B2B", "ECOM"
+  productId        String?    // SKU level
+  product          Product?   @relation(fields: [productId], references: [id])
+  categoryId       String?    // Product Category (String match)
+  warehouseId      String?    // Default level
+  warehouse        Warehouse? @relation(fields: [warehouseId], references: [id])
+  
+  // Policy Config
+  policy           String     // FIFO, FEFO, LIFO
+  minShelfLifeDays Int?       // FEFO constraint
+  missingExpiryAction String? // FALLBACK_FIFO, BLOCK, ALLOW
+  
+  active           Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 }

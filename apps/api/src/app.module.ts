@@ -15,6 +15,7 @@ import { SettingsModule } from './settings/settings.module';
 import { InvoiceModule } from './invoice/invoice.module';
 import { AuthModule } from './auth/auth.module';
 import { StoModule } from './sto/sto.module';
+import { ShippingModule } from './shipping/shipping.module';
 
 @Module({
     imports: [
@@ -32,6 +33,7 @@ import { StoModule } from './sto/sto.module';
         InvoiceModule,
         AuthModule,
         StoModule,
+        ShippingModule,
     ],
     controllers: [],
     providers: [],

@@ -1,19 +1,19 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { StrategyService } from '../strategy/strategy.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { Order } from '@labamu/database';
 
-import * as fs from 'fs';
-import * as path from 'path';
-
 import { FulfillmentService } from '../fulfillment/fulfillment.service';
+import { ShippingService } from '../shipping/shipping.service';
+import { PickingStrategyService } from '../strategy/picking-strategy.service';
 
 @Injectable()
 export class OrderService {
+    private readonly logger = new Logger(OrderService.name);
+
     private log(message: string) {
-        const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
-        fs.appendFileSync(logPath, `[OrderService] ${message}\n`);
+        this.logger.log(message);
     }
 
     constructor(
@@ -21,17 +21,71 @@ export class OrderService {
         private strategyService: StrategyService,
         private inventoryService: InventoryService,
         private fulfillmentService: FulfillmentService,
+        private shippingService: ShippingService,
+        private pickingStrategyService: PickingStrategyService,
     ) { }
 
-    async createOrder(data: { customerId: string; priority: string; items: { productId: string; quantity: number }[]; expectedDate?: Date; warehouseId?: string }): Promise<Order> {
+    async createOrder(data: {
+        customerId?: string;
+        priority: string;
+        items: { productId: string; quantity: number }[];
+        expectedDate?: Date;
+        warehouseId?: string;
+        type?: 'SALES' | 'TRANSFER' | 'STO';
+        destinationWarehouseId?: string;
+        parentOrderId?: string;
+        // Shipping
+        deliveryMethodId?: string;
+        shippingCostInCOGS?: boolean;
+    }): Promise<Order> {
+        let shippingCost = 0;
+
+        // Calculate Shipping if Method is Provided
+        if (data.deliveryMethodId) {
+            // In real app, we fetch product weights. 
+            // We'll calculate total weight/volume/price here.
+            // Simplification: Assume 0 weight for now or fetch if critical
+            // Detailed implementation would require reading Product details for each item.
+
+            // FETCH PRODUCT DETAILS FOR CALCULATION
+            const productIds = data.items.map(i => i.productId);
+            const products = await this.prisma.product.findMany({ where: { id: { in: productIds } } });
+
+            let totalWeight = 0;
+            let totalVolume = 0;
+            let totalPrice = 0; // Requires item price which we don't have in input? Order items logic usually has price.
+            // Assume simplified weight/volume for now.
+
+            for (const item of data.items) {
+                const p = products.find(prod => prod.id === item.productId);
+                if (p) {
+                    totalWeight += (p.weight || 0) * item.quantity;
+                    totalVolume += ((p.width || 0) * (p.height || 0) * (p.depth || 0) / 1000000) * item.quantity; // cm3 to m3
+                }
+            }
+
+            shippingCost = await this.shippingService.calculateCost(data.deliveryMethodId, {
+                weight: totalWeight,
+                volume: totalVolume,
+                price: 0 // Placeholder
+            });
+        }
+
         // 1. Create Order
         const order = await this.prisma.order.create({
             data: {
-                customerId: data.customerId,
+                customerId: data.customerId || undefined,
                 priority: data.priority,
                 status: 'PENDING',
                 expectedDate: data.expectedDate,
                 warehouseId: data.warehouseId,
+                type: data.type || 'SALES',
+                destinationWarehouseId: data.destinationWarehouseId,
+                parentOrderId: data.parentOrderId,
+                // Shipping
+                deliveryMethodId: data.deliveryMethodId,
+                shippingCost: shippingCost,
+                shippingCostInCOGS: data.shippingCostInCOGS || false,
                 items: {
                     create: data.items.map(item => ({
                         productId: item.productId,
@@ -105,11 +159,24 @@ export class OrderService {
             const strategyName = activeStrategy?.name === 'FEFO' ? 'FEFO' : 'FIFO';
 
             try {
-                await this.inventoryService.reserveStock({
-                    orderId: order.id,
-                    items: data.items,
-                    strategy: strategyName,
-                });
+                // New Logic: Use PickingStrategyService for Allocation Plan (Rotation Policies)
+                for (const item of data.items) {
+                    const allocations = await this.pickingStrategyService.allocateStock(
+                        item.productId,
+                        item.quantity,
+                        data.warehouseId || order.warehouseId!, // Ensure we have warehouse
+                        undefined, // Default strategy (use rules)
+                        false // commit: false (Do not reserve in helper, we do it below)
+                    );
+
+                    if (allocations.length > 0) {
+                        await this.inventoryService.reserveBatches(allocations);
+                    } else {
+                        // Fallback? Or throw? For now just log.
+                        this.log(`No allocation found for product ${item.productId}`);
+                        // If strict, we might want to throw here or let it be PENDING
+                    }
+                }
 
                 // 4. Update Order Status
                 return this.prisma.order.update({
@@ -129,7 +196,7 @@ export class OrderService {
 
     async getOrders(): Promise<Order[]> {
         return this.prisma.order.findMany({
-            include: { items: true, reservations: true, shipment: true },
+            include: { items: true, reservations: true, shipment: true, destinationWarehouse: true },
         });
     }
 
@@ -140,6 +207,7 @@ export class OrderService {
                 items: { include: { product: true } },
                 reservations: true,
                 shipment: true,
+                warehouse: true, // Include warehouse for UI
                 pickingTasks: {
                     include: { sourceLocation: true }
                 }
@@ -211,23 +279,32 @@ export class OrderService {
         });
     }
     async checkAvailability(id: string): Promise<Order> {
-        const order = await this.getOrder(id) as any;
+        let order = await this.getOrder(id) as any;
         if (!order) throw new Error('Order not found');
 
-        // 1. Get Strategy
+        // 1. Ensure Allocation
+        if (!order.warehouseId) {
+            this.log(`Order ${id} has no warehouse. Triggering allocation...`);
+            await this.fulfillmentService.allocateOrder(id);
+            // Refresh order
+            order = await this.getOrder(id) as any;
+        }
+
+        // 2. Get Strategy
         const reservationStrategies = await this.strategyService.getReservationStrategies();
         const activeStrategy = reservationStrategies.find(s => s.active) || reservationStrategies[reservationStrategies.length - 1];
 
-        // 2. Reserve
+        // 3. Reserve (Strictly from assigned warehouse)
         const strategyName = activeStrategy?.name === 'FEFO' ? 'FEFO' : 'FIFO';
         try {
             await this.inventoryService.reserveStock({
                 orderId: order.id,
-                items: order.items.map(i => ({ productId: i.productId, quantity: i.quantity })),
+                items: order.items.map((i: any) => ({ productId: i.productId, quantity: i.quantity })),
                 strategy: strategyName,
+                warehouseId: order.warehouseId // Strict Filter
             });
 
-            // 3. Update Status
+            // 4. Update Status
             return this.prisma.order.update({
                 where: { id: order.id },
                 data: { status: 'RESERVED' },
@@ -235,6 +312,10 @@ export class OrderService {
             });
         } catch (error: any) {
             this.log(`Check Availability failed: ${error.message}`);
+            // Provide clarity if it's due to IWT pending
+            if (order.fulfillmentStatus === 'PARTIAL' || order.fulfillmentStatus === 'UNALLOCATED') {
+                throw new BadRequestException(`Stock check failed: Order is ${order.fulfillmentStatus} (likely waiting for IWT or stock). Logic: ${error.message}`);
+            }
             throw new BadRequestException(error.message);
         }
     }

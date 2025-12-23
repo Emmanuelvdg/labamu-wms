@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
 
 import * as fs from 'fs';
 import * as path from 'path';
+
+import { PackagingService } from './packaging.service';
+import { PutawayService } from './putaway.service';
 
 @Injectable()
 export class InventoryService {
@@ -12,23 +15,88 @@ export class InventoryService {
         fs.appendFileSync(logPath, `[InventoryService] ${message}\n`);
     }
 
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private packagingService: PackagingService,
+        private putawayService: PutawayService
+    ) { }
 
     async createProduct(data: any): Promise<Product> {
-        return this.prisma.product.create({
+        const product = await this.prisma.product.create({
             data: {
                 sku: data.sku,
                 name: data.name,
                 category: data.category,
                 expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
                 classification: data.classification,
+                velocity: data.velocity,
                 type: data.type,
                 unitOfMeasure: data.unitOfMeasure,
                 averageCost: data.averageCost,
                 status: data.status,
                 tracking: data.tracking || 'none',
+                requiredAttributeId: data.requiredAttributeId,
+                // Dimensions
+                width: data.width ? parseFloat(data.width) : undefined,
+                height: data.height ? parseFloat(data.height) : undefined,
+                depth: data.depth ? parseFloat(data.depth) : undefined,
+                weight: data.weight ? parseFloat(data.weight) : undefined,
             },
         });
+
+        // Handle Packaging
+        if (data.packaging && Array.isArray(data.packaging)) {
+            for (const pkg of data.packaging) {
+                await this.packagingService.createPackaging({
+                    ...pkg,
+                    productId: product.id,
+                });
+            }
+        }
+
+        return product;
+    }
+
+    async updateProduct(id: string, data: any) {
+        // Update Product Fields
+        const product = await this.prisma.product.update({
+            where: { id },
+            data: {
+                name: data.name,
+                category: data.category,
+                expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
+                classification: data.classification,
+                velocity: data.velocity,
+                type: data.type,
+                unitOfMeasure: data.unitOfMeasure,
+                averageCost: data.averageCost,
+                status: data.status,
+                tracking: data.tracking,
+                requiredAttributeId: data.requiredAttributeId,
+                width: data.width ? parseFloat(data.width) : undefined,
+                height: data.height ? parseFloat(data.height) : undefined,
+                depth: data.depth ? parseFloat(data.depth) : undefined,
+                weight: data.weight ? parseFloat(data.weight) : undefined,
+            },
+        });
+
+        // Update Packaging (Replace Strategy)
+        if (data.packaging && Array.isArray(data.packaging)) {
+            // Delete existing
+            const existing = await this.packagingService.getPackaging(id);
+            for (const pkg of existing) {
+                await this.packagingService.deletePackaging(pkg.id);
+            }
+            // Create new
+            for (const pkg of data.packaging) {
+                await this.packagingService.createPackaging({
+                    ...pkg,
+                    productId: id,
+                });
+            }
+        }
+
+        return product;
     }
 
     async createSupplier(data: { name: string; contactInfo?: string }) {
@@ -77,6 +145,20 @@ export class InventoryService {
 
     async getProduct(id: string): Promise<Product | null> {
         return this.prisma.product.findUnique({ where: { id } });
+    }
+
+    async findProductStockLocations(productId: string): Promise<{ warehouseId: string, quantity: number, available: number }[]> {
+        const inventory = await this.prisma.productInventory.findMany({
+            where: { productId, quantity: { gt: 0 } },
+            orderBy: { quantity: 'desc' },
+            include: { warehouse: true } // Ensure warehouse exists
+        });
+
+        return inventory.map(inv => ({
+            warehouseId: inv.warehouseId,
+            quantity: inv.quantity,
+            available: inv.quantity - inv.reserved
+        }));
     }
 
     async createWarehouse(data: {
@@ -389,15 +471,54 @@ export class InventoryService {
         });
     }
 
-    async reserveStock(data: { orderId: string; items: { productId: string; quantity: number }[]; strategy: string }): Promise<any> {
+    async reserveBatches(allocations: { batchId: string; quantity: number }[]) {
+        return this.prisma.$transaction(async (tx) => {
+            for (const alloc of allocations) {
+                // 1. Update InventoryBatch
+                const batch = await tx.inventoryBatch.update({
+                    where: { id: alloc.batchId },
+                    data: { reserved: { increment: alloc.quantity } }
+                });
+
+                // 2. Update ProductInventory (Aggregate)
+                // We need to find the specific ProductInventory record for this batch's location/product
+                // or just update the one matching the warehouse if tracking isn't granular.
+                // For now, let's update the one at the batch's location to be precise.
+
+                // Note: If ProductInventory is just an aggregate by Warehouse, we might find multiple or one.
+                // Let's rely on finding one by productId + warehouseId + locationId
+                const productInv = await tx.productInventory.findFirst({
+                    where: {
+                        productId: batch.productId,
+                        warehouseId: batch.warehouseId,
+                        locationId: batch.locationId
+                    }
+                });
+
+                if (productInv) {
+                    await tx.productInventory.update({
+                        where: { id: productInv.id },
+                        data: { reserved: { increment: alloc.quantity } }
+                    });
+                }
+            }
+        });
+    }
+
+    async reserveStock(data: { orderId: string; items: { productId: string; quantity: number }[]; strategy: string; warehouseId?: string }): Promise<any> {
         const results = [];
 
         // Simple transaction to ensure atomicity
         await this.prisma.$transaction(async (tx) => {
             for (const item of data.items) {
                 // Fetch available inventory
+                const whereClause: any = { productId: item.productId };
+                if (data.warehouseId) {
+                    whereClause.warehouseId = data.warehouseId;
+                }
+
                 const inventory = await tx.productInventory.findMany({
-                    where: { productId: item.productId },
+                    where: whereClause,
                     include: { product: true, warehouse: true },
                     orderBy: data.strategy === 'FEFO'
                         ? { product: { expiryDate: 'asc' } }
@@ -437,7 +558,7 @@ export class InventoryService {
                 }
 
                 if (remainingQty > 0) {
-                    throw new Error(`Insufficient stock for product ${item.productId}`);
+                    throw new Error(`Insufficient stock for product ${item.productId}${data.warehouseId ? ` in warehouse ${data.warehouseId}` : ''}`);
                 }
 
             }
@@ -502,6 +623,8 @@ export class InventoryService {
         width?: number;
         height?: number;
         rotation?: number;
+        zonePriority?: number;
+        putawaySequence?: number;
     }) {
         try {
             if (data.structuralType) {
@@ -527,6 +650,8 @@ export class InventoryService {
                     width: data.width,
                     height: data.height,
                     rotation: data.rotation,
+                    zonePriority: data.zonePriority,
+                    putawaySequence: data.putawaySequence,
                 },
             });
         } catch (e: any) {
@@ -543,6 +668,8 @@ export class InventoryService {
         attributes?: any;
         removalStrategy?: string;
         inventoryFrequency?: number;
+        zonePriority?: number;
+        putawaySequence?: number;
         x?: number;
         y?: number;
         width?: number;
@@ -578,6 +705,8 @@ export class InventoryService {
                 attributes: data.attributes ? JSON.stringify(data.attributes) : undefined,
                 removalStrategy: data.removalStrategy,
                 inventoryFrequency: data.inventoryFrequency,
+                zonePriority: data.zonePriority !== undefined ? parseInt(data.zonePriority as any) : undefined,
+                putawaySequence: data.putawaySequence !== undefined ? parseInt(data.putawaySequence as any) : undefined,
                 x: data.x,
                 y: data.y,
                 width: data.width,
@@ -605,7 +734,7 @@ export class InventoryService {
 
         const allowedParents = validParents[childType];
         if (allowedParents && !allowedParents.includes(parentType)) {
-            throw new Error(`Invalid hierarchy: ${childType} must be a child of ${allowedParents.join(' or ')}. Found parent type: ${parentType}`);
+            throw new Error(`Invalid hierarchy: ${childType} must be a child of ${allowedParents.join(' or ')}.Found parent type: ${parentType}`);
         }
     }
 
@@ -934,7 +1063,7 @@ export class InventoryService {
         });
     }
 
-    async applyPutawayStrategy(productId: string, currentLocationId?: string): Promise<string | null> {
+    async applyPutawayStrategy(productId: string, currentLocationId?: string, quantity?: number): Promise<string | null> {
         const product = await this.prisma.product.findUnique({ where: { id: productId } });
         if (!product) return null;
 
@@ -975,7 +1104,27 @@ export class InventoryService {
             return b.priority - a.priority;
         });
 
-        return rules.length > 0 ? rules[0].locationId : null;
+        if (rules.length > 0) {
+            return rules[0].locationId;
+        }
+
+        // If no explicit rules, try Velocity-based Logic (Golden Zone)
+        // We need a warehouse context. Derive from currentLocationId.
+        if (currentLocationId && quantity) {
+            try {
+                const location = await this.prisma.location.findUnique({ where: { id: currentLocationId } });
+                if (location && location.warehouseId) {
+                    const bestLocation = await this.putawayService.findBestLocation(productId, quantity, location.warehouseId);
+                    if (bestLocation) {
+                        return bestLocation.id;
+                    }
+                }
+            } catch (e: any) {
+                console.error('Putaway Logic Error:', e);
+            }
+        }
+
+        return null;
     }
 
     async suggestRemoval(locationId: string, productId: string, quantity: number) {
@@ -1295,9 +1444,38 @@ export class InventoryService {
         const location = await this.prisma.location.findUnique({ where: { id: locationId } });
         if (!location) throw new Error('Location not found');
         if (location.type === 'VIEW') {
-            throw new Error(`Cannot store stock in a VIEW location: ${location.name}`);
+            throw new Error(`Cannot store stock in a VIEW location: ${location.name} `);
         }
     }
+    async checkProcurement(productId: string, quantity: number, locationId: string, tx: any) {
+        // Find Pull Rules for this location (e.g. "To fulfill Stock, Pull from Vendor")
+        const pullRules = await tx.rule.findMany({
+            where: {
+                destinationLocationId: locationId,
+                action: 'PULL',
+            },
+            orderBy: { sequence: 'asc' }
+        });
+
+        for (const rule of pullRules) {
+            if (rule.sourceLocationId) {
+                // Create a move: Source -> Destination (This location)
+                await this.createStockMove({
+                    productId,
+                    quantity,
+                    sourceLocationId: rule.sourceLocationId,
+                    destinationLocationId: locationId,
+                    ruleId: rule.id,
+                    origin: 'PROCUREMENT',
+                    status: 'WAITING',
+                }, tx);
+
+                // Recursive: Check if Source now needs replenishment
+                await this.checkProcurement(productId, quantity, rule.sourceLocationId, tx);
+            }
+        }
+    }
+
     async createStockMove(data: {
         productId: string;
         quantity: number;
@@ -1310,28 +1488,12 @@ export class InventoryService {
     }, tx?: any) {
         const prisma = tx || this.prisma;
 
-        // Apply Putaway Strategy
-        // 1. Direct Putaway: If arriving at a location that has a rule, redirect to the rule's destination.
-        // 2. Outgoing Putaway: If leaving a location (Source) and no destination specified, use rule's destination.
-
         let finalDestinationId = data.destinationLocationId;
 
-        // Check Redirect (arriving at X -> move to Y)
+        // Apply Putaway Strategy (Redirects)
         if (data.destinationLocationId) {
-            const redirectId = await this.applyPutawayStrategy(data.productId, data.destinationLocationId);
-            if (redirectId) {
-                finalDestinationId = redirectId;
-            }
-        }
-
-        // Check Default Destination (leaving X -> move to Y)
-        // Only if destination is not yet set (or was not redirected? No, if we redirected, we have a dest).
-        // If we didn't have a dest, and didn't redirect, check source.
-        if (!finalDestinationId && data.sourceLocationId) {
-            const putawayId = await this.applyPutawayStrategy(data.productId, data.sourceLocationId);
-            if (putawayId) {
-                finalDestinationId = putawayId;
-            }
+            const redirectId = await this.applyPutawayStrategy(data.productId, data.destinationLocationId, data.quantity);
+            if (redirectId) finalDestinationId = redirectId;
         }
 
         const move = await prisma.stockMove.create({
@@ -1347,43 +1509,14 @@ export class InventoryService {
             },
         });
 
-        // Trigger Procurement (Pull Rules) if source location is internal
+        // Trigger Procurement (PULL) logic
+        // If we are blocking stock at Source, we might need a PULL rule to replenish it.
+        // E.g. Sales Order blocks stock at Output.
         if (move.sourceLocationId) {
             await this.checkProcurement(move.productId, move.quantity, move.sourceLocationId, prisma);
         }
 
         return move;
-    }
-
-    async checkProcurement(productId: string, quantity: number, locationId: string, tx?: any) {
-        const prisma = tx || this.prisma;
-        // Check for PULL rules targeting this location
-        const rules = await prisma.rule.findMany({
-            where: {
-                destinationLocationId: locationId,
-                action: 'PULL',
-            },
-            orderBy: { sequence: 'asc' }
-        });
-
-        for (const rule of rules) {
-            // Create upstream move
-            // If source is null, it means Buy/Vendor, which we might handle differently (e.g. create PO request)
-            // For now, we'll just create a move from null (Vendor) to Location if source is null
-            // Or if source is set, create move from Source to Location
-
-            await this.createStockMove({
-                productId,
-                quantity,
-                sourceLocationId: rule.sourceLocationId,
-                destinationLocationId: locationId,
-                ruleId: rule.id,
-                status: 'WAITING', // Upstream move is waiting
-                origin: 'Procurement',
-            }, prisma);
-
-            // Note: createStockMove recursively calls checkProcurement for the new source
-        }
     }
 
     async getStockMoves(status?: string) {
@@ -1444,7 +1577,7 @@ export class InventoryService {
                                 costPerUnit: sourceBatch ? sourceBatch.costPerUnit : 0,
                                 purchaseDate: sourceBatch ? sourceBatch.purchaseDate : new Date(),
                                 status: 'Active',
-                                batchNumber: `MOVE-${Date.now()}`
+                                batchNumber: `MOVE - ${Date.now()} `
                             }
                         });
                     }
@@ -1487,7 +1620,7 @@ export class InventoryService {
                             costPerUnit: 0, // Needs to be updated from PO
                             purchaseDate: new Date(),
                             status: 'Active',
-                            batchNumber: `REC-${Date.now()}`
+                            batchNumber: `REC - ${Date.now()} `
                         }
                     });
 
@@ -1549,7 +1682,7 @@ export class InventoryService {
                 data: { status: 'DONE' },
             });
 
-            // 3. Chaining Logic: Check for PUSH rules at destination
+            // 3. PUSH Logic (Downstream)
             if (move.destinationLocationId) {
                 const pushRules = await tx.rule.findMany({
                     where: {
@@ -1560,7 +1693,6 @@ export class InventoryService {
                 });
 
                 for (const rule of pushRules) {
-                    // Create chained move
                     await tx.stockMove.create({
                         data: {
                             productId: move.productId,
@@ -1569,7 +1701,7 @@ export class InventoryService {
                             destinationLocationId: rule.destinationLocationId,
                             ruleId: rule.id,
                             origin: move.origin,
-                            status: 'WAITING', // Waiting for user to validate this next step
+                            status: 'WAITING',
                         }
                     });
                 }

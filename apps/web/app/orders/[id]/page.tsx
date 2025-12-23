@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { ArrowLeft, Package, Truck, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
+import OrderShipping from '@/components/OrderShipping';
+
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const [order, setOrder] = useState<any>(null);
@@ -31,9 +33,9 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
         try {
             await checkAvailability(id);
             loadOrder();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to check availability:', error);
-            alert('Failed to check availability');
+            alert(error.message || 'Failed to check availability');
         }
     };
 
@@ -115,7 +117,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Warehouse</span>
-                            <span className="font-medium">{order.warehouseId || 'N/A'}</span>
+                            <span className="font-medium">{order.warehouse?.name || order.warehouseId || 'N/A'}</span>
                         </div>
                     </div>
                 </div>
@@ -126,8 +128,11 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                         <Truck className="h-5 w-5 text-green-600" />
                         Shipping Info
                     </h3>
-                    {order.shipment ? (
-                        <div className="space-y-3">
+
+                    <OrderShipping order={order} onUpdate={loadOrder} />
+
+                    {order.shipment && (
+                        <div className="mt-4 pt-4 border-t space-y-3">
                             <div className="flex justify-between">
                                 <span className="text-gray-600">Carrier</span>
                                 <span className="font-medium">{order.shipment.carrier}</span>
@@ -141,8 +146,6 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                 <span className="font-medium">{order.shipment.status}</span>
                             </div>
                         </div>
-                    ) : (
-                        <p className="text-gray-500 italic">No shipment details yet.</p>
                     )}
                 </div>
 

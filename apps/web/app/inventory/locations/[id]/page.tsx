@@ -33,6 +33,7 @@ export default function LocationDetailsPage() {
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [editForm, setEditForm] = useState<any>({});
     const [allLocations, setAllLocations] = useState<any[]>([]); // Store all locations for filtering
+    const [attributeDefinitions, setAttributeDefinitions] = useState<any[]>([]);
 
     useEffect(() => {
         if (params.id) {
@@ -48,6 +49,18 @@ export default function LocationDetailsPage() {
             setAllLocations(flattenLocations(Array.isArray(data) ? data : []));
         } catch (e) {
             console.error("Failed to load locations for parent selection", e);
+        }
+    };
+
+    const loadAttributeDefinitions = async () => {
+        try {
+            const res = await fetch('http://localhost:3001/settings/attributes');
+            if (res.ok) {
+                const data = await res.json();
+                setAttributeDefinitions(Array.isArray(data) ? data : []);
+            }
+        } catch (e) {
+            console.error("Failed to load attribute definitions", e);
         }
     };
 
@@ -81,7 +94,9 @@ export default function LocationDetailsPage() {
                 attributes: data.attributes || {},
                 customAttributes: customAttributes,
                 removalStrategy: data.removalStrategy,
-                inventoryFrequency: data.inventoryFrequency
+                inventoryFrequency: data.inventoryFrequency,
+                zonePriority: data.zonePriority,
+                putawaySequence: data.putawaySequence,
             });
         } catch (error) {
             console.error(error);
@@ -108,6 +123,7 @@ export default function LocationDetailsPage() {
                 }
             };
             fetchParents();
+            loadAttributeDefinitions();
         }
     }, [isEditOpen]);
 
@@ -293,7 +309,31 @@ export default function LocationDetailsPage() {
                                 </div>
                             )}
 
-                            {/* Other Fields */}
+                            {/* Putaway Optimization - Zone Priority */}
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="zonePriority" className="text-right">Zone Priority</Label>
+                                <div className="col-span-3">
+                                    <Input
+                                        id="zonePriority"
+                                        type="number"
+                                        value={editForm.zonePriority || 100}
+                                        onChange={(e) => setEditForm({ ...editForm, zonePriority: parseInt(e.target.value) })}
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">Lower = Higher Priority (1 = Golden Zone)</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="putawaySequence" className="text-right">Putaway Seq</Label>
+                                <Input
+                                    id="putawaySequence"
+                                    type="number"
+                                    value={editForm.putawaySequence || 0}
+                                    onChange={(e) => setEditForm({ ...editForm, putawaySequence: parseInt(e.target.value) })}
+                                    className="col-span-3"
+                                />
+                            </div>
+
+                            {/* OTHER FIELDS */}
                             <div className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor="type" className="text-right">Usage Type</Label>
                                 <Select
@@ -314,9 +354,76 @@ export default function LocationDetailsPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            {/* Custom Attributes */}
+
+                            {/* Dynamic Attributes from Definitions */}
+                            {attributeDefinitions.length > 0 && (
+                                <div className="grid gap-4 border-t pt-4 mt-4">
+                                    <Label className="font-semibold">Extended Attributes</Label>
+                                    {attributeDefinitions.map((attr) => (
+                                        <div key={attr.id} className="grid grid-cols-4 items-center gap-4">
+                                            <Label htmlFor={`attr-${attr.name}`} className="text-right">{attr.name}</Label>
+                                            <div className="col-span-3">
+                                                {attr.type === 'BOOLEAN' ? (
+                                                    <div className="flex items-center space-x-2">
+                                                        <input
+                                                            type="checkbox"
+                                                            id={`attr-${attr.name}`}
+                                                            checked={editForm.attributes?.[attr.name] === 'true' || editForm.attributes?.[attr.name] === true}
+                                                            onChange={(e) => setEditForm({
+                                                                ...editForm,
+                                                                attributes: { ...editForm.attributes, [attr.name]: e.target.checked }
+                                                            })}
+                                                            className="h-4 w-4 rounded border-gray-300"
+                                                        />
+                                                        <span className="text-sm text-gray-500">{editForm.attributes?.[attr.name] ? 'Yes' : 'No'}</span>
+                                                    </div>
+                                                ) : attr.type === 'SELECT' ? (
+                                                    <Select
+                                                        value={editForm.attributes?.[attr.name] || ''}
+                                                        onValueChange={(val) => setEditForm({
+                                                            ...editForm,
+                                                            attributes: { ...editForm.attributes, [attr.name]: val }
+                                                        })}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select..." />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {attr.options?.split(',').map((opt: string) => (
+                                                                <SelectItem key={opt.trim()} value={opt.trim()}>
+                                                                    {opt.trim()}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                ) : attr.type === 'NUMBER' ? (
+                                                    <Input
+                                                        type="number"
+                                                        value={editForm.attributes?.[attr.name] || ''}
+                                                        onChange={(e) => setEditForm({
+                                                            ...editForm,
+                                                            attributes: { ...editForm.attributes, [attr.name]: Number(e.target.value) }
+                                                        })}
+                                                    />
+                                                ) : (
+                                                    <Input
+                                                        type="text"
+                                                        value={editForm.attributes?.[attr.name] || ''}
+                                                        onChange={(e) => setEditForm({
+                                                            ...editForm,
+                                                            attributes: { ...editForm.attributes, [attr.name]: e.target.value }
+                                                        })}
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Custom Attributes (Legacy/Ad-hoc) */}
                             <div className="grid grid-cols-4 items-start gap-4 border-t pt-4 mt-4">
-                                <Label className="text-right pt-2">Custom Attributes</Label>
+                                <Label className="text-right pt-2">Ad-hoc Attributes</Label>
                                 <div className="col-span-3 space-y-2">
                                     {(editForm.customAttributes || []).map((attr: any, index: number) => (
                                         <div key={index} className="flex gap-2">
@@ -398,6 +505,20 @@ export default function LocationDetailsPage() {
                         <div className="space-y-4">
                             <div className="bg-gray-50 p-4 rounded-lg">
                                 <h4 className="text-sm font-medium text-gray-500 mb-2">Own Attributes</h4>
+                                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 mb-4">
+                                    {(location.zonePriority !== undefined && location.zonePriority !== null) && (
+                                        <div>
+                                            <dt className="text-sm text-gray-500">Zone Priority</dt>
+                                            <dd className="text-sm font-medium text-gray-900">{location.zonePriority}</dd>
+                                        </div>
+                                    )}
+                                    {(location.putawaySequence !== undefined && location.putawaySequence !== null) && (
+                                        <div>
+                                            <dt className="text-sm text-gray-500">Putaway Sequence</dt>
+                                            <dd className="text-sm font-medium text-gray-900">{location.putawaySequence}</dd>
+                                        </div>
+                                    )}
+                                </dl>
                                 {Object.keys(location.attributes || {}).length > 0 ? (
                                     <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
                                         {Object.entries(location.attributes).map(([key, value]: any) => (
@@ -410,7 +531,9 @@ export default function LocationDetailsPage() {
                                         ))}
                                     </dl>
                                 ) : (
-                                    <p className="text-sm text-gray-400 italic">No specific attributes defined.</p>
+                                    Object.keys(location.attributes || {}).length === 0 && !location.zonePriority && (
+                                        <p className="text-sm text-gray-400 italic">No specific attributes defined.</p>
+                                    )
                                 )}
                             </div>
 
@@ -454,6 +577,6 @@ export default function LocationDetailsPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

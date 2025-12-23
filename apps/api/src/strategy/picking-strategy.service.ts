@@ -1,9 +1,15 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { InventoryService } from '../inventory/inventory.service';
+import { RotationRuleResolverService } from '../inventory/rotation-rule-resolver.service';
 
 @Injectable()
 export class PickingStrategyService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private inventoryService: InventoryService,
+        private ruleResolver: RotationRuleResolverService
+    ) { }
 
     // --- Batch Picking ---
     // Groups whole orders together based on criteria
@@ -27,22 +33,14 @@ export class PickingStrategyService {
             if (criteria === 'contact') {
                 key = order.customerId || 'Unknown';
             } else if (criteria === 'carrier') {
-                // Assuming carrier is stored in metadata or similar, falling back to ID for now
                 key = 'Carrier-Default';
             } else if (criteria === 'location') {
-                // Simple logic: Group by destination (e.g. City/Region if available)
-                // For now, we'll simulate grouping by first item's product category as a proxy for "zone"
-                // In a real app, this would use the source location of items
                 key = 'Zone-A';
             }
 
             if (!batches[key]) batches[key] = [];
             batches[key].push(order);
         }
-
-        // 3. Create Batch Records (Simulated for now as we might not have a PickingBatch table yet)
-        // In a real implementation, we would save this to the DB.
-        // For this MVP, we will just return the grouped structure.
 
         return {
             type: 'BATCH',
@@ -73,8 +71,8 @@ export class PickingStrategyService {
         // Assign each order to a "Tote"
         const cluster = pendingOrders.map((order, index) => ({
             orderId: order.id,
-            toteLabel: `TOTE-${index + 1}`, // TOTE-1, TOTE-2, etc.
-            items: order.items // Items to pick for this tote
+            toteLabel: `TOTE-${index + 1}`,
+            items: order.items
         }));
 
         return {
@@ -129,6 +127,7 @@ export class PickingStrategyService {
             pickingList: Object.values(waveItems)
         };
     }
+
     // --- Picking Session Management ---
 
     async createSession(data: {
@@ -140,11 +139,7 @@ export class PickingStrategyService {
         const { warehouseId, criteria, maxOrders } = data;
         let { strategy } = data;
 
-        // Auto-resolve strategy if not provided
         if (!strategy) {
-            // In a real implementation, we would fetch the active strategy for this warehouse
-            // const activeStrategy = await this.prisma.pickingStrategy.findFirst({ where: { warehouseId, active: true } });
-            // strategy = activeStrategy?.name as any || 'SINGLE';
             strategy = 'SINGLE';
         }
 
@@ -157,7 +152,7 @@ export class PickingStrategyService {
                 ],
                 status: 'RESERVED',
             },
-            take: maxOrders || 50, // Default limit
+            take: maxOrders || 50,
             include: {
                 items: { include: { product: true } },
                 reservations: true
@@ -188,55 +183,154 @@ export class PickingStrategyService {
             });
 
             for (const item of order.items) {
-                // Find where the stock was reserved from (using Reservations)
-                // Simplified: If we have a reservation strategy, we should have specific locations.
-                // For now, we'll look up the reservation or default to a "Stock" location if not found.
+                const pickingRule = 'FEFO'; // Force FEFO for now
 
-                // Try to find a reservation for this item
-                const reservation = order.reservations.find(r => r.productId === item.productId);
+                const allocations = await this.allocateStock(
+                    item.productId,
+                    item.quantity,
+                    warehouseId,
+                    pickingRule
+                );
 
-                // In a real system, Reservation would link to a specific Location or Inventory ID.
-                // Here we'll do a best-effort lookup for stock.
-                const stock = await this.prisma.productInventory.findFirst({
-                    where: {
-                        productId: item.productId,
-                        warehouseId,
-                        quantity: { gte: item.quantity }
-                    },
-                    include: { location: true }
-                });
+                if (allocations.length === 0) {
+                    console.warn(`No stock found for ${item.productId} in Order ${order.id}`);
+                    continue;
+                }
 
-                if (stock && stock.location) {
+                for (const alloc of allocations) {
                     const task = await this.prisma.pickingTask.create({
                         data: {
                             sessionId: session.id,
                             orderId: order.id,
                             productId: item.productId,
-                            sourceLocationId: stock.locationId!,
-                            quantity: item.quantity,
+                            sourceLocationId: alloc.locationId,
+                            quantity: alloc.quantity,
                             status: 'PENDING'
                         }
                     });
                     tasks.push(task);
-                } else {
-                    // Handle missing stock scenario (shouldn't happen if RESERVED, but safety check)
-                    console.warn(`No stock location found for Product ${item.productId} in Order ${order.id}`);
                 }
             }
         }
 
         return this.prisma.pickingSession.findUnique({
             where: { id: session.id },
-            include: {
-                tasks: {
-                    include: {
-                        product: true,
-                        sourceLocation: true,
-                        order: true
-                    }
-                }
-            }
+            include: { tasks: true }
         });
+    }
+
+    // New Helper: Allocates stock from Batches based on Strategy
+    async allocateStock(
+        productId: string,
+        quantityNeeded: number,
+        warehouseId: string,
+        overrideStrategy?: 'FIFO' | 'FEFO',
+        commit: boolean = true
+    ): Promise<{ batchId: string; locationId: string; quantity: number }[]> {
+
+        // Fetch Product to get Category
+        const product = await this.prisma.product.findUnique({
+            where: { id: productId }
+        });
+
+        // 1. Resolve Effective Rule
+        const rule = await this.ruleResolver.resolveRule({
+            productId,
+            warehouseId,
+            categoryId: product?.category || undefined,
+        });
+
+        // 2. Fetch Candidates (Active, Positive Quantity)
+        const batches = await this.prisma.inventoryBatch.findMany({
+            where: {
+                productId,
+                warehouseId,
+                status: 'Active',
+                currentQuantity: { gt: 0 }
+            },
+            include: { location: true }
+        });
+
+        // 3. Filter Candidates (Eligibility + Constraints)
+        let eligibleBatches = batches.filter(b => (b.currentQuantity - b.reserved) > 0);
+
+        // Constraint: Min Shelf Life (FEFO specific mostly)
+        if (rule.minShelfLifeDays) {
+            const minExpiry = new Date();
+            minExpiry.setDate(minExpiry.getDate() + rule.minShelfLifeDays);
+            eligibleBatches = eligibleBatches.filter(b => {
+                if (!b.expiryDate) return true; // Handle missing expiry later
+                return b.expiryDate >= minExpiry;
+            });
+        }
+
+        // Constraint: Missing Expiry Handling
+        if (rule.missingExpiryAction === 'BLOCK') {
+            eligibleBatches = eligibleBatches.filter(b => !!b.expiryDate);
+        }
+
+        // 4. Sort Candidates (Strategy)
+        const policy = rule.policy || overrideStrategy || 'FIFO';
+
+        eligibleBatches.sort((a, b) => {
+            const dateA = a.expiryDate ? new Date(a.expiryDate).getTime() : null;
+            const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : null;
+            const recA = new Date(a.createdAt).getTime();
+            const recB = new Date(b.createdAt).getTime();
+
+            if (policy === 'FEFO') {
+                if (dateA && dateB) {
+                    if (dateA !== dateB) return dateA - dateB;
+                    return recA - recB;
+                }
+                if (!dateA && !dateB) return recA - recB;
+
+                if (dateA && !dateB) return -1;
+                if (!dateA && dateB) return 1;
+            }
+
+            if (policy === 'LIFO') {
+                return recB - recA;
+            }
+
+            return recA - recB;
+        });
+
+        // 5. Greedily Allocate
+        const allocation = [];
+        let remaining = quantityNeeded;
+
+        for (const batch of eligibleBatches) {
+            if (remaining <= 0) break;
+
+            if (!batch.locationId) continue;
+
+            const available = batch.currentQuantity - batch.reserved;
+            const take = Math.min(available, remaining);
+
+            if (take > 0) {
+                // Reserve the stock ONLY if commit is true
+                if (commit) {
+                    await this.prisma.inventoryBatch.update({
+                        where: { id: batch.id },
+                        data: { reserved: { increment: take } }
+                    });
+                }
+
+                allocation.push({
+                    batchId: batch.id,
+                    locationId: batch.locationId,
+                    quantity: take
+                });
+
+                remaining -= take;
+            }
+        }
+
+
+        console.log(`[Allocation] Product: ${productId}, Policy: ${policy}, Applied Rule ID: ${(rule as any).id || 'Default'}`);
+
+        return allocation;
     }
 
     async getActiveSession(warehouseId: string) {
@@ -268,10 +362,20 @@ export class PickingStrategyService {
             }
         });
 
-        // If exception, trigger inventory adjustment (placeholder)
-        if (data.status === 'FAILED' || data.status === 'PARTIALLY_PICKED') {
-            // Logic to flag location for cycle count would go here
-            console.log(`Exception reported for Task ${taskId}: ${data.exceptionReason}`);
+        // If exception, trigger inventory adjustment
+        if ((task.status === 'FAILED' || task.status === 'PARTIALLY_PICKED') && task.exceptionReason) {
+            const failedQty = task.quantity - task.pickedQuantity;
+            if (failedQty > 0) {
+                console.log(`Exception reported for Task ${taskId}: ${task.exceptionReason}`);
+                await this.inventoryService.createStockMove({
+                    productId: task.productId,
+                    quantity: failedQty,
+                    sourceLocationId: task.sourceLocationId,
+                    destinationLocationId: null, // Adjustment
+                    origin: 'PICKING_EXCEPTION',
+                    status: 'COMPLETED'
+                });
+            }
         }
 
         return task;
@@ -301,9 +405,9 @@ export class PickingStrategyService {
 
             let newStatus = 'PICKING';
             if (hasExceptions) {
-                newStatus = 'EXCEPTION'; // Requires Manager Review
+                newStatus = 'EXCEPTION';
             } else if (allPicked) {
-                newStatus = 'PACKING'; // Ready for Packing/Shipping
+                newStatus = 'PACKING';
             }
 
             await this.prisma.order.update({

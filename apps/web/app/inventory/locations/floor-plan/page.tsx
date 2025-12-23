@@ -70,38 +70,25 @@ export default function FloorPlanPage() {
             // We need to find all descendants that are BAYS
             const room = findLocation(locations, selectedRoomId);
             const roomBays = flattenLocations(room?.children || [])
-                .filter(l => l.structuralType === 'BAY');
+                .filter(l => l.structuralType === 'BAY' || l.structuralType === 'ROW');
 
             // Filter by Shelf Layer if needed
-            // "Shelf Layer 1" means the Bay has a child Shelf with name containing "1" or index 1?
             // The user requirement says: "The view is filtered for the first shelf layer."
             // This implies we might want to show bays that HAVE a shelf at layer 1.
             // For now, let's just show all bays, or filter if we can determine layers.
             // Let's assume all bays are visible for the floor plan layout.
 
-            setBays(roomBays);
+            console.log('Selected Room:', room);
+            console.log('Selected Room Children:', room?.children);
+            // reused roomBays from above
+            console.log('Found Bays:', roomBays);
 
-            // Split into mapped and unmapped
-            // We consider 'mapped' if x and y are defined (and not 0,0 default if we want strictness, but 0,0 is valid)
-            // Actually, let's assume if they have been saved with coordinates.
-            // Since we added default 0, we might need a flag or check if they were explicitly placed.
-            // For this UI, let's assume if x=0, y=0 it might be unmapped unless we have a specific "isMapped" flag.
-            // But wait, schema default is 0.
-            // Let's rely on the user moving them.
-            // Or better: check if they are within the canvas bounds?
-            // Let's treat (0,0) as unmapped for now for simplicity, or add a property.
-            // Actually, let's just list all.
+            // Treat as mapped only if x or y is non-zero (and defined)
+            // Ideally non-zero, assuming 0,0 is the "spawn point" or default.
+            const isMapped = (b: Location) => (b.x && b.x !== 0) || (b.y && b.y !== 0);
 
-            // Better approach: If we just added the fields, they are all 0.
-            // We can treat them as unmapped if they are at 0,0 AND we haven't "placed" them.
-            // But 0,0 is a valid coordinate.
-            // Let's assume unmapped if we haven't touched them.
-            // Since we can't distinguish, let's just put them all in "Unmapped" initially if they are at 0,0.
-            // Or, we can check if they overlap?
-
-            // Let's just put everything in Unmapped initially if x=0,y=0.
-            const mapped = roomBays.filter(b => (b.x !== 0 || b.y !== 0));
-            const unmapped = roomBays.filter(b => (b.x === 0 && b.y === 0));
+            const mapped = roomBays.filter(b => isMapped(b));
+            const unmapped = roomBays.filter(b => !isMapped(b));
 
             setMappedBays(mapped);
             setUnmappedBays(unmapped);
@@ -300,7 +287,7 @@ export default function FloorPlanPage() {
             <div className="flex-1 flex overflow-hidden">
                 {/* Sidebar */}
                 <div className="w-64 border-r bg-muted/10 p-4 overflow-y-auto">
-                    <h3 className="font-medium mb-4 text-sm text-muted-foreground uppercase tracking-wider">Unmapped Bays</h3>
+                    <h3 className="font-medium mb-4 text-sm text-muted-foreground uppercase tracking-wider">Unmapped Locations</h3>
                     <div className="space-y-2">
                         {unmappedBays.map(bay => (
                             <div
@@ -313,7 +300,7 @@ export default function FloorPlanPage() {
                             </div>
                         ))}
                         {unmappedBays.length === 0 && (
-                            <p className="text-sm text-muted-foreground italic">No unmapped bays.</p>
+                            <p className="text-sm text-muted-foreground italic">No unmapped locations.</p>
                         )}
                     </div>
                 </div>

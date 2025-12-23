@@ -44,6 +44,13 @@ export default function ProductPackagingPage() {
 
     const [packagingList, setPackagingList] = useState<Packaging[]>([]);
     const [loading, setLoading] = useState(true);
+    const [product, setProduct] = useState<any>(null);
+    const [baseDimensions, setBaseDimensions] = useState({
+        width: 0,
+        height: 0,
+        depth: 0,
+        weight: 0
+    });
     const [newPackaging, setNewPackaging] = useState<Partial<Packaging>>({
         type: 'BOX',
         quantity: 1
@@ -55,15 +62,49 @@ export default function ProductPackagingPage() {
 
     const fetchPackaging = async () => {
         try {
-            const res = await fetch(`${API_URL}/inventory/products/${productId}/packaging`);
-            if (res.ok) {
-                const data = await res.json();
+            const [pkgRes, prodRes] = await Promise.all([
+                fetch(`${API_URL}/inventory/products/${productId}/packaging`),
+                fetch(`${API_URL}/inventory/products/${productId}`)
+            ]);
+
+            if (pkgRes.ok) {
+                const data = await pkgRes.json();
                 setPackagingList(data);
             }
+            if (prodRes.ok) {
+                const prodData = await prodRes.json();
+                setProduct(prodData);
+                setBaseDimensions({
+                    width: prodData.width || 0,
+                    height: prodData.height || 0,
+                    depth: prodData.depth || 0,
+                    weight: prodData.weight || 0
+                });
+            }
         } catch (error) {
-            console.error('Failed to fetch packaging', error);
+            console.error('Failed to fetch data', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateBaseDimensions = async () => {
+        try {
+            const res = await fetch(`${API_URL}/inventory/products/${productId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    width: baseDimensions.width,
+                    height: baseDimensions.height,
+                    depth: baseDimensions.depth,
+                    weight: baseDimensions.weight
+                })
+            });
+
+            if (!res.ok) throw new Error('Failed to update');
+            toast.success('Base dimensions updated');
+        } catch (error) {
+            toast.error('Failed to update dimensions');
         }
     };
 
@@ -126,6 +167,54 @@ export default function ProductPackagingPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Base Unit Dimensions Card */}
+                <Card className="md:col-span-1">
+                    <CardHeader>
+                        <CardTitle>Base Unit Dimensions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Width (cm)</Label>
+                                    <Input
+                                        type="number"
+                                        value={baseDimensions.width}
+                                        onChange={e => setBaseDimensions({ ...baseDimensions, width: Number(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Height (cm)</Label>
+                                    <Input
+                                        type="number"
+                                        value={baseDimensions.height}
+                                        onChange={e => setBaseDimensions({ ...baseDimensions, height: Number(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Depth (cm)</Label>
+                                    <Input
+                                        type="number"
+                                        value={baseDimensions.depth}
+                                        onChange={e => setBaseDimensions({ ...baseDimensions, depth: Number(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Weight (kg)</Label>
+                                    <Input
+                                        type="number"
+                                        value={baseDimensions.weight}
+                                        onChange={e => setBaseDimensions({ ...baseDimensions, weight: Number(e.target.value) })}
+                                    />
+                                </div>
+                            </div>
+                            <Button className="w-full" variant="outline" onClick={handleUpdateBaseDimensions}>
+                                Save Base Dimensions
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* Create New Form */}
                 <Card className="md:col-span-1">
                     <CardHeader>

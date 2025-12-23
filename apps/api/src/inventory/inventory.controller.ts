@@ -58,6 +58,12 @@ export class InventoryController {
         return this.inventoryService.getProduct(id);
     }
 
+    @Put('products/:id')
+    @RequirePermission('INVENTORY', 'UPDATE')
+    updateProduct(@Param('id') id: string, @Body() data: any) {
+        return this.inventoryService.updateProduct(id, data);
+    }
+
     @Post('warehouses')
     createWarehouse(@Body() data: any) {
         return this.inventoryService.createWarehouse(data);
