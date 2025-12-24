@@ -1,6 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
+import { PrismaService } from './prisma.service';
+
 async function bootstrap() {
     try {
         console.log('Bootstrap starting...');
@@ -10,6 +12,9 @@ async function bootstrap() {
             console.log(`[REQUEST] ${req.method} ${req.url}`);
             next();
         });
+
+
+
         const port = process.env.PORT || 3001;
         console.log(`Attempting to listen on port ${port}...`);
         await app.listen(port, '0.0.0.0');

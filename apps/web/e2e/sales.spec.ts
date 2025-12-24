@@ -6,6 +6,7 @@ test.describe('Sales & Picking', () => {
         await page.getByLabel('Email').fill('admin@labamu.co.id');
         await page.getByLabel('Password').fill('admin');
         await page.getByRole('button', { name: 'Sign in' }).click();
+        await expect(page).toHaveURL('/');
     });
 
     test('TC-5.1: Define Picking Strategy', async ({ page }) => {

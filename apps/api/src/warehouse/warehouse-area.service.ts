@@ -1,0 +1,255 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma.service';
+import { AreaType, getRequiredAreaTypes, WarehouseConfig, AREA_TYPE_COLORS } from './area-types';
+
+export interface CreateAreaDto {
+    name: string;
+    areaType: AreaType;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    rotation?: number;
+    color?: string;
+    linkedLocationId?: string;
+    attributes?: any;
+    sequence?: number;
+}
+
+export interface UpdateAreaDto {
+    name?: string;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+    rotation?: number;
+    color?: string;
+    linkedLocationId?: string;
+    attributes?: any;
+    active?: boolean;
+    sequence?: number;
+}
+
+export interface LayoutTemplate {
+    type: 'I' | 'U' | 'L';
+    areas: Partial<CreateAreaDto>[];
+}
+
+@Injectable()
+export class WarehouseAreaService {
+    constructor(private prisma: PrismaService) { }
+
+    async getAreasForWarehouse(warehouseId: string) {
+        return this.prisma.warehouseFunctionalArea.findMany({
+            where: { warehouseId },
+            orderBy: [{ sequence: 'asc' }, { createdAt: 'asc' }],
+            include: {
+                linkedLocation: {
+                    select: { id: true, name: true, structuralType: true }
+                }
+            }
+        });
+    }
+
+    async createArea(warehouseId: string, data: CreateAreaDto) {
+        // Validate area type against warehouse config
+        const warehouse = await this.prisma.warehouse.findUnique({
+            where: { id: warehouseId },
+            select: { incomingSteps: true, outgoingSteps: true }
+        });
+
+        if (!warehouse) {
+            throw new Error('Warehouse not found');
+        }
+
+        const requiredTypes = getRequiredAreaTypes({
+            incomingSteps: warehouse.incomingSteps as any,
+            outgoingSteps: warehouse.outgoingSteps as any,
+        });
+
+        if (!requiredTypes.includes(data.areaType as AreaType)) {
+            throw new Error(`Area type ${data.areaType} not allowed for current warehouse configuration`);
+        }
+
+        return this.prisma.warehouseFunctionalArea.create({
+            data: {
+                warehouseId,
+                name: data.name,
+                areaType: data.areaType,
+                x: data.x ?? 0,
+                y: data.y ?? 0,
+                width: data.width ?? 100,
+                height: data.height ?? 100,
+                rotation: data.rotation ?? 0,
+                color: data.color ?? AREA_TYPE_COLORS[data.areaType as AreaType],
+                linkedLocationId: data.linkedLocationId,
+                attributes: data.attributes ? JSON.stringify(data.attributes) : null,
+                sequence: data.sequence ?? 0,
+            }
+        });
+    }
+
+    async updateArea(areaId: string, data: UpdateAreaDto) {
+        return this.prisma.warehouseFunctionalArea.update({
+            where: { id: areaId },
+            data: {
+                ...data,
+                attributes: data.attributes ? JSON.stringify(data.attributes) : undefined,
+            }
+        });
+    }
+
+    async deleteArea(areaId: string) {
+        return this.prisma.warehouseFunctionalArea.delete({
+            where: { id: areaId }
+        });
+    }
+
+    async getSuggestedAreas(warehouseId: string): Promise<{ areaType: string; name: string; color: string; sequence: number }[]> {
+        const warehouse = await this.prisma.warehouse.findUnique({
+            where: { id: warehouseId },
+            select: { incomingSteps: true, outgoingSteps: true }
+        });
+
+        if (!warehouse) {
+            throw new Error('Warehouse not found');
+        }
+
+        const requiredTypes = getRequiredAreaTypes({
+            incomingSteps: warehouse.incomingSteps as any,
+            outgoingSteps: warehouse.outgoingSteps as any,
+        });
+
+        return requiredTypes.map((type, index) => ({
+            areaType: type,
+            name: this.getDefaultName(type),
+            color: AREA_TYPE_COLORS[type],
+            sequence: index + 1,
+        }));
+    }
+
+    async getSuggestedLayout(warehouseId: string, layoutType: 'I' | 'U' | 'L'): Promise<LayoutTemplate> {
+        const suggestedAreas = await this.getSuggestedAreas(warehouseId);
+
+        let areas: Partial<CreateAreaDto>[] = [];
+
+        switch (layoutType) {
+            case 'I':
+                areas = this.generateIShapedLayout(suggestedAreas);
+                break;
+            case 'U':
+                areas = this.generateUShapedLayout(suggestedAreas);
+                break;
+            case 'L':
+                areas = this.generateLShapedLayout(suggestedAreas);
+                break;
+        }
+
+        return { type: layoutType, areas };
+    }
+
+    private getDefaultName(areaType: AreaType): string {
+        const names = {
+            [AreaType.RECEIVING]: 'Receiving Dock',
+            [AreaType.STAGING]: 'Staging Area',
+            [AreaType.PUTAWAY_LANE]: 'Putaway Lane',
+            [AreaType.STORAGE]: 'Main Storage',
+            [AreaType.PICKING]: 'Picking Zone',
+            [AreaType.PACKING]: 'Packing Station',
+            [AreaType.SHIPPING]: 'Shipping Dock',
+        };
+        return names[areaType] || areaType;
+    }
+
+    private generateIShapedLayout(suggestedAreas: any[]): Partial<CreateAreaDto>[] {
+        // Linear horizontal layout
+        return suggestedAreas.map((area, index) => ({
+            name: area.name,
+            areaType: area.areaType,
+            x: 50 + index * 220,
+            y: 400,
+            width: 200,
+            height: 150,
+            rotation: 0,
+            color: area.color,
+            sequence: index + 1,
+        }));
+    }
+
+    private generateUShapedLayout(suggestedAreas: any[]): Partial<CreateAreaDto>[] {
+        const areas: Partial<CreateAreaDto>[] = [];
+        const totalAreas = suggestedAreas.length;
+        const leftSideCount = Math.ceil(totalAreas / 2);
+
+        suggestedAreas.forEach((area, index) => {
+            if (index < leftSideCount) {
+                // Left side (top to bottom)
+                areas.push({
+                    name: area.name,
+                    areaType: area.areaType,
+                    x: 100,
+                    y: 100 + index * 180,
+                    width: 200,
+                    height: 150,
+                    rotation: 0,
+                    color: area.color,
+                    sequence: index + 1,
+                });
+            } else {
+                // Right side (bottom to top)
+                const rightIndex = index - leftSideCount;
+                areas.push({
+                    name: area.name,
+                    areaType: area.areaType,
+                    x: 1200,
+                    y: 100 + (totalAreas - index - 1) * 180,
+                    width: 200,
+                    height: 150,
+                    rotation: 0,
+                    color: area.color,
+                    sequence: index + 1,
+                });
+            }
+        });
+
+        return areas;
+    }
+
+    private generateLShapedLayout(suggestedAreas: any[]): Partial<CreateAreaDto>[] {
+        const areas: Partial<CreateAreaDto>[] = [];
+        const halfCount = Math.ceil(suggestedAreas.length / 2);
+
+        suggestedAreas.forEach((area, index) => {
+            if (index < halfCount) {
+                // Horizontal part
+                areas.push({
+                    name: area.name,
+                    areaType: area.areaType,
+                    x: 100 + index * 220,
+                    y: 100,
+                    width: 200,
+                    height: 150,
+                    rotation: 0,
+                    color: area.color,
+                    sequence: index + 1,
+                });
+            } else {
+                // Vertical part
+                const vertIndex = index - halfCount;
+                areas.push({
+                    name: area.name,
+                    areaType: area.areaType,
+                    x: 100 + (halfCount - 1) * 220,
+                    y: 300 + vertIndex * 180,
+                    width: 200,
+                    height: 150,
+                    rotation: 0,
+                    color: area.color,
+                    sequence: index + 1,
+                });
+            }
+        });
+
+        return areas;
+    }
+}

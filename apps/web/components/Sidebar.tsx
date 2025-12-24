@@ -96,7 +96,7 @@ export default function Sidebar() {
     return (
         <div className="flex flex-col w-64 bg-gray-800 min-h-screen text-white">
             <div className="flex items-center justify-center h-16 border-b border-gray-700">
-                <span className="text-xl font-bold">Labamu IMS</span>
+                <span className="text-xl font-bold">Labamu WMS</span>
             </div>
             <nav className="flex-1 px-2 py-4 space-y-6 overflow-y-auto">
                 {navigation.map((section, sectionIdx) => {

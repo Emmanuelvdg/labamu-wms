@@ -6,6 +6,7 @@ test.describe('Procurement', () => {
         await page.getByLabel('Email').fill('admin@labamu.co.id');
         await page.getByLabel('Password').fill('admin');
         await page.getByRole('button', { name: 'Sign in' }).click();
+        await expect(page).toHaveURL('/');
     });
 
     test('TC-4.1: Create & Receive Purchase Order', async ({ page }) => {

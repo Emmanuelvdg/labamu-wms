@@ -1,0 +1,245 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]: Labamu WMS
+      - navigation [ref=e6]:
+        - link "Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e10]:
+          - heading "Inventory" [level=3] [ref=e11]
+          - generic [ref=e12]:
+            - link "Products" [ref=e13] [cursor=pointer]:
+              - /url: /inventory
+            - link "Locations" [ref=e14] [cursor=pointer]:
+              - /url: /inventory/locations
+            - link "Warehouses" [ref=e15] [cursor=pointer]:
+              - /url: /inventory/warehouses
+            - link "Adjustments" [ref=e16] [cursor=pointer]:
+              - /url: /inventory/adjustments
+            - link "Scrap Orders" [ref=e17] [cursor=pointer]:
+              - /url: /inventory/scrap
+            - link "Partner Locations" [ref=e18] [cursor=pointer]:
+              - /url: /inventory/partners
+            - link "Routes" [ref=e19] [cursor=pointer]:
+              - /url: /inventory/routes
+        - generic [ref=e20]:
+          - heading "Inbound Operations" [level=3] [ref=e21]
+          - generic [ref=e22]:
+            - link "Suppliers" [ref=e23] [cursor=pointer]:
+              - /url: /inventory/suppliers
+            - link "Purchase Orders" [ref=e24] [cursor=pointer]:
+              - /url: /inventory/purchases
+        - generic [ref=e25]:
+          - heading "Outbound Operations" [level=3] [ref=e26]
+          - generic [ref=e27]:
+            - link "Orders" [ref=e28] [cursor=pointer]:
+              - /url: /orders
+            - link "Picking" [ref=e29] [cursor=pointer]:
+              - /url: /picking
+            - link "Delivery Methods" [ref=e30] [cursor=pointer]:
+              - /url: /configuration/delivery-methods
+            - link "Invoices" [ref=e31] [cursor=pointer]:
+              - /url: /invoices
+        - generic [ref=e32]:
+          - heading "Reporting" [level=3] [ref=e33]
+          - generic [ref=e34]:
+            - link "Reports" [ref=e35] [cursor=pointer]:
+              - /url: /reports
+            - link "Stock Moves" [ref=e36] [cursor=pointer]:
+              - /url: /inventory/moves
+        - generic [ref=e37]:
+          - heading "System" [level=3] [ref=e38]
+          - generic [ref=e39]:
+            - link "User Guide" [ref=e40] [cursor=pointer]:
+              - /url: /user-guide
+            - link "Settings" [ref=e41] [cursor=pointer]:
+              - /url: /settings
+      - link "Sign Out" [ref=e43] [cursor=pointer]:
+        - /url: /login
+    - main [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - heading "Dashboard Overview" [level=1] [ref=e47]
+          - paragraph [ref=e48]: Real-time insights into your inventory and fulfillment performance.
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]:
+              - generic [ref=e52]:
+                - paragraph [ref=e53]: Total Stock Value
+                - heading "Rp 0" [level=3] [ref=e54]
+              - img [ref=e56]
+            - generic [ref=e61]: Current Asset Value
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - paragraph [ref=e65]: Fulfillment Rate
+                - heading "0%" [level=3] [ref=e66]
+              - img [ref=e68]
+            - generic [ref=e72]: Orders Shipped
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - generic [ref=e75]:
+                - paragraph [ref=e76]: Stockout Rate
+                - heading "97.4%" [level=3] [ref=e77]
+              - img [ref=e79]
+            - generic [ref=e82]: Items Out of Stock
+          - generic [ref=e83]:
+            - generic [ref=e84]:
+              - generic [ref=e85]:
+                - paragraph [ref=e86]: Pending Orders
+                - heading "25" [level=3] [ref=e87]
+              - img [ref=e89]
+            - generic [ref=e94]: To be processed
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - generic [ref=e97]:
+                - paragraph [ref=e98]: Avg Cycle Time
+                - heading "0 hrs" [level=3] [ref=e99]
+              - img [ref=e101]
+            - generic [ref=e105]: Created to Shipped
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - generic [ref=e108]:
+                - paragraph [ref=e109]: Warehouse Capacity
+                - heading "0%" [level=3] [ref=e110]
+              - img [ref=e112]
+            - generic [ref=e115]: Volume Utilized
+        - generic [ref=e116]:
+          - generic [ref=e117]:
+            - heading "Daily Sales Trend (Last 5 Days)" [level=3] [ref=e118]
+            - generic [ref=e119]:
+              - generic [ref=e120]:
+                - generic [ref=e123]: 0 Orders
+                - paragraph [ref=e124]: 20 / 12
+              - generic [ref=e125]:
+                - generic [ref=e128]: 0 Orders
+                - paragraph [ref=e129]: 21 / 12
+              - generic [ref=e130]:
+                - generic [ref=e133]: 0 Orders
+                - paragraph [ref=e134]: 22 / 12
+              - generic [ref=e135]:
+                - generic [ref=e138]: 0 Orders
+                - paragraph [ref=e139]: 23 / 12
+              - generic [ref=e140]:
+                - generic [ref=e143]: 0 Orders
+                - paragraph [ref=e144]: 24 / 12
+          - generic [ref=e145]:
+            - heading "Inventory Value by Category" [level=3] [ref=e146]
+            - generic [ref=e147]:
+              - generic [ref=e149]:
+                - generic [ref=e150]: Electronics
+                - generic [ref=e151]: Rp 0
+              - generic [ref=e154]:
+                - generic [ref=e155]: Test
+                - generic [ref=e156]: Rp 0
+              - generic [ref=e159]:
+                - generic [ref=e160]: TEST
+                - generic [ref=e161]: Rp 0
+              - generic [ref=e164]:
+                - generic [ref=e165]: Standard
+                - generic [ref=e166]: Rp 0
+              - generic [ref=e169]:
+                - generic [ref=e170]: cat_perishable
+                - generic [ref=e171]: Rp 0
+        - generic [ref=e173]:
+          - generic [ref=e174]:
+            - heading "Recent Inventory" [level=2] [ref=e175]
+            - generic [ref=e176]: "Total Items: 114"
+          - table [ref=e178]:
+            - rowgroup [ref=e179]:
+              - row "SKU Name Category Stock Status" [ref=e180]:
+                - columnheader "SKU" [ref=e181]
+                - columnheader "Name" [ref=e182]
+                - columnheader "Category" [ref=e183]
+                - columnheader "Stock" [ref=e184]
+                - columnheader "Status" [ref=e185]
+            - rowgroup [ref=e186]:
+              - row "TEST-SKU-001 Test Product A Electronics 0 Out of Stock" [ref=e187]:
+                - cell "TEST-SKU-001" [ref=e188]
+                - cell "Test Product A" [ref=e189]
+                - cell "Electronics" [ref=e190]:
+                  - generic [ref=e191]: Electronics
+                - cell "0" [ref=e192]
+                - cell "Out of Stock" [ref=e193]:
+                  - generic [ref=e194]: Out of Stock
+              - row "E2E-PROD-001 E2E Test Product Test 0 Out of Stock" [ref=e196]:
+                - cell "E2E-PROD-001" [ref=e197]
+                - cell "E2E Test Product" [ref=e198]
+                - cell "Test" [ref=e199]:
+                  - generic [ref=e200]: Test
+                - cell "0" [ref=e201]
+                - cell "Out of Stock" [ref=e202]:
+                  - generic [ref=e203]: Out of Stock
+              - row "Route-Prod-1 Route Test 1 TEST 0 Out of Stock" [ref=e205]:
+                - cell "Route-Prod-1" [ref=e206]
+                - cell "Route Test 1" [ref=e207]
+                - cell "TEST" [ref=e208]:
+                  - generic [ref=e209]: TEST
+                - cell "0" [ref=e210]
+                - cell "Out of Stock" [ref=e211]:
+                  - generic [ref=e212]: Out of Stock
+              - row "PKG-TEST-001 Test Packaging Item Test 0 Out of Stock" [ref=e214]:
+                - cell "PKG-TEST-001" [ref=e215]
+                - cell "Test Packaging Item" [ref=e216]
+                - cell "Test" [ref=e217]:
+                  - generic [ref=e218]: Test
+                - cell "0" [ref=e219]
+                - cell "Out of Stock" [ref=e220]:
+                  - generic [ref=e221]: Out of Stock
+              - row "FAST01 Pro-Fast-Mover Electronics 0 Out of Stock" [ref=e223]:
+                - cell "FAST01" [ref=e224]
+                - cell "Pro-Fast-Mover" [ref=e225]
+                - cell "Electronics" [ref=e226]:
+                  - generic [ref=e227]: Electronics
+                - cell "0" [ref=e228]
+                - cell "Out of Stock" [ref=e229]:
+                  - generic [ref=e230]: Out of Stock
+              - row "FEFO001 Pro-FEFO-Test Test 0 Out of Stock" [ref=e232]:
+                - cell "FEFO001" [ref=e233]
+                - cell "Pro-FEFO-Test" [ref=e234]
+                - cell "Test" [ref=e235]:
+                  - generic [ref=e236]: Test
+                - cell "0" [ref=e237]
+                - cell "Out of Stock" [ref=e238]:
+                  - generic [ref=e239]: Out of Stock
+              - row "FAST-1766454968718 Fast Mover Product Test 0 Out of Stock" [ref=e241]:
+                - cell "FAST-1766454968718" [ref=e242]
+                - cell "Fast Mover Product" [ref=e243]
+                - cell "Test" [ref=e244]:
+                  - generic [ref=e245]: Test
+                - cell "0" [ref=e246]
+                - cell "Out of Stock" [ref=e247]:
+                  - generic [ref=e248]: Out of Stock
+              - row "FAST-1766454968729 Fast Mover Product Test 0 Out of Stock" [ref=e250]:
+                - cell "FAST-1766454968729" [ref=e251]
+                - cell "Fast Mover Product" [ref=e252]
+                - cell "Test" [ref=e253]:
+                  - generic [ref=e254]: Test
+                - cell "0" [ref=e255]
+                - cell "Out of Stock" [ref=e256]:
+                  - generic [ref=e257]: Out of Stock
+              - row "SLOW-1766454968779 Slow Mover Product Test 0 Out of Stock" [ref=e259]:
+                - cell "SLOW-1766454968779" [ref=e260]
+                - cell "Slow Mover Product" [ref=e261]
+                - cell "Test" [ref=e262]:
+                  - generic [ref=e263]: Test
+                - cell "0" [ref=e264]
+                - cell "Out of Stock" [ref=e265]:
+                  - generic [ref=e266]: Out of Stock
+              - row "SLOW-1766454968764 Slow Mover Product Test 0 Out of Stock" [ref=e268]:
+                - cell "SLOW-1766454968764" [ref=e269]
+                - cell "Slow Mover Product" [ref=e270]
+                - cell "Test" [ref=e271]:
+                  - generic [ref=e272]: Test
+                - cell "0" [ref=e273]
+                - cell "Out of Stock" [ref=e274]:
+                  - generic [ref=e275]: Out of Stock
+          - button "View All Products" [ref=e278]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e284] [cursor=pointer]:
+    - img [ref=e285]
+  - alert [ref=e288]
+```

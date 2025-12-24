@@ -1,0 +1,351 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]: Labamu WMS
+      - navigation [ref=e6]:
+        - link "Dashboard" [ref=e9] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e10]:
+          - heading "Inventory" [level=3] [ref=e11]
+          - generic [ref=e12]:
+            - link "Products" [ref=e13] [cursor=pointer]:
+              - /url: /inventory
+            - link "Locations" [ref=e14] [cursor=pointer]:
+              - /url: /inventory/locations
+            - link "Warehouses" [ref=e15] [cursor=pointer]:
+              - /url: /inventory/warehouses
+            - link "Adjustments" [ref=e16] [cursor=pointer]:
+              - /url: /inventory/adjustments
+            - link "Scrap Orders" [ref=e17] [cursor=pointer]:
+              - /url: /inventory/scrap
+            - link "Partner Locations" [ref=e18] [cursor=pointer]:
+              - /url: /inventory/partners
+            - link "Routes" [ref=e19] [cursor=pointer]:
+              - /url: /inventory/routes
+        - generic [ref=e20]:
+          - heading "Inbound Operations" [level=3] [ref=e21]
+          - generic [ref=e22]:
+            - link "Suppliers" [ref=e23] [cursor=pointer]:
+              - /url: /inventory/suppliers
+            - link "Purchase Orders" [ref=e24] [cursor=pointer]:
+              - /url: /inventory/purchases
+        - generic [ref=e25]:
+          - heading "Outbound Operations" [level=3] [ref=e26]
+          - generic [ref=e27]:
+            - link "Orders" [ref=e28] [cursor=pointer]:
+              - /url: /orders
+            - link "Picking" [ref=e29] [cursor=pointer]:
+              - /url: /picking
+            - link "Delivery Methods" [ref=e30] [cursor=pointer]:
+              - /url: /configuration/delivery-methods
+            - link "Invoices" [ref=e31] [cursor=pointer]:
+              - /url: /invoices
+        - generic [ref=e32]:
+          - heading "Reporting" [level=3] [ref=e33]
+          - generic [ref=e34]:
+            - link "Reports" [ref=e35] [cursor=pointer]:
+              - /url: /reports
+            - link "Stock Moves" [ref=e36] [cursor=pointer]:
+              - /url: /inventory/moves
+        - generic [ref=e37]:
+          - heading "System" [level=3] [ref=e38]
+          - generic [ref=e39]:
+            - link "User Guide" [ref=e40] [cursor=pointer]:
+              - /url: /user-guide
+            - link "Settings" [ref=e41] [cursor=pointer]:
+              - /url: /settings
+      - link "Sign Out" [ref=e43] [cursor=pointer]:
+        - /url: /login
+    - main [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - heading "User Management" [level=1] [ref=e47]
+          - button "New User" [active] [ref=e48]:
+            - img [ref=e49]
+            - text: New User
+        - table [ref=e52]:
+          - rowgroup [ref=e53]:
+            - row "Name Email Role Warehouse Actions" [ref=e54]:
+              - columnheader "Name" [ref=e55]
+              - columnheader "Email" [ref=e56]
+              - columnheader "Role" [ref=e57]
+              - columnheader "Warehouse" [ref=e58]
+              - columnheader "Actions" [ref=e59]
+          - rowgroup [ref=e60]:
+            - row "Admin User admin@labamu.co.id ADMIN, Admin None" [ref=e61]:
+              - cell "Admin User" [ref=e62]
+              - cell "admin@labamu.co.id" [ref=e63]
+              - cell "ADMIN, Admin" [ref=e64]
+              - cell "None" [ref=e65]
+              - cell [ref=e66]:
+                - generic [ref=e67]:
+                  - button [ref=e68]:
+                    - img [ref=e69]
+                  - button [ref=e72]:
+                    - img [ref=e73]
+            - row "System Auto system@labamu.io ADMIN None" [ref=e76]:
+              - cell "System Auto" [ref=e77]
+              - cell "system@labamu.io" [ref=e78]
+              - cell "ADMIN" [ref=e79]
+              - cell "None" [ref=e80]
+              - cell [ref=e81]:
+                - generic [ref=e82]:
+                  - button [ref=e83]:
+                    - img [ref=e84]
+                  - button [ref=e87]:
+                    - img [ref=e88]
+            - row "Test Admin admin_1766475533121_0.32546830275484795@example.com Admin_1766475533110_0.8574120920763437 None" [ref=e91]:
+              - cell "Test Admin" [ref=e92]
+              - cell "admin_1766475533121_0.32546830275484795@example.com" [ref=e93]
+              - cell "Admin_1766475533110_0.8574120920763437" [ref=e94]
+              - cell "None" [ref=e95]
+              - cell [ref=e96]:
+                - generic [ref=e97]:
+                  - button [ref=e98]:
+                    - img [ref=e99]
+                  - button [ref=e102]:
+                    - img [ref=e103]
+            - row "Test Admin admin_1766475533255_0.8138399406923007@example.com Admin_1766475533182_0.879497465683224 None" [ref=e106]:
+              - cell "Test Admin" [ref=e107]
+              - cell "admin_1766475533255_0.8138399406923007@example.com" [ref=e108]
+              - cell "Admin_1766475533182_0.879497465683224" [ref=e109]
+              - cell "None" [ref=e110]
+              - cell [ref=e111]:
+                - generic [ref=e112]:
+                  - button [ref=e113]:
+                    - img [ref=e114]
+                  - button [ref=e117]:
+                    - img [ref=e118]
+            - row "Test Admin admin_1766475533326_0.06964258518260458@example.com Admin_1766475533184_0.19146733459403453 None" [ref=e121]:
+              - cell "Test Admin" [ref=e122]
+              - cell "admin_1766475533326_0.06964258518260458@example.com" [ref=e123]
+              - cell "Admin_1766475533184_0.19146733459403453" [ref=e124]
+              - cell "None" [ref=e125]
+              - cell [ref=e126]:
+                - generic [ref=e127]:
+                  - button [ref=e128]:
+                    - img [ref=e129]
+                  - button [ref=e132]:
+                    - img [ref=e133]
+            - row "Test Admin admin_1766476148895_0.5311199966826672@example.com Admin_1766476148873_0.40412913158796604 None" [ref=e136]:
+              - cell "Test Admin" [ref=e137]
+              - cell "admin_1766476148895_0.5311199966826672@example.com" [ref=e138]
+              - cell "Admin_1766476148873_0.40412913158796604" [ref=e139]
+              - cell "None" [ref=e140]
+              - cell [ref=e141]:
+                - generic [ref=e142]:
+                  - button [ref=e143]:
+                    - img [ref=e144]
+                  - button [ref=e147]:
+                    - img [ref=e148]
+            - row "Test Admin admin_1766476148960_0.5705328661232707@example.com Admin_1766476148873_0.775462879723515 None" [ref=e151]:
+              - cell "Test Admin" [ref=e152]
+              - cell "admin_1766476148960_0.5705328661232707@example.com" [ref=e153]
+              - cell "Admin_1766476148873_0.775462879723515" [ref=e154]
+              - cell "None" [ref=e155]
+              - cell [ref=e156]:
+                - generic [ref=e157]:
+                  - button [ref=e158]:
+                    - img [ref=e159]
+                  - button [ref=e162]:
+                    - img [ref=e163]
+            - row "Test Admin admin_1766476149057_0.011537752021898218@example.com Admin_1766476149002_0.10447208178226974 None" [ref=e166]:
+              - cell "Test Admin" [ref=e167]
+              - cell "admin_1766476149057_0.011537752021898218@example.com" [ref=e168]
+              - cell "Admin_1766476149002_0.10447208178226974" [ref=e169]
+              - cell "None" [ref=e170]
+              - cell [ref=e171]:
+                - generic [ref=e172]:
+                  - button [ref=e173]:
+                    - img [ref=e174]
+                  - button [ref=e177]:
+                    - img [ref=e178]
+            - row "Test Admin admin_1766476432592_0.8071366468647587@example.com Admin_1766476432544_0.9430932910207954 None" [ref=e181]:
+              - cell "Test Admin" [ref=e182]
+              - cell "admin_1766476432592_0.8071366468647587@example.com" [ref=e183]
+              - cell "Admin_1766476432544_0.9430932910207954" [ref=e184]
+              - cell "None" [ref=e185]
+              - cell [ref=e186]:
+                - generic [ref=e187]:
+                  - button [ref=e188]:
+                    - img [ref=e189]
+                  - button [ref=e192]:
+                    - img [ref=e193]
+            - row "Test Admin admin_1766476432577_0.0277053748001157@example.com Admin_1766476432537_0.5860943024507157 None" [ref=e196]:
+              - cell "Test Admin" [ref=e197]
+              - cell "admin_1766476432577_0.0277053748001157@example.com" [ref=e198]
+              - cell "Admin_1766476432537_0.5860943024507157" [ref=e199]
+              - cell "None" [ref=e200]
+              - cell [ref=e201]:
+                - generic [ref=e202]:
+                  - button [ref=e203]:
+                    - img [ref=e204]
+                  - button [ref=e207]:
+                    - img [ref=e208]
+            - row "Test Admin admin_1766476432852_0.9796782152377903@example.com Admin_1766476432592_0.44041334343965377 None" [ref=e211]:
+              - cell "Test Admin" [ref=e212]
+              - cell "admin_1766476432852_0.9796782152377903@example.com" [ref=e213]
+              - cell "Admin_1766476432592_0.44041334343965377" [ref=e214]
+              - cell "None" [ref=e215]
+              - cell [ref=e216]:
+                - generic [ref=e217]:
+                  - button [ref=e218]:
+                    - img [ref=e219]
+                  - button [ref=e222]:
+                    - img [ref=e223]
+            - row "Test Admin admin_1766524202753_0.3660050246903024@example.com Admin_1766524202696_0.22924161813907307 None" [ref=e226]:
+              - cell "Test Admin" [ref=e227]
+              - cell "admin_1766524202753_0.3660050246903024@example.com" [ref=e228]
+              - cell "Admin_1766524202696_0.22924161813907307" [ref=e229]
+              - cell "None" [ref=e230]
+              - cell [ref=e231]:
+                - generic [ref=e232]:
+                  - button [ref=e233]:
+                    - img [ref=e234]
+                  - button [ref=e237]:
+                    - img [ref=e238]
+            - row "Test Admin admin_1766524202798_0.26468730881861924@example.com Admin_1766524202691_0.21530173461183755 None" [ref=e241]:
+              - cell "Test Admin" [ref=e242]
+              - cell "admin_1766524202798_0.26468730881861924@example.com" [ref=e243]
+              - cell "Admin_1766524202691_0.21530173461183755" [ref=e244]
+              - cell "None" [ref=e245]
+              - cell [ref=e246]:
+                - generic [ref=e247]:
+                  - button [ref=e248]:
+                    - img [ref=e249]
+                  - button [ref=e252]:
+                    - img [ref=e253]
+            - row "Test Admin admin_1766524202733_0.8075213386574238@example.com Admin_1766524202688_0.11210563999933498 None" [ref=e256]:
+              - cell "Test Admin" [ref=e257]
+              - cell "admin_1766524202733_0.8075213386574238@example.com" [ref=e258]
+              - cell "Admin_1766524202688_0.11210563999933498" [ref=e259]
+              - cell "None" [ref=e260]
+              - cell [ref=e261]:
+                - generic [ref=e262]:
+                  - button [ref=e263]:
+                    - img [ref=e264]
+                  - button [ref=e267]:
+                    - img [ref=e268]
+            - row "Test Admin admin_1766524662676_0.737969422535425@example.com Admin_1766524662658_0.5590984905114176 None" [ref=e271]:
+              - cell "Test Admin" [ref=e272]
+              - cell "admin_1766524662676_0.737969422535425@example.com" [ref=e273]
+              - cell "Admin_1766524662658_0.5590984905114176" [ref=e274]
+              - cell "None" [ref=e275]
+              - cell [ref=e276]:
+                - generic [ref=e277]:
+                  - button [ref=e278]:
+                    - img [ref=e279]
+                  - button [ref=e282]:
+                    - img [ref=e283]
+            - row "Test Admin admin_1766524662788_0.6465610101488921@example.com Admin_1766524662707_0.9887462994750198 None" [ref=e286]:
+              - cell "Test Admin" [ref=e287]
+              - cell "admin_1766524662788_0.6465610101488921@example.com" [ref=e288]
+              - cell "Admin_1766524662707_0.9887462994750198" [ref=e289]
+              - cell "None" [ref=e290]
+              - cell [ref=e291]:
+                - generic [ref=e292]:
+                  - button [ref=e293]:
+                    - img [ref=e294]
+                  - button [ref=e297]:
+                    - img [ref=e298]
+            - row "Test Admin admin_1766524663191_0.8497453859595916@example.com Admin_1766524663046_0.07957121514517529 None" [ref=e301]:
+              - cell "Test Admin" [ref=e302]
+              - cell "admin_1766524663191_0.8497453859595916@example.com" [ref=e303]
+              - cell "Admin_1766524663046_0.07957121514517529" [ref=e304]
+              - cell "None" [ref=e305]
+              - cell [ref=e306]:
+                - generic [ref=e307]:
+                  - button [ref=e308]:
+                    - img [ref=e309]
+                  - button [ref=e312]:
+                    - img [ref=e313]
+            - row "Test Admin admin_1766525179379_0.4691236493104123@example.com Admin_1766525179265_0.7148978002254345 None" [ref=e316]:
+              - cell "Test Admin" [ref=e317]
+              - cell "admin_1766525179379_0.4691236493104123@example.com" [ref=e318]
+              - cell "Admin_1766525179265_0.7148978002254345" [ref=e319]
+              - cell "None" [ref=e320]
+              - cell [ref=e321]:
+                - generic [ref=e322]:
+                  - button [ref=e323]:
+                    - img [ref=e324]
+                  - button [ref=e327]:
+                    - img [ref=e328]
+            - row "Test Admin admin_1766525179445_0.18714452293056993@example.com Admin_1766525179270_0.42145729521042097 None" [ref=e331]:
+              - cell "Test Admin" [ref=e332]
+              - cell "admin_1766525179445_0.18714452293056993@example.com" [ref=e333]
+              - cell "Admin_1766525179270_0.42145729521042097" [ref=e334]
+              - cell "None" [ref=e335]
+              - cell [ref=e336]:
+                - generic [ref=e337]:
+                  - button [ref=e338]:
+                    - img [ref=e339]
+                  - button [ref=e342]:
+                    - img [ref=e343]
+            - row "Test Admin admin_1766525179407_0.31058449981374103@example.com Admin_1766525179260_0.003605895587048158 None" [ref=e346]:
+              - cell "Test Admin" [ref=e347]
+              - cell "admin_1766525179407_0.31058449981374103@example.com" [ref=e348]
+              - cell "Admin_1766525179260_0.003605895587048158" [ref=e349]
+              - cell "None" [ref=e350]
+              - cell [ref=e351]:
+                - generic [ref=e352]:
+                  - button [ref=e353]:
+                    - img [ref=e354]
+                  - button [ref=e357]:
+                    - img [ref=e358]
+            - row "Test Admin admin_1766525684551_0.7166461623635534@example.com Admin_1766525684520_0.07281672706289721 None" [ref=e361]:
+              - cell "Test Admin" [ref=e362]
+              - cell "admin_1766525684551_0.7166461623635534@example.com" [ref=e363]
+              - cell "Admin_1766525684520_0.07281672706289721" [ref=e364]
+              - cell "None" [ref=e365]
+              - cell [ref=e366]:
+                - generic [ref=e367]:
+                  - button [ref=e368]:
+                    - img [ref=e369]
+                  - button [ref=e372]:
+                    - img [ref=e373]
+            - row "Test Admin admin_1766525684627_0.9920870386281797@example.com Admin_1766525684523_0.48168110140154186 None" [ref=e376]:
+              - cell "Test Admin" [ref=e377]
+              - cell "admin_1766525684627_0.9920870386281797@example.com" [ref=e378]
+              - cell "Admin_1766525684523_0.48168110140154186" [ref=e379]
+              - cell "None" [ref=e380]
+              - cell [ref=e381]:
+                - generic [ref=e382]:
+                  - button [ref=e383]:
+                    - img [ref=e384]
+                  - button [ref=e387]:
+                    - img [ref=e388]
+            - row "Test Admin admin_1766525684681_0.3985991816600052@example.com Admin_1766525684558_0.42813153575782303 None" [ref=e391]:
+              - cell "Test Admin" [ref=e392]
+              - cell "admin_1766525684681_0.3985991816600052@example.com" [ref=e393]
+              - cell "Admin_1766525684558_0.42813153575782303" [ref=e394]
+              - cell "None" [ref=e395]
+              - cell [ref=e396]:
+                - generic [ref=e397]:
+                  - button [ref=e398]:
+                    - img [ref=e399]
+                  - button [ref=e402]:
+                    - img [ref=e403]
+            - row "Test Admin admin_1766525797831_0.7060606894418384@example.com Admin_1766525797809_0.7343162255546167 None" [ref=e406]:
+              - cell "Test Admin" [ref=e407]
+              - cell "admin_1766525797831_0.7060606894418384@example.com" [ref=e408]
+              - cell "Admin_1766525797809_0.7343162255546167" [ref=e409]
+              - cell "None" [ref=e410]
+              - cell [ref=e411]:
+                - generic [ref=e412]:
+                  - button [ref=e413]:
+                    - img [ref=e414]
+                  - button [ref=e417]:
+                    - img [ref=e418]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e426] [cursor=pointer]:
+    - generic [ref=e429]:
+      - text: Compiling
+      - generic [ref=e430]:
+        - generic [ref=e431]: .
+        - generic [ref=e432]: .
+        - generic [ref=e433]: .
+  - alert [ref=e434]
+```

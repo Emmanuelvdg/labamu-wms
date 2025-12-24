@@ -13,7 +13,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, MapPin, Building } from 'lucide-react';
+import { Plus, MapPin, Building, Layout } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -251,6 +251,21 @@ export default function WarehousesPage() {
                                         {warehouse.type}
                                     </span>
                                 </div>
+                                <Link
+                                    href={`/inventory/warehouses/${warehouse.id}/floor-plan`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="mt-4"
+                                >
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <Layout className="w-4 h-4 mr-2" />
+                                        Manage Floor Plan
+                                    </Button>
+                                </Link>
                             </CardContent>
                         </Card>
                     </Link>

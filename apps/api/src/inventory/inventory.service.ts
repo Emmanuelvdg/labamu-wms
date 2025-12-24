@@ -1,4 +1,4 @@
-﻿import { Injectable, NotFoundException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
 
@@ -636,6 +636,20 @@ export class InventoryService {
                 }
             }
 
+            // Check for duplicate name in the same scope (Parent or Warehouse)
+            const existing = await this.prisma.location.findFirst({
+                where: {
+                    name: data.name,
+                    parentId: data.parentId || null, // Specific parent or Root (null)
+                    warehouseId: data.parentId ? undefined : data.warehouseId // If root, must match warehouse
+                }
+            });
+
+            if (existing) {
+                console.log('DUPLICATE FOUND! Throwing ConflictException');
+                throw new ConflictException(`A location with the name "${data.name}" already exists in this scope.`);
+            }
+
             return await this.prisma.location.create({
                 data: {
                     name: data.name,
@@ -692,6 +706,29 @@ export class InventoryService {
             // Optimization: only if type or parent changed.
             if (data.structuralType || data.parentId) {
                 await this.validateHierarchy(newStructuralType, newParentId);
+            }
+        }
+
+        // Check for duplicate name if name or parent is changing
+        if (data.name || data.parentId !== undefined) {
+            const newName = data.name || current.name;
+            const effectiveParentId = data.parentId !== undefined ? data.parentId : current.parentId;
+
+            // If parent is present, scope is parent. If null, scope is warehouse.
+            // We need warehouseId from current record if effectiveParentId is null
+            const effectiveWarehouseId = effectiveParentId ? undefined : current.warehouseId;
+
+            const existing = await this.prisma.location.findFirst({
+                where: {
+                    id: { not: id }, // Exclude self
+                    name: newName,
+                    parentId: effectiveParentId,
+                    warehouseId: effectiveWarehouseId
+                }
+            });
+
+            if (existing) {
+                throw new ConflictException(`A location with the name "${newName}" already exists in this scope.`);
             }
         }
 
@@ -764,7 +801,8 @@ export class InventoryService {
         return {
             ...location,
             attributes,
-            inheritedAttributes
+            inheritedAttributes,
+            effectiveAttributes: { ...inheritedAttributes, ...attributes }
         };
     }
 
@@ -778,10 +816,13 @@ export class InventoryService {
             if (current && current.attributes) {
                 try {
                     const attrs = JSON.parse(current.attributes);
-                    // Merge attributes (parent attributes are defaults, child overrides if needed, but here we want to show what is inherited)
-                    // For "inheritance", we usually mean properties that apply to children.
-                    // Let's accumulate them.
-                    mergedAttributes = { ...mergedAttributes, ...attrs };
+                    // Merge attributes (Grandparent attributes come first, allowing Parent to override)
+                    // Logic: { ...Grandparent, ...Parent }
+                    // Since we iterate Up (Parent -> Grandparent), we accumulate:
+                    // Iter 1 (Parent): { ...Parent, ...{} }
+                    // Iter 2 (GP): { ...GP, ...Parent }
+                    // Result: Parent overrides GP.
+                    mergedAttributes = { ...attrs, ...mergedAttributes };
                 } catch (e) {
                     // Ignore parse errors
                 }

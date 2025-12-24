@@ -72,6 +72,7 @@ export default function UserGuidePage() {
                                         <div className="flex flex-col space-y-1">
                                             <a onClick={(e) => scrollToSection(e, 'orders')} href="#orders" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Creating Orders</a>
                                             <a onClick={(e) => scrollToSection(e, 'picking-strategies')} href="#picking-strategies" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Picking Strategies</a>
+                                            <a onClick={(e) => scrollToSection(e, 'rotation-policies')} href="#rotation-policies" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Rotation Policies</a>
                                             <a onClick={(e) => scrollToSection(e, 'worker-interface')} href="#worker-interface" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Worker Interface</a>
                                             <a onClick={(e) => scrollToSection(e, 'delivery-methods')} href="#delivery-methods" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Delivery Methods</a>
                                             <a onClick={(e) => scrollToSection(e, 'invoices')} href="#invoices" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Invoices</a>
@@ -171,12 +172,92 @@ export default function UserGuidePage() {
                                     <CardContent className="pt-6 space-y-4">
                                         <p><strong>Purpose:</strong> A digital twin of your physical warehouse layout, enabling precise stock tracking.</p>
                                         <div className="space-y-4">
-                                            <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                                                <li><strong>Location Types:</strong> INTERNAL (storage), VIEW (grouping), CUSTOMER, VENDOR, SCRAP.</li>
-                                                <li><strong>Attributes:</strong> Assign capabilities like <code>{`{ "refrigerated": true }`}</code> to enforce storage rules.</li>
-                                                <li><strong>Capacity:</strong> Set Max Volume or Max Weight limits.</li>
-                                                <li><strong>Putaway Priority:</strong> Set a sequence number to tell the system which bins to fill first.</li>
-                                            </ul>
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">Structural Hierarchy:</h4>
+                                                <p className="text-sm text-muted-foreground mb-3">
+                                                    The system supports a 6-level hierarchical structure for organizing your warehouse locations, from the broadest facility level down to individual storage positions.
+                                                </p>
+
+                                                <div className="bg-gray-50 p-4 rounded-md mb-3">
+                                                    <img
+                                                        src="/location_hierarchy.png"
+                                                        alt="Location Hierarchy: Warehouse → Room → Row → Bay → Shelf → Position"
+                                                        className="mx-auto rounded border border-gray-200"
+                                                        style={{ maxWidth: '300px' }}
+                                                    />
+                                                    <p className="text-xs text-center text-muted-foreground mt-2">Hierarchical nesting structure</p>
+                                                </div>
+
+                                                <div className="space-y-2 text-sm">
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-medium min-w-[100px]">WAREHOUSE</span>
+                                                        <span className="text-muted-foreground">Top level, represents entire facility</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-medium min-w-[100px]">ROOM</span>
+                                                        <span className="text-muted-foreground">Major zones (Receiving, Packing, Cold Storage, etc.)</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-medium min-w-[100px]">ROW</span>
+                                                        <span className="text-muted-foreground">Aisle or row designation within a room</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs font-medium min-w-[100px]">BAY</span>
+                                                        <span className="text-muted-foreground">Section or bay within a row</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded text-xs font-medium min-w-[100px]">SHELF</span>
+                                                        <span className="text-muted-foreground">Individual shelf or rack level within a bay</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="bg-pink-100 text-pink-800 px-2 py-0.5 rounded text-xs font-medium min-w-[100px]">POSITION</span>
+                                                        <span className="text-muted-foreground">Specific bin or slot on a shelf (most granular)</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-blue-50 p-3 rounded-md mt-3 text-sm">
+                                                    <strong className="text-blue-900">Visual Navigation:</strong>
+                                                    <p className="text-muted-foreground mt-1">Each structural type is color-coded in the location tree UI, making it easy to identify the hierarchy level at a glance.</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">Attribute Inheritance:</h4>
+                                                <p className="text-sm text-muted-foreground mb-2">
+                                                    Attributes set at a parent level automatically apply to all child locations unless explicitly overridden at a lower level.
+                                                </p>
+
+                                                <div className="bg-green-50 p-3 rounded-md text-sm space-y-2">
+                                                    <div>
+                                                        <strong className="text-green-900">Example:</strong>
+                                                        <p className="text-muted-foreground mt-1">
+                                                            Set <code className="bg-white px-1 rounded">{`{"refrigerated": true}`}</code> on a ROOM → all ROWs, BAYs, SHELFs, and POSITIONs within that room automatically inherit this constraint.
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <strong className="text-green-900">Common Use Cases:</strong>
+                                                        <ul className="list-disc pl-5 text-muted-foreground mt-1 space-y-0.5">
+                                                            <li>Temperature control zones (refrigerated, frozen)</li>
+                                                            <li>Hazardous material segregation</li>
+                                                            <li>Access control areas (restricted, secure)</li>
+                                                            <li>Special handling requirements (fragile, heavy)</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">Configuration Options:</h4>
+                                                <ul className="list-disc pl-5 text-muted-foreground space-y-1 text-sm">
+                                                    <li><strong>Location Types:</strong> INTERNAL (storage), VIEW (grouping), CUSTOMER, VENDOR, SCRAP</li>
+                                                    <li><strong>Attributes:</strong> JSON object for capabilities like <code>{`{"refrigerated": true}`}</code></li>
+                                                    <li><strong>Capacity:</strong> Set Max Volume or Max Weight limits</li>
+                                                    <li><strong>Putaway Priority:</strong> Zone priority number (lower = higher priority)</li>
+                                                    <li><strong>Removal Strategy:</strong> FIFO, FEFO, or LIFO per location</li>
+                                                </ul>
+                                            </div>
+
+
                                             <div className="bg-muted p-4 rounded-md text-sm">
                                                 <strong>How to Use:</strong>
                                                 <ol className="list-decimal pl-5 mt-1 space-y-1">
@@ -423,16 +504,130 @@ export default function UserGuidePage() {
                                             <strong>Configuration:</strong> Set the active strategy in <strong>Warehouse Settings</strong>.
                                         </div>
                                         <div className="mt-2">
-                                            <h4 className="font-medium text-sm">Advanced Policies (Automatic):</h4>
-                                            <ul className="list-disc pl-5 text-sm text-muted-foreground">
-                                                <li><strong>FIFO:</strong> Picks oldest batch (Purchase Date).</li>
-                                                <li><strong>FEFO:</strong> Picks expiring batch (Expiration Date).</li>
-                                            </ul>
+                                            <h4 className="font-medium text-sm">Stock Rotation Policies:</h4>
+                                            <p className="text-xs text-muted-foreground mt-1">The system supports FIFO, FEFO, and LIFO policies. See the dedicated section below for comprehensive configuration details.</p>
                                         </div>
 
                                     </CardContent>
                                 </Card>
                             </div>
+
+                            {/* Stock Rotation Policies */}
+                            <div id="rotation-policies" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Settings className="h-5 w-5" /> Stock Rotation Policies</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Control which batch or lot of inventory is picked first when fulfilling orders, ensuring optimal stock rotation based on your business requirements.</p>
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="font-medium mb-2">Available  Policies:</h4>
+                                                <div className="space-y-3">
+                                                    <div className="bg-blue-50 p-3 rounded-md">
+                                                        <strong className="text-blue-900">FIFO (First In, First Out)</strong>
+                                                        <ul className="list-disc pl-5 text-sm text-muted-foreground mt-1">
+                                                            <li><strong>Definition:</strong> Picks the oldest inventory first based on purchase/receipt date</li>
+                                                            <li><strong>Use Case:</strong> Standard goods, preventing inventory aging, general merchandise</li>
+                                                            <li><strong>Logic:</strong> Orders batches by <code>purchaseDate ASC</code></li>
+                                                        </ul>
+                                                    </div>
+
+                                                    <div className="bg-green-50 p-3 rounded-md">
+                                                        <strong className="text-green-900">FEFO (First Expiry, First Out)</strong>
+                                                        <ul className="list-disc pl-5 text-sm text-muted-foreground mt-1">
+                                                            <li><strong>Definition:</strong> Picks inventory closest to expiration first</li>
+                                                            <li><strong>Use Case:</strong> Perishable goods (food, dairy, produce), pharmaceuticals, cosmetics</li>
+                                                            <li><strong>Logic:</strong> Orders batches by <code>expiryDate ASC</code></li>
+                                                            <li><strong>Requirement:</strong> Batches must have expiry dates set during receiving</li>
+                                                        </ul>
+                                                    </div>
+
+                                                    <div className="bg-orange-50 p-3 rounded-md">
+                                                        <strong className="text-orange-900">LIFO (Last In, First Out)</strong>
+                                                        <ul className="list-disc pl-5 text-sm text-muted-foreground mt-1">
+                                                            <li><strong>Definition:</strong> Picks the newest inventory first</li>
+                                                            <li><strong>Use Case:</strong> Rare; sometimes used for commodities, bulk materials, or specific accounting requirements</li>
+                                                            <li><strong>Logic:</strong> Orders batches by <code>purchaseDate DESC</code></li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">Configuration Hierarchy &amp; Precedence:</h4>
+                                                <p className="text-sm text-muted-foreground mb-2">Rotation rules can be defined at multiple levels. When multiple rules could apply to an order, the system uses this precedence (highest to lowest):</p>
+                                                <ol className="list-decimal pl-5 text-sm space-y-1 text-muted-foreground">
+                                                    <li><strong>Customer + Order Type:</strong> Specific customer for a specific order type (e.g., "CustomerA for B2B orders")</li>
+                                                    <li><strong>Customer:</strong> All orders for a specific customer</li>
+                                                    <li><strong>Order Type:</strong> All orders of a specific type (B2B, B2C, Wholesale, etc.)</li>
+                                                    <li><strong>Product (SKU):</strong> Specific product override</li>
+                                                    <li><strong>Category:</strong> All products in a category</li>
+                                                    <li><strong>Warehouse:</strong> Default for entire warehouse</li>
+                                                    <li><strong>System Default:</strong> FIFO (if no rules match)</li>
+                                                </ol>
+                                                <div className="bg-yellow-50 p-3 rounded-md mt-2 text-sm">
+                                                    <strong>Example:</strong> If you have a FIFO rule for "CustomerA" and a FEFO rule for "Product XYZ", when CustomerA orders Product XYZ, the customer-level rule (FIFO) wins.
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">Advanced Features:</h4>
+
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <strong className="text-sm">Minimum Shelf Life Constraint (FEFO)</strong>
+                                                        <ul className="list-disc pl-5 text-sm text-muted-foreground mt-1">
+                                                            <li><strong>Purpose:</strong> Prevent picking items that won't last long enough for the customer to receive and use</li>
+                                                            <li><strong>Configuration:</strong> Set <code>minShelfLifeDays</code> on a rotation rule</li>
+                                                            <li><strong>Example:</strong> "Only pick batches with at least 15 days until expiry"</li>
+                                                            <li><strong>Behavior:</strong> System skips batches that don't meet the shelf life requirement</li>
+                                                        </ul>
+                                                    </div>
+
+                                                    <div>
+                                                        <strong className="text-sm">Missing Expiry Action</strong>
+                                                        <p className="text-sm text-muted-foreground mt-1">For FEFO policies when a batch lacks an expiry date:</p>
+                                                        <ul className="list-disc pl-5 text-sm text-muted-foreground mt-1">
+                                                            <li><strong>BLOCK:</strong> Refuse to pick the batch (strict compliance mode)</li>
+                                                            <li><strong>FALLBACK_FIFO:</strong> Fall back to FIFO logic for that batch (recommended)</li>
+                                                            <li><strong>ALLOW:</strong> Pick anyway without checking expiry (not recommended for strict FEFO)</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-muted p-4 rounded-md text-sm">
+                                                <strong>How to Configure:</strong>
+                                                <ol className="list-decimal pl-5 mt-2 space-y-1">
+                                                    <li>Navigate to <strong>Settings → Rotation Rules</strong></li>
+                                                    <li>Click <strong>+ New Rule</strong></li>
+                                                    <li><strong>Set Context:</strong> Select target level (Customer, Order Type, Product, Category, or Warehouse)</li>
+                                                    <li><strong>Choose Policy:</strong> Select FIFO, FEFO, or LIFO</li>
+                                                    <li><strong>Set Priority:</strong> Higher number = more important (used as tie-breaker at same level)</li>
+                                                    <li><strong>(Optional)</strong> For FEFO: Set <code>minShelfLifeDays</code> and <code>missingExpiryAction</code></li>
+                                                    <li><strong>Activate:</strong> Toggle the rule to active status</li>
+                                                </ol>
+                                            </div>
+
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">Integration with Order Fulfillment:</h4>
+                                                <p className="text-sm text-muted-foreground mb-2">When an order is created and stock reservation occurs:</p>
+                                                <ol className="list-decimal pl-5 text-sm space-y-1 text-muted-foreground">
+                                                    <li>System determines applicable rotation rule based on order context (customer, type, products)</li>
+                                                    <li>Queries available batches in the assigned warehouse</li>
+                                                    <li>Applies rotation policy to sort batches (oldest first, expiring first, or newest first)</li>
+                                                    <li>Applies shelf life filter if minimum days configured</li>
+                                                    <li>Reserves appropriate quantity from the selected batch(es)</li>
+                                                    <li>Creates picking tasks with recommended batch locations for workers</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+
+                            {/* Worker Interface */}
 
                             {/* Worker Interface */}
                             <div id="worker-interface" className="scroll-mt-24 gap-4">

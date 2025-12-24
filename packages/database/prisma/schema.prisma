@@ -111,6 +111,40 @@ model Warehouse {
   sourceTransfers  TransferOrder[]   @relation("TransferSource")
   destTransfers    TransferOrder[]   @relation("TransferDest")
   rotationRules    RotationRule[]
+  functionalAreas  WarehouseFunctionalArea[]
+}
+
+model WarehouseFunctionalArea {
+  id          String    @id @default(uuid())
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  
+  // Area Definition
+  name        String    // e.g. "Main Receiving Dock"
+  areaType    String    // RECEIVING, STAGING, PUTAWAY_LANE, STORAGE, PICKING, PACKING, SHIPPING
+  
+  // Floor Plan Coordinates
+  x           Float     @default(0)
+  y           Float     @default(0)
+  width       Float     @default(100)
+  height      Float     @default(100)
+  rotation    Float     @default(0)
+  
+  // Visual Properties
+  color       String?   // Hex color for visualization
+  icon        String?   // Icon identifier
+  
+  // Configuration
+  attributes  String?   // JSON: { capacity, equipment, etc. }
+  active      Boolean   @default(true)
+  sequence    Int       @default(0) // Order in process flow
+  
+  // Linking
+  linkedLocationId String?
+  linkedLocation   Location? @relation(fields: [linkedLocationId], references: [id])
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Location {
@@ -160,6 +194,7 @@ model Location {
   sourceMoves        StockMove[]           @relation("MoveSource")
   destMoves          StockMove[]           @relation("MoveDest")
   pickingTasks       PickingTask[]
+  functionalAreas    WarehouseFunctionalArea[]
 }
 
 model ProductPackaging {

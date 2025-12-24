@@ -1,0 +1,4 @@
+Checking duplication for: {"name":"Unique Room 1766531478064","parentId":"15e6d7c4-a909-437b-8e22-26b633747746"}
+Existing found: null
+Checking duplication for: {"name":"Unique Room 1766531478064","parentId":"15e6d7c4-a909-437b-8e22-26b633747746"}
+Existing found: {"id":"0b609fab-fcec-4467-b15b-345e6a364df7","name":"Unique Room 1766531478064","type":"INTERNAL","structuralType":"ROOM","attributes":"{}","supportedPackaging":null,"removalStrategy":"FIFO","inventoryFrequency":0,"nextInventoryDate":null,"maxVolume":null,"maxWeight":null,"x":0,"y":0,"width":1,"height":1,"rotation":0,"zonePriority":100,"putawaySequence":0,"parentId":"15e6d7c4-a909-437b-8e22-26b633747746","warehouseId":null}

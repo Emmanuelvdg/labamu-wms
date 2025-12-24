@@ -45,7 +45,7 @@ export default function LocationsPage() {
         try {
             await createLocation({
                 ...newLocation,
-                parentId: newLocation.parentId === 'null' ? undefined : newLocation.parentId,
+                parentId: (newLocation.parentId === 'null' || newLocation.parentId === '') ? undefined : newLocation.parentId,
             });
             toast.success('Location created');
             setIsCreateOpen(false);
@@ -155,47 +155,7 @@ export default function LocationsPage() {
                                     </Select>
                                 </div>
 
-                                {/* Attributes based on Structure */}
-                                {newLocation.structuralType === 'ROOM' && (
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                        <Label htmlFor="temperature" className="text-right">Temperature</Label>
-                                        <Select
-                                            value={newLocation.attributes.temperature || ''}
-                                            onValueChange={(value) => setNewLocation({
-                                                ...newLocation,
-                                                attributes: { ...newLocation.attributes, temperature: value }
-                                            })}
-                                        >
-                                            <SelectTrigger className="col-span-3">
-                                                <SelectValue placeholder="Select temperature" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Unrefrigerated">Unrefrigerated</SelectItem>
-                                                <SelectItem value="Climate Controlled">Climate Controlled</SelectItem>
-                                                <SelectItem value="Refrigerated">Refrigerated</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                )}
-
-                                {newLocation.structuralType === 'SHELF' && (
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                        <Label htmlFor="loadBearing" className="text-right">Load Bearing</Label>
-                                        <div className="col-span-3 flex items-center space-x-2">
-                                            <input
-                                                type="checkbox"
-                                                id="loadBearing"
-                                                checked={newLocation.attributes.loadBearing || false}
-                                                onChange={(e) => setNewLocation({
-                                                    ...newLocation,
-                                                    attributes: { ...newLocation.attributes, loadBearing: e.target.checked }
-                                                })}
-                                                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            />
-                                            <label htmlFor="loadBearing" className="text-sm text-gray-700">Yes</label>
-                                        </div>
-                                    </div>
-                                )}
+                                {/* Attributes based on Structure - REMOVED HARDCODED FIELDS to use Dynamic Attributes */}
 
                                 {/* Supported Packaging */}
                                 <div className="grid grid-cols-4 items-center gap-4">

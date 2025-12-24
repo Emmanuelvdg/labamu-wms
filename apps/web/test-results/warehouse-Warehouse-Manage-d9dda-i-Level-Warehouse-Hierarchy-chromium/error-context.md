@@ -1,0 +1,2957 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - generic: Labamu WMS
+      - navigation:
+        - generic:
+          - generic:
+            - link:
+              - /url: /
+              - text: Dashboard
+        - generic:
+          - heading [level=3]: Inventory
+          - generic:
+            - link:
+              - /url: /inventory
+              - text: Products
+            - link:
+              - /url: /inventory/locations
+              - text: Locations
+            - link:
+              - /url: /inventory/warehouses
+              - text: Warehouses
+            - link:
+              - /url: /inventory/adjustments
+              - text: Adjustments
+            - link:
+              - /url: /inventory/scrap
+              - text: Scrap Orders
+            - link:
+              - /url: /inventory/partners
+              - text: Partner Locations
+            - link:
+              - /url: /inventory/routes
+              - text: Routes
+        - generic:
+          - heading [level=3]: Inbound Operations
+          - generic:
+            - link:
+              - /url: /inventory/suppliers
+              - text: Suppliers
+            - link:
+              - /url: /inventory/purchases
+              - text: Purchase Orders
+        - generic:
+          - heading [level=3]: Outbound Operations
+          - generic:
+            - link:
+              - /url: /orders
+              - text: Orders
+            - link:
+              - /url: /picking
+              - text: Picking
+            - link:
+              - /url: /configuration/delivery-methods
+              - text: Delivery Methods
+            - link:
+              - /url: /invoices
+              - text: Invoices
+        - generic:
+          - heading [level=3]: Reporting
+          - generic:
+            - link:
+              - /url: /reports
+              - text: Reports
+            - link:
+              - /url: /inventory/moves
+              - text: Stock Moves
+        - generic:
+          - heading [level=3]: System
+          - generic:
+            - link:
+              - /url: /user-guide
+              - text: User Guide
+            - link:
+              - /url: /settings
+              - text: Settings
+      - generic:
+        - link:
+          - /url: /login
+          - text: Sign Out
+    - main:
+      - generic:
+        - generic:
+          - heading [level=1]: Locations
+          - generic:
+            - link:
+              - /url: /inventory/locations/floor-plan
+              - button: Manage Floor Plan
+            - button [expanded]:
+              - img
+              - text: New Location
+        - generic:
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/15e6d7c4-a909-437b-8e22-26b633747746
+                - text: Central DC
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/6d81526b-8b46-4792-8843-b3ed81363afb
+                    - text: Parent 1766531925573
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/90314e8e-e27a-4fb9-8b47-1c1cf0260b85
+                    - text: Stock
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/04998d3d-0fc6-4bed-aa00-93570940f580
+                    - text: Unique Room 1766530790517
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/07c204ae-79d2-427e-b277-379fbddd3480
+                    - text: Unique Room 1766530790517
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/37defe75-e486-42f5-9eb1-fa364ae05a3e
+                    - text: Unique Room 1766530891889
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/f36a173a-5dc4-4550-a641-15bf9cbebd86
+                    - text: Unique Room 1766530891889
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/5487b292-e090-4028-aa2b-35ec129acf27
+                    - text: Unique Room 1766530961501
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/787b14ff-f17c-4672-b6f8-8035565e7620
+                    - text: Unique Room 1766530961501
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/776abaf2-4f5e-4415-b489-caa5341bb26f
+                    - text: Unique Room 1766531019402
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/db48987b-a362-4e5e-9962-fd925362bd18
+                    - text: Unique Room 1766531019402
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/9d340a78-1321-4d6d-920d-59c759543d3c
+                    - text: Unique Room 1766531073978
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/fb3fa8d5-60e6-46a6-9dc2-e66e4759cbe0
+                    - text: Unique Room 1766531073978
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/cbbb02fc-ca17-4ea1-99aa-8fb244ddb2ab
+                    - text: Unique Room 1766531140934
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/fa3b383f-dcf9-4a28-9a41-721a95693dd2
+                    - text: Unique Room 1766531140934
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/162c5c70-510d-448a-9dfa-a97e1f70b5bc
+                    - text: Unique Room 1766531205074
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/593c16dd-4e3f-4c95-a084-f24fc2b0c9bd
+                    - text: Unique Room 1766531205074
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/0b609fab-fcec-4467-b15b-345e6a364df7
+                    - text: Unique Room 1766531478064
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/37a2ed9a-5bb3-4e2f-9365-97052e6e702c
+                    - text: Unique Room 1766547483551
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button:
+                    - img
+                  - img
+                  - link:
+                    - /url: /inventory/locations/3b4acee9-964c-4481-b3fe-8741e0579291
+                    - text: Zone A
+                  - generic: (INTERNAL)
+                - generic:
+                  - generic:
+                    - generic:
+                      - button
+                      - img
+                      - link:
+                        - /url: /inventory/locations/a923e3ed-f517-4380-a9e7-d592c76c1899
+                        - text: Row 1
+                      - generic: (INTERNAL)
+                  - generic:
+                    - generic:
+                      - button
+                      - img
+                      - link:
+                        - /url: /inventory/locations/bd2fa6c7-2cff-41f9-b797-9ec75bbdd827
+                        - text: Row 1
+                      - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/9e4bf34d-a37a-4534-9def-3045ac6aad04
+                    - text: Zone A
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/defb1bf4-6970-4866-92cf-caa483c299fd
+                    - text: Zone A
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/6a2f9126-2256-4caf-8b87-5b224e7c7894
+                    - text: Zone A
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/9e474e42-70dc-4265-9612-d6d398bd5934
+                    - text: Zone A
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/a4b1f3c3-71ba-48ed-b3e8-56d7cd0c53e0
+                    - text: Zone A
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/9c5e38bd-bb35-4110-9e98-5d7174ce85ea
+                    - text: test
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/4f42b119-e5cb-4e29-a4ca-0ed65ce6e7a7
+                - text: Downtown Store
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/56a7124d-3d0e-4d8e-a647-e2518d610b53
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/1d87ea8c-0150-48a9-b084-b935d321524c
+                - text: Loc_1766470986895_0.8820865488589835
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/1ec18476-8168-4c3b-ba23-b3ae9a6d7306
+                - text: Loc_1766470986936_0.0322258652103975
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/2bb64a3e-7cf4-473d-9feb-414d1ac7816d
+                - text: Loc_1766470986960_0.32910548022097386
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/518d89e5-f100-4a6c-a2e0-156e50297f6b
+                - text: Loc_1766470986975_0.6160328085815157
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/166d772e-3c52-447f-95ac-ef2a77936031
+                - text: Loc_1766470986990_0.2668432524270621
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/8d85d822-13a0-4966-a1c1-747f7339c639
+                - text: Loc_1766470987033_0.34896043599093685
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/a5e5a202-b8ad-4acc-bf97-60987006c746
+                - text: Loc_1766470987050_0.5763967306195823
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/32f488a3-7e2b-4aeb-aa0f-bf1df3642cb1
+                - text: Loc_1766470987070_0.45730800298492125
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/360b864e-642b-4db1-9a86-8a687b290ecd
+                - text: Loc_1766470987153_0.8691751566360628
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/9735bb8e-6d36-4017-be25-059979f39fc0
+                - text: Loc_1766470987168_0.010685080520238532
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/113e512f-0cc3-4aa9-a2e0-e258d3b10b0c
+                - text: Loc_1766470987183_0.8625335753413177
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/7c118fe2-58bd-4bf5-8f65-067873f609c5
+                - text: Loc_1766470987197_0.17048144579925806
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/a927ea20-8cda-40a0-9cf0-4580a804ea40
+                - text: Loc_1766474029313_0.12205886853786829
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/29a9296c-74f4-4190-ae1f-a2ef877eeb40
+                - text: Loc_1766474029341_0.8958056325082204
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/f35e4d5c-884b-4143-917d-228dfa8ac6cb
+                - text: Loc_1766474029359_0.31212827297126267
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/34e8801e-1a5b-42b5-bb5e-fe7e582f6b5e
+                - text: Loc_1766474029377_0.8425372790301109
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/e6b159ac-858c-4dbb-9408-4bfb5fbfbc29
+                - text: Loc_1766474029438_0.12069197744103333
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/b40ce04b-154b-487d-a76f-941214f79ce6
+                - text: Loc_1766474029456_0.867791054910608
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/2299c9e5-5bd3-4edb-b149-c0333c32b9db
+                - text: Loc_1766474029501_0.983935344759935
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/e1e30943-e19b-4f71-9adc-2d42ec75f07a
+                - text: Loc_1766474029519_0.7144758742326034
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/f6aca59e-e0ac-4ed7-a702-fabde7298d26
+                - text: Loc_1766474029535_0.8462774865982072
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/020ba903-6afa-4b69-a935-a786dd32c49f
+                - text: Loc_1766474029551_0.8715858965590448
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/15d24049-3673-49df-aacc-0a5be9b6573d
+                - text: Loc_1766474029625_0.3367943248498093
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/91dfdd02-791a-4292-9a30-d9f07280e3a0
+                - text: Loc_1766474029641_0.5146475334477334
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/f09fa473-28f3-4c9e-89e8-0e5398127c72
+                - text: Loc_1766475533181_0.08299163447798219
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/ba278290-6366-45c5-bd6e-b6d26cb333e2
+                - text: Loc_1766475533199_0.7302218590852478
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/742e54b6-1e04-4f33-b149-590f19b92a70
+                - text: Loc_1766475533214_0.24513523396378822
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/77d4ebfc-fd5c-47d4-af56-de9fff78fce0
+                - text: Loc_1766475533231_0.2604143550847793
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/6d46b327-89eb-4821-9f55-1f9f076d604c
+                - text: Loc_1766475533303_0.9912105870241181
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/3ef33c22-a29d-406e-b97d-0b9ff3f1abc3
+                - text: Loc_1766475533383_0.3401826492488931
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/8598f0f6-2791-4754-b497-f7500925e8c5
+                - text: Loc_1766475533400_0.04228956250122007
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/66af8c61-e341-44a6-9f54-03adf127ea30
+                - text: Loc_1766475533416_0.3120027585783196
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/f461d7de-5bcb-46ee-b698-2ba464d3a5cc
+                - text: Loc_1766475533422_0.5443901065366237
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/a6a55787-9c76-4c17-9ed4-55e5c1595af0
+                - text: Loc_1766475533439_0.5192906132436133
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/405b5d57-c91f-40ff-af28-3de1b047a54e
+                - text: Loc_1766475533474_0.8611965510587918
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/3f6613ca-56c0-4261-b9d6-782c2573feb3
+                - text: Loc_1766475533492_0.16066232875847763
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/422d69c7-eabc-40ee-8fe2-52cc0897f8c9
+                - text: Loc_1766476148942_0.864975544177589
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/22cbbb2b-5fec-437c-92f2-771ee3e3aa6c
+                - text: Loc_1766476149016_0.6223458022347597
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/b748c22f-e0ca-48d5-8543-cc00314f373f
+                - text: Loc_1766476149049_0.010571200943843007
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/d2700811-1ef0-48f6-8a6b-c188e8b7a9c4
+                - text: Loc_1766476149066_0.025826014362217986
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/a8c9cde1-bab3-47dd-aaff-5a038973940f
+                - text: Loc_1766476149082_0.5201547080328108
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/dc3bd3e3-a991-4170-accc-c5323f595a4f
+                - text: Loc_1766476149099_0.43182433845041457
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/c34e74e2-8458-4897-8592-e5eb566b52c3
+                - text: Loc_1766476149140_0.0033453304287596186
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/1660245c-03a4-467d-9994-fa70a3ef89ff
+                - text: Loc_1766476149158_0.2909784275399263
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/9636b48d-a4a2-44a0-b44a-b60f48c7d37a
+                - text: Loc_1766476149199_0.18722113658263617
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/9f5dc3d5-6c76-4d2d-b78a-b6daa2c7f113
+                - text: Loc_1766476149272_0.008497245946900378
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/20d4712a-9ddf-4099-b12e-14322e606450
+                - text: Loc_1766476149286_0.8698916564967005
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/a53a1188-6ef9-403f-9af0-934050141678
+                - text: Loc_1766476149300_0.6221306987901751
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/2a742dfb-5314-4302-921c-51b72ab9a98c
+                - text: Loc_1766476432676_0.5622204468364207
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/2186cc2d-8f80-443f-9821-b5d9464434ed
+                - text: Loc_1766476432706_0.48416947755794393
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/4a2ad74d-2f8a-4528-9d0f-3b31ba1ab28a
+                - text: Loc_1766476432730_0.6967703742475153
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/94579c47-c0ae-4a6f-ad7c-02ad85da3495
+                - text: Loc_1766476432753_0.15950438850632542
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/f9ca1bb3-583f-4bae-a716-bb1370bc6bd2
+                - text: Loc_1766476433014_0.6168782689887511
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/d0b2ec27-7eb0-41d5-9996-22858cd6bc69
+                - text: Loc_1766476433053_0.47436278856492153
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/a220aad7-19b4-4aec-8a0d-b6e9bcfe1b38
+                - text: Loc_1766476433082_0.3308438067912194
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/f3da4890-346e-4624-9ec4-a8f460d17909
+                - text: Loc_1766476433109_0.24054611315989916
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/420d51bf-0ac9-4d8c-9716-be9ab461945c
+                - text: Loc_1766476433166_0.7722974252581762
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/00bdd2b6-7016-4ea3-a67e-50c97c224a25
+                - text: Loc_1766476433205_0.8848160301052177
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/eb2e07da-a574-42a8-904a-076d209c7f37
+                - text: Loc_1766476433229_0.6775626200175593
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/f043fa41-9017-40bc-bff4-836621ce9db5
+                - text: Loc_1766476433254_0.12471048600269663
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/2c2a3671-b0df-41a0-9bb6-ac5dfa11c417
+                - text: Loc_1766524203015_0.7246667454842717
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/0e91503e-e2b1-482c-8558-67d567f45198
+                - text: Loc_1766524203077_0.5098156354139483
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/fcc094b3-c142-49f4-8fb9-041b02c5fd99
+                - text: Loc_1766524203183_0.07820264770155916
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/4241989b-ae17-48b5-a176-a4915ebd9758
+                - text: Loc_1766524203222_0.36154007489325535
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/ab8f578a-2a2a-4995-bc61-dac08b629979
+                - text: Loc_1766524203252_0.3949046652973289
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/95bf1a09-24e9-4436-ad1c-da36c9a9b57f
+                - text: Loc_1766524203272_0.0058979902256388606
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/3ab586f0-8178-48d2-b1b2-0f78099d1a43
+                - text: Loc_1766524203326_0.5850503519673491
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/7ba83d44-a0ce-47b8-93d2-a981f82499cc
+                - text: Loc_1766524203378_0.06181660814729373
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/9aca7b05-c492-4065-925b-9c872814ca6d
+                - text: Loc_1766524203670_0.0440201794372137
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/f2f29992-8f11-4c02-a6cf-f17fbee786dc
+                - text: Loc_1766524203705_0.028678553516005234
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/b72af04a-df12-4e08-bb83-ceb9538c3cb8
+                - text: Loc_1766524203737_0.32236258644296667
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/6fc78a9c-f81c-4853-8876-1731ec862520
+                - text: Loc_1766524203766_0.13276271794173744
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/ad083452-533a-47cd-b4e0-29c53371f540
+                - text: Loc_1766524662890_0.9781529454453022
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/a34afea8-5947-417f-addd-7b8bbdcc0aa7
+                - text: Loc_1766524662939_0.009905192680233599
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/e71f2663-2f9d-4f2b-9850-7d8bc3736c5f
+                - text: Loc_1766524662959_0.008350823638287874
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/2394ad7c-61e5-49fb-8949-7940fa365f65
+                - text: Loc_1766524662998_0.08990160432528183
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/72825684-24f4-4b64-bcba-f20634742c45
+                - text: Loc_1766524663062_0.6971867626252624
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/5c068e48-3aeb-4884-b0b1-e522a0eb0f55
+                - text: Loc_1766524663125_0.14838031669584817
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/5279bad1-7c3b-4ffa-ae3f-1100c077d2db
+                - text: Loc_1766524663172_0.6623128619476455
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/e81276ee-2832-45bd-baec-3ba944e83dac
+                - text: Loc_1766524663294_0.9797331154077491
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/88e4c766-2b06-4eda-960e-fee1217bdc1a
+                - text: Loc_1766524663596_0.98416463251077
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/bfe251c5-6741-41b1-9694-7ee6e42fe62d
+                - text: Loc_1766524663695_0.06414157667008036
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/c924d271-4e38-4f1d-9838-989f3b6d816b
+                - text: Loc_1766524663817_0.8379123561340458
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/e649426b-7509-4a4d-a637-7db69a883d81
+                - text: Loc_1766524663959_0.1752043338887188
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/fd297755-fe45-46b6-8e0d-eb8e12410339
+                - text: Loc_1766525179710_0.4046594298645092
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/f7751f3a-c2b4-4bef-a60f-69bd466e1cbb
+                - text: Loc_1766525179779_0.07168923695979612
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/2d788e97-de14-440d-8dca-93cead5a31ba
+                - text: Loc_1766525179814_0.6987976549858728
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/01d8d9a4-7b0f-47f7-9efd-6efd18411395
+                - text: Loc_1766525179877_0.694345113211855
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/6404b78c-0737-42cc-af91-4222c6b58c49
+                - text: Loc_1766525179891_0.5008088875350016
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/b2a83f79-851d-4f4e-9ce3-72e9d82ffaa0
+                - text: Loc_1766525179955_0.17085076312712055
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/8cdef5af-e298-4201-9641-4a4b91d7584c
+                - text: Loc_1766525179974_0.7952474528643303
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/ad85d142-196d-47b9-8844-5331d7788ff8
+                - text: Loc_1766525180007_0.18944581766817992
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/d678053d-af33-42d7-b545-93a2ac7742f5
+                - text: Loc_1766525180049_0.6911809621837492
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/76e1dd05-fcb7-4409-b79e-6b1a456fe3a4
+                - text: Loc_1766525180130_0.9367648355144107
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/3f0d826f-9929-4de6-aa61-9800a0a1df8f
+                - text: Loc_1766525180209_0.21868145982590348
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/9d3c7138-52c4-41ed-bbcd-6d6353d7c694
+                - text: Loc_1766525180257_0.3762304788626645
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/ee7984f5-2b8f-4f72-963f-cf550ae0c786
+                - text: Loc_1766525684744_0.6069703378383899
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/1babeace-c8d7-4089-8ee3-8e9c1731e2c8
+                - text: Loc_1766525685137_0.7381721647262356
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/d1e79c4c-807c-4959-93c1-f257b681e42e
+                - text: Loc_1766525685203_0.5212989234596659
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/181bd800-6905-409e-8e42-79030917f5f4
+                - text: Loc_1766525685242_0.4708950850645979
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/53892db2-04f2-475f-8a90-036aa9c048f6
+                - text: Loc_1766525685294_0.5047436611251708
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/15abae79-fffc-4882-819b-d0a13555c173
+                - text: Loc_1766525685312_0.21346518914377355
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/b6a708b8-b800-4bab-b804-b90a48e332df
+                - text: Loc_1766525685347_0.7298408694897609
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/cadd9828-ba59-4cde-84ad-7697df332161
+                - text: Loc_1766525685408_0.3759200083016119
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/967ca691-31ab-4365-868f-9aa37d821c26
+                - text: Loc_1766525685444_0.059062730252098294
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/e0b314b0-b158-4071-a74c-58c99dcf14cf
+                - text: Loc_1766525685631_0.36697207468363224
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/69d75dc1-2aa2-4d67-8b8d-1ecb7d44ea13
+                - text: Loc_1766525685683_0.15651674409974436
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/12296f5b-7c0e-4c77-bf6e-2afc8b05a13b
+                - text: Loc_1766525685718_0.38267093400354524
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/65115787-98be-4969-985f-e9d8ce7eff78
+                - text: Loc_1766525797920_0.8978051861550687
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/f2254dc0-9094-4e24-a0da-c6f97a49dec4
+                - text: Loc_1766525797955_0.6673182645626257
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/70faca20-7d77-484e-8ceb-ab6b4769bf2a
+                - text: Loc_1766525797982_0.8027282288693065
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/9cee5f0a-76e1-43c8-b26a-bf3aa6338440
+                - text: Loc_1766525798006_0.17667065467512777
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/10b8fc02-8c7a-499b-9004-3ccdd8e90520
+                - text: Loc_1766547490885_0.2694827559381432
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/13120cd7-27fb-43a0-b8cc-18f0a6e1944c
+                - text: Loc_1766547490920_0.9702609192963711
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/74e41683-32e9-493b-aa4b-e71bddee5f73
+                - text: Loc_1766547490954_0.06918358433628335
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/2ef761a7-34fd-4907-b9bf-ba5443246601
+                - text: Loc_1766547490986_0.6378573902226392
+              - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/cc3118ad-a46d-4d6d-ba14-724d629d54d8
+                - text: Main Factory
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/b11de34e-0a22-4d2c-8015-20ff436b0fb0
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/c04e3565-4081-4b02-ad57-4096fb3b323f
+                - text: Parent 1766532191896
+              - generic: (INTERNAL)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/85eb464f-9eee-43a1-b0e1-3b612ace4e91
+                    - text: Child Inherit 1766532191896
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/590006b1-73b7-4706-8e62-0545f941903f
+                - text: Parent 1766532751544
+              - generic: (INTERNAL)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/c392265c-7071-4f5f-a466-00f7e88d9944
+                    - text: Child Inherit 1766532751544
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/bb429b29-1ecf-486f-af5a-c6f66f9dda9c
+                    - text: Child Override 1766532751544
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/e6dc2e36-06c9-4f05-a7ab-3eb3198c2adb
+                - text: Parent 1766532812003
+              - generic: (INTERNAL)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/d601932a-3742-48e7-9419-f32c92c025df
+                    - text: Child Inherit 1766532812003
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/9cf7da83-042b-40ee-979e-39ef11690f8c
+                    - text: Child Override 1766532812003
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/c7f21699-95ea-48bc-b1c2-489fdc543274
+                - text: Parent 1766547483652
+              - generic: (INTERNAL)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/88b0fe54-e1c0-4335-bfda-411837917807
+                    - text: Child Inherit 1766547483652
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/27a82320-99a3-445c-860e-dd85369eed20
+                    - text: Child Override 1766547483652
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/d0a853c2-fc16-479a-81df-695cef74c715
+                - text: Putaway Test WH 1766450587588
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/12ac21f7-a4ff-47ee-9cc4-d6be3d5133a5
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/2bdb8358-bf19-4eeb-8d27-282795c66c41
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/1d0fe6bd-c424-4718-a715-64204d1307ff
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/33983b82-6074-43da-8463-9b65d8f028cc
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/0684ea70-8c7f-4cd4-bfa3-d3bddf8eba04
+                - text: Putaway Test WH 1766450587592
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/8ce50e74-6573-477d-97f9-97789772eaff
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/4e87b943-a5e0-4ee6-9f3e-52dfee93d308
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/4d1bb810-8366-4b25-9b0d-10084427d5e9
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/1ed626ee-3c24-432a-93cd-8ed8c4571e90
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/5a8bb976-6fdb-47c5-9528-3c4ef2bca548
+                - text: Putaway Test WH 1766450650501
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/331623f1-dc0e-49ff-854f-88a149817a64
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/363871b9-9dfb-42c3-ac58-1b6bd13d9bd1
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/0b1843a8-e69c-4908-a618-e7bc6b8e582c
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/992da7a1-1ff4-44aa-aa1f-467534044595
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/00744572-af0d-4e67-8a80-03f5cfe2b044
+                - text: Putaway Test WH 1766450650505
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/0f2fefa6-bcbf-4a83-b5a5-de5d6e8e28f4
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/138e1890-2165-423d-9945-867775fc6118
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/a160cf7b-f747-47cc-8a8e-298b9a299c07
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/46bad628-c1d3-484b-8671-f4e37b72065c
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/32da490b-87ff-4b33-b4c7-327e5897f9bc
+                - text: Putaway Test WH 1766450689072
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/ee9a8166-0b96-4366-9c48-90f332059c88
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/29e1712e-f483-422a-904c-8ed1229fc02d
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/2a7fe869-787c-4f90-b472-98adf7f03c74
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/ec1dc9fe-3d88-4ce6-8768-b144ed10c5d9
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/67cc2e2d-ed92-48d6-96ee-55b22457d6fd
+                - text: Putaway Test WH 1766450689097
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/703a5a9f-5a2d-4188-bf77-31126b112370
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/30591df9-eee5-4033-bfac-2691c69cd5a7
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/408aed4c-3635-49e5-8c57-3b4d45d71b3d
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/5e21ae7a-93c8-4781-96f3-dd86d13306f0
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/0ccc4561-a88c-464b-94c4-accc65e326cb
+                - text: Putaway Test WH 1766454387766
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/989270c1-f35b-44e6-8fd8-5df2bf4ab6bb
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/250f6bec-5156-43aa-a792-a8c080d7bb0a
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/96755439-8c4b-4f72-b057-995161c969e6
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/6ef659aa-c8ac-47ac-8379-159b2018d642
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/2b72120e-c10c-42b0-829e-a8b152f0fb6a
+                - text: Putaway Test WH 1766454387844
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/cd6a53a3-3430-40c4-a994-a1b0320441b9
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/c0a22662-ff3d-439b-aa9c-7175aac6cd08
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/676595b1-4617-4947-aabf-bd612e85bf2f
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/e79b144c-dcd1-4c8d-a9e3-6d10e46ce4c6
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/8c378d46-ff81-473b-ab12-d65c35c87ab9
+                - text: Putaway Test WH 1766454595758
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/168527e4-fc03-497d-a6f6-bf428281061a
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/02e474c3-64cc-4f75-acf7-e1c600f0fd8c
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/82b3eea7-2aa4-4f6f-856a-c7ed61c17962
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/e195b107-99eb-4816-8417-65bbda3192f2
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/d171df97-e956-4355-b022-6de2857e0a6e
+                - text: Putaway Test WH 1766454595765
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/d6ee1e96-b72c-4679-892b-8693b866156d
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/e0345b1c-d9eb-4749-8d56-0bf9eb737b3b
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/5ad99fde-b737-4458-b587-032d1a3225b5
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/a1769e4d-e41d-449f-a1e2-d16945ea60f8
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/73ee14d5-ea28-4362-a660-03ef826a9a57
+                - text: Putaway Test WH 1766454657011
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/112b210d-55b3-486d-afb7-48427e33be53
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/d59cd97d-9a97-49ce-8013-adbf5efb4f1a
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/1529d985-323d-44d4-a20e-ae8f7468a4f2
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/7312acd6-cdce-4751-9e83-116d6ca61f68
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/a51c2cd4-284d-461b-96b3-4a441a6d32a9
+                - text: Putaway Test WH 1766454657156
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/d03db6b5-a6ad-4ad1-adec-3c69572c3c74
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/54bacee8-0824-40ae-98cf-bd22695ff803
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/1cd8dc1e-570b-432e-a0b0-55436b2a6976
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/27210cc6-c799-45f9-88ca-6dda9721074e
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/fc85ceb9-c5e1-4b65-8f55-c035fbfbeca5
+                - text: Putaway Test WH 1766454968456
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/076b5147-4a9f-46a4-9b87-9ac15578322b
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/9ce974c9-a41c-4f56-af3c-5411824b6b2c
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/753d16a4-8040-4639-9c9b-b398b9778945
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/c649161c-6845-4697-b244-10bfc62a4ac3
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/6f9abbb7-6220-4fda-851e-3199d791f7ff
+                - text: Putaway Test WH 1766454968467
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/06fd2446-d91e-4bf5-b814-df9cd3ccf8e1
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/2aca3a65-87a2-4285-8b2f-673c581eba33
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/8fd49bbf-e19b-4141-851b-a0e9e05c8aa7
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/330573a6-f190-47cb-b60c-8eb27c26fe92
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/25c66305-70ca-4d34-be16-5eca1038dd17
+                - text: Putaway Test WH 1766455074246
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/482ed7ff-7584-4d7a-b3bc-2e7c5b78e018
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/75a04dde-c32f-4e8a-b222-1a419dbe3d69
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/d926aa56-c123-4d54-b8cf-64ed75a55551
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/87b8c1c3-6560-4792-b232-b046e2d76572
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/5f0e9b75-f854-4082-aae2-cd437917e512
+                - text: Putaway Test WH 1766455074249
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/7c09ad58-d865-458b-aab1-15cf2a3cdef8
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/72756ce5-185c-4b69-b056-437d9c24e8e2
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/abecfe1b-57e3-40ef-a837-efe636928e36
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/753dac95-c7a2-4739-9e79-15af11994640
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/66872987-8394-4951-b759-5e8c61d31d64
+                - text: Putaway Test WH 1766459581791
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/5199bf63-2777-44bd-a93b-0d033f4f1831
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/b6da3105-84a5-401c-8c6c-c5b224da6578
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/01143d99-8255-4fa2-8a2a-63e55f937433
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/92634780-d454-43b0-b8cc-09b072f8ea91
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/ecc9531e-5ca4-4988-ab56-b9d73bdad462
+                - text: Putaway Test WH 1766459581795
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/444af62f-2515-4eec-94ce-54dbd0a87ef8
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/f4e15862-a79b-4b3f-8be2-fb00a0336321
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/dd9b1edf-e664-4af6-b6e2-0a0534ad2ea5
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/a60c4671-fd1b-4af3-9d04-1572b970c775
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/741001ac-b4f0-46a1-8ae4-76cc70cbc738
+                - text: Putaway Test WH 1766460515114
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/465d2d6d-625c-409b-84a1-ef613c121199
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/8a805b7e-b581-4551-a3b1-cd2f6f3a4b41
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/1b04d043-3dd3-4ecd-96e0-1923a10f816a
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/3a2da462-0113-44e1-a36d-134d478b0a4e
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/60297a68-6c7f-4dc3-88f3-f83b8d38b1d3
+                - text: Putaway Test WH 1766460515116
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/5bd9f5be-25e2-42d6-8c6a-b7223ed19de9
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/b8e917d3-7259-4e41-9343-5d5c314ca698
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/6e7ba475-d07f-4321-9365-8513f91e60e0
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/288a6868-a1c9-4478-845c-cf100f4dfbd0
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/392acdce-418a-4c23-bc6e-e82606b2099b
+                - text: Putaway Test WH 1766460595043
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/a32711a7-5419-42ac-95c8-e646ddf70fd0
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/84227619-6265-43e7-9937-86896ba82328
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/a16f0dec-d4ef-4df0-8cc2-fd6dc8579766
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/2731bf6b-c279-422d-ad9a-36dd1c341018
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/09ea83ca-86bd-4aa1-a13a-cd1ba3c45fb3
+                - text: Putaway Test WH 1766460595049
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/449db847-ea9d-4554-bb8c-e09bcb6bf4d8
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/abe523af-04af-4f41-9226-fe57f8c79642
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/aa2c5980-8f0e-4bb9-93dc-e0c0c16f2af3
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/4d857efb-5567-4ea7-b6f9-cafcee507f3c
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/3428ad10-b18e-4010-b33b-6b3297f9bd36
+                - text: Putaway Test WH 1766460792771
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/c50b3571-0b25-41b3-be40-db3c0a932f70
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/b64a959a-6988-4557-b393-ff7e79275873
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/6ad2a831-ad66-4d87-b147-63e63a037e8f
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/006952e1-3a0d-485b-91b6-fd71c8c1bfc3
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/ebf105c2-e9c1-406b-9eac-68079637a20c
+                - text: Putaway Test WH 1766460792885
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/a7f15341-4e5f-4ed6-96a6-d35fc56b2032
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/e610ec8f-8065-46bf-8f74-ec8fdffb2a52
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/2a5e5c7c-8ac9-4287-82c4-528aad0a4ade
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/22db5c7b-3ed1-4ba6-83ad-720780bb482c
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/6e1ab4d0-8f6e-4375-b817-6051c6826ece
+                - text: Putaway Test WH 1766547485805
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/3327967d-e4b2-4cc6-b8ca-045f89cf9aeb
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/244aeef0-9fd4-4326-8d0d-04954ab7f707
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/1f6f05b0-f0ae-42db-870f-39eb237d0fd3
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/645b80ff-a535-4e98-8def-e76f6bf4d120
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button:
+                - img
+              - img
+              - link:
+                - /url: /inventory/locations/6790b2ff-6b62-4110-a5a9-a83375ad4425
+                - text: Putaway Test WH 1766547486299
+              - generic: (VIEW)
+            - generic:
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/d2116446-603a-488c-9caa-8670badc2742
+                    - text: Back Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/0dba1a41-5e83-48b4-9292-f25a544c69c2
+                    - text: Golden Zone
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/1c7a6137-3da0-4c16-a23e-0ab6d6191775
+                    - text: Input Area
+                  - generic: (INTERNAL)
+              - generic:
+                - generic:
+                  - button
+                  - img
+                  - link:
+                    - /url: /inventory/locations/fa4dba35-4fbc-433a-afb1-6687eccd7607
+                    - text: Stock
+                  - generic: (INTERNAL)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/998b3011-f626-4262-8bad-7694a04d2c06
+                - text: View
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/26e625a3-e789-4846-a856-9c1b2700f887
+                - text: View
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/3a211241-12da-4e55-8ce7-9f3e7251412e
+                - text: View
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/63996944-da3c-429a-a67f-0cae3b440115
+                - text: View_1766469869610_0.09407842539117395
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/9acc9e4d-25be-4923-b5ef-ed3762474cfe
+                - text: View_1766469869611_0.5272927795203317
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/0be080ef-2a27-4ac8-8a4c-3daefe7ca7a0
+                - text: View_1766469869611_0.6771983368870316
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/a5b56704-eb2e-4c22-bcd7-96862ecad57d
+                - text: View_1766469962397_0.5327405805667036
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/2d31e192-b9cf-431b-98ae-13305171f6ce
+                - text: View_1766469962427_0.28320824161285163
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/cbee95e1-269f-44a9-b81a-370415034591
+                - text: View_1766469962467_0.2944297212188811
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/29ec4c1e-571a-4ad5-938f-f76eea272812
+                - text: View_1766470068565_0.6786899100049979
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/69893652-e86e-4d0b-9133-f50e91177118
+                - text: View_1766470068591_0.11727791482915895
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/d012bde0-a47f-4ef5-898e-1fcfb61e2f66
+                - text: View_1766470068601_0.7484599472219098
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/fccec297-deaf-4184-931c-f00d684de384
+                - text: View_1766470197996_0.5024828423031591
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/317cb402-133d-430c-8734-8fc76cc7d7fb
+                - text: View_1766470198015_0.20087135010681356
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/7f144216-0d14-42d8-b18d-12d2ced2f7ef
+                - text: View_1766470198027_0.7351303669184042
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/34f613e3-010a-4dc1-8d4d-f5046a6656b0
+                - text: View_1766470467322_0.4250426641366414
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/9f308993-89c3-4e8f-a027-9553cca6799a
+                - text: View_1766470467396_0.0744309615842389
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/d916f56f-3263-496c-97f9-6eaa32339403
+                - text: View_1766470467459_0.7277649573775438
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/431477eb-752b-4e28-a736-ff1e3b49a1d3
+                - text: View_1766470504389_0.4201128535917822
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/11c58cb7-0434-4800-befa-3e593304e8d1
+                - text: View_1766470504437_0.03369457661862296
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/bffac12d-fd6a-4633-bdca-c5747f84084a
+                - text: View_1766470504492_0.22496401261038002
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/5f053283-6efc-4447-a02c-83562711dcdf
+                - text: View_1766470871583_0.17126736411986165
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/6f975159-45f5-4241-aef4-7005018baabf
+                - text: View_1766470871739_0.6493450536568841
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/98636ceb-d01b-4731-84ac-6739ca59ef98
+                - text: View_1766470871775_0.8062405529007217
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/24fb1824-7239-4b47-82d4-7315a2aadbee
+                - text: View_1766470986834_0.5223204715898131
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/e99b6ceb-b8d0-48a7-a470-a7c5d9af2734
+                - text: View_1766470986868_0.044375751107771366
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/600dc92b-1ad9-426f-ab6f-b5d0171995d9
+                - text: View_1766470987055_0.4922336128358451
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/2e121925-207a-4437-99af-432fc068c041
+                - text: View_1766474029229_0.9875793777133224
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/ac70a91d-c82a-419e-8d35-d45a300cb18f
+                - text: View_1766474029231_0.5489068630759966
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/35afd34f-3835-4867-90c1-a3a7b822c1cd
+                - text: View_1766474029399_0.3515330258697269
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/b12f4ebd-5394-4b16-b220-ac51f3e6dc9e
+                - text: View_1766475533140_0.502076689155798
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/020470e8-f525-4d9c-9d02-2aa3fcddee09
+                - text: View_1766475533265_0.15853014941257526
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/99e4dfe9-193b-44f3-adc4-f9b6bc64e323
+                - text: View_1766475533340_0.009946871626242526
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/b94f6cf0-c3a3-4cc0-9c1a-52ee03749a84
+                - text: View_1766476148905_0.8307307786338884
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/ca2b10e2-c7d7-44a1-bba8-be4e3d00e750
+                - text: View_1766476148980_0.5577089598255454
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/17918d29-c25e-4328-9727-03356f969afd
+                - text: View_1766476149166_0.16020594720908643
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/1b52c666-0a50-4109-9600-fa1da58cf089
+                - text: View_1766476432616_0.576348252837735
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/44e37d5e-b316-42b6-832e-8fbbef12f455
+                - text: View_1766476432797_0.08359256366082901
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/cfb33e90-7a1c-4f58-aa71-026f855e98e1
+                - text: View_1766476432869_0.8884138294148811
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/e169b847-abc3-430b-b737-8220df9e2363
+                - text: View_1766524202780_0.29870284502669886
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/be66b0f4-fcde-4907-a162-58464dc7513f
+                - text: View_1766524202845_0.8358941083495675
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/a1ca4e3e-5486-4ae5-90be-e71b9b4f6fc3
+                - text: View_1766524202952_0.2613790065776438
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/8881555f-2d8d-4d93-b854-9cbea89a2b1a
+                - text: View_1766524662704_0.7859687809137457
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/b7c37122-ef88-4ae4-9a6d-79beb767934a
+                - text: View_1766524662811_0.40162117603823644
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/c1f33e9d-af0c-4603-ac32-42fdc82c3904
+                - text: View_1766524663250_0.6295611069805949
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/391def40-8a82-4901-bde5-be831d77bf6b
+                - text: View_1766525179473_0.6403372954757003
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/6a7c2bd3-ba7a-4a4b-8b67-7b8bb86b167b
+                - text: View_1766525179501_0.06607431535929842
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/19e1100a-9194-4deb-ace4-c94a14639da9
+                - text: View_1766525179520_0.13283576482964232
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/8715f994-024d-4cda-b148-1a8d6e51db31
+                - text: View_1766525684574_0.5444264999603379
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/62723aa0-994e-401f-828b-587bd1a7607e
+                - text: View_1766525684651_0.1512506879765949
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/6d4085dd-ad97-470b-bcf7-9dae54e1082a
+                - text: View_1766525684809_0.4800521779899358
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/71d68a2b-be1d-45c3-b397-2ca337fb9552
+                - text: View_1766525797851_0.07773184108209752
+              - generic: (VIEW)
+          - generic:
+            - generic:
+              - button
+              - img
+              - link:
+                - /url: /inventory/locations/e46b55ed-d4a9-494b-95cb-28734edcffea
+                - text: View_1766547490819_0.752103332417295
+              - generic: (VIEW)
+  - region "Notifications alt+T"
+  - generic [ref=e5] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e6]:
+      - img [ref=e7]
+    - generic [ref=e10]:
+      - button "Open issues overlay" [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]: "0"
+          - generic [ref=e14]: "1"
+        - generic [ref=e15]: Issue
+      - button "Collapse issues badge" [ref=e16]:
+        - img [ref=e17]
+  - alert
+  - dialog "Create Location" [ref=e20]:
+    - heading "Create Location" [level=2] [ref=e22]
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]: Name
+        - textbox "Name" [ref=e26]: Zone A
+      - generic [ref=e27]:
+        - generic [ref=e28]: Structure
+        - combobox [ref=e29]:
+          - generic: Room
+          - img [ref=e30]
+      - generic [ref=e32]:
+        - generic [ref=e33]: Supported Pkg
+        - textbox "Supported Pkg" [ref=e34]:
+          - /placeholder: e.g. PALLET, BOX
+      - generic [ref=e35]:
+        - generic [ref=e36]: Cliamte
+        - combobox [ref=e37]:
+          - generic: Select Cliamte
+          - img [ref=e38]
+      - generic [ref=e40]:
+        - generic [ref=e41]: Security Zone
+        - combobox [ref=e42]:
+          - generic: Select Security Zone
+          - img [ref=e43]
+      - generic [ref=e45]:
+        - generic [ref=e46]: Other Attributes (JSON)
+        - textbox "Other Attributes (JSON)" [ref=e47]:
+          - /placeholder: "JSON: {\"refrigerated\": true}"
+      - generic [ref=e48]:
+        - generic [ref=e49]: Parent
+        - combobox [ref=e50]:
+          - generic: Central DC (WAREHOUSE)
+          - img [ref=e51]
+      - generic [ref=e53]:
+        - generic [ref=e54]: Usage Type
+        - combobox [ref=e55]:
+          - generic: Internal
+          - img [ref=e56]
+    - button "Create" [active] [ref=e59]
+    - button "Close" [ref=e60]:
+      - img [ref=e61]
+      - generic [ref=e64]: Close
+```

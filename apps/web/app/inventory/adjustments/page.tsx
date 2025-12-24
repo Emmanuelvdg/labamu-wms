@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import useSWR from 'swr';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth';
 import { fetchAdjustments, checkCycleCounts, startCycleCount, updateAdjustment, applyAdjustment } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +11,7 @@ import { toast } from 'sonner';
 import { Check, Play } from 'lucide-react';
 
 export default function AdjustmentsPage() {
+    const { hasPermission } = useAuth();
     const { data: adjustments, mutate: mutateAdjustments } = useSWR('adjustments', fetchAdjustments);
     const { data: dueLocations, mutate: mutateDue } = useSWR('cycle-counts-due', checkCycleCounts);
     const [counting, setCounting] = useState<Record<string, number>>({});
@@ -53,7 +56,24 @@ export default function AdjustmentsPage() {
 
     return (
         <div className="p-8">
-            <h1 className="text-3xl font-bold mb-6">Inventory Adjustments</h1>
+            {/* Header Section */}
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Inventory Adjustments</h1>
+                    <p className="text-gray-500">Track and manage inventory adjustments and cycle counts</p>
+                </div>
+                <div className="space-x-4">
+                    {hasPermission('INVENTORY', 'ADJUST') && (
+                        <Link href="/inventory/adjustments/new">
+                            <button
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                            >
+                                + New Adjustment
+                            </button>
+                        </Link>
+                    )}
+                </div>
+            </div>
 
             {/* Due for Cycle Count Section */}
             {dueLocations && dueLocations.length > 0 && (

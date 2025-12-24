@@ -6,8 +6,8 @@ import Sidebar from '@/components/Sidebar';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Labamu IMS',
-  description: 'Inventory Management System',
+  title: 'Labamu WMS',
+  description: 'Warehouse Management System',
 };
 
 import { Toaster } from 'sonner';
