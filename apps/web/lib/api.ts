@@ -617,6 +617,7 @@ export async function fetchUsers() {
 export async function createUser(data: any) {
     return fetchWithRetry(`${API_URL}/settings/users`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
 }
@@ -624,6 +625,7 @@ export async function createUser(data: any) {
 export async function updateUser(id: string, data: any) {
     return fetchWithRetry(`${API_URL}/settings/users/${id}`, {
         method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
 }

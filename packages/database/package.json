@@ -9,12 +9,14 @@
         "db:seed": "ts-node prisma/seed.ts"
     },
     "dependencies": {
-        "@prisma/client": "^5.10.0"
+        "@prisma/client": "^5.10.0",
+        "@types/bcrypt": "^6.0.0",
+        "bcrypt": "^6.0.0"
     },
     "devDependencies": {
+        "@types/node": "latest",
         "prisma": "^5.10.0",
         "ts-node": "latest",
-        "typescript": "latest",
-        "@types/node": "latest"
+        "typescript": "latest"
     }
 }
