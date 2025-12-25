@@ -38,4 +38,10 @@ export class UsersController {
     deleteUser(@Param('id') id: string) {
         return this.usersService.deleteUser(id);
     }
+
+    @Post(':id/reset-password')
+    @RequirePermission('SETTINGS', 'UPDATE')
+    resetPassword(@Param('id') id: string, @Body() body: { newPassword: string }) {
+        return this.usersService.resetPassword(id, body.newPassword);
+    }
 }

@@ -21,6 +21,12 @@ export class RolesController {
         return this.rolesService.getRoles();
     }
 
+    @Get('available-permissions')
+    @RequirePermission('SETTINGS', 'READ')
+    async getAvailablePermissions() {
+        return this.rolesService.getAvailablePermissions();
+    }
+
     @Get(':id')
     @RequirePermission('SETTINGS', 'READ')
     async getRole(@Param('id') id: string) {

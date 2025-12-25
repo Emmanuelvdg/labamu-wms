@@ -85,4 +85,26 @@ export class RolesService {
 
         return this.prisma.role.delete({ where: { id } });
     }
+
+    async getAvailablePermissions() {
+        const resources = [
+            'INVENTORY', 'PRODUCTS', 'WAREHOUSE', 'LOCATIONS',
+            'ORDERS', 'PURCHASE_ORDERS', 'ADJUSTMENTS',
+            'SUPPLIERS', 'CUSTOMERS', 'USERS', 'ROLES', 'REPORTS', 'SETTINGS'
+        ];
+
+        const actions = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'APPROVE'];
+
+        const permissions = [];
+        for (const resource of resources) {
+            for (const action of actions) {
+                permissions.push({ resource, action, label: `${resource}:${action}` });
+            }
+        }
+
+        // Add wildcard permissions
+        permissions.push({ resource: '*', action: '*', label: 'All Permissions (Admin)' });
+
+        return permissions;
+    }
 }
