@@ -32,6 +32,7 @@ export class InventoryController {
     }
 
     @Delete('packaging/:id')
+    @RequirePermission('INVENTORY', 'DELETE')
     deletePackaging(@Param('id') id: string) {
         return this.packagingService.deletePackaging(id);
     }
@@ -54,6 +55,7 @@ export class InventoryController {
     }
 
     @Get('products/:id')
+    @RequirePermission('INVENTORY', 'READ')
     getProduct(@Param('id') id: string) {
         return this.inventoryService.getProduct(id);
     }
@@ -65,11 +67,13 @@ export class InventoryController {
     }
 
     @Post('warehouses')
+    @RequirePermission('WAREHOUSE', 'CREATE')
     createWarehouse(@Body() data: any) {
         return this.inventoryService.createWarehouse(data);
     }
 
     @Put('warehouses/:id')
+    @RequirePermission('WAREHOUSE', 'UPDATE')
     updateWarehouse(@Param('id') id: string, @Body() data: any) {
         return this.inventoryService.updateWarehouse(id, data);
     }
@@ -99,6 +103,7 @@ export class InventoryController {
     }
 
     @Post('adjustments')
+    @RequirePermission('ADJUSTMENTS', 'CREATE')
     async createAdjustment(@Body() data: any) {
         this.log(`createAdjustment called with ${JSON.stringify(data)}`);
         try {
@@ -110,11 +115,13 @@ export class InventoryController {
     }
 
     @Put('adjustments/:id')
+    @RequirePermission('ADJUSTMENTS', 'UPDATE')
     updateAdjustment(@Param('id') id: string, @Body() data: any) {
         return this.inventoryService.updateAdjustment(id, data);
     }
 
     @Post('adjustments/:id/apply')
+    @RequirePermission('ADJUSTMENTS', 'APPLY')
     applyAdjustment(@Param('id') id: string) {
         return this.inventoryService.applyAdjustment(id);
     }
@@ -190,6 +197,7 @@ export class InventoryController {
     }
 
     @Post('locations')
+    @RequirePermission('LOCATIONS', 'CREATE')
     createLocation(@Body() data: any) {
         return this.inventoryService.createLocation(data);
     }
@@ -200,6 +208,7 @@ export class InventoryController {
     }
 
     @Put('locations/:id')
+    @RequirePermission('LOCATIONS', 'UPDATE')
     updateLocation(@Param('id') id: string, @Body() data: any) {
         return this.inventoryService.updateLocation(id, data);
     }
