@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
         const response = NextResponse.json({ success: true, user });
 
-        // Set cookie
+        // Set auth cookie
         response.cookies.set('auth', 'true', {
             path: '/',
             httpOnly: true,
@@ -28,10 +28,19 @@ export async function POST(request: Request) {
             maxAge: 60 * 60 * 24 * 7, // 1 week
         });
 
-        // Also set user_id cookie for easier access if needed, but we'll return it too
+        // Set user_id cookie for API requests
         response.cookies.set('user_id', user.id, {
             path: '/',
-            httpOnly: false, // Allow client JS to read if needed
+            httpOnly: false, // Allow client JS to read
+            secure: false,
+            maxAge: 60 * 60 * 24 * 7,
+        });
+
+        // Set user_data cookie with full user object including roles and permissions
+        // This is used by usePermission hook for frontend permission checks
+        response.cookies.set('user_data', JSON.stringify(user), {
+            path: '/',
+            httpOnly: false, // Allow client JS to read for permission checks
             secure: false,
             maxAge: 60 * 60 * 24 * 7,
         });
