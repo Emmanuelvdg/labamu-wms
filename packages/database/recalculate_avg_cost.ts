@@ -51,18 +51,21 @@ async function recalculateAverageCosts() {
 
         const newAvgCost = totalValue / totalQty;
 
-        console.log(`[RecalculateAvgCost] Product ${product.id} (${product.name}): `);
-        console.log(`  - Batches: ${product.batches.length} `);
-        console.log(`  - Total Qty: ${totalQty} `);
-        console.log(`  - Total Value: ${totalValue} `);
-        console.log(`  - Current Avg Cost: ${product.averageCost} `);
-        console.log(`  - New Avg Cost: ${newAvgCost} `);
+        // Round to 2 decimal places for currency display
+        const roundedAvgCost = Math.round(newAvgCost * 100) / 100;
+
+        console.log(`[RecalculateAvgCost] Product ${product.id} (${product.name}):`);
+        console.log(`  - Batches: ${product.batches.length}`);
+        console.log(`  - Total Qty: ${totalQty}`);
+        console.log(`  - Total Value: ${totalValue}`);
+        console.log(`  - Current Avg Cost: ${product.averageCost}`);
+        console.log(`  - New Avg Cost: ${roundedAvgCost}`);
 
         // Update only if different (to avoid unnecessary writes)
-        if (Math.abs((product.averageCost || 0) - newAvgCost) > 0.0001) {
+        if (Math.abs((product.averageCost || 0) - roundedAvgCost) > 0.01) {
             await prisma.product.update({
                 where: { id: product.id },
-                data: { averageCost: newAvgCost }
+                data: { averageCost: roundedAvgCost }
             });
             console.log(`  ✅ Updated!`);
             updated++;

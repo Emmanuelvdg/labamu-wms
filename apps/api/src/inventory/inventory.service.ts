@@ -460,13 +460,16 @@ export class InventoryService {
         const newTotalQty = currentTotalQty + data.quantity;
         const newAvgCost = newTotalQty > 0 ? newValue / newTotalQty : data.costPerUnit;
 
+        // Round to 2 decimal places for currency (e.g., 0.6754966... → 0.68)
+        const roundedAvgCost = Math.round(newAvgCost * 100) / 100;
+
         // Update product average cost
         await this.prisma.product.update({
             where: { id: data.productId },
-            data: { averageCost: newAvgCost }
+            data: { averageCost: roundedAvgCost }
         });
 
-        this.log(`[AverageCost] Product ${data.productId}: Old Avg=${currentAvgCost.toFixed(4)}, New Avg=${newAvgCost.toFixed(4)} (added ${data.quantity} @ ${data.costPerUnit})`);
+        this.log(`[AverageCost] Product ${data.productId}: Old Avg=${currentAvgCost.toFixed(2)}, New Avg=${roundedAvgCost.toFixed(2)} (added ${data.quantity} @ ${data.costPerUnit})`);
 
         // 3. Update Aggregate Inventory (Legacy support)
         // Find existing inventory record for this product/warehouse/location
