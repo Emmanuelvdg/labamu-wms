@@ -417,7 +417,29 @@ export class InventoryService {
             },
         });
 
-        // 2. Update Aggregate Inventory (Legacy support)
+        // 2. Calculate Weighted Average Cost
+        // Formula: New Avg = ((Current Avg × Current Qty) + (New Cost × New Qty)) / (Current Qty + New Qty)
+        const currentInventory = await this.prisma.productInventory.findMany({
+            where: { productId: data.productId }
+        });
+
+        const currentTotalQty = currentInventory.reduce((sum, inv) => sum + inv.quantity, 0);
+        const currentAvgCost = product.averageCost || 0;
+        const currentValue = currentTotalQty * currentAvgCost;
+
+        const newValue = currentValue + (data.quantity * data.costPerUnit);
+        const newTotalQty = currentTotalQty + data.quantity;
+        const newAvgCost = newTotalQty > 0 ? newValue / newTotalQty : data.costPerUnit;
+
+        // Update product average cost
+        await this.prisma.product.update({
+            where: { id: data.productId },
+            data: { averageCost: newAvgCost }
+        });
+
+        this.log(`[AverageCost] Product ${data.productId}: Old Avg=${currentAvgCost}, New Avg=${newAvgCost} (added ${data.quantity} @ ${data.costPerUnit})`);
+
+        // 3. Update Aggregate Inventory (Legacy support)
         // Find existing inventory record for this product/warehouse/location
         const existingInventory = await this.prisma.productInventory.findFirst({
             where: {
@@ -443,7 +465,7 @@ export class InventoryService {
             });
         }
 
-        // 3. Log Transaction
+        // 4. Log Transaction
         await this.prisma.stockTransaction.create({
             data: {
                 productId: data.productId,
