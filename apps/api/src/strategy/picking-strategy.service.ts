@@ -343,7 +343,29 @@ export class PickingStrategyService {
                 tasks: {
                     include: {
                         product: true,
-                        sourceLocation: true,
+                        sourceLocation: {
+                            include: {
+                                parent: {
+                                    include: {
+                                        parent: {
+                                            include: {
+                                                parent: {
+                                                    include: {
+                                                        parent: {
+                                                            include: {
+                                                                parent: {
+                                                                    include: { parent: true }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         order: true
                     }
                 }

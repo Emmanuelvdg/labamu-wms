@@ -138,6 +138,19 @@ export default function PickingPage() {
         }
     };
 
+    // Helper: Build location breadcrumb path
+    const getLocationPath = (location: any): string[] => {
+        const path: string[] = [];
+        let current = location;
+
+        while (current) {
+            path.unshift(current.name);
+            current = current.parent;
+        }
+
+        return path;
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 p-8">
             <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -224,9 +237,34 @@ export default function PickingPage() {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {activeSession.tasks.map((task: any) => (
-                                        <tr key={task.id} className={task.status === 'PICKED' ? 'bg-green-50' : task.status === 'FAILED' ? 'bg-red-50' : ''}>
+                                        <tr key={task.id} className={
+                                            task.status === 'PICKED' ? 'bg-green-50' :
+                                                task.status === 'FAILED' ? 'bg-red-50' :
+                                                    task.status === 'IN_PROGRESS' ? 'bg-blue-50' : ''
+                                        }>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{task.product.name}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{task.sourceLocation.name}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-500">
+                                                {(() => {
+                                                    const path = getLocationPath(task.sourceLocation);
+                                                    if (path.length === 1) {
+                                                        // No hierarchy, just show name
+                                                        return <span className="font-medium text-gray-900">{path[0]}</span>;
+                                                    }
+
+                                                    return (
+                                                        <div className="flex flex-col">
+                                                            {/* Breadcrumb trail */}
+                                                            <div className="text-xs text-gray-400 mb-1">
+                                                                {path.slice(0, -1).join(' → ')}
+                                                            </div>
+                                                            {/* Final location (emphasized) */}
+                                                            <div className="font-medium text-gray-900">
+                                                                {path[path.length - 1]}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{task.order.id.substring(0, 8)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                                 {task.status === 'PENDING' ? task.quantity : `${task.pickedQuantity}/${task.quantity}`}
@@ -236,12 +274,13 @@ export default function PickingPage() {
                                                     ${task.status === 'PICKED' ? 'bg-green-100 text-green-800' :
                                                         task.status === 'FAILED' ? 'bg-red-100 text-red-800' :
                                                             task.status === 'PARTIALLY_PICKED' ? 'bg-yellow-100 text-yellow-800' :
-                                                                'bg-gray-100 text-gray-800'}`}>
+                                                                task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+                                                                    'bg-gray-100 text-gray-800'}`}>
                                                     {task.status}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                {task.status === 'PENDING' && (
+                                                {(task.status === 'PENDING' || task.status === 'IN_PROGRESS') && (
                                                     <div className="flex justify-end gap-2">
                                                         <button
                                                             onClick={() => handleConfirmPick(task)}
