@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchInventory, createOrder, fetchCustomers, createCustomer, fetchWarehouses, fetchWithRetry } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -112,6 +112,34 @@ export default function NewOrderPage() {
             setSubmitting(false);
         }
     };
+
+    // Calculate Order Totals
+    const orderTotals = useMemo(() => {
+        let subtotal = 0;
+        let shippingCost = 0;
+
+        // Calculate subtotal from items (product price × quantity)
+        formData.items.forEach(item => {
+            if (item.productId) {
+                const product = products.find(p => p.id === item.productId);
+                if (product && product.price) {
+                    subtotal += product.price * item.quantity;
+                }
+            }
+        });
+
+        // Get shipping cost from selected delivery method
+        if (formData.deliveryMethodId) {
+            const selectedMethod = deliveryMethods.find(m => m.id === formData.deliveryMethodId);
+            if (selectedMethod && selectedMethod.fixedPrice) {
+                shippingCost = selectedMethod.fixedPrice;
+            }
+        }
+
+        const grandTotal = subtotal + shippingCost;
+
+        return { subtotal, shippingCost, grandTotal };
+    }, [formData.items, formData.deliveryMethodId, products, deliveryMethods]);
 
     if (loading) return <div className="p-8">Loading...</div>;
 
@@ -342,6 +370,30 @@ export default function NewOrderPage() {
                     ))}
                     <Button type="button" variant="outline" onClick={handleAddItem} data-testid="add-order-item-btn">+ Add Item</Button>
                 </div>
+
+                {/* Order Total Summary - NEW */}
+                {formData.type === 'SALES' && formData.items.some(item => item.productId) && (
+                    <div className="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Subtotal:</span>
+                                <span className="font-medium">IDR {orderTotals.subtotal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            {formData.deliveryMethodId && orderTotals.shippingCost > 0 && (
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">Shipping Cost:</span>
+                                    <span className="font-medium">IDR {orderTotals.shippingCost.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                </div>
+                            )}
+                            <div className="border-t border-gray-300 pt-2 mt-2"></div>
+                            <div className="flex justify-between text-lg font-bold">
+                                <span className="text-gray-900">Grand Total:</span>
+                                <span className="text-theme-600">IDR {orderTotals.grandTotal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="flex justify-end gap-3 mt-8">
                     <Button type="button" variant="ghost" onClick={() => router.back()}>Cancel</Button>
