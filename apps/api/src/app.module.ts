@@ -18,6 +18,9 @@ import { StoModule } from './sto/sto.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { WarehouseModule } from './warehouse/warehouse.module';
 
+import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
+import { PrismaService } from './prisma.service';
+
 @Module({
     imports: [
         InventoryModule,
@@ -37,7 +40,7 @@ import { WarehouseModule } from './warehouse/warehouse.module';
         ShippingModule,
         WarehouseModule,
     ],
-    controllers: [],
-    providers: [],
+    controllers: [DeliveryMethodsController],
+    providers: [PrismaService],
 })
 export class AppModule { }

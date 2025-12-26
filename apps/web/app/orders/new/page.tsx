@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchInventory, createOrder, fetchCustomers, createCustomer, fetchWarehouses } from '@/lib/api';
+import { fetchInventory, createOrder, fetchCustomers, createCustomer, fetchWarehouses, fetchWithRetry } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 
 export default function NewOrderPage() {
@@ -10,6 +10,7 @@ export default function NewOrderPage() {
     const [products, setProducts] = useState<any[]>([]);
     const [customers, setCustomers] = useState<any[]>([]);
     const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [deliveryMethods, setDeliveryMethods] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
@@ -25,20 +26,23 @@ export default function NewOrderPage() {
         items: [{ productId: '', quantity: 1 }],
         type: 'SALES', // SALES, TRANSFER
         warehouseId: '', // Optional for Sales (Source), Required for Transfer (Source)
-        destinationWarehouseId: '' // Required for Transfer
+        destinationWarehouseId: '', // Required for Transfer
+        deliveryMethodId: '' // NEW: Delivery method selection
     });
 
     useEffect(() => {
         async function loadData() {
             try {
-                const [prods, custs, whs] = await Promise.all([
+                const [prods, custs, whs, methods] = await Promise.all([
                     fetchInventory(),
                     fetchCustomers(),
-                    fetchWarehouses()
+                    fetchWarehouses(),
+                    fetchWithRetry(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/configuration/delivery-methods`)
                 ]);
                 setProducts(prods || []);
                 setCustomers(custs || []);
                 setWarehouses(whs || []);
+                setDeliveryMethods(methods || []);
             } catch (error) {
                 console.error('Failed to load data:', error);
                 alert('Failed to load data');
@@ -259,6 +263,27 @@ export default function NewOrderPage() {
                             data-testid="order-expected-date-input"
                         />
                     </div>
+
+                    {/* Delivery Method Selection - NEW */}
+                    {formData.type === 'SALES' && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Delivery Method</label>
+                            <select
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                value={formData.deliveryMethodId}
+                                onChange={(e) => setFormData({ ...formData, deliveryMethodId: e.target.value })}
+                                required={formData.type === 'SALES'}
+                                data-testid="order-delivery-method-select"
+                            >
+                                <option value="">Select Delivery Method</option>
+                                {deliveryMethods.map((dm) => (
+                                    <option key={dm.id} value={dm.id}>
+                                        {dm.name} - IDR {dm.fixedPrice?.toLocaleString() || 'Contact for price'}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Optional Source Warehouse for Sales Orders (Manual Override) */}
                     {formData.type === 'SALES' && (
