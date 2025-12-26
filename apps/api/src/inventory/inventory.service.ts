@@ -419,14 +419,43 @@ export class InventoryService {
 
         // 2. Calculate Weighted Average Cost
         // Formula: New Avg = ((Current Avg × Current Qty) + (New Cost × New Qty)) / (Current Qty + New Qty)
+
+        // Get current inventory quantities
         const currentInventory = await this.prisma.productInventory.findMany({
             where: { productId: data.productId }
         });
-
         const currentTotalQty = currentInventory.reduce((sum, inv) => sum + inv.quantity, 0);
-        const currentAvgCost = product.averageCost || 0;
-        const currentValue = currentTotalQty * currentAvgCost;
 
+        let currentAvgCost = product.averageCost || 0;
+
+        // IMPORTANT: If product.averageCost is 0 but batches exist, calculate the true average from existing batches
+        // This handles products created before the average cost feature was implemented
+        if (currentAvgCost === 0 && currentTotalQty > 0) {
+            this.log(`[AverageCost] Product ${data.productId}: averageCost is 0 but inventory exists. Calculating from batches...`);
+
+            const existingBatches = await this.prisma.inventoryBatch.findMany({
+                where: {
+                    productId: data.productId,
+                    status: 'Active'
+                }
+            });
+
+            if (existingBatches.length > 0) {
+                const totalValue = existingBatches.reduce((sum, batch) =>
+                    sum + (batch.currentQuantity * batch.costPerUnit), 0
+                );
+                const totalQty = existingBatches.reduce((sum, batch) =>
+                    sum + batch.currentQuantity, 0
+                );
+
+                if (totalQty > 0) {
+                    currentAvgCost = totalValue / totalQty;
+                    this.log(`[AverageCost] Calculated from batches: ${existingBatches.length} batches, Total Value=${totalValue}, Total Qty=${totalQty}, Avg=${currentAvgCost}`);
+                }
+            }
+        }
+
+        const currentValue = currentTotalQty * currentAvgCost;
         const newValue = currentValue + (data.quantity * data.costPerUnit);
         const newTotalQty = currentTotalQty + data.quantity;
         const newAvgCost = newTotalQty > 0 ? newValue / newTotalQty : data.costPerUnit;
@@ -437,7 +466,7 @@ export class InventoryService {
             data: { averageCost: newAvgCost }
         });
 
-        this.log(`[AverageCost] Product ${data.productId}: Old Avg=${currentAvgCost}, New Avg=${newAvgCost} (added ${data.quantity} @ ${data.costPerUnit})`);
+        this.log(`[AverageCost] Product ${data.productId}: Old Avg=${currentAvgCost.toFixed(4)}, New Avg=${newAvgCost.toFixed(4)} (added ${data.quantity} @ ${data.costPerUnit})`);
 
         // 3. Update Aggregate Inventory (Legacy support)
         // Find existing inventory record for this product/warehouse/location
