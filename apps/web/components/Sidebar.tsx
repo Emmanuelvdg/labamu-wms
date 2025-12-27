@@ -30,6 +30,7 @@ const navigation: NavSection[] = [
         items: [
             { name: 'Suppliers', href: '/inventory/suppliers' },
             { name: 'Purchase Orders', href: '/inventory/purchases' },
+            { name: 'Putaway', href: '/putaway' },
         ]
     },
     {
@@ -75,6 +76,9 @@ export default function Sidebar() {
             if (item.href === '/inventory/scrap') return hasPermission('INVENTORY', 'UPDATE');
             return hasPermission('INVENTORY', 'READ');
         }
+
+        // Putaway
+        if (item.href === '/putaway') return hasPermission('INVENTORY', 'UPDATE');
 
         // Invoices
         if (item.href === '/invoices') return hasPermission('INVOICES', 'READ');
