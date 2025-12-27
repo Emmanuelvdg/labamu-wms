@@ -1,6 +1,6 @@
 import Cookies from 'js-cookie';
 
-export const API_URL = 'http://localhost:3001';
+export const API_URL = 'http://127.0.0.1:3001';
 
 export async function fetchWithRetry(url: string, options?: RequestInit) {
     try {

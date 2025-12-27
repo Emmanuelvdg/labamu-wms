@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext } from 'react';
-import { fetchWithRetry } from './api';
+import { fetchWithRetry, API_URL } from './api';
 import Cookies from 'js-cookie';
 
 interface Permission {
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Actually, fetchWithRetry uses API_URL. We should probably just use fetchWithRetry.
             // But wait, fetchWithRetry might throw if 401.
 
-            const res = await fetch('http://localhost:3001/auth/me', {
+            const res = await fetch(`${API_URL}/auth/me`, {
                 headers: { 'x-user-id': userId }
             });
 

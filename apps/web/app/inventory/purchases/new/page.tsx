@@ -11,7 +11,7 @@ export default function NewPurchaseOrderPage() {
     const [products, setProducts] = useState<any[]>([]);
     const [suppliers, setSuppliers] = useState<any[]>([]);
     const [supplierId, setSupplierId] = useState('');
-    const [items, setItems] = useState<{ productId: string; quantity: number; unitCost: number }[]>([]);
+    const [items, setItems] = useState<{ productId: string; quantity: number; unitCost: number; packagingId?: string }[]>([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -47,8 +47,14 @@ export default function NewPurchaseOrderPage() {
     }
 
     async function handleProductChange(index: number, productId: string) {
-        updateItem(index, 'productId', productId);
-        updateItem(index, 'packagingId', undefined); // Reset packaging
+        // Combine both updates into a single atomic operation
+        const newItems = [...items];
+        newItems[index] = {
+            ...newItems[index],
+            productId,
+            packagingId: undefined  // Reset packaging when product changes
+        };
+        setItems(newItems);
 
         if (productId && !packagingOptions[productId]) {
             // Fetch packaging
