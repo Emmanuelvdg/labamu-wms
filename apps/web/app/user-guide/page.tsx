@@ -64,6 +64,7 @@ export default function UserGuidePage() {
                                         <div className="flex flex-col space-y-1">
                                             <a onClick={(e) => scrollToSection(e, 'suppliers')} href="#suppliers" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Suppliers</a>
                                             <a onClick={(e) => scrollToSection(e, 'purchase-orders')} href="#purchase-orders" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Purchase Orders</a>
+                                            <a onClick={(e) => scrollToSection(e, 'putaway')} href="#putaway" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Putaway</a>
                                         </div>
                                     </div>
 
@@ -451,6 +452,138 @@ export default function UserGuidePage() {
                                                     </ul>
                                                 </li>
                                             </ol>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Putaway */}
+                            <div id="putaway" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Box className="h-5 w-5" /> Putaway Operations</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Moving received goods from receiving areas to their designated storage locations quickly and efficiently.</p>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">What is Putaway?</h4>
+                                            <p className="text-sm text-muted-foreground mb-3">
+                                                After goods arrive via purchase orders and are received into a receiving location, putaway is the process of transferring them to optimal storage locations. The system recommends storage locations based on product velocity, zone priority, and location constraints.
+                                            </p>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Session-Based Workflow:</h4>
+                                            <p className="text-sm text-muted-foreground mb-3">
+                                                Putaway operates in sessions where workers are assigned multiple tasks to complete as a batch, optimizing travel time and efficiency.
+                                            </p>
+
+                                            <div className="bg-muted p-4 rounded-md text-sm">
+                                                <strong>Standard Putaway Flow:</strong>
+                                                <ol className="list-decimal pl-5 mt-2 space-y-2">
+                                                    <li>
+                                                        <strong>Start Session:</strong>
+                                                        <ul className="list-disc pl-5 mt-1 text-muted-foreground">
+                                                            <li>Navigate to <strong>Putaway</strong> page</li>
+                                                            <li>Select your warehouse</li>
+                                                            <li>Click <strong>Start Putaway Session</strong></li>
+                                                            <li>System scans receiving locations and creates tasks for all pending items</li>
+                                                        </ul>
+                                                    </li>
+                                                    <li>
+                                                        <strong>View Tasks:</strong>
+                                                        <ul className="list-disc pl-5 mt-1 text-muted-foreground">
+                                                            <li>See list of all putaway tasks in session</li>
+                                                            <li>Each task shows: Product, Quantity, Source (receiving location), Suggested destination</li>
+                                                            <li>Tasks are optimized by zone priority and product velocity</li>
+                                                        </ul>
+                                                    </li>
+                                                    <li>
+                                                        <strong>Execute Tasks:</strong>
+                                                        <ul className="list-disc pl-5 mt-1 text-muted-foreground">
+                                                            <li>Click <strong>Start</strong> on a task to begin</li>
+                                                            <li>System shows source location and suggested storage location</li>
+                                                            <li>Physical: Pick items from receiving, transport to storage location</li>
+                                                            <li>Click <strong>Confirm</strong> to complete the putaway</li>
+                                                            <li>Inventory automatically moves from receiving to st orage</li>
+                                                        </ul>
+                                                    </li>
+                                                    <li>
+                                                        <strong>Complete Session:</strong>
+                                                        <ul className="list-disc pl-5 mt-1 text-muted-foreground">
+                                                            <li>Continue until all tasks are completed</li>
+                                                            <li>Click <strong>Complete Session</strong> when done</li>
+                                                            <li>Session is finalized and new one can be started</li>
+                                                        </ul>
+                                                    </li>
+                                                </ol>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Smart Location Recommendations:</h4>
+                                            <p className="text-sm text-muted-foreground mb-3">
+                                                The system uses intelligent logic to suggest optimal storage locations:
+                                            </p>
+                                            <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                                                <li><strong>Zone Priority:</strong> Locations with lower priority numbers (golden zones) are preferred for fast-mo ving items</li>
+                                                <li><strong>Product Velocity:</strong> 'A' class (fast) products go to easily accessible zones</li>
+                                                <li><strong>Capacity Checking:</strong> System verifies location has sufficient space (volume/weight)</li>
+                                                <li><strong>Attribute Matching:</strong> Refrigerated products only suggested for refrigerated locations</li>
+                                                <li><strong>Existing Stock:</strong> Prefers consolidating same product in fewer locations</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Exception Handling:</h4>
+                                            <p className="text-sm text-muted-foreground mb-3">
+                                                Workers can report exceptions during putaway that require supervisor intervention:
+                                            </p>
+
+                                            <div className="space-y-3">
+                                                <div className="bg-red-50 p-3 rounded-md">
+                                                    <strong className="text-red-900">LOCATION_FULL</strong>
+                                                    <ul className="list-disc pl-5 text-sm text-muted-foreground mt-1">
+                                                        <li><strong>When:</strong> Suggested location doesn't have physical space</li>
+                                                        <li><strong>Action:</strong> Supervisor assigns alternative location</li>
+                                                        <li><strong>System:</strong> Updates task with new destination</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="bg-orange-50 p-3 rounded-md">
+                                                    <strong className="text-orange-900">DAMAGED</strong>
+                                                    <ul className="list-disc pl-5 text-sm text-muted-foreground mt-1">
+                                                        <li><strong>When:</strong> Items found damaged during putaway</li>
+                                                        <li><strong>Action:</strong> Specify damaged quantity, items moved to inspection/scrap</li>
+                                                        <li><strong>Tracking:</strong> Records loss for inventory accuracy</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="bg-yellow-50 p-3 rounded-md">
+                                                    <strong className="text-yellow-900">SHORT_RECEIPT</strong>
+                                                    <ul className="list-disc pl-5 text-sm text-muted-foreground mt-1">
+                                                        <li><strong>When:</strong> Physical quantity doesn't match expected</li>
+                                                        <li><strong>Action:</strong> Adjust task to actual quantity found</li>
+                                                        <li><strong>Resolution:</strong> Triggers receiving variance investigation</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Performance Metrics:</h4>
+                                            <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                                                <li><strong>Tasks per Session:</strong> Track worker productivity</li>
+                                                <li><strong>Average Time per Task:</strong> Identify bottlenecks</li>
+                                                <li><strong>Exception Rate:</strong> Monitor process quality</li>
+                                                <li><strong>Location Accuracy:</strong> Verify suggested locations are followed</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="bg-blue-50 p-4 rounded-md text-sm mt-4">
+                                            <strong className="text-blue-900">💡 Best Practice:</strong>
+                                            <p className="text-muted-foreground mt-1">
+                                                Complete putaway sessions within the same day as receiving. This keeps receiving locations clear, provides accurate stock data, and enables faster order fulfillment from organized storage locations.
+                                            </p>
                                         </div>
                                     </CardContent>
                                 </Card>
