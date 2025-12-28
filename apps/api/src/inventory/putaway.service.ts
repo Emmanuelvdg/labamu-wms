@@ -114,25 +114,39 @@ export class PutawayService {
         packagingType?: string
     ): Promise<boolean> {
         try {
-            // NOTE: Location still uses JSON for attributes (not a relation like Product/PutawayRule)
-            // Parse legacy location attributes JSON
-            const locationAttrs = location.attributes ? JSON.parse(location.attributes) : {};
+            // Phase 3B: Load location with dynamic attributes
+            const locationWithAttrs = await this.prisma.location.findUnique({
+                where: { id: location.id },
+                include: {
+                    dynamicAttributes: {
+                        include: {
+                            definition: true
+                        }
+                    }
+                }
+            });
+
+            if (!locationWithAttrs) return false;
 
             // Check storage requirements - location must have ALL required product attributes
             if (product.attributes && product.attributes.length > 0) {
-                const productAttrIds = product.attributes.map(attr => attr.attributeDefinitionId);
-                const locAttributes = locationAttrs.attributes || [];
+                const locationAttrIds = locationWithAttrs.dynamicAttributes.map(
+                    attr => attr.definitionId
+                );
+                const productAttrIds = product.attributes.map(
+                    attr => attr.attributeDefinitionId
+                );
 
-                // For now, compare using attribute names/keys from JSON
-                // TODO: Future enhancement - add LocationAttribute table for consistency
-                const hasAllAttributes = product.attributes.every(prodAttr => {
-                    // Check if location JSON has this attribute
-                    const attrKey = prodAttr.attributeDefinition?.name?.toLowerCase().replace(/ /g, '_');
-                    return locAttributes.includes(attrKey) || locationAttrs[attrKey] === true;
-                });
+                // Location must support ALL product attribute requirements
+                const hasAllAttributes = productAttrIds.every(reqId =>
+                    locationAttrIds.includes(reqId)
+                );
 
                 if (!hasAllAttributes) return false;
             }
+
+            // Parse legacy location attributes JSON for temperature and packaging
+            const locationAttrs = location.attributes ? JSON.parse(location.attributes) : {};
 
             // Check temperature compatibility
             if (product.temperatureMin !== null || product.temperatureMax !== null) {

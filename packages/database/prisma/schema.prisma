@@ -212,6 +212,9 @@ model Location {
   putawaySourceTasks PutawayTask[]         @relation("PutawaySource")
   putawayDestTasks   PutawayTask[]         @relation("PutawayDest")
   functionalAreas    WarehouseFunctionalArea[]
+  
+  // Phase 3B: Dynamic attributes (replacing JSON)
+  dynamicAttributes  LocationAttribute[]
 }
 
 model ProductPackaging {
@@ -393,6 +396,7 @@ model LocationAttributeDefinition {
   // Reverse relations for dynamic attributes
   putawayRuleAttributes  PutawayRuleAttribute[] @relation("PutawayRuleAttributes")
   productAttributes      ProductAttribute[]      @relation("ProductAttributes")
+  locationAttributes     LocationAttribute[]     @relation("LocationAttributes")
 }
 
 model PickingTask {
@@ -629,6 +633,21 @@ model ProductAttribute {
   createdAt              DateTime @default(now())
   
   @@unique([productId, attributeDefinitionId])
+}
+
+model LocationAttribute {
+  id                      String                      @id @default(uuid())
+  locationId             String
+  location               Location                    @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  
+  definitionId           String
+  definition             LocationAttributeDefinition @relation("LocationAttributes", fields: [definitionId], references: [id])
+  
+  value                  String?  // For future extensibility (temperature values, etc.)
+  
+  createdAt              DateTime @default(now())
+  
+  @@unique([locationId, definitionId])
 }
 
 // --- Inbound / Purchase Order Models ---
