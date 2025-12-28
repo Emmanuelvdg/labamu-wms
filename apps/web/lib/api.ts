@@ -44,7 +44,7 @@ export async function fetchInventory(filters?: {
     if (filters?.classification) params.append('classification', filters.classification);
     if (filters?.warehouseId) params.append('warehouseId', filters.warehouseId);
 
-    return fetchWithRetry(`${API_URL}/inventory/products?${params.toString()}`);
+    return fetchWithRetry(`/api/inventory/products?${params.toString()}`);
 }
 
 export async function getProduct(id: string) {
@@ -456,7 +456,7 @@ export async function createRule(routeId: string, data: any) {
 // --- Reporting ---
 
 export async function fetchAnalytics() {
-    return fetchWithRetry(`${API_URL}/reporting/analytics`);
+    return fetchWithRetry('/api/analytics');
 }
 
 export async function generateReport(type: string, period: string) {
