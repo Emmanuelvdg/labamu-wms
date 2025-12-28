@@ -22,31 +22,47 @@ export class InventoryService {
     ) { }
 
     async createProduct(data: any): Promise<Product> {
+        // Phase 4: Extract attribute IDs and create relations
+        const { attributeIds, packaging, ...productData } = data;
+
         const product = await this.prisma.product.create({
             data: {
-                sku: data.sku,
-                name: data.name,
-                category: data.category,
-                expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
-                classification: data.classification,
-                velocity: data.velocity,
-                type: data.type,
-                unitOfMeasure: data.unitOfMeasure,
-                averageCost: data.averageCost,
-                status: data.status,
-                tracking: data.tracking || 'none',
-                requiredAttributeId: data.requiredAttributeId,
+                sku: productData.sku,
+                name: productData.name,
+                category: productData.category,
+                expiryDate: productData.expiryDate ? new Date(productData.expiryDate) : null,
+                classification: productData.classification,
+                velocity: productData.velocity,
+                type: productData.type,
+                unitOfMeasure: productData.unitOfMeasure,
+                averageCost: productData.averageCost,
+                status: productData.status,
+                tracking: productData.tracking || 'none',
                 // Dimensions
-                width: data.width ? parseFloat(data.width) : undefined,
-                height: data.height ? parseFloat(data.height) : undefined,
-                depth: data.depth ? parseFloat(data.depth) : undefined,
-                weight: data.weight ? parseFloat(data.weight) : undefined,
+                width: productData.width ? parseFloat(productData.width) : undefined,
+                height: productData.height ? parseFloat(productData.height) : undefined,
+                depth: productData.depth ? parseFloat(productData.depth) : undefined,
+                weight: productData.weight ? parseFloat(productData.weight) : undefined,
+                // Create attribute relations
+                attributes: {
+                    create: attributeIds?.map((attrId: string) => ({
+                        attributeDefinitionId: attrId,
+                        value: 'true'
+                    })) || []
+                }
             },
+            include: {
+                attributes: {
+                    include: {
+                        attributeDefinition: true
+                    }
+                }
+            }
         });
 
         // Handle Packaging
-        if (data.packaging && Array.isArray(data.packaging)) {
-            for (const pkg of data.packaging) {
+        if (packaging && Array.isArray(packaging)) {
+            for (const pkg of packaging) {
                 await this.packagingService.createPackaging({
                     ...pkg,
                     productId: product.id,

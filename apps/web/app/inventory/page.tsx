@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchInventory, createProduct, fetchWarehouses } from '@/lib/api';
+import { fetchInventory, createProduct, fetchWarehouses, fetchAttributeDefinitions } from '@/lib/api';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 
@@ -11,6 +11,7 @@ export default function InventoryPage() {
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [attributes, setAttributes] = useState<any[]>([]); // Phase 4: Dynamic attributes
 
     // Filter State
     const [filters, setFilters] = useState({
@@ -30,12 +31,14 @@ export default function InventoryPage() {
         unitOfMeasure: 'Piece',
         averageCost: 0,
         status: 'Active',
-        tracking: 'none'
+        tracking: 'none',
+        attributeIds: [] as string[] // Phase 4: Use attribute IDs
     });
 
     useEffect(() => {
         load();
         loadWarehouses();
+        fetchAttributeDefinitions().then(setAttributes).catch(console.error); // Phase 4: Fetch attributes
     }, []);
 
 
@@ -101,7 +104,8 @@ export default function InventoryPage() {
                 unitOfMeasure: 'Piece',
                 averageCost: 0,
                 status: 'Active',
-                tracking: 'none'
+                tracking: 'none',
+                attributeIds: [] // Phase 4: Reset attribute IDs
             });
             alert('Product Created Successfully'); // Add feedback
         } catch (err) {
@@ -352,19 +356,31 @@ export default function InventoryPage() {
                                     </select>
                                 </div>
 
-                                {/* Storage Requirements */}
+                                {/* Storage Requirements - Phase 4: Dynamic Attributes */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Storage Requirement</label>
-                                    <select
-                                        className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
-                                        value={(newProduct as any).requiredAttributeId || ''}
-                                        onChange={(e) => setNewProduct({ ...newProduct, requiredAttributeId: e.target.value } as any)}
-                                    >
-                                        <option value="">None</option>
-                                        <option value="cold-storage">Cold Storage</option>
-                                        <option value="hazardous">Hazardous Area</option>
-                                        <option value="secure">Secure Storage</option>
-                                    </select>
+                                    <label className="block text-sm font-medium text-gray-700">Storage Requirements</label>
+                                    <div className="grid grid-cols-2 gap-2 mt-1 max-h-32 overflow-y-auto">
+                                        {attributes.map(attr => (
+                                            <label key={attr.id} className="flex items-center gap-2 text-sm">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={newProduct.attributeIds.includes(attr.id)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setNewProduct({ ...newProduct, attributeIds: [...newProduct.attributeIds, attr.id] });
+                                                        } else {
+                                                            setNewProduct({ ...newProduct, attributeIds: newProduct.attributeIds.filter(id => id !== attr.id) });
+                                                        }
+                                                    }}
+                                                    className="rounded border-gray-300 text-blue-600"
+                                                />
+                                                <span className="text-gray-700">{attr.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {attributes.length === 0 && (
+                                        <p className="text-xs text-gray-500 mt-1">Loading attributes...</p>
+                                    )}
                                 </div>
 
                                 {/* Packaging & Dimensions */}
