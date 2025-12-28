@@ -2,9 +2,9 @@ import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const allCookies = cookieStore.getAll();
-    const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ');
+    const cookieHeader = allCookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
 
     // Get query params from request URL
     const { searchParams } = new URL(request.url);
