@@ -193,7 +193,64 @@ apps/web/
     └── usePermission.ts
 ```
 
----
+### Important: API Proxy vs UI Routes
+
+You'll notice that `putaway` and `putaway-rules` appear in **two different locations** in the structure above. This is intentional and serves different purposes:
+
+#### 1. **API Proxy Routes** (`app/api/...`)
+These are **server-side** Next.js API routes that proxy requests to the NestJS backend. They do not render any UI.
+
+```
+app/api/inventory/putaway-rules/   ← Returns JSON (API proxy)
+app/api/inventory/putaway/sessions/ ← Returns JSON (API proxy)
+```
+
+**Purpose**:
+- Forward frontend requests from port 3000 → backend port 3001
+- Solve CORS issues (same-origin policy)
+- Handle authentication cookies seamlessly
+- Return raw JSON data to frontend components
+
+#### 2. **UI Page Routes** (`app/...`)
+These are **user-facing** pages that render React components and provide actual user interfaces.
+
+```
+app/inventory/putaway-rules/   ← Renders UI for managing rules
+app/putaway/                   ← Renders UI for putaway operations
+```
+
+**Purpose**:
+- Display forms, tables, buttons, and interactive elements
+- Handle user interactions
+- Call API proxy routes to fetch/update data
+
+#### Example Request Flow
+
+```
+1. User visits: http://localhost:3000/inventory/putaway-rules
+                ↓
+2. [UI Page Route renders React components]
+                ↓
+3. User clicks "Create Rule" button
+                ↓
+4. Frontend calls: fetch('/api/inventory/putaway-rules', { method: 'POST', ... })
+                ↓
+5. [API Proxy Route] receives request on same domain
+                ↓
+6. Proxy forwards to: http://127.0.0.1:3001/inventory/putaway-rules
+                ↓
+7. [NestJS Backend] processes request, returns JSON
+                ↓
+8. Proxy returns JSON to frontend
+                ↓
+9. UI updates with new data
+```
+
+**Why This Pattern?**
+
+In Next.js, you **cannot** call external APIs directly from browser JavaScript due to CORS (Cross-Origin Resource Sharing) restrictions. The `/api/*` routes run on the server-side within the Next.js application, allowing them to make backend calls without CORS issues. The frontend then calls these same-origin `/api/*` endpoints instead of directly calling the backend.
+
+
 
 ## API Structure
 
