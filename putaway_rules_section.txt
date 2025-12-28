@@ -1,0 +1,186 @@
+                            {/* Putaway Rules */}
+                            <div id="putaway-rules" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Settings className="h-5 w-5" /> Putaway Rules Management</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Define sophisticated, rule-based logic for automated putaway location selection using configurable matching criteria and selection strategies.</p>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">What are Putaway Rules?</h4>
+                                            <p className="text-sm text-muted-foreground mb-3">
+                                                Putaway Rules are user-defined configurations that automatically determine the optimal storage location for incoming goods based on product characteristics, storage requirements, and inventory strategies. Rules are evaluated in priority order, allowing you to create complex location assignment logic.
+                                            </p>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Accessing Putaway Rules:</h4>
+                                            <div className="bg-muted p-4 rounded-md text-sm">
+                                                <ol className="list-decimal pl-5 space-y-1">
+                                                    <li>Navigate to <strong>Inbound Operations → Putaway Rules</strong></li>
+                                                    <li>View all existing rules with their priority, strategy, and status</li>
+                                                    <li>Click <strong>Create Rule</strong> to define new putaway logic</li>
+                                                    <li>Edit existing rules by clicking the edit icon</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Rule Components:</h4>
+                                            
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <strong className="text-sm">1. Basic Information</strong>
+                                                    <ul className="list-disc pl-5 text-sm text-muted-foreground mt-1 space-y-0.5">
+                                                        <li><strong>Name:</strong> Descriptive identifier for the rule</li>
+                                                        <li><strong>Description:</strong> Explains when and why this rule applies</li>
+                                                        <li><strong>Priority:</strong> Numeric value (higher = evaluated first). Critical for rule precedence</li>
+                                                        <li><strong>Warehouse Scope:</strong> Apply to specific warehouse or globally</li>
+                                                        <li><strong>Active Status:</strong> Enable/disable rule without deletion</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div>
+                                                    <strong className="text-sm">2. Matching Criteria (When to Apply)</strong>
+                                                    <p className="text-xs text-muted-foreground mt-1 mb-2">Define which products this rule matches. Rules match when ALL specified criteria are met.</p>
+                                                    <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-0.5">
+                                                        <li><strong>Specific Product:</strong> Target individual SKU</li>
+                                                        <li><strong>Product Category:</strong> Apply to all products in category</li>
+                                                        <li><strong>Velocity Class:</strong> A (Fast), B (Medium), C (Slow-moving)</li>
+                                                        <li><strong>ABC Classification:</strong> A (High value), B (Medium), C (Low value)</li>
+                                                        <li><strong>Storage Requirements:</strong> refrigerated, climate_controlled, hazmat_certified, fragile, heavy_duty, ground_floor, dry, frozen</li>
+                                                        <li><strong>Temperature Range:</strong> Min/Max temperature constraints (°C)</li>
+                                                        <li><strong>Packaging Size:</strong> INDIVIDUAL, BOX, or PALLET</li>
+                                                        <li><strong>Weight Range:</strong> Min/Max weight filters (kg)</li>
+                                                        <li><strong>Source Location:</strong> Apply only when items come from specific receiving area</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div>
+                                                    <strong className="text-sm">3. Destination Strategy (Where to Put)</strong>
+                                                    <p className="text-xs text-muted-foreground mt-1 mb-2">How should the system select the storage location?</p>
+                                                    
+                                                    <div className="space-y-2">
+                                                        <div className="bg-blue-50 p-2 rounded">
+                                                            <strong className="text-blue-900 text-xs">📍 FIXED Location</strong>
+                                                            <ul className="list-disc pl-5 text-xs text-muted-foreground mt-1">
+                                                                <li>Always assigns to a specific location</li>
+                                                                <li>Use for dedicated storage zones</li>
+                                                                <li>Configuration: Select exact destination location</li>
+                                                            </ul>
+                                                        </div>
+
+                                                        <div className="bg-purple-50 p-2 rounded">
+                                                            <strong className="text-purple-900 text-xs">🎯 ZONE_PRIORITY</strong>
+                                                            <ul className="list-disc pl-5 text-xs text-muted-foreground mt-1">
+                                                                <li>Selects from zone priority range</li>
+                                                                <li>Ideal for flexible golden zone assignment</li>
+                                                                <li>Configuration: Set min/max zone priority (e.g., 1-20 for golden zones)</li>
+                                                            </ul>
+                                                        </div>
+
+                                                        <div className="bg-green-50 p-2 rounded">
+                                                            <strong className="text-green-900 text-xs">📏 CLOSEST</strong>
+                                                            <ul className="list-disc pl-5 text-xs text-muted-foreground mt-1">
+                                                                <li>Minimizes travel distance from receiving</li>
+                                                                <li>Calculates distance to each eligible location</li>
+                                                                <li>Best for high-volume, fast putaway operations</li>
+                                                            </ul>
+                                                        </div>
+
+                                                        <div className="bg-yellow-50 p-2 rounded">
+                                                            <strong className="text-yellow-900 text-xs">⚖️ LEAST_OCCUPIED</strong>
+                                                            <ul className="list-disc pl-5 text-xs text-muted-foreground mt-1">
+                                                                <li>Balances utilization across locations</li>
+                                                                <li>Prevents hotspot congestion</li>
+                                                                <li>Maximizes available capacity</li>
+                                                            </ul>
+                                                        </div>
+
+                                                        <div className="bg-orange-50 p-2 rounded">
+                                                            <strong className="text-orange-900 text-xs">🎲 BALANCED</strong>
+                                                            <ul className="list-disc pl-5 text-xs text-muted-foreground mt-1">
+                                                                <li>Random distribution within eligible locations</li>
+                                                                <li>Prevents worker clustering</li>
+                                                                <li>Improves concurrent putaway performance</li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Rule Evaluation Logic:</h4>
+                                            <div className="bg-gray-50 p-4 rounded-md space-y-2 text-sm">
+                                                <p><strong>When putaway location is needed:</strong></p>
+                                                <ol className="list-decimal pl-5 space-y-1 text-muted-foreground">
+                                                    <li>System retrieves all <strong>active</strong> rules for the warehouse</li>
+                                                    <li>Rules are sorted by <strong>priority descending</strong> (highest first)</li>
+                                                    <li>Each rule's matching criteria is evaluated against the product</li>
+                                                    <li><strong>First matching rule</strong> determines the strategy to use</li>
+                                                    <li>Strategy is applied to find candidate locations</li>
+                                                    <li>Location capacity, attributes, and compatibility are validated</li>
+                                                    <li>Best location is returned based on strategy algorithm</li>
+                                                    <li>If no rules match → fallback to velocity-based heuristic</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Common Rule Patterns:</h4>
+                                            
+                                            <div className="space-y-3">
+                                                <div className="bg-blue-50 p-3 rounded">
+                                                    <strong className="text-blue-900 text-sm">Example 1: Fast-Moving Items to Golden Zone</strong>
+                                                    <ul className="list-disc pl-5 text-xs text-muted-foreground mt-1">
+                                                        <li><strong>Priority:</strong> 150</li>
+                                                        <li><strong>Match:</strong> Velocity Class = A</li>
+                                                        <li><strong>Strategy:</strong> ZONE_PRIORITY (1-20)</li>
+                                                        <li><strong>Result:</strong> All fast-moving products go to easily accessible zones</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="bg-green-50 p-3 rounded">
+                                                    <strong className="text-green-900 text-sm">Example 2: Refrigerated Products</strong>
+                                                    <ul className="list-disc pl-5 text-xs text-muted-foreground mt-1">
+                                                        <li><strong>Priority:</strong> 200 (higher = evaluated first)</li>
+                                                        <li><strong>Match:</strong> Storage Requirement = refrigerated, Temperature 2-8°C</li>
+                                                        <li><strong>Strategy:</strong> FIXED → Cold Storage Room A</li>
+                                                        <li><strong>Result:</strong> Temperature-sensitive items always go to climate-controlled area</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="bg-purple-50 p-3 rounded">
+                                                    <strong className="text-purple-900 text-sm">Example 3: Heavy Pallets</strong>
+                                                    <ul className="list-disc pl-5 text-xs text-muted-foreground mt-1">
+                                                        <li><strong>Priority:</strong> 120</li>
+                                                        <li><strong>Match:</strong> Packaging = PALLET, Min Weight = 500kg</li>
+                                                        <li><strong>Strategy:</strong> LEAST_OCCUPIED</li>
+                                                        <li><strong>Result:</strong> Distributes heavy items across ground-floor locations to balance load</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Best Practices:</h4>
+                                            <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                                                <li><strong>Assign Clear Priorities:</strong> Use priority ranges (100-199 for category rules, 200+ for product-specific rules)</li>
+                                                <li><strong>Start General, Get Specific:</strong> Create broad rules first, then add exceptions</li>
+                                                <li><strong>Test Before Activating:</strong> Create rules as inactive, verify logic, then enable</li>
+                                                <li><strong>Monitor Rule Usage:</strong> Check which rules are being applied most frequently</li>
+                                                <li><strong>Keep Descriptions Clear:</strong> Document the business reason for each rule</li>
+                                                <li><strong>Avoid Rule Conflicts:</strong> Ensure higher priority rules don't make lower ones unreachable</li>
+                                                <li><strong>Regular Review:</strong> Audit rules quarterly as inventory mix changes</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="bg-blue-50 p-4 rounded-md text-sm mt-4">
+                                            <strong className="text-blue-900">💡 Pro Tip:</strong>
+                                            <p className="text-muted-foreground mt-1">
+                                                Combine multiple matching criteria to create highly targeted rules. For example: "Fast-moving (A) + Refrigerated + From Dock 3" creates a very specific rule that won't interfere with other putaway logic.
+                                            </p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>

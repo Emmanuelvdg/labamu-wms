@@ -17,6 +17,7 @@ import { AuthModule } from './auth/auth.module';
 import { StoModule } from './sto/sto.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { WarehouseModule } from './warehouse/warehouse.module';
+import { PutawayModule } from './inventory/putaway.module';
 
 import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
 import { PrismaService } from './prisma.service';
@@ -39,6 +40,7 @@ import { PrismaService } from './prisma.service';
         StoModule,
         ShippingModule,
         WarehouseModule,
+        PutawayModule,
     ],
     controllers: [DeliveryMethodsController],
     providers: [PrismaService],

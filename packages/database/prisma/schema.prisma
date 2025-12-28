@@ -31,6 +31,16 @@ model Product {
   velocity       String?   @default("C") // A, B, C (Fast, Medium, Slow)
   abcClass       String?   // A, B, C (Cost based)
 
+  // ===  PHASE 2: Enhanced Putaway - Storage Requirements  ===
+  storageRequirements String? // JSON: ["refrigerated", "climate_controlled", "hazmat", "fragile"]
+  temperatureMin      Float?  // °C - minimum storage temperature required
+  temperatureMax      Float?  // °C - maximum storage temperature required
+  
+  // === PHASE 2: Enhanced Putaway - Packaging Preferences ===
+  preferredPackaging  String? // PALLET, BOX, INDIVIDUAL
+  stackable           Boolean @default(true)
+  maxStackHeight      Int?    // Maximum number of units to stack
+
   supplierId           String?
   inventory            ProductInventory[] // Aggregate view
   batches              InventoryBatch[] // Detailed view
@@ -46,6 +56,7 @@ model Product {
   stockMoves           StockMove[]
   packaging            ProductPackaging[]
   pickingTasks         PickingTask[]
+  putawayTasks         PutawayTask[]
   TransferOrderItem    TransferOrderItem[]
   receiptItems         ReceiptItem[]
 
@@ -105,6 +116,8 @@ model Warehouse {
   orders             Order[]
   transferDestOrders Order[]            @relation("OrderDestination")
   pickingSessions    PickingSession[]
+  putawaySessions    PutawaySession[]
+  putawayRules       PutawayRule[] // Phase 2
 
   users            User[]
   fulfillmentRules FulfillmentRule[]
@@ -186,6 +199,7 @@ model Location {
   scrapOrders        ScrapOrder[]
   putawayRules       PutawayRule[]
   sourcePutawayRules PutawayRule[]         @relation("PutawaySource")
+  putawayDestinationRules PutawayRule[]    @relation("PutawayDest") // Phase 2
   reorderingRules    ReorderingRule[]
   sourceRules        Rule[]                @relation("SourceLocation")
   destRules          Rule[]                @relation("DestLocation")
@@ -194,6 +208,8 @@ model Location {
   sourceMoves        StockMove[]           @relation("MoveSource")
   destMoves          StockMove[]           @relation("MoveDest")
   pickingTasks       PickingTask[]
+  putawaySourceTasks PutawayTask[]         @relation("PutawaySource")
+  putawayDestTasks   PutawayTask[]         @relation("PutawayDest")
   functionalAreas    WarehouseFunctionalArea[]
 }
 
@@ -392,6 +408,49 @@ model PickingTask {
   updatedAt        DateTime       @updatedAt
 }
 
+model PutawaySession {
+  id          String        @id @default(uuid())
+  warehouseId String
+  warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
+  status      String        @default("PLANNED") // PLANNED, ASSIGNED, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED
+  workerId    String?       // Link to User (optional)
+  worker      User?         @relation(fields: [workerId], references: [id])
+  tasks       PutawayTask[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model PutawayTask {
+  id                    String         @id @default(uuid())
+  sessionId             String
+  session               PutawaySession @relation(fields: [sessionId], references: [id])
+  receiptId             String
+  receipt               Receipt        @relation(fields: [receiptId], references: [id])
+  productId             String
+  product               Product        @relation(fields: [productId], references: [id])
+  sourceLocationId      String         // Receiving/Staging location
+  sourceLocation        Location       @relation("PutawaySource", fields: [sourceLocationId], references: [id])
+  destinationLocationId String         // Recommended storage location
+  destinationLocation   Location       @relation("PutawayDest", fields: [destinationLocationId], references: [id])
+  quantity              Int
+  putawayQuantity       Int            @default(0)
+  status                String         @default("PENDING") // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, BLOCKED, FAILED
+  
+  // Exception tracking
+  exceptionType             String?  // LOCATION_FULL, DAMAGED, SHORT_RECEIPT, OVERAGE, WRONG_PRODUCT, OTHER
+  exceptionReason           String?  // Detailed description
+  originalQuantity          Int?     // Track original before adjustments
+  actualQuantity            Int?     // Actual quantity if different
+  alternativeLocationId     String?  // If redirected
+  requiresSupervisorReview  Boolean  @default(false)
+  resolvedBy                String?  // User ID who resolved
+  resolvedAt                DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
 model ReservationStrategy {
   id     String  @id @default(uuid())
   name   String  @unique // FIFO, FEFO, Location
@@ -469,15 +528,68 @@ model ReorderingRule {
 
 model PutawayRule {
   id               String    @id @default(uuid())
+  name             String    // Human-readable rule name
+  description      String?
+  
+  // =========================
+  // MATCHING CRITERIA (What products/scenarios this rule applies to)
+  // =========================
+  
+  // Product Filters
   productId        String?
   product          Product?  @relation(fields: [productId], references: [id])
-  categoryId       String? // Optional: Apply to entire category
-  locationId       String
-  location         Location  @relation(fields: [locationId], references: [id])
-  sourceLocationId String? // Optional: Only apply if arriving at this location
+  categoryId       String?   // Optional: Apply to entire category
+  
+  // === PHASE 2: Velocity & Classification Matching ===
+  velocityClass    String?   // A, B, C (fast/medium/slow moving)
+  abcClass         String?   // A, B, C (cost-based classification)
+  
+  // === PHASE 2: Storage Requirements Matching ===
+  requiredAttributes String? // JSON: ["refrigerated", "climate_controlled", "hazmat"]
+  temperatureMin   Float?    // °C - location must support this range
+  temperatureMax   Float?    // °C
+  
+  // === PHASE 2: Packaging Size Filtering ===
+  minPackagingSize String?   // INDIVIDUAL, BOX, PALLET
+  maxPackagingSize String?
+  
+  // === PHASE 2: Weight Filtering ===
+  minWeight        Float?    // kg - rule applies if total weight >= this
+  maxWeight        Float?    // kg - rule applies if total weight <= this
+  
+  // Source Location Filter
+  sourceLocationId String?   // Only apply if coming from this location
   sourceLocation   Location? @relation("PutawaySource", fields: [sourceLocationId], references: [id])
-  priority         Int       @default(0)
+  
+  // =========================
+  // DESTINATION STRATEGY (How to select target location)
+  // =========================
+  
+  // === PHASE 2: Selection Strategy ===
+  strategy         String    // FIXED, ZONE_PRIORITY, CLOSEST, LEAST_OCCUPIED, BALANCED
+  
+  // For FIXED strategy
+  destinationLocationId String?
+  destinationLocation   Location? @relation("PutawayDest", fields: [destinationLocationId], references: [id])
+  
+  // For ZONE_PRIORITY strategy
+  preferredZonePriorityMin Int?  // e.g., 1 (golden zone)
+  preferredZonePriorityMax Int?  // e.g., 20
+  
+  // Warehouse Scoping
+  warehouseId      String?   // Rule applies only to this warehouse (null = all warehouses)
+  warehouse        Warehouse? @relation(fields: [warehouseId], references: [id])
+  
+  // Legacy field (keeping for backwards compatibility)
+  locationId       String?   // Old field - use destinationLocationId instead
+  location         Location?  @relation(fields: [locationId], references: [id])
+  
+  // Rule Metadata
+  priority         Int       @default(0)  // Higher = checked first
   active           Boolean   @default(true)
+  
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }
 
 // --- Inbound / Purchase Order Models ---
@@ -553,7 +665,8 @@ model Receipt {
   destinationLocationId String
   destinationLocation   Location      @relation(fields: [destinationLocationId], references: [id])
 
-  items ReceiptItem[]
+  items        ReceiptItem[]
+  putawayTasks PutawayTask[]
 
   // Link to Invoice (optional, for 3-way match)
   invoiceId String?
@@ -621,6 +734,7 @@ model User {
   initiatedTransfers TransferOrder[]  @relation("TransferInitiator")
   approvedTransfers  TransferOrder[]  @relation("TransferApprover")
   pickingSessions    PickingSession[]
+  putawaySessions    PutawaySession[]
 }
 
 model Customer {

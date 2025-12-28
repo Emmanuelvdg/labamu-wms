@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Actually, fetchWithRetry uses API_URL. We should probably just use fetchWithRetry.
             // But wait, fetchWithRetry might throw if 401.
 
-            const res = await fetch(`${API_URL}/auth/me`, {
+            const res = await fetch(`/api/auth/me`, {
                 headers: { 'x-user-id': userId }
             });
 

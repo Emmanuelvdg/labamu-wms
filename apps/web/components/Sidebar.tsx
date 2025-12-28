@@ -31,6 +31,7 @@ const navigation: NavSection[] = [
             { name: 'Suppliers', href: '/inventory/suppliers' },
             { name: 'Purchase Orders', href: '/inventory/purchases' },
             { name: 'Putaway', href: '/putaway' },
+            { name: 'Putaway Rules', href: '/inventory/putaway-rules' },
         ]
     },
     {
@@ -79,6 +80,7 @@ export default function Sidebar() {
 
         // Putaway
         if (item.href === '/putaway') return hasPermission('INVENTORY', 'UPDATE');
+        if (item.href === '/inventory/putaway-rules') return hasPermission('INVENTORY', 'UPDATE');
 
         // Invoices
         if (item.href === '/invoices') return hasPermission('INVOICES', 'READ');

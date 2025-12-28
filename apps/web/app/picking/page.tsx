@@ -12,12 +12,16 @@ import {
 } from 'lucide-react';
 
 import { createPickingBatch, createPickingCluster, createPickingWave, fetchWarehouses } from '@/lib/api';
+import ExceptionModal from './exception-modal';
 
 export default function PickingPage() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
     const [activeSession, setActiveSession] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [exceptionModal, setExceptionModal] = useState<{ isOpen: boolean; task: any | null }>({ isOpen: false, task: null });
+    const [exceptionReason, setExceptionReason] = useState('');
+    const [exceptionQuantity, setExceptionQuantity] = useState('0');
 
     useEffect(() => {
         loadWarehouses();
@@ -91,15 +95,22 @@ export default function PickingPage() {
         }
     };
 
-    const handleException = async (task: any) => {
-        const reason = prompt('Enter exception reason (e.g., Damaged, Missing):');
-        if (!reason) return;
+    const handleException = (task: any) => {
+        setExceptionModal({ isOpen: true, task });
+        setExceptionReason('');
+        setExceptionQuantity('0');
+    };
 
-        const qtyStr = prompt(`Enter quantity actually picked (Max ${task.quantity}):`, '0');
-        const pickedQty = parseInt(qtyStr || '0');
+    const submitException = async () => {
+        const task = exceptionModal.task;
+        if (!task || !exceptionReason.trim()) {
+            alert('Please enter an exception reason');
+            return;
+        }
 
+        const pickedQty = parseInt(exceptionQuantity);
         if (isNaN(pickedQty) || pickedQty < 0 || pickedQty > task.quantity) {
-            alert('Invalid quantity');
+            alert(`Invalid quantity. Must be between 0 and ${task.quantity}`);
             return;
         }
 
@@ -108,8 +119,9 @@ export default function PickingPage() {
             await updatePickingTask(task.id, {
                 pickedQuantity: pickedQty,
                 status: pickedQty === 0 ? 'FAILED' : 'PARTIALLY_PICKED',
-                exceptionReason: reason
+                exceptionReason: exceptionReason.trim()
             });
+            setExceptionModal({ isOpen: false, task: null });
             checkActiveSession();
         } catch (error) {
             console.error('Failed to report exception:', error);
@@ -305,6 +317,17 @@ export default function PickingPage() {
                     </div>
                 </div>
             )}
+
+            <ExceptionModal
+                isOpen={exceptionModal.isOpen}
+                task={exceptionModal.task}
+                exceptionReason={exceptionReason}
+                exceptionQuantity={exceptionQuantity}
+                onReasonChange={setExceptionReason}
+                onQuantityChange={setExceptionQuantity}
+                onSubmit={submitException}
+                onClose={() => setExceptionModal({ isOpen: false, task: null })}
+            />
         </div>
     );
 }

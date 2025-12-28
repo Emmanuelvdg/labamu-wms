@@ -218,15 +218,55 @@ export class InventoryController {
         return this.inventoryService.moveLocation(id, data.newParentId);
     }
 
+
     @Post('putaway-rules')
-    createPutawayRule(@Body() data: { productId?: string; categoryId?: string; locationId: string; sourceLocationId?: string; priority: number }) {
+    @RequirePermission('PUTAWAY_RULES', 'CREATE')
+    createPutawayRule(@Body() data: {
+        name: string;
+        description?: string;
+        productId?: string;
+        categoryId?: string;
+        locationId?: string;
+        destinationLocationId?: string;
+        sourceLocationId?: string;
+        strategy: string;
+        priority: number;
+        warehouseId?: string;
+    }) {
         return this.inventoryService.createPutawayRule(data);
     }
 
     @Get('putaway-rules')
+    @RequirePermission('PUTAWAY_RULES', 'READ')
     getPutawayRules() {
         return this.inventoryService.getPutawayRules();
     }
+
+    @Put('putaway-rules/:id')
+    @RequirePermission('PUTAWAY_RULES', 'UPDATE')
+    updatePutawayRule(@Param('id') id: string, @Body() data: any) {
+        return this.inventoryService.updatePutawayRule(id, data);
+    }
+
+    @Delete('putaway-rules/:id')
+    @RequirePermission('PUTAWAY_RULES', 'DELETE')
+    deletePutawayRule(@Param('id') id: string) {
+        return this.inventoryService.deletePutawayRule(id);
+    }
+
+    @Post('putaway-rules/test')
+    @RequirePermission('PUTAWAY_RULES', 'READ')
+    async testPutawayRule(@Body() data: {
+        productId: string;
+        quantity: number;
+        warehouseId: string;
+        sourceLocationId?: string;
+        packagingType?: string;
+    }) {
+        const result = await this.inventoryService.testPutawayRule(data);
+        return result;
+    }
+
 
     @Post('products/:id/packaging')
     createProductPackaging(@Param('id') id: string, @Body() data: any) {

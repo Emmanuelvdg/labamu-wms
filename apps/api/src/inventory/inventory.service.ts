@@ -1139,24 +1139,130 @@ export class InventoryService {
         });
     }
 
-    async createPutawayRule(data: { productId?: string; categoryId?: string; locationId: string; sourceLocationId?: string; priority: number }) {
+    async createPutawayRule(data: {
+        name: string;
+        description?: string;
+        productId?: string;
+        categoryId?: string;
+        locationId?: string;
+        destinationLocationId?: string;
+        sourceLocationId?: string;
+        strategy: string;
+        priority: number;
+        warehouseId?: string;
+    }) {
         return this.prisma.putawayRule.create({
             data: {
+                name: data.name,
+                description: data.description,
                 productId: data.productId,
                 categoryId: data.categoryId,
-                locationId: data.locationId,
+                locationId: data.locationId, // Legacy field
+                destinationLocationId: data.destinationLocationId, // Phase 2 field
                 sourceLocationId: data.sourceLocationId,
+                strategy: data.strategy,
                 priority: data.priority,
+                warehouseId: data.warehouseId,
             },
         });
     }
 
     async getPutawayRules() {
         return this.prisma.putawayRule.findMany({
-            include: { product: true, location: true, sourceLocation: true },
+            include: {
+                product: true,
+                location: true,
+                sourceLocation: true,
+                destinationLocation: true,
+                warehouse: true,
+            },
             orderBy: { priority: 'desc' },
         });
     }
+
+    async updatePutawayRule(id: string, data: any) {
+        return this.prisma.putawayRule.update({
+            where: { id },
+            data: {
+                name: data.name,
+                description: data.description,
+                productId: data.productId,
+                categoryId: data.categoryId,
+                velocityClass: data.velocityClass,
+                abcClass: data.abcClass,
+                requiredAttributes: data.requiredAttributes,
+                temperatureMin: data.temperatureMin,
+                temperatureMax: data.temperatureMax,
+                minPackagingSize: data.minPackagingSize,
+                maxPackagingSize: data.maxPackagingSize,
+                minWeight: data.minWeight,
+                maxWeight: data.maxWeight,
+                sourceLocationId: data.sourceLocationId,
+                strategy: data.strategy,
+                destinationLocationId: data.destinationLocationId,
+                preferredZonePriorityMin: data.preferredZonePriorityMin,
+                preferredZonePriorityMax: data.preferredZonePriorityMax,
+                warehouseId: data.warehouseId,
+                priority: data.priority,
+                active: data.active,
+            },
+        });
+    }
+
+    async deletePutawayRule(id: string) {
+        return this.prisma.putawayRule.delete({
+            where: { id },
+        });
+    }
+
+    async testPutawayRule(data: {
+        productId: string;
+        quantity: number;
+        warehouseId: string;
+        sourceLocationId?: string;
+        packagingType?: string;
+    }) {
+        // Import PutawayService to use findBestLocation
+        const putawayService = new (await import('./putaway.service')).PutawayService(this.prisma);
+
+        const bestLocation = await putawayService.findBestLocation(
+            data.productId,
+            data.quantity,
+            data.warehouseId,
+            data.sourceLocationId,
+            data.packagingType
+        );
+
+        // Get product details
+        const product = await this.prisma.product.findUnique({
+            where: { id: data.productId },
+        });
+
+        // Get matching rules for context
+        const matchingRules = await this.prisma.putawayRule.findMany({
+            where: {
+                active: true,
+                warehouseId: { in: [data.warehouseId, null] },
+                OR: [
+                    { productId: data.productId },
+                    { categoryId: product?.category },
+                    { velocityClass: product?.velocity },
+                    { abcClass: product?.abcClass },
+                    { AND: [{ productId: null }, { categoryId: null }] },
+                ],
+            },
+            orderBy: { priority: 'desc' },
+            take: 5, // Top 5 matching rules
+        });
+
+        return {
+            selectedLocation: bestLocation,
+            product,
+            matchingRules,
+            testParameters: data,
+        };
+    }
+
 
     async applyPutawayStrategy(productId: string, currentLocationId?: string, quantity?: number): Promise<string | null> {
         const product = await this.prisma.product.findUnique({ where: { id: productId } });
