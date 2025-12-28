@@ -6,9 +6,14 @@ export async function GET() {
     const allCookies = cookieStore.getAll();
     const cookieHeader = allCookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
 
+    // Extract user_id from cookies for x-user-id header
+    const userIdCookie = allCookies.find((c: any) => c.name === 'user_id');
+    const userId = userIdCookie?.value || '';
+
     const response = await fetch(`${API_URL}/analytics`, {
         headers: {
             'Cookie': cookieHeader,
+            'x-user-id': userId,
         },
     });
 

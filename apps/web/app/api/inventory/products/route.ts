@@ -6,6 +6,10 @@ export async function GET(request: Request) {
     const allCookies = cookieStore.getAll();
     const cookieHeader = allCookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
 
+    // Extract user_id from cookies for x-user-id header
+    const userIdCookie = allCookies.find((c: any) => c.name === 'user_id');
+    const userId = userIdCookie?.value || '';
+
     // Get query params from request URL
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
@@ -15,6 +19,7 @@ export async function GET(request: Request) {
         {
             headers: {
                 'Cookie': cookieHeader,
+                'x-user-id': userId,
             },
         }
     );
