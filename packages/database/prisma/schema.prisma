@@ -31,10 +31,10 @@ model Product {
   velocity       String?   @default("C") // A, B, C (Fast, Medium, Slow)
   abcClass       String?   // A, B, C (Cost based)
 
-  // ===  PHASE 2: Enhanced Putaway - Storage Requirements  ===
-  storageRequirements String? // JSON: ["refrigerated", "climate_controlled", "hazmat", "fragile"]
-  temperatureMin      Float?  // °C - minimum storage temperature required
-  temperatureMax      Float?  // °C - maximum storage temperature required
+  // ===  PHASE 3: Enhanced Putaway - Storage Requirements - NOW DYNAMIC  ===
+  // Removed: storageRequirements String? - replaced by attributes relation (ProductAttribute)
+  temperatureMin      Float?  // °C - minimum storage temperature required (kept for direct temp ranges)
+  temperatureMax      Float?  // °C - maximum storage temperature required (kept for direct temp ranges)
   
   // === PHASE 2: Enhanced Putaway - Packaging Preferences ===
   preferredPackaging  String? // PALLET, BOX, INDIVIDUAL
@@ -64,6 +64,7 @@ model Product {
   requiredAttributeId String?
   requiredAttribute   LocationAttributeDefinition? @relation(fields: [requiredAttributeId], references: [id])
   rotationRules       RotationRule[]
+  attributes          ProductAttribute[]
 }
 
 model Route {
@@ -388,6 +389,10 @@ model LocationAttributeDefinition {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   Product   Product[]
+  
+  // Reverse relations for dynamic attributes
+  putawayRuleAttributes  PutawayRuleAttribute[] @relation("PutawayRuleAttributes")
+  productAttributes      ProductAttribute[]      @relation("ProductAttributes")
 }
 
 model PickingTask {
@@ -544,10 +549,11 @@ model PutawayRule {
   velocityClass    String?   // A, B, C (fast/medium/slow moving)
   abcClass         String?   // A, B, C (cost-based classification)
   
-  // === PHASE 2: Storage Requirements Matching ===
-  requiredAttributes String? // JSON: ["refrigerated", "climate_controlled", "hazmat"]
-  temperatureMin   Float?    // °C - location must support this range
-  temperatureMax   Float?    // °C
+  
+  // === PHASE 3: Storage Requirements - NOW DYNAMIC via PutawayRuleAttribute ===
+  // Removed: requiredAttributes String? - replaced by requiredAttributes relation
+  // Removed: temperatureMin/Max - can be implemented via LocationAttribute if needed
+  
   
   // === PHASE 2: Packaging Size Filtering ===
   minPackagingSize String?   // INDIVIDUAL, BOX, PALLET
@@ -590,6 +596,39 @@ model PutawayRule {
   
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  
+  // Relations
+  requiredAttributes PutawayRuleAttribute[]
+}
+
+model PutawayRuleAttribute {
+  id                      String                      @id @default(uuid())
+  putawayRuleId          String
+  putawayRule            PutawayRule                 @relation(fields: [putawayRuleId], references: [id], onDelete: Cascade)
+  
+  attributeDefinitionId  String
+  attributeDefinition    LocationAttributeDefinition @relation("PutawayRuleAttributes", fields: [attributeDefinitionId], references: [id])
+  
+  requiredValue          String?  // For boolean: "true", for select: specific option
+  
+  createdAt              DateTime @default(now())
+  
+  @@unique([putawayRuleId, attributeDefinitionId])
+}
+
+model ProductAttribute {
+  id                      String                      @id @default(uuid())
+  productId              String
+  product                Product                     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  attributeDefinitionId  String
+  attributeDefinition    LocationAttributeDefinition @relation("ProductAttributes", fields: [attributeDefinitionId], references: [id])
+  
+  value                  String?  // Attribute value (for select types, or "true" for boolean)
+  
+  createdAt              DateTime @default(now())
+  
+  @@unique([productId, attributeDefinitionId])
 }
 
 // --- Inbound / Purchase Order Models ---
