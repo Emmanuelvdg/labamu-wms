@@ -14,7 +14,7 @@ export class PutawayService {
         category?: string;
         velocity?: string;
         abcClass?: string;
-        storageRequirements?: string; // JSON string
+        productAttributeIds?: string[]; // IDs of product's attributes
         packagingType?: string;
         totalWeight?: number;
         sourceLocationId?: string;
@@ -58,26 +58,32 @@ export class PutawayService {
                     }
                 ]
             },
-            orderBy: { priority: 'desc' }
+            orderBy: { priority: 'desc' },
+            // Load required attributes for matching
+            include: {
+                requiredAttributes: {
+                    include: {
+                        attributeDefinition: true
+                    }
+                }
+            }
         });
 
-        // Additional client-side filtering for JSON fields and packaging
+        // Filter rules based on attribute requirements
         return rules.filter(rule => {
-            // Storage requirements matching
-            if (rule.requiredAttributes && params.storageRequirements) {
-                try {
-                    const ruleAttrs = JSON.parse(rule.requiredAttributes);
-                    const productAttrs = JSON.parse(params.storageRequirements);
-
-                    // Product must have ALL required attributes from the rule
-                    const hasAllRequired = ruleAttrs.every((req: string) =>
-                        productAttrs.includes(req)
-                    );
-                    if (!hasAllRequired) return false;
-                } catch (e) {
-                    // If JSON parsing fails, skip this rule
+            // Storage requirements matching - check if product has ALL required attributes
+            if (rule.requiredAttributes && rule.requiredAttributes.length > 0) {
+                if (!params.productAttributeIds || params.productAttributeIds.length === 0) {
+                    // Product has no attributes but rule requires them
                     return false;
                 }
+
+                // Check if product has ALL required attributes from rule
+                const hasAllRequired = rule.requiredAttributes.every(reqAttr =>
+                    params.productAttributeIds.includes(reqAttr.attributeDefinitionId)
+                );
+
+                if (!hasAllRequired) return false;
             }
 
             // Packaging size matching
@@ -108,20 +114,34 @@ export class PutawayService {
         packagingType?: string
     ): Promise<boolean> {
         try {
-            // Parse location attributes
-            const locationAttrs = location.attributes ? JSON.parse(location.attributes) : {};
+            // Load location's attributes dynamically
+            const locationWithAttrs = await this.prisma.location.findUnique({
+                where: { id: location.id },
+                include: {
+                    attributes: {
+                        include: {
+                            definition: true
+                        }
+                    }
+                }
+            });
 
-            // Check storage requirements
-            if (product.storageRequirements) {
-                const productReqs = JSON.parse(product.storageRequirements);
-                const locAttrs = locationAttrs.attributes || [];
+            if (!locationWithAttrs) return false;
 
-                // Location must support ALL product requirements
-                const hasAllAttributes = productReqs.every((req: string) =>
-                    locAttrs.includes(req)
+            // Check storage requirements - location must have ALL required product attributes
+            if (product.attributes && product.attributes.length > 0) {
+                const locationAttrIds = locationWithAttrs.attributes.map(attr => attr.definitionId);
+                const productAttrIds = product.attributes.map(attr => attr.attributeDefinitionId);
+
+                // Location must support ALL product attribute requirements
+                const hasAllAttributes = productAttrIds.every(reqId =>
+                    locationAttrIds.includes(reqId)
                 );
                 if (!hasAllAttributes) return false;
             }
+
+            // Parse legacy location attributes JSON for temperature and packaging
+            const locationAttrs = location.attributes ? JSON.parse(location.attributes) : {};
 
             // Check temperature compatibility
             if (product.temperatureMin !== null || product.temperatureMax !== null) {
@@ -219,14 +239,24 @@ export class PutawayService {
         sourceLocationId?: string,
         packagingType?: string
     ) {
-        // 1. Get Product Details with Phase 2 fields
+        // 1. Get Product Details with Phase 3 dynamic attributes
         const product = await this.prisma.product.findUnique({
-            where: { id: productId }
+            where: { id: productId },
+            include: {
+                attributes: {
+                    include: {
+                        attributeDefinition: true
+                    }
+                }
+            }
         });
 
         if (!product) throw new Error('Product not found');
 
         const totalWeight = product.weight ? product.weight * quantity : 0;
+
+        // Extract attribute definition IDs from product
+        const productAttributeIds = product.attributes.map(attr => attr.attributeDefinitionId);
 
         // 2. Find matching putaway rules
         const matchingRules = await this.findMatchingPutawayRules({
@@ -234,7 +264,7 @@ export class PutawayService {
             category: product.category,
             velocity: product.velocity,
             abcClass: product.abcClass,
-            storageRequirements: product.storageRequirements,
+            productAttributeIds, // Pass attribute IDs instead of JSON
             packagingType,
             totalWeight,
             sourceLocationId,
