@@ -1151,19 +1151,44 @@ export class InventoryService {
         priority: number;
         warehouseId?: string;
     }) {
+        // Phase 4: Extract attribute IDs and create relations
+        const { requiredAttributeIds, ...ruleData } = data as any;
+
         return this.prisma.putawayRule.create({
             data: {
-                name: data.name,
-                description: data.description,
-                productId: data.productId,
-                categoryId: data.categoryId,
-                locationId: data.locationId, // Legacy field
-                destinationLocationId: data.destinationLocationId, // Phase 2 field
-                sourceLocationId: data.sourceLocationId,
-                strategy: data.strategy,
-                priority: data.priority,
-                warehouseId: data.warehouseId,
+                name: ruleData.name,
+                description: ruleData.description,
+                productId: ruleData.productId,
+                categoryId: ruleData.categoryId,
+                locationId: ruleData.locationId, // Legacy field
+                destinationLocationId: ruleData.destinationLocationId, // Phase 2 field
+                sourceLocationId: ruleData.sourceLocationId,
+                strategy: ruleData.strategy,
+                priority: ruleData.priority,
+                warehouseId: ruleData.warehouseId,
+                active: ruleData.active ?? true,
+                velocityClass: ruleData.velocityClass,
+                abcClass: ruleData.abcClass,
+                minPackagingSize: ruleData.minPackagingSize,
+                maxPackagingSize: ruleData.maxPackagingSize,
+                minWeight: ruleData.minWeight,
+                maxWeight: ruleData.maxWeight,
+                preferredZonePriorityMin: ruleData.preferredZonePriorityMin,
+                preferredZonePriorityMax: ruleData.preferredZonePriorityMax,
+                // Create attribute relations
+                requiredAttributes: {
+                    create: requiredAttributeIds?.map((attrId: string) => ({
+                        attributeDefinitionId: attrId
+                    })) || []
+                }
             },
+            include: {
+                requiredAttributes: {
+                    include: {
+                        attributeDefinition: true
+                    }
+                }
+            }
         });
     }
 

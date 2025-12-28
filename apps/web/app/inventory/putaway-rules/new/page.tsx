@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Save, TestTube } from 'lucide-react';
+import { fetchAttributeDefinitions } from '@/lib/api';
 
 const STRATEGIES = [
     { value: 'FIXED', label: 'Fixed Location', icon: '📍', description: 'Always send to a specific location' },
@@ -13,16 +14,6 @@ const STRATEGIES = [
 ];
 
 const PACKAGING_SIZES = ['INDIVIDUAL', 'BOX', 'PALLET'];
-const STORAGE_ATTRIBUTES = [
-    'refrigerated',
-    'climate_controlled',
-    'hazmat_certified',
-    'fragile',
-    'heavy_duty',
-    'ground_floor',
-    'dry',
-    'frozen',
-];
 
 export default function NewPutawayRulePage() {
     const router = useRouter();
@@ -41,9 +32,7 @@ export default function NewPutawayRulePage() {
         categoryId: '',
         velocityClass: '',
         abcClass: '',
-        requiredAttributes: [] as string[],
-        temperatureMin: '',
-        temperatureMax: '',
+        requiredAttributeIds: [] as string[], // Phase 4: Use attribute IDs
         minPackagingSize: '',
         maxPackagingSize: '',
         minWeight: '',
@@ -60,10 +49,12 @@ export default function NewPutawayRulePage() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
     const [locations, setLocations] = useState<any[]>([]);
+    const [attributes, setAttributes] = useState<any[]>([]); // Phase 4: Dynamic attributes
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         fetchData();
+        fetchAttributeDefinitions().then(setAttributes).catch(console.error); // Phase 4: Fetch attributes
         if (duplicateId) {
             duplicateRule(duplicateId);
         }
@@ -97,7 +88,7 @@ export default function NewPutawayRulePage() {
                 setFormData({
                     ...rule,
                     name: `${rule.name} (Copy)`,
-                    requiredAttributes: rule.requiredAttributes ? JSON.parse(rule.requiredAttributes) : [],
+                    requiredAttributeIds: rule.requiredAttributes?.map((ra: any) => ra.attributeDefinitionId) || [],
                 });
             }
         } catch (error) {
@@ -112,11 +103,7 @@ export default function NewPutawayRulePage() {
         try {
             const payload = {
                 ...formData,
-                requiredAttributes: formData.requiredAttributes.length > 0
-                    ? JSON.stringify(formData.requiredAttributes)
-                    : null,
-                temperatureMin: formData.temperatureMin ? parseFloat(formData.temperatureMin) : null,
-                temperatureMax: formData.temperatureMax ? parseFloat(formData.temperatureMax) : null,
+                requiredAttributeIds: formData.requiredAttributeIds, // Phase 4: Send attribute IDs
                 minWeight: formData.minWeight ? parseFloat(formData.minWeight) : null,
                 maxWeight: formData.maxWeight ? parseFloat(formData.maxWeight) : null,
                 preferredZonePriorityMin: formData.preferredZonePriorityMin ? parseInt(formData.preferredZonePriorityMin) : null,
@@ -152,12 +139,12 @@ export default function NewPutawayRulePage() {
         }
     }
 
-    function toggleAttribute(attr: string) {
+    function toggleAttributeId(attrId: string) {
         setFormData(prev => ({
             ...prev,
-            requiredAttributes: prev.requiredAttributes.includes(attr)
-                ? prev.requiredAttributes.filter(a => a !== attr)
-                : [...prev.requiredAttributes, attr]
+            requiredAttributeIds: prev.requiredAttributeIds.includes(attrId)
+                ? prev.requiredAttributeIds.filter(id => id !== attrId)
+                : [...prev.requiredAttributeIds, attrId]
         }));
     }
 
@@ -315,49 +302,25 @@ export default function NewPutawayRulePage() {
                             </div>
                         </div>
 
-                        {/* Storage Requirements */}
+                        {/* Storage Requirements - Phase 4: Dynamic Attributes */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Storage Requirements</label>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                {STORAGE_ATTRIBUTES.map(attr => (
-                                    <label key={attr} className="flex items-center gap-2">
+                                {attributes.map(attr => (
+                                    <label key={attr.id} className="flex items-center gap-2">
                                         <input
                                             type="checkbox"
-                                            checked={formData.requiredAttributes.includes(attr)}
-                                            onChange={() => toggleAttribute(attr)}
+                                            checked={formData.requiredAttributeIds.includes(attr.id)}
+                                            onChange={() => toggleAttributeId(attr.id)}
                                             className="rounded border-gray-300 text-blue-600"
                                         />
-                                        <span className="text-sm text-gray-700">{attr}</span>
+                                        <span className="text-sm text-gray-700">{attr.name}</span>
                                     </label>
                                 ))}
                             </div>
-                        </div>
-
-                        {/* Temperature Range */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Min Temperature (°C)</label>
-                                <input
-                                    type="number"
-                                    step="0.1"
-                                    value={formData.temperatureMin}
-                                    onChange={(e) => setFormData({ ...formData, temperatureMin: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., 2"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Max Temperature (°C)</label>
-                                <input
-                                    type="number"
-                                    step="0.1"
-                                    value={formData.temperatureMax}
-                                    onChange={(e) => setFormData({ ...formData, temperatureMax: e.target.value })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., 8"
-                                />
-                            </div>
+                            {attributes.length === 0 && (
+                                <p className="text-sm text-gray-500 mt-2">Loading attributes...</p>
+                            )}
                         </div>
 
                         {/* Packaging & Weight */}
@@ -451,8 +414,8 @@ export default function NewPutawayRulePage() {
                                     <label
                                         key={strategy.value}
                                         className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.strategy === strategy.value
-                                                ? 'border-blue-500 bg-blue-50'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-blue-500 bg-blue-50'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         <input
