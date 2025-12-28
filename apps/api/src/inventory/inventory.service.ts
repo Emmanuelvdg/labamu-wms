@@ -1190,9 +1190,8 @@ export class InventoryService {
                 categoryId: data.categoryId,
                 velocityClass: data.velocityClass,
                 abcClass: data.abcClass,
-                requiredAttributes: data.requiredAttributes,
-                temperatureMin: data.temperatureMin,
-                temperatureMax: data.temperatureMax,
+                // requiredAttributes: removed - now use PutawayRuleAttribute relation
+                // temperatureMin/Max: removed from schema
                 minPackagingSize: data.minPackagingSize,
                 maxPackagingSize: data.maxPackagingSize,
                 minWeight: data.minWeight,
