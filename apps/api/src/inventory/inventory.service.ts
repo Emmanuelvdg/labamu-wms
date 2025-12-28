@@ -1214,6 +1214,13 @@ export class InventoryService {
         });
     }
 
+    // Phase 4: Get all attribute definitions for frontend forms
+    async getAttributeDefinitions() {
+        return this.prisma.locationAttributeDefinition.findMany({
+            orderBy: { name: 'asc' }
+        });
+    }
+
     async testPutawayRule(data: {
         productId: string;
         quantity: number;

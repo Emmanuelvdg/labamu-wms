@@ -408,6 +408,11 @@ export async function fetchPutawayRules() {
     return fetchWithRetry(`${API_URL}/inventory/putaway-rules`);
 }
 
+// Phase 4: Fetch attribute definitions for dynamic forms
+export async function fetchAttributeDefinitions() {
+    return fetchWithRetry('/api/inventory/attributes/definitions');
+}
+
 export async function createPackage(data: any) {
     return fetchWithRetry(`${API_URL}/inventory/packages`, {
         method: 'POST',

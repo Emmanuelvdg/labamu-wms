@@ -242,6 +242,12 @@ export class InventoryController {
         return this.inventoryService.getPutawayRules();
     }
 
+    @Get('attributes/definitions')
+    @RequirePermission('PUTAWAY_RULES', 'READ')
+    getAttributeDefinitions() {
+        return this.inventoryService.getAttributeDefinitions();
+    }
+
     @Put('putaway-rules/:id')
     @RequirePermission('PUTAWAY_RULES', 'UPDATE')
     updatePutawayRule(@Param('id') id: string, @Body() data: any) {
