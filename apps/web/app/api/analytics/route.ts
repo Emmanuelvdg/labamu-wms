@@ -10,7 +10,7 @@ export async function GET() {
     const userIdCookie = allCookies.find((c: any) => c.name === 'user_id');
     const userId = userIdCookie?.value || '';
 
-    const response = await fetch(`${API_URL}/analytics`, {
+    const response = await fetch(`${API_URL}/reporting/analytics`, {
         headers: {
             'Cookie': cookieHeader,
             'x-user-id': userId,
