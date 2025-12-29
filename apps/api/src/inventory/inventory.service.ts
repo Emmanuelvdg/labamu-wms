@@ -7,6 +7,7 @@ import * as path from 'path';
 
 import { PackagingService } from './packaging.service';
 import { PutawayService } from './putaway.service';
+import { getRequiredAreaTypes, AREA_TYPE_LABELS } from '../warehouse/area-types';
 
 @Injectable()
 export class InventoryService {
@@ -241,7 +242,49 @@ export class InventoryService {
                 data: { warehouseId: warehouse.id },
             });
 
-            // 5. Generate Routes based on configuration
+            // 5. **NEW**: Auto-Create Functional Areas and Linked Locations
+            const requiredAreaTypes = getRequiredAreaTypes({
+                incomingSteps: data.incomingSteps as any,
+                outgoingSteps: data.outgoingSteps as any,
+            });
+
+            console.log(`✨ Creating functional areas for warehouse ${data.name}:`, requiredAreaTypes);
+
+            for (const [index, areaType] of requiredAreaTypes.entries()) {
+                // Create INTERNAL location for this functional area
+                const areaLocation = await tx.location.create({
+                    data: {
+                        name: AREA_TYPE_LABELS[areaType] || areaType,
+                        parentId: viewLocation.id,
+                        type: 'INTERNAL',
+                        warehouseId: warehouse.id,
+                        structuralType: 'ROOM', // Functional areas are room-level
+                        zonePriority: areaType === 'STORAGE' ? 50 : 100, // Storage gets medium priority
+                        putawaySequence: index,
+                    }
+                });
+
+                // Create WarehouseFunctionalArea linked to the location
+                await tx.warehouseFunctionalArea.create({
+                    data: {
+                        warehouseId: warehouse.id,
+                        name: AREA_TYPE_LABELS[areaType] || areaType,
+                        areaType: areaType,
+                        linkedLocationId: areaLocation.id,
+                        sequence: index,
+                        active: true,
+                        x: 100 + index * 220, // Basic layout positioning
+                        y: 100,
+                        width: 200,
+                        height: 150,
+                        rotation: 0,
+                    }
+                });
+
+                console.log(`  ✓ Created ${areaType} area with location: ${areaLocation.name}`);
+            }
+
+            // 6. Generate Routes based on configuration (legacy support)
 
             // Helper to create a route and its rules
             const createRouteWithRules = async (name: string, rules: any[]) => {
@@ -321,6 +364,8 @@ export class InventoryService {
                     { action: 'PULL', sourceLocationId: stockLocation.id, destinationLocationId: null }
                 ]);
             }
+
+            console.log(`✅ Warehouse ${data.name} created with ${requiredAreaTypes.length} functional areas`);
 
             return warehouse;
         });

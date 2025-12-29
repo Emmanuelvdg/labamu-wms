@@ -546,8 +546,34 @@ export class PutawayService {
         const receivingLocationIds = await this.getReceivingLocationIds(warehouseId);
 
         if (receivingLocationIds.length === 0) {
+            // Get warehouse name for better error context
+            const warehouse = await this.prisma.warehouse.findUnique({
+                where: { id: warehouseId },
+                select: { name: true }
+            });
+
             throw new HttpException(
-                'No receiving/staging areas found. Configure WarehouseFunctionalArea or name locations with "Receiving"/"Staging"',
+                {
+                    message: `No receiving or staging areas found for warehouse "${warehouse?.name || warehouseId}"`,
+                    error: 'MISSING_RECEIVING_LOCATIONS',
+                    details: {
+                        warehouseId,
+                        warehouseName: warehouse?.name || 'Unknown',
+                        receivingLocationsFound: 0,
+                        explanation: 'Putaway operations require designated receiving or staging locations where inbound inventory arrives before being stored.'
+                    },
+                    remediation: {
+                        steps: [
+                            '1. Navigate to Inventory > Locations',
+                            '2. Click "New Location" to create a receiving area',
+                            '3. Set the location type to "INTERNAL"',
+                            '4. Name it "Receiving Dock A" or "Staging Area" (must include "Receiving" or "Staging" in the name)',
+                            '5. Select your warehouse as the parent',
+                            '6. Alternatively, configure WarehouseFunctionalArea entries with areaType "RECEIVING" or "STAGING"'
+                        ],
+                        quickFix: 'Create at least one INTERNAL location with "Receiving" or "Staging" in its name'
+                    }
+                },
                 HttpStatus.BAD_REQUEST
             );
         }
@@ -571,7 +597,35 @@ export class PutawayService {
         });
 
         if (receipts.length === 0) {
-            throw new HttpException('No items available for putaway', HttpStatus.NOT_FOUND);
+            const warehouse = await this.prisma.warehouse.findUnique({
+                where: { id: warehouseId },
+                select: { name: true }
+            });
+
+            throw new HttpException(
+                {
+                    message: `No items available for putaway in warehouse "${warehouse?.name || warehouseId}"`,
+                    error: 'NO_PUTAWAY_ITEMS',
+                    details: {
+                        warehouseId,
+                        warehouseName: warehouse?.name || 'Unknown',
+                        receivingLocationsChecked: receivingLocationIds.length,
+                        receiptsFound: 0,
+                        explanation: 'No recent receipts found at receiving/staging locations. Items must be received before they can be put away.'
+                    },
+                    remediation: {
+                        steps: [
+                            '1. Navigate to Purchase Orders',
+                            '2. Create and confirm a purchase order',
+                            '3. Navigate to Procurement > Receive Products',
+                            '4. Select the purchase order and receive items to a receiving/staging location',
+                            '5. Return to Putaway and create a new session'
+                        ],
+                        quickFix: 'Receive a purchase order to a receiving or staging location first'
+                    }
+                },
+                HttpStatus.NOT_FOUND
+            );
         }
 
         // Create session

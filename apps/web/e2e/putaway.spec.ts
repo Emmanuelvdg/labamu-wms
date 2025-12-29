@@ -38,13 +38,12 @@ test.describe('Putaway Operations E2E Tests', () => {
         console.log('✓ Created warehouse:', warehouseId);
     });
 
-    test('Setup: Create Receiving Location', async ({ request }) => {
+    test('Setup: Create Receiving Location (REQUIRED FOR PUTAWAY)', async ({ request }) => {
         const response = await request.post('http://localhost:3001/inventory/locations', {
             data: {
                 name: 'RECEIVING-DOCK-A',
                 warehouseId,
-                type: 'VENDOR', // This is key for putaway to find it
-                barcode: 'RCV-DOCK-A',
+                type: 'INTERNAL', // Must be INTERNAL, not VENDOR
                 maxWeight: 5000,
                 maxVolume: 100
             }

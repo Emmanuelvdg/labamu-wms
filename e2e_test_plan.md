@@ -16,6 +16,10 @@ This document outlines the End-to-End (E2E) test scenarios for the Labamu IMS ap
 - [ ] **Scenario 2.1: Create a Warehouse**
     - **Action**: Use API or UI (if available) to create a new warehouse "E2E Warehouse".
     - **Expected**: Warehouse appears in lists and dropdowns.
+- [ ] **Scenario 2.1b: Create Receiving Location (REQUIRED FOR PUTAWAY)**
+    - **Action**: Navigate to `/inventory/locations`, create location named "Receiving Dock A", type: INTERNAL, parent: E2E Warehouse
+    - **Expected**: Location appears in list. This is required for putaway operations.
+    - **Note**: Receiving locations must be type INTERNAL with "Receiving" or "Staging" in the name, OR linked via WarehouseFunctionalArea.
 - [ ] **Scenario 2.2: Create a Product**
     - **Action**: Navigate to `/inventory`, click "+ New Item", fill form (SKU: `E2E-PROD-001`, Name: `E2E Test Product`, Tracking: `none`), submit.
     - **Expected**: Product appears in the inventory list.

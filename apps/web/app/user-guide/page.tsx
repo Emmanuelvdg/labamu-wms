@@ -285,11 +285,51 @@ export default function UserGuidePage() {
                                             <li><strong>Picking Strategy:</strong> Set the default strategy for this warehouse (FIFO, FEFO, or User Selected).</li>
                                             <li><strong>Resupply Rules:</strong> Configure if this warehouse restocks from another warehouse (STO) or from Suppliers (PO).</li>
                                         </ul>
+
+                                        <div className="border-t pt-4 mt-4">
+                                            <h4 className="font-medium mb-2">Workflow Configuration:</h4>
+                                            <p className="text-sm text-muted-foreground mb-3">
+                                                Each warehouse can be configured with different inbound and outbound workflows to match your operational reality:
+                                            </p>
+                                            <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                                                <li><strong>Inbound Steps:</strong> 1-step (direct-to-storage), 2-steps (receiving + staging), 3-steps (receiving + staging + quality)</li>
+                                                <li><strong>Outbound Steps:</strong> 1-step (pick to ship), 2-steps (pick + pack), 3-steps (pick + pack + staging)</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="bg-blue-50 p-4 rounded-md text-sm">
+                                            <strong className="text-blue-900">✨ Automatic Setup</strong>
+                                            <p className="text-muted-foreground mt-2 mb-3">
+                                                When you create a warehouse, the system automatically creates functional areas and locations based on your workflow configuration:
+                                            </p>
+                                            <div className="space-y-2 text-xs">
+                                                <div className="flex items-start gap-2">
+                                                    <span className="bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-medium min-w-[80px]">1-step</span>
+                                                    <span className="text-muted-foreground">Receiving Dock, Main Storage, Shipping Dock</span>
+                                                </div>
+                                                <div className="flex items-start gap-2">
+                                                    <span className="bg-purple-100 text-purple-900 px-2 py-0.5 rounded font-medium min-w-[80px]">2-steps</span>
+                                                    <span className="text-muted-foreground">Receiving Dock, Staging Area, Main Storage, Picking Zone, Shipping Dock</span>
+                                                </div>
+                                                <div className="flex items-start gap-2">
+                                                    <span className="bg-green-100 text-green-900 px-2 py-0.5 rounded font-medium min-w-[80px]">3-steps</span>
+                                                    <span className="text-muted-foreground">Receiving Dock, Staging Area, Putaway Lane, Main Storage, Picking Zone, Packing Station, Shipping Dock</span>
+                                                </div>
+                                            </div>
+                                            <p className="text-muted-foreground mt-3">
+                                                ✓ Each area gets a functional area entry with explicit type classification<br />
+                                                ✓ Linked INTERNAL locations are created automatically<br />
+                                                ✓ Warehouse is immediately operational for putaway and picking
+                                            </p>
+                                        </div>
+
                                         <div className="bg-muted p-4 rounded-md text-sm">
                                             <strong>How to Use:</strong>
                                             <ol className="list-decimal pl-5 mt-1 space-y-1">
                                                 <li>Go to <strong>Settings &rarr; Warehouses</strong>.</li>
                                                 <li>Create a Warehouse for each physical address.</li>
+                                                <li>Select inbound/outbound workflow steps (1, 2, or 3 steps).</li>
+                                                <li>System automatically creates functional areas and locations.</li>
                                                 <li>Assign <strong>Users</strong> to the warehouse to restrict their access/visibility.</li>
                                             </ol>
                                         </div>

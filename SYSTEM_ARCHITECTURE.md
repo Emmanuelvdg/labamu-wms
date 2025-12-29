@@ -496,6 +496,60 @@ Warehouse {
 }
 ```
 
+#### WarehouseFunctionalArea (Auto-Created)
+```typescript
+WarehouseFunctionalArea {
+  id: string (UUID)
+  warehouseId: string
+  warehouse: Warehouse
+  
+  // Area Definition
+  name: string              // e.g. "Receiving Dock", "Main Storage"
+  areaType: string          // RECEIVING, STAGING, PUTAWAY_LANE, STORAGE, PICKING, PACKING, SHIPPING
+  sequence: int             // Order in process flow
+  active: boolean
+  
+  // Linked Location
+  linkedLocationId: string?
+  linkedLocation: Location?  // The actual INTERNAL location for this functional area
+  
+  // Floor Plan Visualization
+  x: float                  // Position coordinates
+  y: float
+  width: float
+  height: float
+  rotation: float
+  color: string?            // Hex color for UI display
+  
+  attributes: string?       // JSON: capacity, equipment, etc.
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+```
+
+**Automatic Functional Area Creation**
+
+When a warehouse is created, the system automatically creates functional areas and their linked locations based on the `incomingSteps` and `outgoingSteps` configuration:
+
+| Configuration | Auto-Created Functional Areas | Linked Locations Created |
+|---------------|-------------------------------|-------------------------|
+| **1-step** (Default) | RECEIVING, STORAGE, SHIPPING | "Receiving Dock", "Main Storage", "Shipping Dock" |
+| **2-steps** | RECEIVING, STAGING, STORAGE, PICKING, SHIPPING | "Receiving Dock", "Staging Area", "Main Storage", "Picking Zone", "Shipping Dock" |
+| **3-steps** | RECEIVING, STAGING, PUTAWAY_LANE, STORAGE, PICKING, PACKING, SHIPPING | "Receiving Dock", "Staging Area", "Putaway Lane", "Main Storage", "Picking Zone", "Packing Station", "Shipping Dock" |
+
+Each functional area:
+- Gets a `WarehouseFunctionalArea` entry with explicit `areaType`
+- Has a linked INTERNAL `Location` created automatically
+- Is positioned on the warehouse floor plan for visualization
+- Is identified by `areaType` enum (not name-based string matching)
+
+**Benefits:**
+1. **No Manual Setup Required**: Warehouses are immediately operational for putaway/picking
+2. **Correct by Default**: Receiving locations always exist, preventing putaway errors
+3. **Explicit Typing**: Uses `areaType` enum instead of fragile name matching
+4. **Flexible**: Users can add more locations or functional areas later
+5. **Process-Aligned**: Locations match the configured warehouse flow
+
 #### PutawayRule (Phase 2 & 3)
 ```typescript
 PutawayRule {

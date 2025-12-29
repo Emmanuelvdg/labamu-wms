@@ -26,6 +26,7 @@ export default function PutawayPage() {
     const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
     const [activeSession, setActiveSession] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<any>(null);
     const [exceptionModal, setExceptionModal] = useState<{ isOpen: boolean; task: any | null }>({ isOpen: false, task: null });
 
     useEffect(() => {
@@ -67,6 +68,7 @@ export default function PutawayPage() {
         }
 
         setLoading(true);
+        setError(null);
         try {
             const session = await createPutawaySession({
                 warehouseId: selectedWarehouseId
@@ -74,7 +76,10 @@ export default function PutawayPage() {
             setActiveSession(session);
         } catch (error: any) {
             console.error('Failed to start session:', error);
-            alert(error.message || 'Failed to start putaway session. Ensure there are items in receiving.');
+
+            // Extract detailed error information from response
+            const errorData = error.response?.data || error;
+            setError(errorData);
         } finally {
             setLoading(false);
         }
@@ -147,6 +152,61 @@ export default function PutawayPage() {
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Putaway Operations</h1>
                 <p className="text-gray-600">Store incoming inventory in optimal warehouse locations</p>
             </div>
+
+            {/* Error Display */}
+            {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+                    <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-red-900 mb-2">
+                                {error.message || 'Error Starting Putaway Session'}
+                            </h3>
+
+                            {error.details && (
+                                <div className="mb-4">
+                                    <p className="text-sm text-red-800 mb-2">{error.details.explanation}</p>
+                                    {error.details.warehouseName && (
+                                        <p className="text-sm text-red-700">
+                                            <strong>Warehouse:</strong> {error.details.warehouseName}
+                                        </p>
+                                    )}
+                                    {error.details.receivingLocationsFound !== undefined && (
+                                        <p className="text-sm text-red-700">
+                                            <strong>Receiving Locations Found:</strong> {error.details.receivingLocationsFound}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {error.remediation && (
+                                <div className="bg-white rounded-md p-4 border border-red-100">
+                                    <h4 className="font-semibold text-red-900 mb-2">How to Fix:</h4>
+                                    {error.remediation.quickFix && (
+                                        <p className="text-sm text-red-800 mb-3 font-medium">
+                                            ✓ {error.remediation.quickFix}
+                                        </p>
+                                    )}
+                                    {error.remediation.steps && (
+                                        <ol className="list-decimal list-inside space-y-1 text-sm text-red-800">
+                                            {error.remediation.steps.map((step: string, idx: number) => (
+                                                <li key={idx}>{step.replace(/^\d+\.\s*/, '')}</li>
+                                            ))}
+                                        </ol>
+                                    )}
+                                </div>
+                            )}
+
+                            <button
+                                onClick={() => setError(null)}
+                                className="mt-4 text-sm text-red-600 hover:text-red-800 font-medium"
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {!activeSession ? (
                 <div className="bg-white rounded-lg shadow p-6">

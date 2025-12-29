@@ -111,6 +111,17 @@ model Warehouse {
   manufactureSteps       String? // "1_step", "2_steps", "3_steps"
   buyToResupply          Boolean @default(false)
 
+  // Floor Plan Configuration
+  floorPlanShape     String? @default("rectangle") // "rectangle", "u_shape", "l_shape", "custom"
+  floorPlanVertices  String? // JSON array of {x, y} points in meters
+  floorPlanWidth     Float?  @default(50.0) // Bounding box width in meters
+  floorPlanHeight    Float?  @default(30.0) // Bounding box height in meters
+  
+  // Grid Settings
+  gridEnabled        Boolean @default(true)
+  gridSize           Float   @default(1.0) // Grid square size in meters
+  snapToGrid         Boolean @default(true)
+
   inventory          ProductInventory[]
   batches            InventoryBatch[]
   pickingStrategies  PickingStrategy[]

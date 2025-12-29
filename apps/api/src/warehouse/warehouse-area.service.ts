@@ -30,6 +30,16 @@ export interface UpdateAreaDto {
     sequence?: number;
 }
 
+export interface UpdateFloorPlanDto {
+    shape?: 'rectangle' | 'u_shape' | 'l_shape' | 'custom';
+    vertices?: Array<{ x: number, y: number }>;
+    width?: number;
+    height?: number;
+    gridEnabled?: boolean;
+    gridSize?: number;
+    snapToGrid?: boolean;
+}
+
 export interface LayoutTemplate {
     type: 'I' | 'U' | 'L';
     areas: Partial<CreateAreaDto>[];
@@ -251,5 +261,48 @@ export class WarehouseAreaService {
         });
 
         return areas;
+    }
+
+    async updateFloorPlan(warehouseId: string, data: UpdateFloorPlanDto) {
+        const updateData: any = {};
+
+        if (data.shape !== undefined) {
+            updateData.floorPlanShape = data.shape;
+        }
+        if (data.vertices !== undefined) {
+            // Store as JSON string
+            updateData.floorPlanVertices = JSON.stringify(data.vertices);
+        }
+        if (data.width !== undefined) {
+            updateData.floorPlanWidth = data.width;
+        }
+        if (data.height !== undefined) {
+            updateData.floorPlanHeight = data.height;
+        }
+        if (data.gridEnabled !== undefined) {
+            updateData.gridEnabled = data.gridEnabled;
+        }
+        if (data.gridSize !== undefined) {
+            updateData.gridSize = data.gridSize;
+        }
+        if (data.snapToGrid !== undefined) {
+            updateData.snapToGrid = data.snapToGrid;
+        }
+
+        return this.prisma.warehouse.update({
+            where: { id: warehouseId },
+            data: updateData,
+            select: {
+                id: true,
+                name: true,
+                floorPlanShape: true,
+                floorPlanVertices: true,
+                floorPlanWidth: true,
+                floorPlanHeight: true,
+                gridEnabled: true,
+                gridSize: true,
+                snapToGrid: true
+            }
+        });
     }
 }

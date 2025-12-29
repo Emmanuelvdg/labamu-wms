@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
-import { WarehouseAreaService, CreateAreaDto, UpdateAreaDto } from './warehouse-area.service';
+import { Controller, Get, Post, Put, Delete, Patch, Param, Body } from '@nestjs/common';
+import { WarehouseAreaService, CreateAreaDto, UpdateAreaDto, UpdateFloorPlanDto } from './warehouse-area.service';
 
 @Controller('warehouses')
 export class WarehouseAreaController {
@@ -42,5 +42,13 @@ export class WarehouseAreaController {
     @Delete(':warehouseId/areas/:areaId')
     async deleteArea(@Param('areaId') areaId: string) {
         return this.warehouseAreaService.deleteArea(areaId);
+    }
+
+    @Patch(':id/floor-plan')
+    async updateFloorPlan(
+        @Param('id') warehouseId: string,
+        @Body() data: UpdateFloorPlanDto
+    ) {
+        return this.warehouseAreaService.updateFloorPlan(warehouseId, data);
     }
 }
