@@ -1,5 +1,18 @@
-// Floor Plan Helper Functions
+M// Floor Plan Helper Functions
 // Copy these functions into your floor-plan/page.tsx file after the renderResizeHandles function
+
+export interface FunctionalArea {
+    id: string;
+    name: string;
+    areaType: string;
+    x: number;  // in meters
+    y: number;  // in meters
+    width: number;  // in meters
+    height: number;  // in meters
+    rotation: number;
+    color?: string;
+    sequence: number;
+}
 
 /**
  * Calculate center-to-center distance between two areas in meters

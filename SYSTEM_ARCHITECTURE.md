@@ -151,7 +151,7 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 | **WarehouseModule** | Warehouse configuration, locations, functional areas | `WarehouseService` |
 | **SettingsModule** | Attributes, custom fields, system configuration | `AttributeService` |
 | **AuthModule** | Authentication, user management, permissions | `AuthService` |
-| **ReportingModule** | Analytics, dashboards, compliance reports | `ReportingService` |
+| **ReportingModule** | Analytics, dashboards, compliance reports, inventory ledger | `ReportingService`, `DrillDownService`, `InventoryLedgerService` |
 | **IntegrationModule** | External system integrations, webhooks | `IntegrationService` |
 | **StoModule** | Stock Transfer Orders (inter-warehouse) | `StoService` |
 | **ShippingModule** | Carrier management, delivery methods | `ShippingService` |
@@ -671,6 +671,18 @@ StockTransaction {
   notes: string?
   timestamp: DateTime
 }
+
+#### InventoryLedger (Virtual)
+The Inventory Ledger is a derived view that unifies all inventory movements into a linear history for reporting. It does not have its own database table but aggregates data from:
+1. **Receipts** (Inbound) - From `ReceiptItem`
+2. **Orders** (Outbound) - From `Order` and `OrderItem`
+3. **InventoryAdjustments** (Corrections)
+4. **ScrapOrders** (Losses)
+
+This virtual model enables:
+- Accurate historical reconstruction
+- Linkage to source documents (PO, Order #)
+- Simplified pagination and CSV export via `InventoryLedgerService`
 ```
 
 ### Entity Relationships Diagram

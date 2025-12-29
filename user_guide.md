@@ -1,0 +1,178 @@
+# Labamu WMS - User Guide
+
+Comprehensive documentation for the Labamu Inventory Management System.
+
+## Table of Contents
+1. [Getting Started](#getting-started)
+2. [Inventory Management](#inventory-management)
+3. [Inbound Operations](#inbound-operations)
+4. [Outbound Operations](#outbound-operations)
+5. [Reporting & Admin](#reporting--admin)
+6. [End-to-End Examples](#end-to-end-examples)
+
+---
+
+## Getting Started
+
+### Dashboard
+**Purpose:** The command center for your warehouse operations, offering real-time visibility into stock value, alerts, and activity.
+
+**✨ New: Deep Dive Analytics**
+- **Date Filtering:** Toggle view between 7, 30, and 90 days, or select a custom range to analyze trends over specific periods.
+- **Drill-Down:** Double-click on any KPI card (e.g., "Stock Value" or "Pending Orders") to open a detailed view with granular line-item data.
+
+**Key Metrics & Widgets:**
+- **Total Inventory Value:** The aggregate cost value of all `ACTIVE` inventory.
+- **Low Stock Alerts:** Real-time counter of items below their `Min Quantity` reorder point. Click to view the specific items and generate POs.
+- **Pending Orders:** Sales orders currently in `PENDING` or `RESERVED` state, awaiting picking.
+- **Recent Activity:** A timeline of the last 10 system actions (logins, stock moves, settings changes).
+
+---
+
+## Inventory Management
+
+### Products
+**Purpose:** The master record for every item you buy, store, or sell.
+
+**Detailed Configuration:**
+- **SKU (Stock Keeping Unit):** Unique alphanumeric identifier (Required).
+- **Dimensions & Weight:** Critical for shipping calculation and storage capacity logic.
+- **Cost & Price:** 'Cost' is used for inventory valuation (COGS); 'Price' is the default sales price.
+- **Packaging Units:** Define specific unit types (e.g., "Case of 12", "Pallet of 50") in the "Manage Packaging" tab.
+- **Storage Requirements:** Tag items as "Refrigerated", "Hazardous", or "Heavy" to restrict where they can be put away.
+
+### Locations
+**Purpose:** A digital twin of your physical warehouse layout, enabling precise stock tracking.
+
+**Structural Hierarchy:**
+WAREHOUSE → ROOM → ROW → BAY → SHELF → POSITION
+
+**Attribute Inheritance:**
+Attributes set at a parent level automatically apply to all child locations unless explicitly overridden. For example, setting `{ "refrigerated": true }` on a ROOM applies to all locations within it.
+
+### Warehouses
+**Purpose:** Top-level facilities that act as the root of your location hierarchy.
+
+**Workflow Configuration:**
+- **Inbound Steps:** 1-step (direct), 2-steps (receive+stage), 3-steps (receive+stage+quality).
+- **Outbound Steps:** 1-step (pick-ship), 2-steps (pick-pack), 3-steps (pick-pack-stage).
+
+**✨ Automatic Setup:**
+When creating a warehouse, the system automatically creates standard functional areas (Receiving Dock, Main Storage, Shipping Dock) based on your selected workflow.
+
+### Adjustments
+**Purpose:** Reconciling system usage with physical reality (Cycle Counts, Stocktakes).
+- **Relative Entry:** (+2 found)
+- **Absolute Entry:** (Counted 5 total)
+
+### Scrap Orders
+**Purpose:** Formal process for writing off inventory value due to damage or expiry.
+
+### Partner Locations
+**Purpose:** Extending visibility to 3rd party sites like Retail Stores or Consignment Partners.
+
+### Optimized Putaway
+**Purpose:** The system recommends the best location for incoming goods based on Product Velocity (A/B/C) and Zone Priority.
+
+### Routes
+**Purpose:** Defining the lifecycle and movement path of inventory (Push/Pull rules).
+
+---
+
+## Inbound Operations
+
+### Suppliers
+**Purpose:** CRM for your vendors, tracking payment terms and lead times.
+
+### Purchase Orders & Receiving
+**Purpose:** The commercial agreement to buy goods and the act of accepting them.
+1. **Draft:** Create PO.
+2. **Order:** Confirm PO.
+3. **Receive:** Receive goods into a receiving location. Supports partial receiving.
+
+### Putaway Operations
+**Purpose:** Moving received goods from receiving areas to their designated storage locations.
+
+**Workflow:**
+1. **Start Session:** Batch multiple putaway tasks.
+2. **View Tasks:** See optimized suggestions.
+3. **Execute:** Physical move and confirmation.
+4. **Complete:** Finalize session.
+
+**Features:**
+- **Smart Recommendations:** Based on Zone Priority and Product Velocity.
+- **Exceptions:** Handle Location Full, Damaged, or Short Receipts.
+
+### Putaway Rules Management
+**Purpose:** Define sophisticated, rule-based logic for automated putaway location selection.
+
+**Rule Components:**
+- **Matching Criteria:** Product, Category, Velocity, Storage Requirements (Frozen, Hazmat), Weight, etc.
+- **Strategies:**
+  - **FIXED:** Dedicated locations.
+  - **ZONE_PRIORITY:** Best available zone.
+  - **CLOSEST:** Minimize travel.
+  - **LEAST_OCCUPIED:** Balance utilization.
+  - **BALANCED:** Random distribution.
+
+---
+
+## Outbound Operations
+
+### Creating Orders
+**Purpose:** The demand signal. Allocates inventory.
+
+### Picking Strategies
+- **FIFO (First-In, First-Out):** Oldest stock first.
+- **FEFO (First-Expired, First-Out):** Expiry date priority.
+
+### Worker Interface
+**Purpose:** Mobile-focused screen for picking execution.
+- Scan Location -> Scan Product -> Confirm Pick.
+
+### Delivery Methods
+**Purpose:** Calculating shipping costs (Fixed or Rule-based).
+
+### Invoices
+**Purpose:** Financial documents. Sales Invoices (AR) and Vendor Bills (AP).
+
+---
+
+## Reporting & Admin
+
+### Reports
+**Purpose:** Compliance and Deep Dive.
+- **Inventory Valuation:** Current stock value.
+- **Compliance:** VAT/SAF-T data.
+
+### Stock Moves
+**Purpose:** The ledger of truth. Detailed record of every single transaction.
+
+### Inventory Ledger
+**Purpose:** A chronological, immutable record of every stock movement in the system. Essential for audits and traceability.
+
+**Key Features:**
+- **Unified History:** Combines data from Inbound Receipts, Outbound Orders, Adjustments, and Scrap.
+- **Traceability:** Links directly back to source documents (PO Number, Order Number).
+- **Detailed Columns:** Date, Type, Product, Quantity, Warehouse, Location, Notes.
+- **Advanced Filtering:** Filter by Warehouse, Location, Product, Date Range, or Transaction Type.
+- **Export to CSV:** Download the full ledger history for external reporting or auditing.
+
+### Settings
+**Purpose:** Admin controls for Users, Roles, and General configuration.
+
+---
+
+## End-to-End Examples
+
+### Scenario A: The Full Retail Flow
+1. **Buy:** Create PO, Receive goods.
+2. **Sell:** Create Sales Order.
+3. **Process:** Reserve -> Pick -> Pack -> Ship.
+4. **Bill:** Generate Invoice.
+
+### Scenario B: Resupplying a Retail Store (STO)
+1. **Trigger:** Store needs stock.
+2. **Action:** Create Transfer Order (Main -> Store).
+3. **Execute:** Pick & Ship from Main.
+4. **Receive:** Store receives items.

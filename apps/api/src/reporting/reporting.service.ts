@@ -105,7 +105,8 @@ export class ReportingService {
         return null;
     }
 
-    async getDashboardAnalytics(): Promise<any> {
+    async getDashboardAnalytics(query?: any): Promise<any> {
+        const { startDate, endDate } = this.parseDateRange(query);
         // 1. Inventory Value
         const products = await this.prisma.product.findMany({
             include: { inventory: true }
@@ -136,21 +137,46 @@ export class ReportingService {
 
         const stockoutRate = activeProducts > 0 ? (outOfStockProducts / activeProducts) * 100 : 0;
 
-        // 2. Order Fulfillment Rate
-        const totalOrders = await this.prisma.order.count();
+        // 2. Order Fulfillment Rate (filtered by date range)
+        const totalOrders = await this.prisma.order.count({
+            where: {
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            }
+        });
         const shippedOrders = await this.prisma.order.count({
-            where: { status: 'SHIPPED' }
+            where: {
+                status: 'SHIPPED',
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            }
         });
         const fulfillmentRate = totalOrders > 0 ? (shippedOrders / totalOrders) * 100 : 0;
 
-        // 3. Pending Orders
+        // 3. Pending Orders (filtered by date range)
         const pendingOrders = await this.prisma.order.count({
-            where: { status: { in: ['PENDING', 'RESERVED', 'PICKING'] } }
+            where: {
+                status: { in: ['PENDING', 'RESERVED', 'PICKING'] },
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            }
         });
 
-        // 4. Order Cycle Time (Avg hours from Created to Shipped)
+        // 4. Order Cycle Time (Avg hours from Created to Shipped, filtered by date range)
         const shippedOrdersList = await this.prisma.order.findMany({
-            where: { status: 'SHIPPED' },
+            where: {
+                status: 'SHIPPED',
+                createdAt: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            },
             select: { createdAt: true, updatedAt: true }
         });
 
@@ -226,6 +252,29 @@ export class ReportingService {
             capacityUtilization: parseFloat(capacityUtilization.toFixed(1)),
             categoryValue,
             dailySales,
+            meta: {
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
+                period: query?.period || '7d'
+            }
         };
     }
-}
+
+    private parseDateRange(query?: any): { startDate: Date, endDate: Date } {
+        const endDate = new Date();
+        let startDate: Date;
+
+        if (query?.period === 'custom' && query.startDate && query.endDate) {
+            startDate = new Date(query.startDate);
+            endDate.setTime(new Date(query.endDate).getTime());
+        } else {
+            const days = query?.period === '30d' ? 30 : query?.period === '90d' ? 90 : 7;
+            startDate = new Date();
+            startDate.setDate(startDate.getDate() - days);
+        }
+
+        return { startDate, endDate };
+    }
+
+
+

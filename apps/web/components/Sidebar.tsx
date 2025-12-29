@@ -47,6 +47,7 @@ const navigation: NavSection[] = [
         title: 'Reporting',
         items: [
             { name: 'Reports', href: '/reports' },
+            { name: 'Inventory Ledger', href: '/inventory/ledger' },
             { name: 'Stock Moves', href: '/inventory/moves' },
         ]
     },
@@ -92,6 +93,7 @@ export default function Sidebar() {
 
         // Reports
         if (item.href === '/reports') return hasPermission('REPORTS', 'READ');
+        if (item.href === '/inventory/ledger') return hasPermission('REPORTS', 'READ');
 
         // Settings
         if (item.href === '/settings') return hasPermission('SETTINGS', 'READ');

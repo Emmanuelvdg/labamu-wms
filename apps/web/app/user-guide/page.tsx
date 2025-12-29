@@ -86,6 +86,7 @@ export default function UserGuidePage() {
                                         <div className="flex flex-col space-y-1">
                                             <a onClick={(e) => scrollToSection(e, 'reports')} href="#reports" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Reports</a>
                                             <a onClick={(e) => scrollToSection(e, 'stock-moves')} href="#stock-moves" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Stock Moves</a>
+                                            <a onClick={(e) => scrollToSection(e, 'inventory-ledger')} href="#inventory-ledger" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Inventory Ledger</a>
                                             <a onClick={(e) => scrollToSection(e, 'settings')} href="#settings" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Settings</a>
                                         </div>
                                     </div>
@@ -109,6 +110,13 @@ export default function UserGuidePage() {
                         <Card>
                             <CardContent className="pt-6 space-y-4">
                                 <p><strong>Purpose:</strong> The command center for your warehouse operations, offering real-time visibility into stock value, alerts, and activity.</p>
+                                <div className="bg-primary/5 p-4 rounded-md text-sm border border-primary/20">
+                                    <strong className="text-primary block mb-2">✨ New: Deep Dive Analytics</strong>
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        <li><strong>Date Filtering:</strong> Toggle view between 7, 30, and 90 days, or select a custom range to analyze trends over specific periods.</li>
+                                        <li><strong>Drill-Down:</strong> Double-click on any KPI card (e.g., "Stock Value" or "Pending Orders") to open a detailed view with granular line-item data.</li>
+                                    </ul>
+                                </div>
                                 <div>
                                     <h4 className="font-medium mb-1">Key Metrics & Widgets:</h4>
                                     <ul className="list-disc pl-5 text-muted-foreground space-y-1">
@@ -1076,6 +1084,28 @@ export default function UserGuidePage() {
                                     <CardContent className="pt-6 space-y-4">
                                         <p><strong>Purpose:</strong> The ledger of truth. Audit trail of every single transaction row.</p>
                                         <p className="text-muted-foreground text-sm">Every single change is a row here. Use for investigating "missing" items.</p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div id="inventory-ledger" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Archive className="h-5 w-5" /> Inventory Ledger</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> A chronological, immutable record of every stock movement in the system. Essential for audits and traceability.</p>
+                                        <ul className="list-disc pl-5 text-muted-foreground space-y-1">
+                                            <li><strong>Unified History:</strong> Combines data from Inbound Receipts, Outbound Orders, Adjustments, and Scrap.</li>
+                                            <li><strong>Traceability:</strong> Links directly back to source documents (PO Number, Order Number).</li>
+                                            <li><strong>Detailed Columns:</strong> Date, Type, Product, Quantity, Warehouse, Location, Notes.</li>
+                                        </ul>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>Features:</strong>
+                                            <ul className="list-disc pl-5 mt-1 space-y-1">
+                                                <li><strong>Advanced Filtering:</strong> Filter by Warehouse, Location, Product, Date Range, or Transaction Type.</li>
+                                                <li><strong>Export to CSV:</strong> Download the full ledger history for external reporting or auditing.</li>
+                                                <li><strong>Pagination:</strong> Efficiently browse through thousands of records.</li>
+                                            </ul>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </div>

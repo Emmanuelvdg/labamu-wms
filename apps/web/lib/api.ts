@@ -44,7 +44,7 @@ export async function fetchInventory(filters?: {
     if (filters?.classification) params.append('classification', filters.classification);
     if (filters?.warehouseId) params.append('warehouseId', filters.warehouseId);
 
-    return fetchWithRetry(`/api/inventory/products?${params.toString()}`);
+    return fetchWithRetry(`${API_URL}/inventory/products?${params.toString()}`);
 }
 
 export async function getProduct(id: string) {
@@ -410,7 +410,7 @@ export async function fetchPutawayRules() {
 
 // Phase 4: Fetch attribute definitions for dynamic forms
 export async function fetchAttributeDefinitions() {
-    return fetchWithRetry('/api/inventory/attributes/definitions');
+    return fetchWithRetry(`${API_URL}/inventory/attributes/definitions`);
 }
 
 export async function createPackage(data: any) {
@@ -456,7 +456,7 @@ export async function createRule(routeId: string, data: any) {
 // --- Reporting ---
 
 export async function fetchAnalytics() {
-    return fetchWithRetry('/api/analytics');
+    return fetchWithRetry(`${API_URL}/reporting/analytics`);
 }
 
 export async function generateReport(type: string, period: string) {

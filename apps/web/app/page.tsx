@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { fetchAnalytics, fetchInventory } from '@/lib/api';
+import DateRangeFilter from '@/components/DateRangeFilter';
+import MetricDrillDownModal from '@/components/MetricDrillDownModal';
 import {
   TrendingUp,
   Package,
@@ -29,29 +31,53 @@ export default function Dashboard() {
   const [products, setProducts] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState('7d');
+  const [drillDownModal, setDrillDownModal] = useState<{
+    isOpen: boolean;
+    metricType: string;
+    metricTitle: string;
+  }>({
+    isOpen: false,
+    metricType: '',
+    metricTitle: ''
+  });
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        const [analyticsData, productsData] = await Promise.all([
-          fetchAnalytics(),
-          fetchInventory()
-        ]);
-        setAnalytics(analyticsData);
-        setProducts(productsData);
-      } catch (err: any) {
-        console.error(err);
-        if (err.message && (err.message.includes('Unauthorized') || err.message.includes('Forbidden'))) {
-          window.location.href = '/login';
-          return;
-        }
-        setError('Failed to connect to the backend. Please ensure the API server is running.');
-      } finally {
-        setLoading(false);
-      }
-    }
     loadData();
-  }, []);
+  }, [period]);
+
+  async function loadData() {
+    try {
+      setLoading(true);
+      const [analyticsData, productsData] = await Promise.all([
+        fetchAnalytics({ period }),
+        fetchInventory()
+      ]);
+      setAnalytics(analyticsData);
+      setProducts(productsData);
+    } catch (err: any) {
+      console.error(err);
+      if (err.message && (err.message.includes('Unauthorized') || err.message.includes('Forbidden'))) {
+        window.location.href = '/login';
+        return;
+      }
+      setError('Failed to connect to the backend. Please ensure the API server is running.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleFilterChange = (newPeriod: string) => {
+    setPeriod(newPeriod);
+  };
+
+  const handleMetricDoubleClick = (metricType: string, metricTitle: string) => {
+    setDrillDownModal({
+      isOpen: true,
+      metricType,
+      metricTitle
+    });
+  };
 
   if (error) {
     return (
@@ -98,9 +124,14 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-8 space-y-8">
-      <header>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard Overview</h1>
-        <p className="text-gray-500 mt-1">Real-time insights into your inventory and fulfillment performance.</p>
+      <header className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard Overview</h1>
+          <p className="text-gray-500 mt-1">Real-time insights into your inventory and fulfillment performance.</p>
+        </div>
+
+        {/* Date Filter */}
+        <DateRangeFilter onFilterChange={handleFilterChange} />
       </header>
 
       {/* KPI Grid */}
@@ -111,6 +142,7 @@ export default function Dashboard() {
           icon={<Database className="h-5 w-5 text-blue-600" />}
           trend="Current Asset Value"
           color="blue"
+          onDoubleClick={() => handleMetricDoubleClick('stock-value', 'Total Stock Value')}
         />
         <KpiCard
           title="Fulfillment Rate"
@@ -118,6 +150,7 @@ export default function Dashboard() {
           icon={<TrendingUp className="h-5 w-5 text-green-600" />}
           trend="Orders Shipped"
           color="green"
+          onDoubleClick={() => handleMetricDoubleClick('fulfillment', 'Fulfillment Rate')}
         />
         <KpiCard
           title="Stockout Rate"
@@ -125,6 +158,7 @@ export default function Dashboard() {
           icon={<AlertTriangle className="h-5 w-5 text-red-600" />}
           trend="Items Out of Stock"
           color="red"
+          onDoubleClick={() => handleMetricDoubleClick('stockout', 'Stockout Rate')}
         />
         <KpiCard
           title="Pending Orders"
@@ -132,6 +166,7 @@ export default function Dashboard() {
           icon={<Package className="h-5 w-5 text-orange-600" />}
           trend="To be processed"
           color="orange"
+          onDoubleClick={() => handleMetricDoubleClick('pending', 'Pending Orders')}
         />
         <KpiCard
           title="Avg Cycle Time"
@@ -139,6 +174,7 @@ export default function Dashboard() {
           icon={<Clock className="h-5 w-5 text-purple-600" />}
           trend="Created to Shipped"
           color="purple"
+          onDoubleClick={() => handleMetricDoubleClick('cycle-time', 'Avg Cycle Time')}
         />
         <KpiCard
           title="Warehouse Capacity"
@@ -146,6 +182,7 @@ export default function Dashboard() {
           icon={<BarChart3 className="h-5 w-5 text-indigo-600" />}
           trend="Volume Utilized"
           color="indigo"
+          onDoubleClick={() => handleMetricDoubleClick('capacity', 'Warehouse Capacity')}
         />
       </div>
 
@@ -254,11 +291,20 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Drill-Down Modal */}
+      <MetricDrillDownModal
+        isOpen={drillDownModal.isOpen}
+        onClose={() => setDrillDownModal({ isOpen: false, metricType: '', metricTitle: '' })}
+        metricType={drillDownModal.metricType}
+        metricTitle={drillDownModal.metricTitle}
+        period={period}
+      />
     </div>
   );
 }
 
-function KpiCard({ title, value, icon, trend, color }: any) {
+function KpiCard({ title, value, icon, trend, color, onDoubleClick }: any) {
   const colorClasses: Record<string, string> = {
     blue: 'bg-blue-50 text-blue-600',
     green: 'bg-green-50 text-green-600',
@@ -269,7 +315,11 @@ function KpiCard({ title, value, icon, trend, color }: any) {
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+    <div
+      className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
+      onDoubleClick={onDoubleClick}
+      title="Double-click for details"
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
