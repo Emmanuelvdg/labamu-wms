@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { RuleService } from '../rule/rule.service';
+import { StockMoveService } from '../inventory/stock-move.service';
 
 @Injectable()
 export class PurchaseOrderService {
@@ -9,6 +10,7 @@ export class PurchaseOrderService {
         private prisma: PrismaService,
         private inventoryService: InventoryService,
         private ruleService: RuleService,
+        private stockMoveService: StockMoveService,
     ) { }
 
     async createPurchaseOrder(data: {
@@ -194,19 +196,25 @@ export class PurchaseOrderService {
             const location = await tx.location.findUnique({ where: { id: destinationLocationId } });
             if (!location || !location.warehouseId) throw new Error('Destination location must belong to a warehouse');
 
+            // NEW: Create Linked Transfer Order
+            const transferOrder = await this.stockMoveService.createInboundTransferHeader(tx, {
+                purchaseOrderId: po.id,
+                warehouseId: location.warehouseId,
+                userId: 'SYSTEM',
+                type: 'INBOUND_FLOW'
+            });
+
             for (const item of itemsToProcess) {
                 const poItem = item.poItem;
                 const quantityToReceive = item.quantity;
 
                 // Handle Packaging (if applicable)
-                // Note: Assuming quantityToReceive is in the same unit as PO Item (e.g. Boxes if PO was for Boxes)
                 let unitQuantity = quantityToReceive;
                 let isPackaged = false;
                 let totalBaseUnits = quantityToReceive;
 
                 if (poItem.packaging) {
                     // PO Item quantity is in Packages
-                    // So quantityToReceive is number of Packages
                     totalBaseUnits = quantityToReceive * poItem.packaging.quantity;
                     unitQuantity = poItem.packaging.quantity;
                     isPackaged = true;
@@ -259,6 +267,13 @@ export class PurchaseOrderService {
                     });
                 }
 
+                // NEW: Trace Process (For this Item)
+                await this.stockMoveService.generateInboundMoves(tx, transferOrder.id, {
+                    productId: poItem.productId,
+                    quantity: totalBaseUnits,
+                    warehouseId: location.warehouseId
+                });
+
                 // Update Aggregate Inventory
                 const existingInventory = await tx.productInventory.findFirst({
                     where: { productId: poItem.productId, warehouseId: location.warehouseId, locationId: destinationLocationId },
@@ -294,7 +309,6 @@ export class PurchaseOrderService {
 
             // 3. Update PO Status
             // Check if fully received
-            // We need to re-fetch or calculate totals
             let allReceived = true;
             let anyReceived = false;
 

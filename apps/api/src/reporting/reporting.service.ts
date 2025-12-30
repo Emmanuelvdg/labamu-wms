@@ -275,6 +275,6 @@ export class ReportingService {
 
         return { startDate, endDate };
     }
-
+}
 
 

@@ -4,6 +4,8 @@ const prisma = new PrismaClient();
 
 async function main() {
     // Seed Picking Strategies
+    // Seed Picking Strategies (Temporarily commented out due to schema mismatch)
+    /*
     const pickingStrategies = [
         { name: 'Single', rules: JSON.stringify({ description: 'Process one order at a time' }) },
         { name: 'Cluster', rules: JSON.stringify({ description: 'Group orders by zone' }) },
@@ -33,6 +35,7 @@ async function main() {
             create: strategy,
         });
     }
+    */
 
     // Seed Roles
     const adminRole = await prisma.role.upsert({

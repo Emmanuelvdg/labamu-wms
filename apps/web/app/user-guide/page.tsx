@@ -311,17 +311,25 @@ export default function UserGuidePage() {
                                                 When you create a warehouse, the system automatically creates functional areas and locations based on your workflow configuration:
                                             </p>
                                             <div className="space-y-2 text-xs">
-                                                <div className="flex items-start gap-2">
-                                                    <span className="bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-medium min-w-[80px]">1-step</span>
-                                                    <span className="text-muted-foreground">Receiving Dock, Main Storage, Shipping Dock</span>
-                                                </div>
-                                                <div className="flex items-start gap-2">
-                                                    <span className="bg-purple-100 text-purple-900 px-2 py-0.5 rounded font-medium min-w-[80px]">2-steps</span>
-                                                    <span className="text-muted-foreground">Receiving Dock, Staging Area, Main Storage, Picking Zone, Shipping Dock</span>
-                                                </div>
-                                                <div className="flex items-start gap-2">
-                                                    <span className="bg-green-100 text-green-900 px-2 py-0.5 rounded font-medium min-w-[80px]">3-steps</span>
-                                                    <span className="text-muted-foreground">Receiving Dock, Staging Area, Putaway Lane, Main Storage, Picking Zone, Packing Station, Shipping Dock</span>
+                                                <div className="space-y-2 text-xs">
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-medium min-w-[80px]">1-step</span>
+                                                        <span className="text-muted-foreground">Receiving Dock, Main Storage, Shipping Dock</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="bg-purple-100 text-purple-900 px-2 py-0.5 rounded font-medium min-w-[80px]">2-steps</span>
+                                                        <span className="text-muted-foreground">Receiving Dock, Staging Area, Main Storage, Picking Zone, Shipping Dock</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="bg-green-100 text-green-900 px-2 py-0.5 rounded font-medium min-w-[80px]">3-steps</span>
+                                                        <span className="text-muted-foreground">Receiving Dock, Staging Area, Putaway Lane, Main Storage, Picking Zone, Packing Station, Shipping Dock</span>
+                                                    </div>
+                                                    <div className="mt-2 pl-2 border-l-2 border-blue-200">
+                                                        <strong className="text-blue-900 block mb-1">Advanced: Multi-Step Tracking</strong>
+                                                        <span className="text-muted-foreground">
+                                                            The system automatically generates digital `TransferOrder` records to track goods as they move through these steps (e.g., from Receiving &rarr; Quality Control &rarr; Stock).
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <p className="text-muted-foreground mt-3">
@@ -500,7 +508,15 @@ export default function UserGuidePage() {
                                                         <li><strong>LPN Generation:</strong> If receiving "Pallets", the system generates unique license plate numbers.</li>
                                                     </ul>
                                                 </li>
+                                                <li><strong>Tracking:</strong> For multi-step warehouses, receiving automatically triggers an inbound <code>TransferOrder</code> chain (e.g. Input &rarr; QC &rarr; Stock).</li>
                                             </ol>
+                                        </div>
+
+                                        <div className="bg-yellow-50 p-4 rounded-md text-sm">
+                                            <strong className="text-yellow-900">⚡ Exception Handling</strong>
+                                            <p className="text-muted-foreground mt-1">
+                                                If items fail Quality Control (QC), workers can move them to a <strong>Quarantine</strong> location. The system automatically detects this deviation and cancels the standard "Move to Stock" task, ensuring damaged goods don't mix with sellable inventory.
+                                            </p>
                                         </div>
                                     </CardContent>
                                 </Card>

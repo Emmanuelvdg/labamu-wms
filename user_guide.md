@@ -60,6 +60,13 @@ Attributes set at a parent level automatically apply to all child locations unle
 **✨ Automatic Setup:**
 When creating a warehouse, the system automatically creates standard functional areas (Receiving Dock, Main Storage, Shipping Dock) based on your selected workflow.
 
+**Multi-Step Flows:**
+Configuring a warehouse for multi-step flows (2 or 3 steps) enables detailed tracking throughout the facility:
+- **1-Step (Direct):** Vendor -> Stock. Best for simple operations.
+- **2-Step (Receive & Putaway):** Vendor -> Input -> Stock. Adds a staging step for breakdown or inspection.
+- **3-Step (Quality Control):** Vendor -> Input -> Quality Control -> Stock. Enables a dedicated Quality Assurance process with exception handling.
+
+
 ### Adjustments
 **Purpose:** Reconciling system usage with physical reality (Cycle Counts, Stocktakes).
 - **Relative Entry:** (+2 found)
@@ -114,6 +121,16 @@ When creating a warehouse, the system automatically creates standard functional 
   - **CLOSEST:** Minimize travel.
   - **LEAST_OCCUPIED:** Balance utilization.
   - **BALANCED:** Random distribution.
+
+---
+
+### Multi-Step Receiving & Exception Handling
+**Purpose:** Manage complex receiving flows involving Quality Control (QC) or multi-stage putaway.
+
+**Process:**
+1. **Chain Generation:** Upon receiving a PO, the system generates a `TransferOrder` containing a chain of linked `StockMoves` (e.g., Input -> QC -> Stock).
+2. **Execution:** Workers execute each move sequentially.
+3. **Exception Handling (Quality Failure):** If items fail QC, the worker can deviate from the standard flow by moving items to a *Quarantine* or *Scrap* location. The system detects this deviation and automatically re-routes the workflow, cancelling the original "Happy Path" move to Stock.
 
 ---
 

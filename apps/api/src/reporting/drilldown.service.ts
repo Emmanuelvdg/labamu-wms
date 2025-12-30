@@ -25,12 +25,6 @@ export class DrillDownService {
         const { startDate, endDate } = this.parseDateRange(query);
 
         const inventory = await this.prisma.productInventory.findMany({
-            where: {
-                updatedAt: {
-                    gte: startDate,
-                    lte: endDate
-                }
-            },
             include: {
                 product: {
                     select: {
@@ -58,8 +52,7 @@ export class DrillDownService {
             location: inv.location.name,
             quantity: inv.quantity,
             unitCost: inv.product.averageCost,
-            totalValue: inv.quantity * (inv.product.averageCost || 0),
-            lastUpdated: inv.updatedAt
+            totalValue: inv.quantity * (inv.product.averageCost || 0)
         }));
     }
 
@@ -114,8 +107,7 @@ export class DrillDownService {
             sku: product.sku,
             name: product.name,
             category: product.category || 'Uncategorized',
-            reorderPoint: product.reorderPoint || 0,
-            lastStockUpdate: product.updatedAt
+            currentStock: 0
         }));
     }
 

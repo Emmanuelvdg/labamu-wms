@@ -708,6 +708,7 @@ model PurchaseOrder {
   items     PurchaseOrderItem[]
   receipts  Receipt[]
   invoices  Invoice[]
+  transfers TransferOrder[]
   createdAt DateTime            @default(now())
   updatedAt DateTime            @updatedAt
 }
@@ -842,7 +843,7 @@ model TransferOrder {
   destinationWarehouseId String
   destinationWarehouse   Warehouse @relation("TransferDest", fields: [destinationWarehouseId], references: [id])
 
-  status String @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, IN_TRANSIT, RECEIVED, CANCELLED
+  status String @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, PROCESSING, DONE, CANCELLED
 
   initiatorId String
   initiator   User   @relation("TransferInitiator", fields: [initiatorId], references: [id])
@@ -852,8 +853,20 @@ model TransferOrder {
 
   items TransferOrderItem[]
 
+  // Multi-Step Layout
+  type           String    @default("INTERNAL") // INBOUND_FLOW, OUTBOUND_FLOW, INTERNAL
+  totalSteps     Int       @default(1)
+  currentStep    Int       @default(1)
+  activeMoveId   String?   // Pointer to current active move
+
+  moves          StockMove[]
+
   relatedOrderId String?
   relatedOrder   Order?  @relation(fields: [relatedOrderId], references: [id])
+  
+  // Link to PO
+  purchaseOrderId String?
+  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -876,7 +889,7 @@ model StockMove {
   productId             String
   product               Product         @relation(fields: [productId], references: [id])
   quantity              Int
-  status                String          @default("DRAFT") // DRAFT, WAITING, READY, DONE, CANCELLED
+  status                String          @default("DRAFT") // DRAFT, WAITING, READY, IN_PROGRESS, DONE, CANCELLED, FAILED
   sourceLocationId      String?
   sourceLocation        Location?       @relation("MoveSource", fields: [sourceLocationId], references: [id])
   destinationLocationId String?
@@ -886,6 +899,21 @@ model StockMove {
   origin                String? // e.g. PO001, MO001
   batchId               String?
   batch                 InventoryBatch? @relation(fields: [batchId], references: [id])
+  
+  // Chaining & Multi-Step
+  sequence        Int      @default(0)
+  transferOrderId String?
+  transferOrder   TransferOrder? @relation(fields: [transferOrderId], references: [id])
+  
+  nextMoveId      String?  @unique
+  nextMove        StockMove? @relation("ChainedMoves", fields: [nextMoveId], references: [id])
+  previousMove    StockMove? @relation("ChainedMoves")
+
+  // Exception Tracking
+  inputQuantity   Int?     // Expected
+  outputQuantity  Int?     // Actual
+  exceptionReason String?
+
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 }

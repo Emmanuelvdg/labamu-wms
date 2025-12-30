@@ -142,7 +142,7 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 
 | Module | Responsibility | Key Services |
 |--------|---------------|--------------|
-| **InventoryModule** | Product catalog, stock levels, adjustments | `InventoryService`, `PackagingService` |
+| **InventoryModule** | Product catalog, stock levels, adjustments, **stock moves** | `InventoryService`, `PackagingService`, `StockMoveService` |
 | **PutawayModule** | Inbound putaway operations, rule-based location assignment | `PutawayService`, `PutawayController` |
 | **OrderModule** | Sales orders, fulfillment, reservations | `OrderService`, `FulfillmentService` |
 | **PurchaseOrderModule** | Purchase orders, receipts, vendor management | `PurchaseOrderService` |
@@ -670,7 +670,52 @@ StockTransaction {
   userId: string?
   notes: string?
   timestamp: DateTime
+  timestamp: DateTime
 }
+
+#### TransferOrder (New)
+```typescript
+TransferOrder {
+  id: string (UUID)
+  orderNumber: string (unique) // TO-20241230-001
+  
+  type: string // INBOUND_FLOW, OUTBOUND_FLOW, INTERNAL
+  status: string // PROCESSING, DONE, CANCELLED
+  
+  sourceWarehouseId: string
+  destinationWarehouseId: string
+  
+  // Progress
+  totalSteps: int // e.g., 3
+  currentStep: int // e.g., 2
+  activeMoveId: string? // Pointer to current active move
+  
+  // Relations
+  purchaseOrderId: string?
+  moves: StockMove[]
+}
+```
+
+#### StockMove (Enhanced)
+```typescript
+StockMove {
+  id: string (UUID)
+  transferOrderId: string?
+  transferOrder: TransferOrder?
+  
+  sequence: int // 1, 2, 3
+  status: string // PENDING, READY, DONE, CANCELLED, FAILED
+  
+  // Linking
+  previousMoveId: string?
+  nextMoveId: string?
+  
+  // Deviation Tracking
+  inputQuantity: float // Expected
+  outputQuantity: float // Actual
+  exceptionReason: string? // "QC Failed", "Damaged"
+}
+```
 
 #### InventoryLedger (Virtual)
 The Inventory Ledger is a derived view that unifies all inventory movements into a linear history for reporting. It does not have its own database table but aggregates data from:
@@ -718,6 +763,12 @@ graph TD
     
     WarehouseFunctionalArea -->|belongs to| Warehouse
     WarehouseFunctionalArea -->|links to| Location
+    WarehouseFunctionalArea -->|belongs to| Warehouse
+    WarehouseFunctionalArea -->|links to| Location
+
+    TransferOrder -->|linked to| PurchaseOrder
+    TransferOrder -->|has many| StockMove
+    StockMove -->|chained to| StockMove
 ```
 
 ---
