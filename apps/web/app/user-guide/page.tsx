@@ -1129,12 +1129,104 @@ export default function UserGuidePage() {
                             <div id="settings" className="scroll-mt-24 gap-4">
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Settings className="h-5 w-5" /> Settings</h3>
                                 <Card>
-                                    <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> Admin controls.</p>
-                                        <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                                            <li><strong>Users:</strong> Create accounts and assign Roles (Manager vs Picker).</li>
-                                            <li><strong>General:</strong> Set base currency and company details.</li>
-                                        </ul>
+                                    <CardContent className="pt-6 space-y-6">
+                                        <p><strong>Purpose:</strong> Administrative configuration for users, locations, and external integrations.</p>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Users & Roles</h4>
+                                            <ul className="list-disc pl-5 text-muted-foreground text-sm space-y-1">
+                                                <li><strong>Users:</strong> Create accounts and assign roles (Admin, Manager, Picker, etc.)</li>
+                                                <li><strong>Roles:</strong> Define permission sets for different user types</li>
+                                                <li><strong>Warehouse Assignment:</strong> Restrict users to specific warehouses</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Location Attributes</h4>
+                                            <p className="text-sm text-muted-foreground mb-3">
+                                                Define custom attributes that can be applied to warehouse locations to enforce storage requirements and optimize putaway decisions.
+                                            </p>
+
+                                            <div className="bg-blue-50 p-3 rounded-md text-sm space-y-2">
+                                                <p><strong className="text-blue-900">Common Attributes:</strong></p>
+                                                <ul className="list-disc pl-5 text-muted-foreground space-y-0.5">
+                                                    <li><strong>refrigerated:</strong> For cold storage zones</li>
+                                                    <li><strong>frozen:</strong> For freezer areas</li>
+                                                    <li><strong>climate_controlled:</strong> Temperature and humidity controlled</li>
+                                                    <li><strong>hazmat_certified:</strong> For dangerous goods storage</li>
+                                                    <li><strong>heavy_duty:</strong> Reinforced floors for heavy items</li>
+                                                    <li><strong>ground_floor:</strong> Accessible without lifts</li>
+                                                    <li><strong>fragile:</strong> Special handling zones</li>
+                                                    <li><strong>secure:</strong> Restricted access areas</li>
+                                                </ul>
+                                            </div>
+
+                                            <div className="bg-muted p-4 rounded-md text-sm mt-3">
+                                                <strong>How to Use:</strong>
+                                                <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                    <li>Navigate to <strong>Settings → Location Attributes</strong></li>
+                                                    <li>Create custom attributes for your warehouse needs</li>
+                                                    <li>Apply attributes to locations in the location management page</li>
+                                                    <li>Set matching storage requirements on products</li>
+                                                    <li>System automatically respects these constraints during putaway</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">API Keys & MCP Integration</h4>
+                                            <p className="text-sm text-muted-foreground mb-3">
+                                                Generate secure API keys for programmatic access and enable LLM-powered warehouse orchestration through the Model Context Protocol (MCP) server.
+                                            </p>
+
+                                            <div className="space-y-3">
+                                                <div className="bg-green-50 p-3 rounded-md text-sm">
+                                                    <strong className="text-green-900">✨ Key Management:</strong>
+                                                    <ul className="list-disc pl-5 text-muted-foreground mt-1 space-y-0.5">
+                                                        <li><strong>Generation:</strong> Create keys with custom scopes (permissions)</li>
+                                                        <li><strong>Scopes:</strong> INVENTORY:READ, ORDERS:CREATE, PUTAWAY:UPDATE, etc.</li>
+                                                        <li><strong>Security:</strong> Keys shown only once, stored as SHA-256 hashes</li>
+                                                        <li><strong>Lifecycle:</strong> Track last used date, expiration, revoke inactive keys</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="bg-purple-50 p-3 rounded-md text-sm">
+                                                    <strong className="text-purple-900">🤖 MCP Server:</strong>
+                                                    <p className="text-muted-foreground mt-1 mb-2">
+                                                        Allows AI assistants like Claude to orchestrate warehouse operations using generated API keys.
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground mb-1"><strong>Available Tools:</strong></p>
+                                                    <ul className="list-disc pl-5 text-muted-foreground text-xs space-y-0.5">
+                                                        <li><strong>list_products</strong> - Query inventory</li>
+                                                        <li><strong>get_stock_levels</strong> - Check stock for products</li>
+                                                        <li><strong>create_purchase_order</strong> - Generate POs programmatically</li>
+                                                        <li><strong>start_putaway_task</strong> - Initiate putaway operations</li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="bg-muted p-4 rounded-md text-sm">
+                                                    <strong>How to Use:</strong>
+                                                    <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                        <li>Navigate to <strong>Settings → API Keys</strong></li>
+                                                        <li>Click <strong>Generate New Key</strong></li>
+                                                        <li>Select required scopes (e.g., INVENTORY:READ, ORDERS:CREATE)</li>
+                                                        <li>Copy the key (shown only once!)</li>
+                                                        <li>Configure MCP server in <code>apps/mcp/.env</code></li>
+                                                        <li>Add to Claude Desktop config or use via MCP protocol</li>
+                                                        <li>Ask Claude to "List all products" or "Check stock levels"</li>
+                                                    </ol>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">General Settings</h4>
+                                            <ul className="list-disc pl-5 text-muted-foreground text-sm space-y-1">
+                                                <li><strong>Company Info:</strong> Business name and contact details</li>
+                                                <li><strong>Currency:</strong> Base currency for cost and pricing</li>
+                                                <li><strong>System Preferences:</strong> Default warehouse, language, timezone</li>
+                                            </ul>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </div>
