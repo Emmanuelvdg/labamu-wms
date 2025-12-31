@@ -870,6 +870,169 @@ Events:
 
 ---
 
+## API Keys & MCP Integration
+
+### Overview
+
+The system includes a secure API key management system that enables programmatic access to WMS functionality. This powers the Model Context Protocol (MCP) server, allowing AI assistants like Claude to orchestrate warehouse operations.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Client Applications                         │
+│  ┌─────────────────┐  ┌──────────────────┐                  │
+│  │  Claude Desktop │  │  Custom Scripts  │                  │
+│  │   (MCP Client)  │  │   (API Client)   │                  │
+│  └────────┬────────┘  └────────┬─────────┘                  │
+└───────────┼──────────────────────┼──────────────────────────┘
+            │                      │
+            │  MCP Protocol        │  HTTP + X-API-KEY
+            ▼                      │
+┌─────────────────────────┐       │
+│    MCP Server           │       │
+│    (apps/mcp)           │       │
+│  • Stdio Transport      │       │
+│  • Tool Definitions     │       │
+│  • WMS API Client       │       │
+└────────┬────────────────┘       │
+         │  HTTP + X-API-KEY      │
+         ▼                        ▼
+┌─────────────────────────────────────────────────────────────┐
+│              NestJS Backend API (Port 3001)                  │
+│                                                               │
+│  ┌─────────────────┐                                         │
+│  │  ApiKeyGuard    │ ◄─── Validates X-API-KEY header        │
+│  │  (Middleware)   │       • Hash comparison                │
+│  │                 │       • Expiration check               │
+│  │                 │       • Scope validation               │
+│  └────────┬────────┘                                         │
+│           │ Sets user context                                │
+│           ▼                                                   │
+│  ┌─────────────────┐   ┌──────────────────┐                │
+│  │  Inventory      │   │  Purchase Order  │  ...            │
+│  │  Controller     │   │  Controller      │                 │
+│  └─────────────────┘   └──────────────────┘                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### ApiKey Entity
+
+```typescript
+ApiKey {
+  id: string (UUID)
+  name: string
+  description: string?
+  keyHash: string (SHA-256)  // Never store raw key
+  scopes: string             // JSON array: ["INVENTORY:READ", "ORDERS:CREATE"]
+  
+  userId: string
+  user: User
+  
+  lastUsedAt: DateTime?
+  expiresAt: DateTime?
+  isActive: boolean
+  
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+```
+
+### API Key Lifecycle
+
+1. **Generation** (Settings > API Keys UI):
+   - Admin creates key with name, description, and scopes
+   - Backend generates 64-char hex random key
+   - Key hashed with SHA-256 before storage
+   - Raw key shown to user **once** (cannot be retrieved later)
+
+2. **Authentication**:
+   - Client includes `X-API-KEY` header in requests
+   - `ApiKeyGuard` intercepts, hashes incoming key, looks up in DB
+   - Validates: key exists, `isActive=true`, not expired
+   - Updates `lastUsedAt` timestamp
+   - Attaches user context with scopes to request
+
+3. **Scope Validation**:
+   - Each endpoint requires specific permissions
+   - Guard checks if key's scopes include required permission
+   - Example: `GET /inventory/products` requires `INVENTORY:READ`
+
+4. **Revocation**:
+   - Set `isActive=false` to instantly disable key
+   - Deletion permanently removes record
+
+### Available Scopes
+
+| Scope | Permissions |
+|-------|-------------|
+| `INVENTORY:READ` | View products, stock levels, locations |
+| `INVENTORY:CREATE` | Create products, add stock |
+| `INVENTORY:UPDATE` | Modify product details, adjust stock |
+| `INVENTORY:DELETE` | Delete products |
+| `ORDERS:READ` | View orders |
+| `ORDERS:CREATE` | Create new orders |
+| `PURCHASE_ORDERS:READ` | View purchase orders |
+| `PURCHASE_ORDERS:CREATE` | Create purchase orders |
+| `PUTAWAY:READ` | View putaway tasks |
+| `PUTAWAY:UPDATE` | Update putaway tasks, start sessions |
+
+### MCP Server
+
+**Location**: `apps/mcp/`
+
+**Purpose**: Expose WMS functionality as AI-accessible tools via Model Context Protocol
+
+**Tools**:
+- `list_products` - Query inventory
+- `get_stock_levels` - Check stock for product
+- `create_purchase_order` - Generate POs
+- `start_putaway_task` - Initiate putaway
+
+**Configuration**:
+```bash
+# apps/mcp/.env
+WMS_API_URL=http://localhost:3001
+WMS_API_KEY=generated_key_from_settings
+```
+
+**Usage**:
+```json
+// Claude Desktop config
+{
+  "mcpServers": {
+    "labamu-wms": {
+      "command": "node",
+      "args": ["/path/to/apps/mcp/dist/index.js"],
+      "env": {
+        "WMS_API_KEY": "your_key_here"
+      }
+    }
+  }
+}
+```
+
+### Security Features
+
+1. **Hash-Only Storage**: Only SHA-256 hash stored in database
+2. **One-Time Display**: Raw key visible only during generation
+3. **Granular Scopes**: Fine-grained permission control per key
+4. **Expiration Support**: Optional expiry dates
+5. **Instant Revocation**: Deactivate without deletion
+6. **Usage Tracking**: `lastUsedAt` timestamp for monitoring
+7. **User Isolation**: Users only manage their own keys
+
+### API Endpoints
+
+```
+POST   /api-keys                  Create API key
+GET    /api-keys                  List user's API keys
+DELETE /api-keys/:id/revoke       Revoke key (set inactive)
+DELETE /api-keys/:id              Delete key permanently
+```
+
+---
+
 ## Appendix
 
 ### Glossary

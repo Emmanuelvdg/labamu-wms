@@ -1,0 +1,86 @@
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from '../src/app.module';
+import { PurchaseOrderService } from '../src/purchase-order/purchase-order.service';
+import { StockMoveService } from '../src/inventory/stock-move.service';
+import { PrismaService } from '../src/prisma.service';
+
+async function verify() {
+    const app = await NestFactory.createApplicationContext(AppModule, { logger: false });
+    const poService = app.get(PurchaseOrderService);
+    const stockMoveService = app.get(StockMoveService);
+    const prisma = app.get(PrismaService);
+
+    console.log('1. Setup Test Data... 3-step Warehouse');
+    // Clean up or create unique
+    const warehouseName = `TestWare-${Date.now()}`;
+    const warehouse = await prisma.warehouse.create({
+        data: {
+            name: warehouseName,
+            type: 'PHYSICAL',
+            location: '{}',
+            incomingSteps: '3_steps', // Crucial
+            outgoingSteps: '1_step',
+        }
+    });
+
+    // Create Locations
+    const viewLoc = await prisma.location.create({ data: { name: 'View', type: 'VIEW', warehouseId: warehouse.id } });
+    await prisma.warehouse.update({ where: { id: warehouse.id }, data: { viewLocationId: viewLoc.id } });
+
+    const stockLoc = await prisma.location.create({ data: { name: 'Stock', type: 'INTERNAL', warehouseId: warehouse.id, parentId: viewLoc.id } });
+    const inputLoc = await prisma.location.create({ data: { name: 'Input', type: 'INTERNAL', warehouseId: warehouse.id, parentId: viewLoc.id } });
+    const qualityLoc = await prisma.location.create({ data: { name: 'Quality Control', type: 'INTERNAL', warehouseId: warehouse.id, parentId: viewLoc.id } });
+
+    console.log('2. Create PO');
+    const supplier = await prisma.supplier.findFirst() || await prisma.supplier.create({ data: { name: `Sup-${Date.now()}` } });
+    const product = await prisma.product.findFirst() || await prisma.product.create({ data: { sku: `PROD-${Date.now()}`, name: 'Test Prod', category: 'General' } });
+
+    const po = await poService.createPurchaseOrder({
+        supplierId: supplier.id,
+        items: [{ productId: product.id, quantity: 10, unitCost: 100 }],
+        destinationLocationId: inputLoc.id
+    });
+
+    console.log('3. Receive PO (Trigger Chain Generation)');
+    await poService.receiveGoods(po.id, inputLoc.id);
+
+    console.log('4. Verify Transfer Order & Moves');
+    const moves = await prisma.stockMove.findMany({
+        where: { transferOrder: { purchaseOrderId: po.id } },
+        orderBy: { sequence: 'asc' }
+    });
+
+    if (moves.length !== 3) throw new Error(`Expected 3 moves, found ${moves.length}`);
+    console.log('Moves found:', moves.map(m => `${m.sequence}: ${m.status}`));
+
+    if (moves[0].status !== 'DONE') throw new Error('Move 1 should be DONE');
+    if (moves[1].status !== 'READY') throw new Error('Move 2 should be READY');
+    if (moves[2].status !== 'WAITING') throw new Error('Move 3 should be WAITING');
+
+    console.log('5. Execute Move 2 (Input -> QC)');
+    await stockMoveService.completeMove(moves[1].id, 10, qualityLoc.id, 'User');
+
+    const movesAfter2 = await prisma.stockMove.findMany({ where: { transferOrder: { purchaseOrderId: po.id } }, orderBy: { sequence: 'asc' } });
+    if (movesAfter2[2].status !== 'READY') throw new Error('Move 3 should now be READY');
+
+    console.log('6. Execute Move 3 (QC -> Stock) with FAILURE (Exception)');
+    const quarantineLoc = await prisma.location.create({ data: { name: 'Quarantine', type: 'INTERNAL', warehouseId: warehouse.id, parentId: viewLoc.id } });
+
+    // Try to move to Quarantine (Deviation)
+    await stockMoveService.completeMove(moves[2].id, 10, quarantineLoc.id, 'User');
+
+    const movesFinal = await prisma.stockMove.findMany({ where: { transferOrder: { purchaseOrderId: po.id } }, include: { nextMove: true }, orderBy: { sequence: 'asc' } });
+
+    if (movesFinal[2].status !== 'DONE') throw new Error('Move 3 should be DONE');
+    if (movesFinal[2].destinationLocationId !== quarantineLoc.id) throw new Error('Move 3 destination should be Quarantine');
+
+    const to = await prisma.transferOrder.findFirst({ where: { purchaseOrderId: po.id } });
+    if (to?.status !== 'DONE') throw new Error(`TO Status is ${to?.status}`);
+
+    console.log('SUCCESS: Full verification passed.');
+    await app.close();
+}
+verify().catch(e => {
+    console.error(e);
+    process.exit(1);
+});

@@ -178,6 +178,36 @@ Configuring a warehouse for multi-step flows (2 or 3 steps) enables detailed tra
 ### Settings
 **Purpose:** Admin controls for Users, Roles, and General configuration.
 
+### API Keys & MCP Integration
+**Purpose:** Enable secure programmatic access to the WMS and LLM-powered task orchestration.
+
+**API Key Management:**
+- **Generation:** Create secure API keys with granular permission scopes (e.g., `INVENTORY:READ`, `ORDERS:CREATE`)
+- **Scope Selection:** Choose exactly which APIs each key can access
+- **Lifecycle:** View last used date, revoke inactive keys, or delete keys permanently
+- **Security:** Keys are shown only once during generation and stored as SHA-256 hashes
+
+**MCP Server Integration:**
+The system includes a Model Context Protocol (MCP) server that allows AI assistants like Claude to orchestrate warehouse operations using generated API keys.
+
+**Available Tools:**
+- **list_products:** Query inventory products
+- **get_stock_levels:** Check current stock for any product
+- **create_purchase_order:** Generate purchase orders programmatically
+- **start_putaway_task:** Initiate putaway operations
+
+**Setup:**
+1. Navigate to Settings > API Keys
+2. Generate a new key with desired scopes
+3. Configure the MCP server in `apps/mcp/.env` with your key
+4. Add to Claude Desktop config or use via MCP protocol
+
+**Use Cases:**
+- "Ask Claude to list all products in the warehouse"
+- "Request stock levels for a specific item"
+- "Generate purchase orders via natural language commands"
+- "Automate warehouse task management through AI"
+
 ---
 
 ## End-to-End Examples

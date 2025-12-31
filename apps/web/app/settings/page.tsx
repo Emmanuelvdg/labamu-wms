@@ -84,6 +84,12 @@ export default function SettingsPage() {
                             >
                                 Users
                             </a>
+                            <a
+                                href="/settings/api-keys"
+                                className="px-4 py-3 text-left text-sm font-medium border-l-4 border-transparent text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                API Keys
+                            </a>
                         </nav>
                     </div>
                 </div>
