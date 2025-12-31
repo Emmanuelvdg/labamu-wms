@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, use } from 'react';
-import { fetchPurchaseOrders, receivePurchaseOrder, fetchLocations, fetchPurchaseOrderReceipts } from '@/lib/api';
+import { fetchPurchaseOrders, receivePurchaseOrder, fetchLocations, fetchPurchaseOrderReceipts, getPurchaseOrder } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -21,13 +21,8 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
 
     async function loadData() {
         try {
-            // Fetch single PO directly
-            const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/purchase-orders/${id}`;
-            console.log(`Fetching PO from: ${url}`);
-            const res = await fetch(url);
-            console.log(`PO Fetch Status: ${res.status}`);
-            if (!res.ok) throw new Error('Failed to fetch PO');
-            const data = await res.json();
+            // Fetch single PO using API function with auth headers
+            const data = await getPurchaseOrder(id);
 
             // Fetch receipts
             try {

@@ -5,6 +5,7 @@ export const API_URL = 'http://127.0.0.1:3001';
 export async function fetchWithRetry(url: string, options?: RequestInit) {
     try {
         const userId = Cookies.get('user_id');
+
         const headers = {
             ...options?.headers,
             ...(userId ? { 'x-user-id': userId } : {}),
@@ -269,6 +270,10 @@ export async function fetchPurchaseOrders() {
     return fetchWithRetry(`${API_URL}/purchase-orders`);
 }
 
+export async function getPurchaseOrder(id: string) {
+    return fetchWithRetry(`${API_URL}/purchase-orders/${id}`);
+}
+
 export async function createPurchaseOrder(data: any) {
     return fetchWithRetry(`${API_URL}/purchase-orders`, {
         method: 'POST',
@@ -277,11 +282,15 @@ export async function createPurchaseOrder(data: any) {
     });
 }
 
-export async function receivePurchaseOrder(id: string, items: { productId: string; quantity: number; locationId: string }[]) {
+export async function receivePurchaseOrder(
+    id: string,
+    destinationLocationId: string,
+    itemsToReceive: { poItemId: string; quantity: number }[]
+) {
     return fetchWithRetry(`${API_URL}/purchase-orders/${id}/receive`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ destinationLocationId, itemsToReceive }),
     });
 }
 

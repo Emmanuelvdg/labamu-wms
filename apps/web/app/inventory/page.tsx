@@ -316,6 +316,34 @@ export default function InventoryPage() {
                                     </div>
                                 </div>
 
+                                {/* Cost and Price Fields */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Cost (IDR)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                            placeholder="0.00"
+                                            value={newProduct.averageCost || ''}
+                                            onChange={(e) => setNewProduct({ ...newProduct, averageCost: parseFloat(e.target.value) || 0 })}
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">Average cost per unit</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700">Price (IDR)</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                            placeholder="0.00"
+                                            value={(newProduct as any).price || ''}
+                                            onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value) || 0 } as any)}
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">Selling price per unit</p>
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">Type</label>
@@ -404,7 +432,7 @@ export default function InventoryPage() {
                                         </div>
                                         <div>
                                             <label className="text-xs text-gray-500">Weight (kg)</label>
-                                            <input type="number" className="w-full border rounded px-1" value={(newProduct as any).weight || ''} onChange={e => setNewProduct({ ...newProduct, weight: e.target.value } as any)} />
+                                            <input type="number" step="0.01" className="w-full border rounded px-1" value={(newProduct as any).weight || ''} onChange={e => setNewProduct({ ...newProduct, weight: e.target.value } as any)} />
                                         </div>
                                     </div>
 
@@ -472,7 +500,7 @@ export default function InventoryPage() {
                                                             </div>
                                                             <div>
                                                                 <label>Wgt (kg)</label>
-                                                                <input type="number" className="w-full border p-1 rounded" placeholder="0" value={pkg.weight} onChange={e => updatePkg('weight', e.target.value)} />
+                                                                <input type="number" step="0.01" className="w-full border p-1 rounded" placeholder="0" value={pkg.weight} onChange={e => updatePkg('weight', e.target.value)} />
                                                             </div>
                                                         </div>
                                                     )}

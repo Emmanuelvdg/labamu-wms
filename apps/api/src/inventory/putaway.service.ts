@@ -23,7 +23,10 @@ export class PutawayService {
         const rules = await this.prisma.putawayRule.findMany({
             where: {
                 active: true,
-                warehouseId: { in: [params.warehouseId, null] },
+                OR: [
+                    { warehouseId: params.warehouseId },
+                    { warehouseId: null }
+                ],
 
                 // Combine all matching conditions with AND
                 AND: [
@@ -668,52 +671,150 @@ export class PutawayService {
     }
 
     /**
-     * Get active putaway session for a warehouse
+     * Create putaway tasks for a specific receipt
+     * Called automatically after PO receiving to generate putaway tasks
+     * Auto-creates a PutawaySession to group the tasks
      */
-    async getActiveSession(warehouseId: string) {
-        const session = await this.prisma.putawaySession.findFirst({
-            where: {
-                warehouseId,
-                status: { in: ['PLANNED', 'IN_PROGRESS'] }
-            },
+    async createTasksForReceipt(
+        tx: any,
+        params: { receiptId: string; warehouseId: string }
+    ) {
+        console.log(`[PutawayService] Auto-creating putaway tasks for receipt ${params.receiptId}`);
+
+        const receipt = await tx.receipt.findUnique({
+            where: { id: params.receiptId },
             include: {
-                tasks: {
-                    include: {
-                        product: true,
-                        sourceLocation: {
-                            include: {
-                                parent: {
-                                    include: {
-                                        parent: {
-                                            include: {
-                                                parent: true
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        destinationLocation: {
-                            include: {
-                                parent: {
-                                    include: {
-                                        parent: {
-                                            include: {
-                                                parent: true
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        receipt: true
-                    },
-                    orderBy: { createdAt: 'asc' }
-                }
+                items: { include: { product: true } },
+                destinationLocation: true
             }
         });
 
-        return session;
+        if (!receipt) {
+            console.error(`[PutawayService] Receipt ${params.receiptId} not found`);
+            throw new Error('Receipt not found');
+        }
+
+        console.log(`[PutawayService] Processing ${receipt.items.length} items from receipt at ${receipt.destinationLocation.name}`);
+
+        // Check if there's an active session for this warehouse
+        let session = await tx.putawaySession.findFirst({
+            where: {
+                warehouseId: params.warehouseId,
+                status: { in: ['PLANNED', 'IN_PROGRESS'] }
+            }
+        });
+
+        // If no active session, create one
+        if (!session) {
+            console.log(`[PutawayService] Creating new putaway session for warehouse ${params.warehouseId}`);
+            session = await tx.putawaySession.create({
+                data: {
+                    warehouseId: params.warehouseId,
+                    status: 'PLANNED'
+                }
+            });
+        }
+
+        // Create putaway tasks for each receipt item
+        let tasksCreated = 0;
+        for (const item of receipt.items) {
+            // Find best location using putaway rules
+            const destinationLocation = await this.findBestLocation(
+                item.productId,
+                item.quantity,
+                params.warehouseId,
+                receipt.destinationLocationId
+            );
+
+            if (!destinationLocation) {
+                console.warn(`[PutawayService] No destination found for product ${item.product.name} - skipping`);
+                continue;
+            }
+
+            console.log(`[PutawayService] Creating task: ${item.product.name} → ${destinationLocation.name}`);
+
+            await tx.putawayTask.create({
+                data: {
+                    sessionId: session.id, // Link task to session
+                    receiptId: receipt.id,
+                    productId: item.productId,
+                    sourceLocationId: receipt.destinationLocationId,
+                    destinationLocationId: destinationLocation.id,
+                    quantity: item.quantity,
+                    originalQuantity: item.quantity,
+                    status: 'PENDING'
+                }
+            });
+
+            tasksCreated++;
+        }
+
+        console.log(`[PutawayService] Created ${tasksCreated} putaway tasks for receipt ${params.receiptId}`);
+        return tasksCreated;
+    }
+
+
+    /**
+     * Get active putaway session for a warehouse
+     */
+    async getActiveSession(warehouseId: string) {
+        // Validate warehouseId
+        if (!warehouseId || warehouseId === 'undefined') {
+            console.log('[PutawayService] Invalid warehouseId provided to getActiveSession');
+            return null;
+        }
+
+        try {
+            const session = await this.prisma.putawaySession.findFirst({
+                where: {
+                    warehouseId,
+                    status: { in: ['PLANNED', 'IN_PROGRESS'] }
+                },
+                include: {
+                    tasks: {
+                        include: {
+                            product: true,
+                            sourceLocation: {
+                                include: {
+                                    parent: {
+                                        include: {
+                                            parent: {
+                                                include: {
+                                                    parent: true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            destinationLocation: {
+                                include: {
+                                    parent: {
+                                        include: {
+                                            parent: {
+                                                include: {
+                                                    parent: true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            receipt: true
+                        },
+                        orderBy: { createdAt: 'asc' }
+                    }
+                }
+            });
+
+            return session;
+        } catch (error) {
+            console.error('[PutawayService] Error getting active session:', error);
+            throw new HttpException(
+                'Failed to get active session',
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
     }
 
     /**

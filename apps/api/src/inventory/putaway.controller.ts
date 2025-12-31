@@ -21,7 +21,11 @@ export class PutawayController {
      */
     @Get('sessions/:warehouseId/active')
     async getActiveSession(@Param('warehouseId') warehouseId: string) {
-        return this.putawayService.getActiveSession(warehouseId);
+        const session = await this.putawayService.getActiveSession(warehouseId);
+        if (!session) {
+            throw new HttpException('No active session found', HttpStatus.NOT_FOUND);
+        }
+        return session;
     }
 
     /**

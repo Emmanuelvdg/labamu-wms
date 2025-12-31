@@ -4,11 +4,11 @@ const API_BASE = 'http://127.0.0.1:3001';
 
 export async function PATCH(
     request: Request,
-    { params }: { params: { taskId: string } }
+    { params }: { params: Promise<{ taskId: string }> }
 ) {
     try {
         const body = await request.json();
-        const { taskId } = params;
+        const { taskId } = await params;
 
         // Get user ID from cookie
         const cookies = request.headers.get('cookie') || '';

@@ -4,10 +4,10 @@ const API_BASE = 'http://127.0.0.1:3001';
 
 export async function GET(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params;
+        const { id } = await params;
 
         // Get user ID from cookie
         const cookies = request.headers.get('cookie') || '';

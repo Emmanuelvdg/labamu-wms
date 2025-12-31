@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { RuleService } from '../rule/rule.service';
 import { StockMoveService } from '../inventory/stock-move.service';
+import { PutawayService } from '../inventory/putaway.service';
 
 @Injectable()
 export class PurchaseOrderService {
@@ -11,6 +12,7 @@ export class PurchaseOrderService {
         private inventoryService: InventoryService,
         private ruleService: RuleService,
         private stockMoveService: StockMoveService,
+        private putawayService: PutawayService,
     ) { }
 
     async createPurchaseOrder(data: {
@@ -175,11 +177,38 @@ export class PurchaseOrderService {
                 throw new Error('No items to receive');
             }
 
-            // 1. Create Receipt
+            // 1. Get Warehouse ID
+            // Get warehouse from existing stock moves for this PO (created during PO creation)
+            // We don't use destinationLocationId anymore - it's just for backwards compatibility
+            const existingMove = await tx.stockMove.findFirst({
+                where: { origin: purchaseOrderId },
+                include: { destinationLocation: true }
+            });
+
+            let warehouseId: string;
+            if (existingMove?.destinationLocation?.warehouseId) {
+                warehouseId = existingMove.destinationLocation.warehouseId;
+            } else if (destinationLocationId) {
+                // Fallback: try to get warehouse from destinationLocationId if it's valid
+                const location = await tx.location.findUnique({ where: { id: destinationLocationId } });
+                if (location?.warehouseId) {
+                    warehouseId = location.warehouseId;
+                } else {
+                    throw new Error('Could not determine warehouse for receiving. Please ensure PO has associated stock moves.');
+                }
+            } else {
+                throw new Error('Could not determine warehouse for receiving');
+            }
+
+            // Get or create receiving location for this warehouse
+            const receivingLocationId = await this.getReceivingLocation(warehouseId, tx);
+            console.log(`[PurchaseOrderService] Using receiving location ${receivingLocationId} for warehouse ${warehouseId}`);
+
+            // 2. Create Receipt at Receiving Location
             const receipt = await tx.receipt.create({
                 data: {
                     purchaseOrderId: po.id,
-                    destinationLocationId: destinationLocationId,
+                    destinationLocationId: receivingLocationId,
                     status: 'DONE',
                     items: {
                         create: itemsToProcess.map(item => ({
@@ -192,15 +221,20 @@ export class PurchaseOrderService {
                 include: { items: true }
             });
 
-            // 2. Process Inventory (Batches)
-            const location = await tx.location.findUnique({ where: { id: destinationLocationId } });
-            if (!location || !location.warehouseId) throw new Error('Destination location must belong to a warehouse');
+
+            // 3. Process Inventory (Batches)
+            // Inventory is now created at receivingLocationId (defined above)
 
             // NEW: Create Linked Transfer Order
+            // Get a real user to use as initiator (use first admin user)
+            const adminUser = await tx.user.findFirst();
+            if (!adminUser) throw new Error('No users found in system');
+
+
             const transferOrder = await this.stockMoveService.createInboundTransferHeader(tx, {
                 purchaseOrderId: po.id,
-                warehouseId: location.warehouseId,
-                userId: 'SYSTEM',
+                warehouseId: warehouseId,
+                userId: adminUser.id,
                 type: 'INBOUND_FLOW'
             });
 
@@ -227,7 +261,7 @@ export class PurchaseOrderService {
                             data: {
                                 name: `${poItem.packaging?.type.toUpperCase()}-${Date.now()}-${i}`,
                                 type: poItem.packaging?.type || 'BOX',
-                                locationId: destinationLocationId,
+                                locationId: receivingLocationId,
                                 packagingId: poItem.packagingId
                             }
                         });
@@ -237,8 +271,8 @@ export class PurchaseOrderService {
                         await tx.inventoryBatch.create({
                             data: {
                                 productId: poItem.productId,
-                                warehouseId: location.warehouseId,
-                                locationId: destinationLocationId,
+                                warehouseId: warehouseId,
+                                locationId: receivingLocationId,
                                 packageId: pkg.id,
                                 batchNumber: batchNumber,
                                 initialQuantity: unitQuantity,
@@ -255,8 +289,8 @@ export class PurchaseOrderService {
                     await tx.inventoryBatch.create({
                         data: {
                             productId: poItem.productId,
-                            warehouseId: location.warehouseId,
-                            locationId: destinationLocationId,
+                            warehouseId: warehouseId,
+                            locationId: receivingLocationId,
                             batchNumber: batchNumber,
                             initialQuantity: quantityToReceive,
                             currentQuantity: quantityToReceive,
@@ -271,12 +305,12 @@ export class PurchaseOrderService {
                 await this.stockMoveService.generateInboundMoves(tx, transferOrder.id, {
                     productId: poItem.productId,
                     quantity: totalBaseUnits,
-                    warehouseId: location.warehouseId
+                    warehouseId: warehouseId
                 });
 
                 // Update Aggregate Inventory
                 const existingInventory = await tx.productInventory.findFirst({
-                    where: { productId: poItem.productId, warehouseId: location.warehouseId, locationId: destinationLocationId },
+                    where: { productId: poItem.productId, warehouseId: warehouseId, locationId: receivingLocationId },
                 });
 
                 if (existingInventory) {
@@ -288,8 +322,8 @@ export class PurchaseOrderService {
                     await tx.productInventory.create({
                         data: {
                             productId: poItem.productId,
-                            warehouseId: location.warehouseId,
-                            locationId: destinationLocationId,
+                            warehouseId: warehouseId,
+                            locationId: receivingLocationId,
                             quantity: totalBaseUnits,
                         },
                     });
@@ -307,7 +341,15 @@ export class PurchaseOrderService {
                 });
             }
 
-            // 3. Update PO Status
+            // 4. Auto-Generate Putaway Tasks
+            // Always generate putaway tasks after receiving - they will determine optimal storage locations
+            console.log(`[PurchaseOrderService] Auto-generating putaway tasks for receipt ${receipt.id}`);
+            await this.putawayService.createTasksForReceipt(tx, {
+                receiptId: receipt.id,
+                warehouseId: warehouseId
+            });
+
+            // 5. Update PO Status
             // Check if fully received
             let allReceived = true;
             let anyReceived = false;
@@ -362,4 +404,53 @@ export class PurchaseOrderService {
             },
         });
     }
+
+    /**
+     * Get or create a receiving location for a warehouse
+     * Searches for existing receiving/dock/intake locations, or creates one if none exist
+     */
+    private async getReceivingLocation(warehouseId: string, tx: any): Promise<string> {
+        // Try to find existing receiving location
+        const receivingLoc = await tx.location.findFirst({
+            where: {
+                warehouseId,
+                OR: [
+                    { name: { contains: 'Receiving' } },
+                    { name: { contains: 'Dock' } },
+                    { name: { contains: 'Intake' } },
+                    { name: { contains: 'Input' } }
+                ],
+                type: 'INTERNAL'
+            }
+        });
+
+        if (receivingLoc) {
+            console.log(`[PurchaseOrderService] Found existing receiving location: ${receivingLoc.name} (${receivingLoc.id})`);
+            return receivingLoc.id;
+        }
+
+        // Create a receiving location if none exists
+        console.log(`[PurchaseOrderService] No receiving location found, creating one for warehouse ${warehouseId}`);
+
+        const warehousePrimaryLoc = await tx.location.findFirst({
+            where: { warehouseId, parentId: null }
+        });
+
+        if (!warehousePrimaryLoc) {
+            throw new Error(`No primary location found for warehouse ${warehouseId}. Cannot auto-create receiving location.`);
+        }
+
+        const newReceivingLoc = await tx.location.create({
+            data: {
+                name: 'Receiving Dock',
+                type: 'INTERNAL',
+                warehouseId,
+                parentId: warehousePrimaryLoc.id
+            }
+        });
+
+        console.log(`[PurchaseOrderService] Created new receiving location: ${newReceivingLoc.name} (${newReceivingLoc.id})`);
+        return newReceivingLoc.id;
+    }
 }
+

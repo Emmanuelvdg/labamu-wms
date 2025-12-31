@@ -41,10 +41,15 @@ export default function PutawayPage() {
 
     async function loadWarehouses() {
         try {
+            console.log('[Putaway] Loading warehouses...');
             const data = await fetchWarehouses();
+            console.log('[Putaway] Warehouses loaded:', data);
             setWarehouses(data);
             if (data.length > 0) {
+                console.log('[Putaway] Setting selected warehouse to:', data[0].id);
                 setSelectedWarehouseId(data[0].id);
+            } else {
+                console.warn('[Putaway] No warehouses found!');
             }
         } catch (err) {
             console.error('Failed to load warehouses', err);
@@ -52,6 +57,11 @@ export default function PutawayPage() {
     }
 
     async function checkActiveSession() {
+        if (!selectedWarehouseId) {
+            console.log('[Putaway] No warehouse selected, skipping session check');
+            return;
+        }
+
         try {
             const session = await getActivePutawaySession(selectedWarehouseId);
             setActiveSession(session);

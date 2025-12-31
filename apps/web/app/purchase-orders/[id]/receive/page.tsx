@@ -1,14 +1,15 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchOrder, receivePurchaseOrder, fetchPurchaseOrderReceipts } from '@/lib/api';
+import { getPurchaseOrder, receivePurchaseOrder, fetchPurchaseOrderReceipts } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
-export default function ReceivePurchaseOrderPage({ params }: { params: { id: string } }) {
+export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
     const { hasPermission } = useAuth();
+    const { id } = use(params); // Unwrap params Promise for Next.js 15
     const [po, setPo] = useState<any>(null);
     const [receipts, setReceipts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -17,13 +18,13 @@ export default function ReceivePurchaseOrderPage({ params }: { params: { id: str
 
     useEffect(() => {
         loadData();
-    }, [params.id]);
+    }, [id]);
 
     async function loadData() {
         try {
             const [poData, receiptsData] = await Promise.all([
-                fetchOrder(params.id), // Assuming fetchOrder handles POs too or we need fetchPurchaseOrder
-                fetchPurchaseOrderReceipts(params.id)
+                getPurchaseOrder(id), // Use unwrapped id
+                fetchPurchaseOrderReceipts(id)
             ]);
             setPo(poData);
             setReceipts(receiptsData);
@@ -66,11 +67,14 @@ export default function ReceivePurchaseOrderPage({ params }: { params: { id: str
 
         const itemsToReceive = Object.entries(receiveQuantities)
             .filter(([_, qty]) => qty > 0)
-            .map(([productId, qty]) => ({
-                productId,
-                quantity: qty,
-                locationId: destinationLocationId
-            }));
+            .map(([productId, qty]) => {
+                // Find the PO item to get its ID
+                const poItem = po.items.find((item: any) => item.productId === productId);
+                return {
+                    poItemId: poItem?.id || productId, // Use poItem.id if available
+                    quantity: qty
+                };
+            });
 
         if (itemsToReceive.length === 0) {
             alert('Please enter at least one quantity to receive.');
@@ -78,9 +82,9 @@ export default function ReceivePurchaseOrderPage({ params }: { params: { id: str
         }
 
         try {
-            await receivePurchaseOrder(params.id, itemsToReceive);
+            await receivePurchaseOrder(id, destinationLocationId, itemsToReceive);
             alert('Receipt processed successfully!');
-            router.push(`/inventory/purchases/${params.id}`);
+            router.push(`/inventory/purchases/${id}`);
         } catch (err) {
             console.error('Failed to receive items', err);
             alert('Failed to process receipt.');
