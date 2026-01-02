@@ -8,7 +8,6 @@ import { ArrowLeft, Package, Truck, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 import OrderShipping from '@/components/OrderShipping';
-import { LalamoveDelivery } from '@/components/LalamoveDelivery';
 
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -150,15 +149,9 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     )}
                 </div>
 
-                {/* Lalamove Delivery - for Orders with Lalamove delivery method */}
-                {order.deliveryMethod?.provider === 'LALAMOVE' && order.warehouseId && (
-                    <div className="lg:col-span-1">
-                        <LalamoveDelivery
-                            orderId={order.id}
-                            warehouseId={order.warehouseId}
-                        />
-                    </div>
-                )}
+                {/* Lalamove Delivery - for Orders with Lalamove delivery
+                {/* Lalamove delivery functionality is now integrated into OrderShipping component above */}
+
             </div>
 
             {/* Exceptions Card */}

@@ -8,11 +8,36 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
     const [selectedMethodId, setSelectedMethodId] = useState(order.deliveryMethodId || '');
     const [loading, setLoading] = useState(false);
     const [calculatedCost, setCalculatedCost] = useState<number | null>(order.shippingCost || null);
+    const [lalamoveQuotationId, setLalamoveQuotationId] = useState<string | null>(null);
+    const [bookingDelivery, setBookingDelivery] = useState(false);
 
     useEffect(() => {
         // Fetch active methods
         api.get('/shipping/methods').then(setMethods);
     }, []);
+
+    // Auto-fetch Lalamove quote if already selected
+    useEffect(() => {
+        if (selectedMethodId && methods.length > 0) {
+            const selectedMethod = methods.find(m => m.id === selectedMethodId);
+            if (selectedMethod?.provider === 'LALAMOVE' && order.warehouseId && order.id) {
+                // Automatically fetch quote for Lalamove
+                setLoading(true);
+                api.get(`/lalamove/quotation/${order.id}?warehouseId=${order.warehouseId}`)
+                    .then((quotation) => {
+                        setCalculatedCost(quotation.price ? parseFloat(quotation.price) : 0);
+                        setLalamoveQuotationId(quotation.quotationId || null);
+                    })
+                    .catch((error) => {
+                        console.error('Failed to auto-fetch Lalamove quotation:', error);
+                        setCalculatedCost(0);
+                    })
+                    .finally(() => {
+                        setLoading(false);
+                    });
+            }
+        }
+    }, [selectedMethodId, methods, order.warehouseId, order.id]);
 
     const handleMethodChange = async (methodId: string) => {
         setSelectedMethodId(methodId);
@@ -28,8 +53,9 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
             // If Lalamove, fetch real-time quotation
             if (selectedMethod?.provider === 'LALAMOVE') {
                 try {
-                    const quotation = await api.get(`/lalamove/quotation/${order.warehouseId}/${order.id}`);
+                    const quotation = await api.get(`/lalamove/quotation/${order.id}?warehouseId=${order.warehouseId}`);
                     setCalculatedCost(quotation.price ? parseFloat(quotation.price) : 0);
+                    setLalamoveQuotationId(quotation.quotationId || null);
                 } catch (error: any) {
                     console.error('Failed to get Lalamove quotation:', error);
                     alert(`Failed to get Lalamove quote: ${error.message || 'Unknown error'}`);
@@ -85,6 +111,28 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
         }
     };
 
+    const bookLalamoveDelivery = async () => {
+        if (!lalamoveQuotationId || !order.warehouseId) {
+            alert('Missing quotation. Please select Lalamove delivery method first.');
+            return;
+        }
+
+        setBookingDelivery(true);
+        try {
+            const result = await api.post(`/lalamove/orders/${order.id}`, {
+                warehouseId: order.warehouseId,
+                quotationId: lalamoveQuotationId
+            });
+            alert(`Delivery booked successfully! Order ID: ${result.lalamoveOrderId}`);
+            onUpdate();
+        } catch (error: any) {
+            console.error('Failed to book delivery:', error);
+            alert(`Failed to book delivery: ${error.message || 'Unknown error'}`);
+        } finally {
+            setBookingDelivery(false);
+        }
+    };
+
     return (
         <div className="bg-white p-4 rounded shadow mt-4">
             <h3 className="font-bold text-lg mb-4">Shipping & Delivery</h3>
@@ -114,15 +162,28 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                                 {loading ? '...' : `$${(calculatedCost || 0).toLocaleString()}`}
                             </span>
                         </div>
-                        {(order.status === 'PENDING' || order.status === 'DRAFT') && (
-                            <button
-                                onClick={applyShipping}
-                                disabled={loading || selectedMethodId === order.deliveryMethodId}
-                                className={`px-4 py-2 rounded ${selectedMethodId === order.deliveryMethodId ? 'bg-gray-300 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                            >
-                                {selectedMethodId === order.deliveryMethodId ? 'Applied' : 'Apply'}
-                            </button>
-                        )}
+                        <div className="flex gap-2">
+                            {(order.status === 'PENDING' || order.status === 'DRAFT') && (
+                                <button
+                                    onClick={applyShipping}
+                                    disabled={loading || selectedMethodId === order.deliveryMethodId}
+                                    className={`px-4 py-2 rounded ${selectedMethodId === order.deliveryMethodId ? 'bg-gray-300 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                                >
+                                    {selectedMethodId === order.deliveryMethodId ? 'Applied' : 'Apply'}
+                                </button>
+                            )}
+
+                            {/* Book Delivery button for Lalamove */}
+                            {selectedMethodId && methods.find(m => m.id === selectedMethodId)?.provider === 'LALAMOVE' && lalamoveQuotationId && (
+                                <button
+                                    onClick={bookLalamoveDelivery}
+                                    disabled={bookingDelivery}
+                                    className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400"
+                                >
+                                    {bookingDelivery ? 'Booking...' : '📦 Book Delivery'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
