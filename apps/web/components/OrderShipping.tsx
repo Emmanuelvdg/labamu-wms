@@ -150,7 +150,7 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                         className="block w-full border border-gray-300 rounded p-2"
                         value={selectedMethodId}
                         onChange={(e) => handleMethodChange(e.target.value)}
-                        disabled={order.status !== 'PENDING' && order.status !== 'DRAFT'}
+                        disabled={order.status === 'SHIPPED' || order.status === 'DELIVERED' || order.status === 'CANCELLED'}
                     >
                         <option value="">Select a method...</option>
                         {methods.map(m => (
@@ -171,7 +171,7 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                                 </span>
                             </div>
                             <div className="flex gap-2">
-                                {(order.status === 'PENDING' || order.status === 'DRAFT') && (
+                                {(order.status !== 'SHIPPED' && order.status !== 'DELIVERED' && order.status !== 'CANCELLED') && (
                                     <button
                                         onClick={applyShipping}
                                         disabled={loading || selectedMethodId === order.deliveryMethodId}
