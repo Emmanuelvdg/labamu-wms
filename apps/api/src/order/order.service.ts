@@ -208,6 +208,7 @@ export class OrderService {
                 reservations: true,
                 shipment: true,
                 warehouse: true, // Include warehouse for UI
+                deliveryMethod: true, // Include delivery method for Lalamove card
                 pickingTasks: {
                     include: { sourceLocation: true }
                 }
@@ -318,5 +319,19 @@ export class OrderService {
             }
             throw new BadRequestException(error.message);
         }
+    }
+
+    async updateOrder(id: string, data: any): Promise<Order> {
+        return this.prisma.order.update({
+            where: { id },
+            data: {
+                deliveryMethodId: data.deliveryMethodId,
+                // Add other fields as needed
+            },
+            include: {
+                items: { include: { product: true } },
+                deliveryMethod: true,
+            },
+        });
     }
 }

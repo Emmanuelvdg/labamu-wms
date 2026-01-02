@@ -94,9 +94,18 @@ model Warehouse {
   id             String    @id @default(uuid())
   name           String
   shortName      String? // Max 5 chars
-  address        String?
+  
+  // Structured Address Fields
+  address        String? // Street address
+  city           String?
+  state          String? // State/Province
+  postalCode     String?
+  country        String?
+  latitude       Float?
+  longitude      Float?
+  
   companyId      String?
-  location       String // JSON: { lat: number, lng: number }
+  location       String @default("{}") // JSON: { lat: number, lng: number } - deprecated, use latitude/longitude
   type           String
   partnerId      String?
   viewLocationId String?   @unique
@@ -137,6 +146,7 @@ model Warehouse {
   destTransfers    TransferOrder[]   @relation("TransferDest")
   rotationRules    RotationRule[]
   functionalAreas  WarehouseFunctionalArea[]
+  lalamoveConfig   LalamoveConfig?
 }
 
 model WarehouseFunctionalArea {
@@ -349,6 +359,9 @@ model Order {
   deliveryMethod     DeliveryMethod? @relation(fields: [deliveryMethodId], references: [id])
   shippingCost       Float           @default(0)
   shippingCostInCOGS Boolean         @default(false)
+  
+  // Lalamove Integration
+  lalamoveOrders LalamoveOrder[]
 }
 
 model OrderItem {
@@ -829,9 +842,16 @@ model ApiKey {
 model Customer {
   id        String   @id @default(uuid())
   name      String
-  address   String?
+  
+  // Structured Address Fields
+  address   String? // Street address
+  city      String?
+  state     String? // State/Province
+  postalCode String?
+  country   String?
   latitude  Float?
   longitude Float?
+  
   orders    Order[]
   rotationRules RotationRule[]
   createdAt DateTime @default(now())
@@ -952,17 +972,88 @@ model DeliveryMethod {
   id         String  @id @default(uuid())
   name       String
   active     Boolean @default(true)
-  provider   String // FIXED_PRICE, BASED_ON_RULES
+  provider   String // FIXED_PRICE, BASED_ON_RULES, LALAMOVE
   fixedPrice Float   @default(0)
 
   // Link to external carrier (optional integration)
-  carrier String? // FedEx, UPS, etc.
+  carrier String? // FedEx, UPS, Lalamove, etc.
 
   rules  ShippingRule[]
   orders Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model LalamoveConfig {
+  id            String    @id @default(uuid())
+  warehouseId   String    @unique
+  warehouse     Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  
+  market        String   // TH, SG, HK, PH, MY, ID, TW, VN, BR, MX, JP
+  apiKey        String   // Encrypted
+  apiSecret     String   // Encrypted
+  environment   String   @default("SANDBOX") // SANDBOX, PRODUCTION
+  webhookUrl    String?
+  
+  defaultServiceType String? // MOTORCYCLE, SEDAN, VAN, LORRY
+  
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([warehouseId])
+}
+
+model LalamoveOrder {
+  id              String    @id @default(uuid())
+  orderId         String
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  // Lalamove identifiers
+  quotationId     String?
+  lalamoveOrderId String?   @unique
+  shareLink       String?
+  
+  // Order details
+  serviceType     String    // MOTORCYCLE, SEDAN, VAN, LORRY
+  market          String
+  status          String    // ASSIGNING_DRIVER, ON_GOING, PICKED_UP, COMPLETED, CANCELLED, REJECTED, EXPIRED
+  
+  // Pricing
+  quotedPrice     Float?
+  finalPrice      Float?
+  currency        String?
+  priceBreakdown  String?   // JSON
+  
+  // Driver info
+  driverId        String?
+  driverName      String?
+  driverPhone     String?
+  driverPlate     String?
+  
+  // Tracking
+  distance        Float?    // in meters
+  distanceUnit    String?   // m, km
+  
+  // Stops (JSON array)
+  stops           String    // JSON: [{address, coordinates, name, phone, status, POD}]
+  
+  // Metadata
+  specialRequests String?   // JSON array
+  remarks         String?   // JSON array
+  metadata        String?   // JSON key-value pairs
+  
+  // Proof of delivery
+  podStatus       String?   // PENDING, DELIVERED, FAILED
+  podImageUrl     String?
+  deliveredAt     DateTime?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([orderId])
+  @@index([lalamoveOrderId])
 }
 
 model ShippingRule {

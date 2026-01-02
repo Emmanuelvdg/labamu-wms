@@ -115,6 +115,29 @@ export class WarehouseAreaService {
         });
     }
 
+    async updateWarehouse(id: string, data: {
+        address?: string;
+        city?: string;
+        state?: string;
+        postalCode?: string;
+        country?: string;
+        latitude?: number;
+        longitude?: number;
+    }) {
+        return this.prisma.warehouse.update({
+            where: { id },
+            data: {
+                address: data.address,
+                city: data.city,
+                state: data.state,
+                postalCode: data.postalCode,
+                country: data.country,
+                latitude: data.latitude,
+                longitude: data.longitude,
+            },
+        });
+    }
+
     async getSuggestedAreas(warehouseId: string): Promise<{ areaType: string; name: string; color: string; sequence: number }[]> {
         const warehouse = await this.prisma.warehouse.findUnique({
             where: { id: warehouseId },

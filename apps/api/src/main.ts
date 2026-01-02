@@ -1,7 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
 import { PrismaService } from './prisma.service';
+
+// Load .env file from apps/api directory
+const envPath = path.join(process.cwd(), '.env');
+console.log('[ENV] Loading .env from:', envPath);
+dotenv.config({ path: envPath });
+console.log('[ENV] LALAMOVE_API_KEY loaded:', !!process.env.LALAMOVE_API_KEY);
+console.log('[ENV] LALAMOVE_API_SECRET loaded:', !!process.env.LALAMOVE_API_SECRET);
 
 async function bootstrap() {
     try {

@@ -72,6 +72,22 @@ export async function createWarehouse(warehouse: any) {
     });
 }
 
+export async function updateWarehouse(id: string, data: {
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+}) {
+    return fetchWithRetry(`${API_URL}/warehouses/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
 export async function fetchBatches(productId: string) {
     return fetchWithRetry(`${API_URL}/inventory/batch/${productId}`);
 }

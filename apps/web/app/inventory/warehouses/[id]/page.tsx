@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { fetchWarehouses, fetchStrategies, createStrategy, toggleStrategy } from '@/lib/api';
+import { fetchWarehouses, fetchStrategies, createStrategy, toggleStrategy, updateWarehouse } from '@/lib/api';
 import {
     Settings as SettingsIcon,
     Truck,
@@ -24,11 +24,19 @@ export default function WarehouseDetailsPage() {
     const [pickingStrategy, setPickingStrategy] = useState('standard');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [savingInfo, setSavingInfo] = useState(false);
 
     // Configuration states
     const [batchCriteria, setBatchCriteria] = useState<string[]>(['location']);
     const [clusterSize, setClusterSize] = useState(4);
     const [waveCriteria, setWaveCriteria] = useState('product');
+
+    // Warehouse information states
+    const [address, setAddress] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
+    const [postalCode, setPostalCode] = useState('');
+    const [country, setCountry] = useState('');
 
     useEffect(() => {
         loadData();
@@ -40,6 +48,15 @@ export default function WarehouseDetailsPage() {
             const warehouses = await fetchWarehouses();
             const wh = warehouses.find((w: any) => w.id === warehouseId);
             setWarehouse(wh);
+
+            // Populate address fields
+            if (wh) {
+                setAddress(wh.address || '');
+                setCity(wh.city || '');
+                setState(wh.state || '');
+                setPostalCode(wh.postalCode || '');
+                setCountry(wh.country || '');
+            }
 
             // 2. Fetch Strategies
             const strategies = await fetchStrategies('picking', warehouseId);
@@ -64,6 +81,26 @@ export default function WarehouseDetailsPage() {
             setLoading(false);
         }
     }
+
+    const handleSaveInfo = async () => {
+        setSavingInfo(true);
+        try {
+            await updateWarehouse(warehouseId, {
+                address,
+                city,
+                state,
+                postalCode,
+                country,
+            });
+
+            toast.success('Warehouse information updated');
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to save warehouse information');
+        } finally {
+            setSavingInfo(false);
+        }
+    };
 
     const handleSave = async () => {
         setSaving(true);
@@ -111,6 +148,99 @@ export default function WarehouseDetailsPage() {
                     <p className="text-gray-600 mt-1">Warehouse Configuration</p>
                 </div>
             </header>
+
+            {/* Warehouse Information Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-5xl mx-auto mb-6">
+                <div className="mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                        <SettingsIcon className="h-5 w-5" />
+                        Warehouse Information
+                    </h2>
+                    <p className="text-gray-500 text-sm mt-1">
+                        Update warehouse address and contact details.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Street Address
+                        </label>
+                        <input
+                            type="text"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                            placeholder="123 Main Street"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            City
+                        </label>
+                        <input
+                            type="text"
+                            value={city}
+                            onChange={(e) => setCity(e.target.value)}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                            placeholder="Jakarta"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            State/Province
+                        </label>
+                        <input
+                            type="text"
+                            value={state}
+                            onChange={(e) => setState(e.target.value)}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                            placeholder="DKI Jakarta"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Postal Code
+                        </label>
+                        <input
+                            type="text"
+                            value={postalCode}
+                            onChange={(e) => setPostalCode(e.target.value)}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                            placeholder="12190"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Country
+                        </label>
+                        <input
+                            type="text"
+                            value={country}
+                            onChange={(e) => setCountry(e.target.value)}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                            placeholder="Indonesia"
+                        />
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-end">
+                    <Button
+                        onClick={handleSaveInfo}
+                        disabled={savingInfo}
+                        className="flex items-center gap-2"
+                    >
+                        <Save className="h-4 w-4" />
+                        {savingInfo ? 'Saving...' : 'Save Information'}
+                    </Button>
+                </div>
+            </div>
+
+            {/* Picking Strategy Section */}
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-5xl mx-auto">
                 <div className="mb-6">

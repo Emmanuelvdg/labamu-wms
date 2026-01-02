@@ -1,0 +1,20 @@
+{
+    "serviceType": "MOTORCYCLE",
+    "stops": [
+        {
+            "location": {
+                "lat": "-6.2088",
+                "lng": "106.8456"
+            },
+            "address": "Jl. Jenderal Sudirman Kav 52-53, Jakarta Selatan"
+        },
+        {
+            "location": {
+                "lat": "-6.1754",
+                "lng": "106.8272"
+            },
+            "address": "Jl. MH Thamrin No.1, Jakarta Pusat"
+        }
+    ],
+    "isRouteOptimized": false
+}

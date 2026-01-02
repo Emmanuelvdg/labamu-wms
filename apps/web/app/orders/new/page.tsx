@@ -17,6 +17,9 @@ export default function NewOrderPage() {
     // Customer Creation State
     const [showCustomerModal, setShowCustomerModal] = useState(false);
     const [newCustomerName, setNewCustomerName] = useState('');
+    const [newCustomerAddress, setNewCustomerAddress] = useState('');
+    const [newCustomerLat, setNewCustomerLat] = useState('');
+    const [newCustomerLng, setNewCustomerLng] = useState('');
     const [creatingCustomer, setCreatingCustomer] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -74,13 +77,32 @@ export default function NewOrderPage() {
 
     const handleCreateCustomer = async () => {
         if (!newCustomerName.trim()) return;
+
+        // Validate address fields if provided
+        if (newCustomerAddress && (!newCustomerLat || !newCustomerLng)) {
+            alert('Please provide both latitude and longitude for the address');
+            return;
+        }
+
         setCreatingCustomer(true);
         try {
-            const newCustomer = await createCustomer({ name: newCustomerName });
+            const customerData: any = { name: newCustomerName };
+
+            // Add address fields if provided
+            if (newCustomerAddress && newCustomerLat && newCustomerLng) {
+                customerData.address = newCustomerAddress;
+                customerData.latitude = parseFloat(newCustomerLat);
+                customerData.longitude = parseFloat(newCustomerLng);
+            }
+
+            const newCustomer = await createCustomer(customerData);
             setCustomers([newCustomer, ...customers]);
             setFormData({ ...formData, customerId: newCustomer.id });
             setShowCustomerModal(false);
             setNewCustomerName('');
+            setNewCustomerAddress('');
+            setNewCustomerLat('');
+            setNewCustomerLng('');
         } catch (error) {
             console.error('Failed to create customer:', error);
             alert('Failed to create customer');
@@ -306,7 +328,7 @@ export default function NewOrderPage() {
                                 <option value="">Select Delivery Method</option>
                                 {deliveryMethods.map((dm) => (
                                     <option key={dm.id} value={dm.id}>
-                                        {dm.name} - IDR {dm.fixedPrice?.toLocaleString() || 'Contact for price'}
+                                        {dm.name} - {dm.provider === 'LALAMOVE' ? 'Contact for quotation' : `IDR ${dm.fixedPrice?.toLocaleString() || 0}`}
                                     </option>
                                 ))}
                             </select>
@@ -409,17 +431,66 @@ export default function NewOrderPage() {
             {/* Customer Modal */}
             {showCustomerModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
                         <h2 className="text-lg font-bold mb-4">New Customer</h2>
-                        <input
-                            type="text"
-                            placeholder="Customer Name"
-                            className="w-full border p-2 rounded mb-4"
-                            value={newCustomerName}
-                            onChange={(e) => setNewCustomerName(e.target.value)}
-                            autoFocus
-                        />
-                        <div className="flex justify-end gap-2">
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                                <input
+                                    type="text"
+                                    placeholder="Customer Name"
+                                    className="w-full border border-gray-300 p-2 rounded"
+                                    value={newCustomerName}
+                                    onChange={(e) => setNewCustomerName(e.target.value)}
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Address (for Lalamove delivery)
+                                </label>
+                                <textarea
+                                    placeholder="Full delivery address"
+                                    className="w-full border border-gray-300 p-2 rounded"
+                                    rows={2}
+                                    value={newCustomerAddress}
+                                    onChange={(e) => setNewCustomerAddress(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        placeholder="13.7563"
+                                        className="w-full border border-gray-300 p-2 rounded"
+                                        value={newCustomerLat}
+                                        onChange={(e) => setNewCustomerLat(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        placeholder="100.5018"
+                                        className="w-full border border-gray-300 p-2 rounded"
+                                        value={newCustomerLng}
+                                        onChange={(e) => setNewCustomerLng(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-gray-500">
+                                💡 Tip: Get coordinates from Google Maps → Right-click location → Copy coordinates
+                            </p>
+                        </div>
+
+                        <div className="flex justify-end gap-2 mt-6">
                             <Button variant="ghost" onClick={() => setShowCustomerModal(false)}>Cancel</Button>
                             <Button onClick={handleCreateCustomer} disabled={creatingCustomer || !newCustomerName.trim()}>
                                 {creatingCustomer ? 'Creating...' : 'Create'}

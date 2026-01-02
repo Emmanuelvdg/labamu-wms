@@ -8,6 +8,7 @@ import { ArrowLeft, Package, Truck, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 import OrderShipping from '@/components/OrderShipping';
+import { LalamoveDelivery } from '@/components/LalamoveDelivery';
 
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -149,28 +150,37 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     )}
                 </div>
 
-                {/* Exceptions Card */}
-                {order.status === 'EXCEPTION' && (
-                    <div className="bg-red-50 p-6 rounded-xl shadow-sm border border-red-200">
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-red-800">
-                            <AlertCircle className="h-5 w-5" />
-                            Exceptions Detected
-                        </h3>
-                        <div className="space-y-2">
-                            {order.pickingTasks
-                                ?.filter((t: any) => t.status === 'FAILED' || t.status === 'PARTIALLY_PICKED')
-                                .map((t: any) => (
-                                    <div key={t.id} className="text-sm text-red-700 bg-white p-2 rounded border border-red-100">
-                                        <p className="font-medium">Product: {t.product?.name || t.productId}</p>
-                                        <p>Reason: {t.exceptionReason}</p>
-                                        <p>Picked: {t.pickedQuantity} / {t.quantity}</p>
-                                    </div>
-                                ))}
-                        </div>
+                {/* Lalamove Delivery - for Orders with Lalamove delivery method */}
+                {order.deliveryMethod?.provider === 'LALAMOVE' && order.warehouseId && (
+                    <div className="lg:col-span-1">
+                        <LalamoveDelivery
+                            orderId={order.id}
+                            warehouseId={order.warehouseId}
+                        />
                     </div>
                 )}
             </div>
 
+            {/* Exceptions Card */}
+            {order.status === 'EXCEPTION' && (
+                <div className="bg-red-50 p-6 rounded-xl shadow-sm border border-red-200">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-red-800">
+                        <AlertCircle className="h-5 w-5" />
+                        Exceptions Detected
+                    </h3>
+                    <div className="space-y-2">
+                        {order.pickingTasks
+                            ?.filter((t: any) => t.status === 'FAILED' || t.status === 'PARTIALLY_PICKED')
+                            .map((t: any) => (
+                                <div key={t.id} className="text-sm text-red-700 bg-white p-2 rounded border border-red-100">
+                                    <p className="font-medium">Product: {t.product?.name || t.productId}</p>
+                                    <p>Reason: {t.exceptionReason}</p>
+                                    <p>Picked: {t.pickedQuantity} / {t.quantity}</p>
+                                </div>
+                            ))}
+                    </div>
+                </div>
+            )}
             {/* Line Items Table */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200">
@@ -226,6 +236,6 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     </tbody>
                 </table>
             </div>
-        </div >
+        </div>
     );
 }

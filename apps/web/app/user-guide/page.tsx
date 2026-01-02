@@ -339,6 +339,25 @@ export default function UserGuidePage() {
                                             </p>
                                         </div>
 
+                                        <div className="border-t pt-4 mt-4">
+                                            <h4 className="font-medium mb-2">✨ Address Management:</h4>
+                                            <p className="text-sm text-muted-foreground mb-3">
+                                                Each warehouse can have a complete structured address for delivery integration and shipping:
+                                            </p>
+                                            <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+
+                                                <li><strong>Street Address:</strong> Physical location of the warehouse</li>
+                                                <li><strong>City, State, Postal Code, Country:</strong> Complete geographic details</li>
+                                                <li><strong>Latitude/Longitude:</strong> GPS coordinates for automated delivery quotations</li>
+                                            </ul>
+                                            <div className="bg-blue-50 p-3 rounded-md text-sm mt-3">
+                                                <strong className="text-blue-900">💡 Delivery Integration:</strong>
+                                                <p className="text-muted-foreground mt-1">
+                                                    Structured address information is critical for automated delivery quotations and third-party logistics integrations like Lalamove. Navigate to the warehouse edit page to update address details and GPS coordinates.
+                                                </p>
+                                            </div>
+                                        </div>
+
                                         <div className="bg-muted p-4 rounded-md text-sm">
                                             <strong>How to Use:</strong>
                                             <ol className="list-decimal pl-5 mt-1 space-y-1">
@@ -346,6 +365,7 @@ export default function UserGuidePage() {
                                                 <li>Create a Warehouse for each physical address.</li>
                                                 <li>Select inbound/outbound workflow steps (1, 2, or 3 steps).</li>
                                                 <li>System automatically creates functional areas and locations.</li>
+                                                <li>Click on warehouse to edit and add complete address information.</li>
                                                 <li>Assign <strong>Users</strong> to the warehouse to restrict their access/visibility.</li>
                                             </ol>
                                         </div>
@@ -1040,13 +1060,87 @@ export default function UserGuidePage() {
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Truck className="h-5 w-5" /> Delivery Methods</h3>
                                 <Card>
                                     <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> Calculating and charging for logistics.</p>
-                                        <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                                            <li><strong>Fixed Price:</strong> Simple. "Standard Shipping = $10".</li>
-                                            <li><strong>Rules Based:</strong> "If Weight &gt; 5kg, Cost = $20". "If Total &gt; $100, Free Shipping".</li>
-                                        </ul>
-                                        <div className="bg-muted p-4 rounded-md text-sm">
-                                            <strong>How to Use:</strong> Define methods in <strong>Configuration</strong>. These appear in the Sales Order dropdown.
+                                        <p><strong>Purpose:</strong> Calculating shipping costs and managing delivery logistics.</p>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Method Types:</h4>
+                                            <ul className="list-disc pl-5 text-muted-foreground space-y-1">
+                                                <li><strong>Fixed Price:</strong> Simple flat rate shipping (e.g., "Standard Shipping = $10")</li>
+                                                <li><strong>Rules Based:</strong> Calculate based on weight, volume, dimensions (e.g., "If Weight &gt; 5kg, Cost = $20")</li>
+                                                <li><strong>Lalamove (On-Demand):</strong> Real-time delivery quotations from Lalamove API</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="border-t pt-4 mt-4 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg">
+                                            <h4 className="font-medium mb-3 flex items-center gap-2">
+                                                <Truck className="h-5 w-5 text-blue-600" />
+                                                ✨ Lalamove Integration
+                                            </h4>
+                                            <p className="text-sm text-muted-foreground mb-4">
+                                                Seamless on-demand delivery integration for supported markets (Indonesia, Singapore, Thailand, Philippines, Vietnam)
+                                            </p>
+
+                                            <div className="space-y-4">
+                                                <div className="bg-white p-4 rounded-md">
+                                                    <strong className="text-sm block mb-2 text-blue-900">📋 Setup:</strong>
+                                                    <ol className="list-decimal pl-5 text-sm text-muted-foreground space-y-1">
+                                                        <li>Navigate to <strong>Configuration → Delivery Methods</strong></li>
+                                                        <li>Create new delivery method with Provider = "LALAMOVE"</li>
+                                                        <li>Configure Lalamove credentials in environment variables</li>
+                                                        <li>System automatically maps markets to appropriate languages</li>
+                                                    </ol>
+                                                </div>
+
+                                                <div className="bg-white p-4 rounded-md">
+                                                    <strong className="text-sm block mb-2 text-green-900">🚀 Using Lalamove for Order Delivery:</strong>
+                                                    <ol className="list-decimal pl-5 text-sm text-muted-foreground space-y-1">
+                                                        <li><strong>Create Order:</strong> Ensure warehouse and customer have complete address information</li>
+                                                        <li><strong>Select Method:</strong> In order's "Shipping Info", choose "Lalamove Delivery (On-Demand)" from dropdown</li>
+                                                        <li><strong>Auto-Quote:</strong> System automatically fetches real-time quotation</li>
+                                                        <li><strong>View Cost:</strong> "Estimated Cost" updates with actual Lalamove price (e.g., IDR 8,500)</li>
+                                                        <li><strong>Apply:</strong> Click "Apply" to confirm delivery method</li>
+                                                        <li><strong>Book Delivery:</strong> Once order is ready to ship, use "Book Delivery" button</li>
+                                                    </ol>
+                                                </div>
+
+                                                <div className="bg-white p-4 rounded-md">
+                                                    <strong className="text-sm block mb-2 text-purple-900">🏍️ Supported Service Types:</strong>
+                                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                                        <div className="flex items-start gap-2">
+                                                            <span className="bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-medium min-w-[100px]">MOTORCYCLE</span>
+                                                            <span className="text-muted-foreground">&lt; 20kg</span>
+                                                        </div>
+                                                        <div className="flex items-start gap-2">
+                                                            <span className="bg-green-100 text-green-900 px-2 py-0.5 rounded font-medium min-w-[100px]">SEDAN</span>
+                                                            <span className="text-muted-foreground">20-100kg</span>
+                                                        </div>
+                                                        <div className="flex items-start gap-2">
+                                                            <span className="bg-orange-100 text-orange-900 px-2 py-0.5 rounded font-medium min-w-[100px]">VAN</span>
+                                                            <span className="text-muted-foreground">100-500kg</span>
+                                                        </div>
+                                                        <div className="flex items-start gap-2">
+                                                            <span className="bg-red-100 text-red-900 px-2 py-0.5 rounded font-medium min-w-[100px]">LORRY</span>
+                                                            <span className="text-muted-foreground">&gt; 500kg</span>
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground mt-2">System automatically selects appropriate service type based on order weight</p>
+                                                </div>
+
+                                                <div className="bg-yellow-50 p-3 rounded-md border border-yellow-200">
+                                                    <strong className="text-yellow-900 text-sm block mb-1">⚠️ Requirements:</strong>
+                                                    <ul className="list-disc pl-5 text-xs text-muted-foreground space-y-0.5">
+                                                        <li><strong>Warehouse:</strong> Street address, city, state, postal code, country, latitude, longitude</li>
+                                                        <li><strong>Customer:</strong> Street address, city, state, postal code, country, latitude, longitude</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-muted p-4 rounded-md text-sm mt-4">
+                                            <strong>How to Configure:</strong>
+                                            <p className="text-muted-foreground mt-1">
+                                                Go to <strong>Configuration → Delivery Methods</strong> to define methods. These will appear in the Sales Order shipping dropdown for automatic cost calculation and booking.
+                                            </p>
                                         </div>
                                     </CardContent>
                                 </Card>

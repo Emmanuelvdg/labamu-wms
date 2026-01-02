@@ -1,9 +1,40 @@
 import { Controller, Get, Post, Put, Delete, Patch, Param, Body } from '@nestjs/common';
 import { WarehouseAreaService, CreateAreaDto, UpdateAreaDto, UpdateFloorPlanDto } from './warehouse-area.service';
+import { PrismaService } from '../prisma.service';
 
 @Controller('warehouses')
 export class WarehouseAreaController {
-    constructor(private warehouseAreaService: WarehouseAreaService) { }
+    constructor(
+        private warehouseAreaService: WarehouseAreaService,
+        private prisma: PrismaService
+    ) { }
+
+    @Get()
+    async getAllWarehouses() {
+        return this.prisma.warehouse.findMany({
+            select: {
+                id: true,
+                name: true,
+                shortName: true,
+                address: true,
+                city: true,
+                state: true,
+                postalCode: true,
+                country: true,
+                latitude: true,
+                longitude: true,
+                type: true,
+            },
+            orderBy: {
+                name: 'asc',
+            },
+        });
+    }
+
+    @Patch(':id')
+    async updateWarehouse(@Param('id') id: string, @Body() data: any) {
+        return this.warehouseAreaService.updateWarehouse(id, data);
+    }
 
     @Get(':id/areas')
     async getAreas(@Param('id') warehouseId: string) {
@@ -52,3 +83,4 @@ export class WarehouseAreaController {
         return this.warehouseAreaService.updateFloorPlan(warehouseId, data);
     }
 }
+

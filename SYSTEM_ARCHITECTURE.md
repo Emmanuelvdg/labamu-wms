@@ -1033,6 +1033,251 @@ DELETE /api-keys/:id              Delete key permanently
 
 ---
 
+## Lalamove Integration
+
+### Overview
+
+The system integrates with Lalamove's on-demand delivery platform to provide real-time delivery quotations and order placement for supported markets (Indonesia, Singapore, Thailand, Philippines, Vietnam).
+
+### Architecture Components
+
+#### Backend Services
+
+**LalamoveService** (`apps/api/src/lalamove/lalamove.service.ts`)
+- Manages all Lalamove API interactions
+- Implements HMAC SHA-256 signature authentication
+- Handles quotation requests, order placement, and status tracking
+
+**Key Methods:**
+```typescript
+async getQuotation(warehouseId: string, orderId: string)
+async placeOrder(warehouseId: string, orderId: string, quotationId: string)
+async getOrderStatus(lalamoveOrderId: string)
+async cancelOrder(lalamoveOrderId: string)
+```
+
+#### API Endpoints
+
+```
+GET    /lalamove/quotation/:warehouseId/:orderId    Get delivery quotation
+POST   /lalamove/orders/:warehouseId/:orderId       Place Lalamove order
+GET    /lalamove/orders/:lalamoveOrderId            Get order status
+PUT    /lalamove/orders/:lalamoveOrderId/cancel     Cancel order
+POST   /lalamove/webhook                            Handle Lalamove webhooks
+```
+
+### Data Model
+
+#### Warehouse Extensions
+```typescript
+Warehouse {
+  // ... existing fields
+  
+  // Structured Address (required for Lalamove)
+  address: string?        // Street address
+  city: string?          // City name
+  state: string?         // State/Province
+  postalCode: string?    // Postal code
+  country: string?       // Country
+  latitude: float?       // GPS latitude
+  longitude: float?      // GPS longitude
+}
+```
+
+#### Customer Extensions
+```typescript
+Customer {
+  // ... existing fields
+  
+  // Structured Address (required for Lalamove)
+  address: string?       // Street address
+  city: string?         // City name
+  state: string?        // State/Province
+  postalCode: string?   // Postal code
+  country: string?      // Country
+  latitude: float?      // GPS latitude
+  longitude: float?     // GPS longitude
+}
+```
+
+#### LalamoveOrder
+```typescript
+LalamoveOrder {
+  id: string (UUID)
+  orderId: string                // WMS Order ID
+  quotationId: string           // Lalamove quotation ID
+  lalamoveOrderId: string       // Lalamove's order ID
+  shareLink: string?            // Tracking URL
+  
+  serviceType: string           // MOTORCYCLE, SEDAN, VAN, LORRY
+  market: string                // ID, SG, TH, PH, VN
+  status: string                // ASSIGNING_DRIVER, ACCEPTED, etc.
+  
+  // Pricing
+  quotedPrice: float
+  finalPrice: float?
+  currency: string?
+  priceBreakdown: string?       // JSON
+  
+  // Tracking
+  driverId: string?
+  distance: float?
+  distanceUnit: string?
+  stops: string?                // JSON
+  
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+```
+
+### Integration Flow
+
+#### 1. Quotation Request
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API
+    participant Lalamove
+    
+    User->>Frontend: Select "Lalamove Delivery"
+    Frontend->>API: GET /lalamove/quotation/:warehouseId/:orderId
+    API->>API: Load order with warehouse & customer
+    API->>API: Validate addresses (lat/lng required)
+    API->>API: Calculate weight, select service type
+    API->>API: Build request with language mapping
+    API->>API: Generate HMAC signature
+    API->>Lalamove: POST /v3/quotations
+    Lalamove-->>API: Return quotation
+    API-->>Frontend: { quotationId, price, currency, serviceType }
+    Frontend-->>User: Display price (e.g., IDR 8,500)
+```
+
+#### 2. Order Placement
+
+```
+User confirms delivery → Place order via /lalamove/orders
+→ Lalamove assigns driver → Webhook updates status
+→ Real-time tracking via shareLink
+```
+
+### Authentication
+
+Lalamove uses HMAC SHA-256 authentication:
+
+```typescript
+// Signature generation
+const rawSignature = `${timestamp}\r\n${method}\r\n${path}\r\n\r\n${body}`;
+const signature = createHmac('sha256', apiSecret)
+  .update(rawSignature)
+  .digest('hex');
+const token = `${apiKey}:${timestamp}:${signature}`;
+
+// Authorization header
+Authorization: hmac ${token}
+```
+
+### Environment Configuration
+
+```env
+# Global credentials (fallback)
+LALAMOVE_API_KEY=pk_test_...
+LALAMOVE_API_SECRET=sk_test_...
+
+# Market-specific credentials (optional)
+LALAMOVE_API_KEY_ID=pk_test_...
+LALAMOVE_API_SECRET_ID=sk_test_...
+LALAMOVE_API_KEY_SG=pk_test_...
+LALAMOVE_API_SECRET_SG=sk_test_...
+```
+
+### Market-Language Mapping
+
+```typescript
+const languageMap = {
+  'ID': 'en_ID',  // Indonesia - English
+  'SG': 'en_SG',  // Singapore - English
+  'TH': 'th_TH',  // Thailand - Thai
+  'PH': 'en_PH',  // Philippines - English
+  'VN': 'vi_VN',  // Vietnam - Vietnamese
+};
+```
+
+### Service Type Selection
+
+Automatic service type selection based on total order weight:
+
+| Weight Range | Service Type | Description |
+|--------------|--------------|-------------|
+| < 20kg | MOTORCYCLE | Small deliveries |
+| 20-100kg | SEDAN | Medium deliveries |
+| 100-500kg | VAN | Large deliveries |
+| > 500kg | LORRY | Extra-large deliveries |
+
+### API Request Format
+
+```json
+{
+  "data": {
+    "serviceType": "MOTORCYCLE",
+    "language": "en_ID",
+    "stops": [
+      {
+        "coordinates": { "lat": "-6.2088", "lng": "106.8456" },
+        "address": "Jl. Jenderal Sudirman Kav 52-53, Jakarta"
+      },
+      {
+        "coordinates": { "lat": "-6.1754", "lng": "106.8272" },
+        "address": "Jl. MH Thamrin No.1, Jakarta"
+      }
+    ],
+    "item": {
+      "quantity": "1",
+      "weight": "LESS_THAN_3KG",
+      "categories": ["FOOD_DELIVERY"]
+    },
+    "isRouteOptimized": false
+  }
+}
+```
+
+### Frontend Integration
+
+**OrderShipping Component** automatically fetches Lalamove quotations when a Lalamove delivery method is selected:
+
+```typescript
+// In handleMethodChange
+if (selectedMethod?.provider === 'LALAMOVE') {
+  const quotation = await api.get(
+    `/lalamove/quotation/${order.warehouseId}/${order.id}`
+  );
+  setCalculatedCost(quotation.price);
+}
+```
+
+This provides a unified shipping selection experience across fixed-price, rule-based, and on-demand delivery methods.
+
+### Error Handling
+
+Common errors and resolutions:
+
+| Error | Cause | Resolution |
+|-------|-------|------------|
+| 400 Bad Request | Invalid credentials | Update API keys in `.env` |
+| 422 Unprocessable Entity | Missing language field | Ensured in request |
+| 422 Unprocessable Entity | Invalid coordinates | Validate lat/lng in warehouse/customer |
+| 404 Not Found | Invalid market | Check Lalamove market support |
+
+### Security Considerations
+
+1. **API Keys**: Stored in environment variables, never in code
+2. **HMAC Signatures**: All requests cryptographically signed
+3. **Webhook Validation**: Verify webhook sources (TODO)
+4. **PII Protection**: Customer data encrypted in transit
+
+---
+
 ## Appendix
 
 ### Glossary

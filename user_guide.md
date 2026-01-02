@@ -62,9 +62,17 @@ When creating a warehouse, the system automatically creates standard functional 
 
 **Multi-Step Flows:**
 Configuring a warehouse for multi-step flows (2 or 3 steps) enables detailed tracking throughout the facility:
-- **1-Step (Direct):** Vendor -> Stock. Best for simple operations.
+- **1-Step (Direct)::** Vendor -> Stock. Best for simple operations.
 - **2-Step (Receive & Putaway):** Vendor -> Input -> Stock. Adds a staging step for breakdown or inspection.
 - **3-Step (Quality Control):** Vendor -> Input -> Quality Control -> Stock. Enables a dedicated Quality Assurance process with exception handling.
+
+**✨ Address Management:**
+Each warehouse can have a complete structured address including:
+- **Street Address:** Physical location
+- **City, State, Postal Code, Country:** Geographic details
+- **Latitude/Longitude:** GPS coordinates for delivery integrations
+
+This structured address information is critical for automated delivery quotations and third-party logistics integrations (e.g., Lalamove).
 
 
 ### Adjustments
@@ -148,7 +156,41 @@ Configuring a warehouse for multi-step flows (2 or 3 steps) enables detailed tra
 - Scan Location -> Scan Product -> Confirm Pick.
 
 ### Delivery Methods
-**Purpose:** Calculating shipping costs (Fixed or Rule-based).
+**Purpose:** Calculating shipping costs and managing delivery logistics.
+
+**Method Types:**
+- **Fixed Price:** Flat rate shipping cost
+- **Rule-based:** Calculate based on weight, volume, and dimensions
+- **Lalamove (On-Demand):** Real-time delivery quotations from Lalamove API
+
+**✨ Lalamove Integration:**
+The system provides seamless integration with Lalamove for on-demand delivery services in supported markets (Indonesia, Singapore, Thailand, Philippines, Vietnam).
+
+**Setting Up Lalamove:**
+1. Navigate to Configuration > Delivery Methods
+2. Create a new delivery method with Provider = "LALAMOVE"
+3. Configure your Lalamove credentials in environment variables
+4. The system automatically maps markets to appropriate languages
+
+**Using Lalamove for Order Delivery:**
+1. **Create Order:** Ensure warehouse and customer have complete address information
+2. **Select Method:** In the order's "Shipping Info" section, select "Lalamove Delivery (On-Demand)" from dropdown
+3. **Auto-Quote:** System automatically fetches real-time quotation from Lalamove
+4. **View Cost:** "Estimated Cost" updates to show actual Lalamove price (e.g., IDR 8,500)
+5. **Apply:** Click "Apply" to confirm the delivery method
+6. **Book Delivery:** Once order is ready to ship, use "Book Delivery" in the Lalamove card
+
+**Supported Service Types:**
+- **MOTORCYCLE:** Small, lightweight deliveries (< 20kg)
+- **SEDAN:** Medium deliveries (20-100kg)
+- **VAN:** Large deliveries (100-500kg)
+- **LORRY:** Extra-large deliveries (> 500kg)
+
+The system automatically selects the appropriate service type based on order weight.
+
+**Requirements:**
+- Warehouse must have: Street address, city, state, postal code, country, latitude, longitude
+- Customer must have: Street address, city, state, postal code, country, latitude, longitude
 
 ### Invoices
 **Purpose:** Financial documents. Sales Invoices (AR) and Vendor Bills (AP).

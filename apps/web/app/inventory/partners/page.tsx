@@ -15,6 +15,8 @@ export default function PartnerLocationsPage() {
         name: '',
         type: 'MANUFACTURING', // MANUFACTURING, RETAIL
         address: '',
+        latitude: '',
+        longitude: ''
     });
     const [submitting, setSubmitting] = useState(false);
 
@@ -37,14 +39,35 @@ export default function PartnerLocationsPage() {
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+
+        // Validate coordinates if address is provided
+        if (formData.address && (!formData.latitude || !formData.longitude)) {
+            alert('Please provide both latitude and longitude for the address');
+            return;
+        }
+
         setSubmitting(true);
         try {
-            await createWarehouse({
-                ...formData,
-                location: JSON.stringify({ lat: 0, lng: 0 }) // Default location
-            });
+            const locationData: any = {
+                name: formData.name,
+                type: formData.type,
+            };
+
+            // Add address and coordinates if provided
+            if (formData.address && formData.latitude && formData.longitude) {
+                locationData.address = formData.address;
+                locationData.location = JSON.stringify({
+                    lat: parseFloat(formData.latitude),
+                    lng: parseFloat(formData.longitude)
+                });
+            } else {
+                // Default location if not provided
+                locationData.location = JSON.stringify({ lat: 0, lng: 0 });
+            }
+
+            await createWarehouse(locationData);
             setShowModal(false);
-            setFormData({ name: '', type: 'MANUFACTURING', address: '' });
+            setFormData({ name: '', type: 'MANUFACTURING', address: '', latitude: '', longitude: '' });
             load();
         } catch (error) {
             console.error(error);
@@ -139,8 +162,37 @@ export default function PartnerLocationsPage() {
                                     className="mt-1 block w-full border border-gray-300 rounded-md p-2"
                                     value={formData.address}
                                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                    placeholder="Full address"
+                                    rows={2}
                                 />
                             </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Latitude</label>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                                        value={formData.latitude}
+                                        onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                                        placeholder="13.7563"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Longitude</label>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                                        value={formData.longitude}
+                                        onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                                        placeholder="100.5018"
+                                    />
+                                </div>
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                💡 Tip: Get coordinates from Google Maps → Right-click location → Copy coordinates
+                            </p>
                             <div className="flex justify-end gap-2 mt-6">
                                 <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>Cancel</Button>
                                 <Button type="submit" disabled={submitting}>
