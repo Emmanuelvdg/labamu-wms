@@ -67,9 +67,9 @@ export class LalamoveController {
     @Post('orders/:orderId')
     async placeOrder(
         @Param('orderId') orderId: string,
-        @Body() body: { warehouseId: string; quotationId: string },
+        @Body() body: { warehouseId: string; quotationId: string; stops?: any[] },
     ) {
-        return this.lalamoveService.placeOrder(body.warehouseId, orderId, body.quotationId);
+        return this.lalamoveService.placeOrder(body.warehouseId, orderId, body.quotationId, body.stops);
     }
 
     @Get('orders/:lalamoveOrderId')

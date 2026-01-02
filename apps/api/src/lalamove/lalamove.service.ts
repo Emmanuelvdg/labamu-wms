@@ -328,7 +328,7 @@ export class LalamoveService {
     /**
      * Place Lalamove order
      */
-    async placeOrder(warehouseId: string, orderId: string, quotationId: string) {
+    async placeOrder(warehouseId: string, orderId: string, quotationId: string, stops?: any[]) {
         const order = await this.prisma.order.findUnique({
             where: { id: orderId },
             include: {
@@ -359,11 +359,16 @@ export class LalamoveService {
             );
         }
 
-        // Get fresh quotation to retrieve stop IDs
-        const quotation = await this.getQuotation(warehouseId, orderId);
+        // Use provided stops or fetch quotation for stop IDs
+        let quotationStops = stops;
+        if (!quotationStops || quotationStops.length < 2) {
+            // Fallback: get fresh quotation if stops not provided
+            const quotation = await this.getQuotation(warehouseId, orderId);
+            quotationStops = quotation.stops;
 
-        if (!quotation.stops || quotation.stops.length < 2) {
-            throw new BadRequestException('Invalid quotation: missing stop information');
+            if (!quotationStops || quotationStops.length < 2) {
+                throw new BadRequestException('Invalid quotation: missing stop information');
+            }
         }
 
         // Build order request with recipient based on order type
@@ -377,7 +382,7 @@ export class LalamoveService {
             }
 
             recipientInfo = {
-                stopId: quotation.stops[1].stopId, // Second stop is destination
+                stopId: quotationStops[1].stopId, // Second stop is destination
                 name: order.destinationWarehouse.name,
                 phone: order.destinationWarehouse.phone,
                 remarks: `Transfer Order #${order.id}`,
@@ -392,7 +397,7 @@ export class LalamoveService {
             }
 
             recipientInfo = {
-                stopId: quotation.stops[1].stopId, // Second stop is destination
+                stopId: quotationStops[1].stopId, // Second stop is destination
                 name: order.customer.name,
                 phone: order.customer.phone,
                 remarks: `Order #${order.id}`,
@@ -404,7 +409,7 @@ export class LalamoveService {
             data: {
                 quotationId,
                 sender: {
-                    stopId: quotation.stops[0].stopId, // First stop is pickup
+                    stopId: quotationStops[0].stopId, // First stop is pickup
                     name: order.warehouse.name,
                     phone: order.warehouse.phone,
                 },

@@ -128,7 +128,8 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
         try {
             const result = await api.post(`/lalamove/orders/${order.id}`, {
                 warehouseId: order.warehouseId,
-                quotationId: lalamoveQuotationId
+                quotationId: lalamoveQuotationId,
+                stops: lalamoveQuoteDetails?.stops // Include stops with stopIds
             });
             alert(`Delivery booked successfully! Order ID: ${result.lalamoveOrderId}`);
             onUpdate();
