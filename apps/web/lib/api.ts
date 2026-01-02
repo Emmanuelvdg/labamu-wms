@@ -80,6 +80,7 @@ export async function updateWarehouse(id: string, data: {
     country?: string;
     latitude?: number;
     longitude?: number;
+    phone?: string;
 }) {
     return fetchWithRetry(`${API_URL}/warehouses/${id}`, {
         method: 'PATCH',
@@ -243,6 +244,14 @@ export async function fetchCustomers() {
 export async function createCustomer(data: any) {
     return fetchWithRetry(`${API_URL}/customers`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateCustomer(id: string, data: any) {
+    return fetchWithRetry(`${API_URL}/customers/${id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
     });
