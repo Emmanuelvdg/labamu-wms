@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { fetchOrder, checkAvailability } from '@/lib/api';
+import { fetchOrder, checkAvailability, updateCustomer } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Package, Truck, AlertCircle } from 'lucide-react';
@@ -13,6 +13,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     const { id } = use(params);
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [customerPhone, setCustomerPhone] = useState('');
+    const [savingPhone, setSavingPhone] = useState(false);
 
     useEffect(() => {
         loadOrder();
@@ -22,6 +24,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
         try {
             const data = await fetchOrder(id);
             setOrder(data);
+            setCustomerPhone(data.customer?.phone || '');
         } catch (error) {
             console.error('Failed to fetch order:', error);
         } finally {
@@ -80,7 +83,25 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                 {order.status}
                             </span>
                         </h1>
-                        <p className="text-gray-500 mt-1">Customer: {order.customerId}</p>
+                        <p className="text-gray-500 mt-1">Customer: {order.customer?.name || order.customerId}</p>
+                        {order.customer && (
+                            <div className="mt-2 flex items-center gap-2">
+                                <input
+                                    type="tel"
+                                    value={customerPhone}
+                                    onChange={(e) => setCustomerPhone(e.target.value)}
+                                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                                    placeholder="Customer phone (+62...)"
+                                />
+                                <Button
+                                    size="sm"
+                                    onClick={handleSaveCustomerPhone}
+                                    disabled={savingPhone || customerPhone === (order.customer.phone || '')}
+                                >
+                                    {savingPhone ? 'Saving...' : 'Save Phone'}
+                                </Button>
+                            </div>
+                        )}
                     </div>
                     <div className="text-right">
                         <p className="text-sm text-gray-500">Created: {format(new Date(order.createdAt), 'PPP')}</p>
