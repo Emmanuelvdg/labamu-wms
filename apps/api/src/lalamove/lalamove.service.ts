@@ -422,6 +422,15 @@ export class LalamoveService {
             },
         };
 
+        // Debug logging
+        this.logger.log('=== Place Order Request ===');
+        this.logger.log(`Order ID: ${orderId}`);
+        this.logger.log(`Quotation ID: ${quotationId}`);
+        this.logger.log(`Warehouse Phone: ${order.warehouse.phone}`);
+        this.logger.log(`Stops provided: ${stops ? 'Yes (' + stops.length + ')' : 'No'}`);
+        this.logger.log('Order Request Payload:');
+        this.logger.log(JSON.stringify(orderRequest, null, 2));
+
         const response: OrderResponse = await this.makeRequest(
             warehouseId,
             'POST',
