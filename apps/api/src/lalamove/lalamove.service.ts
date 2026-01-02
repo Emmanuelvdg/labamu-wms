@@ -321,6 +321,7 @@ export class LalamoveService {
             currency: response.data.priceBreakdown?.currency,
             serviceType,
             expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min validity
+            stops: response.data.stops, // Include stops with stopIds for booking
         };
     }
 
@@ -350,22 +351,50 @@ export class LalamoveService {
             where: { warehouseId },
         });
 
+        // Validate warehouse phone
+        if (!order.warehouse.phone) {
+            throw new BadRequestException(
+                'Warehouse phone number is required for Lalamove delivery. ' +
+                'Please update warehouse information with a valid phone number.'
+            );
+        }
+
+        // Get fresh quotation to retrieve stop IDs
+        const quotation = await this.getQuotation(warehouseId, orderId);
+
+        if (!quotation.stops || quotation.stops.length < 2) {
+            throw new BadRequestException('Invalid quotation: missing stop information');
+        }
+
         // Build order request with recipient based on order type
         let recipientInfo;
         if (order.type === 'TRANSFER') {
             // For transfer orders, recipient is the destination warehouse
+            if (!order.destinationWarehouse?.phone) {
+                throw new BadRequestException(
+                    'Destination warehouse phone number is required for Lalamove delivery'
+                );
+            }
+
             recipientInfo = {
-                stopId: '1',
-                name: order.destinationWarehouse?.name || 'Warehouse',
-                phone: '+1234567890', // TODO: Add phone field to Warehouse model
+                stopId: quotation.stops[1].stopId, // Second stop is destination
+                name: order.destinationWarehouse.name,
+                phone: order.destinationWarehouse.phone,
                 remarks: `Transfer Order #${order.id}`,
             };
         } else {
             // For sales orders, recipient is the customer
+            if (!order.customer?.phone) {
+                throw new BadRequestException(
+                    'Customer phone number is required for Lalamove delivery. ' +
+                    'Please update customer information with a valid phone number.'
+                );
+            }
+
             recipientInfo = {
-                stopId: '1',
-                name: order.customer?.name || 'Customer',
-                phone: '+1234567890', // TODO: Add phone field to Customer model
+                stopId: quotation.stops[1].stopId, // Second stop is destination
+                name: order.customer.name,
+                phone: order.customer.phone,
                 remarks: `Order #${order.id}`,
             };
         }
@@ -375,8 +404,9 @@ export class LalamoveService {
             data: {
                 quotationId,
                 sender: {
+                    stopId: quotation.stops[0].stopId, // First stop is pickup
                     name: order.warehouse.name,
-                    phone: '+1234567890', // TODO: Get from warehouse config
+                    phone: order.warehouse.phone,
                 },
                 recipients: [recipientInfo],
                 isPODEnabled: true,

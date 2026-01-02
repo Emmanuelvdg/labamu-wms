@@ -101,6 +101,7 @@ model Warehouse {
   state          String? // State/Province
   postalCode     String?
   country        String?
+  phone          String? // Contact phone for delivery services
   latitude       Float?
   longitude      Float?
   
@@ -851,6 +852,7 @@ model Customer {
   country   String?
   latitude  Float?
   longitude Float?
+  phone     String? // Contact phone for delivery services
   
   orders    Order[]
   rotationRules RotationRule[]
