@@ -36,6 +36,11 @@ interface QuotationResponse {
             total: string;
             currency: string;
         };
+        stops?: Array<{
+            stopId: string;
+            coordinates: { lat: string; lng: string };
+            address: string;
+        }>;
     };
 }
 
