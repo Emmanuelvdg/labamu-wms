@@ -150,7 +150,13 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                         className="block w-full border border-gray-300 rounded p-2"
                         value={selectedMethodId}
                         onChange={(e) => handleMethodChange(e.target.value)}
-                        disabled={order.status === 'SHIPPED' || order.status === 'DELIVERED' || order.status === 'CANCELLED'}
+                        disabled={
+                            order.status === 'SHIPPED' ||
+                            order.status === 'DELIVERED' ||
+                            order.status === 'CANCELLED' ||
+                            // Disable if Lalamove delivery is already booked
+                            (order.lalamoveOrders && order.lalamoveOrders.length > 0 && order.lalamoveOrders.some((lo: any) => lo.status !== 'CANCELLED'))
+                        }
                     >
                         <option value="">Select a method...</option>
                         {methods.map(m => (
