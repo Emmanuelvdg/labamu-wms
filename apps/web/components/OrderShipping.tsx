@@ -9,6 +9,7 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
     const [loading, setLoading] = useState(false);
     const [calculatedCost, setCalculatedCost] = useState<number | null>(order.shippingCost || null);
     const [lalamoveQuotationId, setLalamoveQuotationId] = useState<string | null>(null);
+    const [lalamoveQuoteDetails, setLalamoveQuoteDetails] = useState<any>(null);
     const [bookingDelivery, setBookingDelivery] = useState(false);
 
     useEffect(() => {
@@ -27,6 +28,7 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                     .then((quotation) => {
                         setCalculatedCost(quotation.price ? parseFloat(quotation.price) : 0);
                         setLalamoveQuotationId(quotation.quotationId || null);
+                        setLalamoveQuoteDetails(quotation);
                     })
                     .catch((error) => {
                         console.error('Failed to auto-fetch Lalamove quotation:', error);
@@ -56,12 +58,17 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                     const quotation = await api.get(`/lalamove/quotation/${order.id}?warehouseId=${order.warehouseId}`);
                     setCalculatedCost(quotation.price ? parseFloat(quotation.price) : 0);
                     setLalamoveQuotationId(quotation.quotationId || null);
+                    setLalamoveQuoteDetails(quotation);
                 } catch (error: any) {
                     console.error('Failed to get Lalamove quotation:', error);
                     alert(`Failed to get Lalamove quote: ${error.message || 'Unknown error'}`);
                     setCalculatedCost(0);
+                    setLalamoveQuoteDetails(null);
                 }
             } else {
+                // Clear Lalamove details when switching away
+                setLalamoveQuoteDetails(null);
+                setLalamoveQuotationId(null);
                 // For other methods, calculate using existing logic
                 // Calculate cost logic (simulated for now, or calling backend)
                 // Ideally we'd call an endpoint like POST /orders/:id/quote
@@ -155,35 +162,63 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                 </div>
 
                 {selectedMethodId && (
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                        <div>
-                            <span className="text-sm text-gray-500 block">Estimated Cost</span>
-                            <span className="font-bold text-xl">
-                                {loading ? '...' : `$${(calculatedCost || 0).toLocaleString()}`}
-                            </span>
-                        </div>
-                        <div className="flex gap-2">
-                            {(order.status === 'PENDING' || order.status === 'DRAFT') && (
-                                <button
-                                    onClick={applyShipping}
-                                    disabled={loading || selectedMethodId === order.deliveryMethodId}
-                                    className={`px-4 py-2 rounded ${selectedMethodId === order.deliveryMethodId ? 'bg-gray-300 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                                >
-                                    {selectedMethodId === order.deliveryMethodId ? 'Applied' : 'Apply'}
-                                </button>
-                            )}
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                            <div>
+                                <span className="text-sm text-gray-500 block">Estimated Cost</span>
+                                <span className="font-bold text-xl">
+                                    {loading ? '...' : `${lalamoveQuoteDetails?.currency || '$'}${(calculatedCost || 0).toLocaleString()}`}
+                                </span>
+                            </div>
+                            <div className="flex gap-2">
+                                {(order.status === 'PENDING' || order.status === 'DRAFT') && (
+                                    <button
+                                        onClick={applyShipping}
+                                        disabled={loading || selectedMethodId === order.deliveryMethodId}
+                                        className={`px-4 py-2 rounded ${selectedMethodId === order.deliveryMethodId ? 'bg-gray-300 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                                    >
+                                        {selectedMethodId === order.deliveryMethodId ? 'Applied' : 'Apply'}
+                                    </button>
+                                )}
 
-                            {/* Book Delivery button for Lalamove */}
-                            {selectedMethodId && methods.find(m => m.id === selectedMethodId)?.provider === 'LALAMOVE' && lalamoveQuotationId && (
-                                <button
-                                    onClick={bookLalamoveDelivery}
-                                    disabled={bookingDelivery}
-                                    className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400"
-                                >
-                                    {bookingDelivery ? 'Booking...' : '📦 Book Delivery'}
-                                </button>
-                            )}
+                                {/* Book Delivery button for Lalamove */}
+                                {selectedMethodId && methods.find(m => m.id === selectedMethodId)?.provider === 'LALAMOVE' && lalamoveQuotationId && (
+                                    <button
+                                        onClick={bookLalamoveDelivery}
+                                        disabled={bookingDelivery}
+                                        className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400"
+                                    >
+                                        {bookingDelivery ? 'Booking...' : '📦 Book Delivery'}
+                                    </button>
+                                )}
+                            </div>
                         </div>
+
+                        {/* Lalamove Quote Details */}
+                        {lalamoveQuoteDetails && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <h4 className="font-semibold text-blue-900 mb-2">Lalamove Quote Details:</h4>
+                                <div className="space-y-1 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Service Type:</span>
+                                        <span className="font-medium text-gray-900">{lalamoveQuoteDetails.serviceType}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Quote expires:</span>
+                                        <span className="font-medium text-gray-900">
+                                            {lalamoveQuoteDetails.expiresAt ? new Date(lalamoveQuoteDetails.expiresAt).toLocaleString('en-GB', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                second: '2-digit',
+                                            }) : 'N/A'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
