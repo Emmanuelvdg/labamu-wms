@@ -37,6 +37,7 @@ export default function WarehouseDetailsPage() {
     const [state, setState] = useState('');
     const [postalCode, setPostalCode] = useState('');
     const [country, setCountry] = useState('');
+    const [phone, setPhone] = useState('');
 
     useEffect(() => {
         loadData();
@@ -56,6 +57,7 @@ export default function WarehouseDetailsPage() {
                 setState(wh.state || '');
                 setPostalCode(wh.postalCode || '');
                 setCountry(wh.country || '');
+                setPhone(wh.phone || '');
             }
 
             // 2. Fetch Strategies
@@ -91,6 +93,7 @@ export default function WarehouseDetailsPage() {
                 state,
                 postalCode,
                 country,
+                phone,
             });
 
             toast.success('Warehouse information updated');
@@ -225,6 +228,20 @@ export default function WarehouseDetailsPage() {
                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
                             placeholder="Indonesia"
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Phone Number <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                            placeholder="+6281234567890"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Required for Lalamove deliveries. Include country code (e.g., +62 for Indonesia)</p>
                     </div>
                 </div>
 
