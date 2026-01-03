@@ -177,11 +177,7 @@ export class LalamoveService {
             body: body ? JSON.stringify(body) : undefined,
         });
 
-        if (!response.ok) {
-            const error: any = await response.json();
-            this.logger.error(`Lalamove API error: ${JSON.stringify(error)}`);
-            throw new BadRequestException(error?.message || 'Lalamove API request failed');
-        }
+
 
         return response.json();
     }
