@@ -178,6 +178,26 @@ export class LalamoveService {
         });
 
 
+        if (!response.ok) {
+            const error: any = await response.json();
+            this.logger.error(`Lalamove API error: ${JSON.stringify(error)}`);
+
+            // Extract error message from Lalamove's response format
+            let errorMessage = 'Lalamove API request failed';
+            if (error?.errors && Array.isArray(error.errors) && error.errors.length > 0) {
+                const firstError = error.errors[0];
+                errorMessage = firstError.message || errorMessage;
+
+                // Add helpful context for common errors
+                if (firstError.id === 'ERR_INSUFFICIENT_CREDIT') {
+                    errorMessage += '. Please top up your Lalamove wallet to place orders.';
+                }
+            } else if (error?.message) {
+                errorMessage = error.message;
+            }
+
+            throw new BadRequestException(errorMessage);
+        }
 
         return response.json();
     }
