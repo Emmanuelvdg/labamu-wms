@@ -209,6 +209,8 @@ export class OrderService {
                 shipment: true,
                 warehouse: true, // Include warehouse for UI
                 deliveryMethod: true, // Include delivery method for Lalamove card
+                customer: true, // Include customer details
+                lalamoveOrders: true, // Include Lalamove delivery orders
                 pickingTasks: {
                     include: { sourceLocation: true }
                 }
