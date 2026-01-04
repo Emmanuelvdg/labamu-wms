@@ -84,24 +84,6 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                             </span>
                         </h1>
                         <p className="text-gray-500 mt-1">Customer: {order.customer?.name || order.customerId}</p>
-                        {order.customer && (
-                            <div className="mt-2 flex items-center gap-2">
-                                <input
-                                    type="tel"
-                                    value={customerPhone}
-                                    onChange={(e) => setCustomerPhone(e.target.value)}
-                                    className="text-sm border border-gray-300 rounded px-2 py-1"
-                                    placeholder="Customer phone (+62...)"
-                                />
-                                <Button
-                                    size="sm"
-                                    onClick={handleSaveCustomerPhone}
-                                    disabled={savingPhone || customerPhone === (order.customer.phone || '')}
-                                >
-                                    {savingPhone ? 'Saving...' : 'Save Phone'}
-                                </Button>
-                            </div>
-                        )}
                     </div>
                     <div className="text-right">
                         <p className="text-sm text-gray-500">Created: {format(new Date(order.createdAt), 'PPP')}</p>
