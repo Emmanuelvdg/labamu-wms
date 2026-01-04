@@ -132,7 +132,8 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                 stops: lalamoveQuoteDetails?.stops // Include stops with stopIds
             });
             alert(`Delivery booked successfully! Order ID: ${result.lalamoveOrderId}`);
-            onUpdate();
+            // Reload order to get updated lalamove booking data
+            await onUpdate();
         } catch (error: any) {
             console.error('Failed to book delivery:', error);
             alert(`Failed to book delivery: ${error.message || 'Unknown error'}`);
@@ -187,25 +188,35 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                                 </span>
                             </div>
                             <div className="flex gap-2">
-                                {(order.status !== 'SHIPPED' && order.status !== 'DELIVERED' && order.status !== 'CANCELLED') && (
-                                    <button
-                                        onClick={applyShipping}
-                                        disabled={loading || selectedMethodId === order.deliveryMethodId}
-                                        className={`px-4 py-2 rounded ${selectedMethodId === order.deliveryMethodId ? 'bg-gray-300 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                                    >
-                                        {selectedMethodId === order.deliveryMethodId ? 'Applied' : 'Apply'}
-                                    </button>
-                                )}
+                                {/* Show Applied button only if not Lalamove OR if Lalamove but not booked */}
+                                {(order.status !== 'SHIPPED' && order.status !== 'DELIVERED' && order.status !== 'CANCELLED') &&
+                                    !order.lalamoveOrders?.some((lo: any) => lo.status !== 'CANCELLED') && (
+                                        <button
+                                            onClick={applyShipping}
+                                            disabled={loading || selectedMethodId === order.deliveryMethodId}
+                                            className={`px-4 py-2 rounded ${selectedMethodId === order.deliveryMethodId ? 'bg-gray-300 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                                        >
+                                            {selectedMethodId === order.deliveryMethodId ? 'Applied' : 'Apply'}
+                                        </button>
+                                    )}
 
-                                {/* Book Delivery button for Lalamove */}
-                                {selectedMethodId && methods.find(m => m.id === selectedMethodId)?.provider === 'LALAMOVE' && lalamoveQuotationId && (
-                                    <button
-                                        onClick={bookLalamoveDelivery}
-                                        disabled={bookingDelivery}
-                                        className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400"
-                                    >
-                                        {bookingDelivery ? 'Booking...' : '📦 Book Delivery'}
-                                    </button>
+                                {/* Book Delivery button for Lalamove - only show if not booked yet */}
+                                {selectedMethodId && methods.find(m => m.id === selectedMethodId)?.provider === 'LALAMOVE' && lalamoveQuotationId &&
+                                    !order.lalamoveOrders?.some((lo: any) => lo.status !== 'CANCELLED') && (
+                                        <button
+                                            onClick={bookLalamoveDelivery}
+                                            disabled={bookingDelivery}
+                                            className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400"
+                                        >
+                                            {bookingDelivery ? 'Booking...' : '📦 Book Delivery'}
+                                        </button>
+                                    )}
+
+                                {/* Show "Booked" status if Lalamove order exists */}
+                                {order.lalamoveOrders?.some((lo: any) => lo.status !== 'CANCELLED') && (
+                                    <div className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-medium">
+                                        ✓ Booked
+                                    </div>
                                 )}
                             </div>
                         </div>
