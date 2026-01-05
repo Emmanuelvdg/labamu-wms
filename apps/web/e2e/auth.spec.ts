@@ -5,8 +5,13 @@ test.describe('Authentication & RBAC', () => {
     test('TC-1.1: Create and Verify Custom Role', async ({ page }) => {
         // Pre-requisite: Login as Admin (assuming admin:admin credentials from seed)
         await page.goto('/login');
+
+        // Clear autofilled values and fill with test credentials
+        await page.getByLabel('Email').clear();
         await page.getByLabel('Email').fill('admin@labamu.co.id');
-        await page.getByLabel('Password').fill('admin'); // Assuming default seed password
+        await page.getByLabel('Password').clear();
+        await page.getByLabel('Password').fill('admin');
+
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         await expect(page).toHaveURL('/');
@@ -36,8 +41,13 @@ test.describe('Authentication & RBAC', () => {
 
     test('TC-1.2: Create User with Custom Role', async ({ page }) => {
         await page.goto('/login');
+
+        // Clear autofilled values and fill with test credentials
+        await page.getByLabel('Email').clear();
         await page.getByLabel('Email').fill('admin@labamu.co.id');
+        await page.getByLabel('Password').clear();
         await page.getByLabel('Password').fill('admin');
+
         await page.getByRole('button', { name: 'Sign in' }).click();
 
         // Create User

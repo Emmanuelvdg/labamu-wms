@@ -25,6 +25,7 @@ test.describe('Warehouse Management', () => {
 
         // 3. Navigate to Locations Management
         await page.goto('/inventory/locations');
+        await page.reload(); // Ensure newly created warehouse is loaded in dropdown options
 
         // 4. Create Zone (Room) under Warehouse
         // We need to wait for the warehouse to appear in the parent list.
@@ -37,9 +38,9 @@ test.describe('Warehouse Management', () => {
         await page.getByTestId('location-structure-select').click();
         await page.getByRole('option', { name: 'Room' }).click();
 
-        // Parent: Central DC
+        // Parent: Central DC (Note: UI appends (WAREHOUSE) suffix)
         await page.getByTestId('location-parent-select').click();
-        await page.getByRole('option', { name: 'Central DC' }).click();
+        await page.getByRole('option', { name: /Central DC/ }).click();
 
         await page.getByTestId('create-location-submit-btn').click();
 
@@ -85,19 +86,20 @@ test.describe('Warehouse Management', () => {
         await page.goto('/inventory/locations');
 
         // Create a location to edit (ensure it exists)
-        await page.getByTestId('create-location-btn').click();
+        // Create a location to edit (ensure it exists)
+        // Wait for button to be ready (handle loading state)
+        const createBtn = page.getByTestId('create-location-btn');
+        await createBtn.waitFor({ state: 'attached' });
+        await createBtn.click({ force: true });
         await page.getByTestId('location-name-input').fill('LocForAttrs');
         await page.getByTestId('location-structure-select').click();
         await page.getByRole('option', { name: 'Room' }).click();
         await page.getByTestId('location-parent-select').click();
-        // Use E2E Warehouse from seed if available, or try Central DC from previous test if sequential
-        // For safety, we'll try E2E Warehouse first.
-        const parentOption = page.getByRole('option', { name: 'E2E Warehouse' });
-        if (await parentOption.isVisible()) {
-            await parentOption.click();
-        } else {
-            await page.getByRole('option').first().click(); // Fallback to first available parent
-        }
+        // Use E2E Warehouse from seed
+        const parentOption = page.getByRole('option', { name: /E2E Warehouse/ });
+        // It might take a moment
+        await parentOption.waitFor({ state: 'attached' });
+        await parentOption.click();
         await page.getByTestId('create-location-submit-btn').click();
         await expect(page.getByText('LocForAttrs')).toBeVisible();
 

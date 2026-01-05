@@ -1,103 +1,135 @@
+import { PrismaClient } from '@labamu/database';
 
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../src/app.module';
-import { InventoryService } from '../src/inventory/inventory.service';
-import { PurchaseOrderService } from '../src/purchase-order/purchase-order.service';
-import { CustomerService } from '../src/customer/customer.service';
+const prisma = new PrismaClient();
 
-async function seed() {
-    const app = await NestFactory.createApplicationContext(AppModule);
-    const inventoryService = app.get(InventoryService);
-    const poService = app.get(PurchaseOrderService);
-
-    console.log('--- Seeding E2E Data ---');
-
+async function seedE2eData() {
     try {
-        // 1. Warehouse & Location
-        let warehouses = await inventoryService.getWarehouses();
-        if (warehouses.length === 0) {
-            console.log('Creating Warehouse...');
-            const w = await inventoryService.createWarehouse({
-                name: 'E2E Warehouse',
-                shortName: 'E2E',
-                address: 'Test City',
-                companyId: '1',
-                location: 'Test City',
-                type: 'Physical'
+        console.log('🌱 Seeding E2E Test Data...\n');
+
+        // ==========================================
+        // 1. Warehouse: E2E Warehouse
+        // ==========================================
+        let warehouse = await prisma.warehouse.findFirst({
+            where: { name: 'E2E Warehouse' }
+        });
+
+        if (!warehouse) {
+            console.log('Creating E2E Warehouse...');
+            warehouse = await prisma.warehouse.create({
+                data: {
+                    name: 'E2E Warehouse',
+                    type: 'PHYSICAL', // Assuming enum or string
+                    shortName: 'E2E',
+                    companyId: 'default-company', // Optional but good to have
+                    gridEnabled: true,
+                    gridSize: 1.0,
+                    floorPlanWidth: 50.0,
+                    floorPlanHeight: 30.0,
+                }
             });
-            await inventoryService.createLocation({ name: 'Input Zone', type: 'INTERNAL', warehouseId: w.id });
+            console.log(`✅ Created E2E Warehouse (ID: ${warehouse.id})`);
         } else {
-            console.log('Warehouse exists.');
+            console.log(`✅ Found E2E Warehouse (ID: ${warehouse.id})`);
         }
 
-        // 2. Supplier
-        let suppliers = await poService.getSuppliers();
-        if (suppliers.length === 0) {
-            console.log('Creating Supplier...');
-            await inventoryService.createSupplier({ name: 'E2E Supplier', contactInfo: 'e2e@supplier.com' });
-        } else {
-            console.log('Supplier exists.');
-        }
+        // ==========================================
+        // 2. Product: E2E Test Product
+        // ==========================================
+        const productSku = 'E2E-TEST-PRODUCT-001';
 
-        // 3. Product
-        let products = await inventoryService.getProducts({});
-        const e2eProduct = products.find(p => p.sku === 'E2E-PROD-001');
-        if (!e2eProduct) {
-            console.log('Creating Product...');
-            await inventoryService.createProduct({
+        const product = await prisma.product.upsert({
+            where: { sku: productSku },
+            update: {
                 name: 'E2E Test Product',
-                sku: 'E2E-PROD-001',
-                description: 'For E2E Testing',
-                price: 100,
-                cost: 50,
-                category: 'Test',
+                category: 'E2E Testing',
+                status: 'Active',
+                isStockable: true
+            },
+            create: {
+                sku: productSku,
+                name: 'E2E Test Product',
+                category: 'E2E Testing',
                 classification: 'A',
-                type: 'Stock',
-                unitOfMeasure: 'Unit',
-                averageCost: 50,
-                status: 'Active'
+                type: 'Finished',
+                unitOfMeasure: 'Piece',
+                isStockable: true,
+                status: 'Active',
+                averageCost: 10.0,
+                description: 'Product for E2E automated testing',
+                tracking: 'none',
+                width: 10,
+                height: 10,
+                depth: 10,
+                weight: 1.0,
+            }
+        });
+        console.log(`✅ Upserted E2E Product (SKU: ${product.sku})`);
+
+        // ==========================================
+        // 3. Inventory: Ensure Product is in Warehouse
+        // ==========================================
+        // Create initial stock if 0
+        const inventory = await prisma.productInventory.findFirst({
+            where: {
+                productId: product.id,
+                warehouseId: warehouse.id
+            }
+        });
+
+        if (!inventory) {
+            await prisma.productInventory.create({
+                data: {
+                    productId: product.id,
+                    warehouseId: warehouse.id,
+                    quantity: 100, // Initial stock
+                    reserved: 0
+                }
             });
+            console.log('✅ Created initial inventory in E2E Warehouse');
         } else {
-            console.log('Product exists.');
-        }
-
-        // 3a. Add Stock explicitly for E2E Product if needed
-        const stock = await inventoryService.getStock(e2eProduct.id || products.find(p => p.sku === 'E2E-PROD-001').id);
-        const totalStock = stock.reduce((sum, s) => sum + s.quantity, 0);
-
-        if (totalStock < 10) {
-            console.log('Adding Stock to E2E Product...');
-            // Find warehouse to add stock to
-            const w = (await inventoryService.getWarehouses()).find(w => w.name === 'E2E Warehouse');
-            if (w) {
-                await inventoryService.addStock({
-                    productId: e2eProduct.id || products.find(p => p.sku === 'E2E-PROD-001').id,
-                    warehouseId: w.id,
-                    quantity: 100
+            // Optional: Reset stock to 100 if low?
+            if (inventory.quantity < 10) {
+                await prisma.productInventory.update({
+                    where: { id: inventory.id },
+                    data: { quantity: 100 }
                 });
+                console.log('✅ Refilled inventory to 100');
+            } else {
+                console.log(`✅ Inventory exists (${inventory.quantity} units)`);
             }
         }
 
-        // 4. Customer
-        const customerService = app.get(CustomerService);
-        let customers = await customerService.getCustomers();
-        if (customers.length === 0) {
-            console.log('Creating Customer...');
-            await customerService.createCustomer({
-                name: 'E2E Customer',
-                address: '123 E2E Lane'
+        // Also seed in "Main Factory" if it exists, as that is often the default
+        const mainFactory = await prisma.warehouse.findFirst({
+            where: { name: 'Main Factory' }
+        });
+
+        if (mainFactory) {
+            const mfInventory = await prisma.productInventory.findFirst({
+                where: { productId: product.id, warehouseId: mainFactory.id }
             });
-        } else {
-            console.log('Customer exists.');
+            if (!mfInventory) {
+                await prisma.productInventory.create({
+                    data: {
+                        productId: product.id,
+                        warehouseId: mainFactory.id,
+                        quantity: 100,
+                        reserved: 0
+                    }
+                });
+                console.log('✅ Created initial inventory in Main Factory');
+            }
         }
 
-        console.log('SUCCESS: Data Seeded.');
 
-    } catch (e) {
-        console.error('ERROR:', e);
+        console.log('\n🎉 E2E Seeding Complete!');
+
+    } catch (error) {
+        console.error('❌ Error seeding data:', error);
+        process.exit(1);
     } finally {
-        await app.close();
+        await prisma.$disconnect();
     }
 }
 
-seed();
+seedE2eData();
