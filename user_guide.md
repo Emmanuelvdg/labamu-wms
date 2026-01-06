@@ -39,6 +39,7 @@ Comprehensive documentation for the Labamu Inventory Management System.
 - **Dimensions & Weight:** Critical for shipping calculation and storage capacity logic.
 - **Cost & Price:** 'Cost' is used for inventory valuation (COGS); 'Price' is the default sales price.
 - **Packaging Units:** Define specific unit types (e.g., "Case of 12", "Pallet of 50") in the "Manage Packaging" tab.
+- **Ti-Hi Configuration:** For Pallet units, define `Ti` (Cartons per Layer) and `Hi` (Layers per Pallet) to automatically calculate pallet capacity.
 - **Storage Requirements:** Tag items as "Refrigerated", "Hazardous", or "Heavy" to restrict where they can be put away.
 
 ### Locations
@@ -107,6 +108,9 @@ This structured address information is critical for automated delivery quotation
 
 ### Putaway Operations
 **Purpose:** Moving received goods from receiving areas to their designated storage locations.
+
+**✨ New: Manual Inbound**
+Manually adding an inventory batch (e.g., "Found stock") now triggers a standard Putaway Task, ensuring that even unplanned inventory follows the optimized storage logic.
 
 **Workflow:**
 1. **Start Session:** Batch multiple putaway tasks.

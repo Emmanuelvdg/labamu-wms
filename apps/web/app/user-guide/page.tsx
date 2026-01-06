@@ -158,6 +158,7 @@ export default function UserGuidePage() {
                                                     <li><strong>Dimensions & Weight:</strong> Critical for shipping calculation and storage capacity logic.</li>
                                                     <li><strong>Cost & Price:</strong> 'Cost' is used for inventory valuation (COGS); 'Price' is the default sales price.</li>
                                                     <li><strong>Packaging Units:</strong> Define specific unit types (e.g., "Case of 12", "Pallet of 50") in the "Manage Packaging" tab.</li>
+                                                    <li><strong>Ti-Hi Configuration:</strong> For Pallet units, define <code>Ti</code> (Cartons/Layer) and <code>Hi</code> (Layers/Pallet) for automatic capacity calc.</li>
                                                     <li><strong>Storage Requirements:</strong> Tag items as "Refrigerated", "Hazardous", or "Heavy" to restrict where they can be put away.</li>
                                                 </ul>
                                             </div>
@@ -548,6 +549,13 @@ export default function UserGuidePage() {
                                 <Card>
                                     <CardContent className="pt-6 space-y-4">
                                         <p><strong>Purpose:</strong> Moving received goods from receiving areas to their designated storage locations quickly and efficiently.</p>
+
+                                        <div className="bg-green-50 p-4 rounded-md text-sm cursor-pointer hover:bg-green-100 transition-colors">
+                                            <strong className="text-green-900">✨ New: Manual Inbound</strong>
+                                            <p className="text-muted-foreground mt-1">
+                                                Manually adding an inventory batch (via "Add Batch") now triggers a standard Putaway Task. This ensures strict inventory control even for unplanned stock discovery.
+                                            </p>
+                                        </div>
 
                                         <div className="border-t pt-4">
                                             <h4 className="font-medium mb-2">What is Putaway?</h4>

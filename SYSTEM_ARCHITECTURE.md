@@ -401,6 +401,10 @@ Product {
   averageCost: float
   tracking: string         // none, lot, serial
   
+  // Packaging Unitization
+  ti: int?                 // Trays per Inner (Cartons per Layer)
+  hi: int?                 // Inners per Outer (Layers per Pallet)
+  
   // Physical Dimensions
   width: float?  // cm
   height: float? // cm

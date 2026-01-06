@@ -394,7 +394,12 @@ export class PutawayService {
     ): Promise<{ available: boolean; reason?: string }> {
         const location = await this.prisma.location.findUnique({
             where: { id: locationId },
-            include: { inventory: true }
+            include: {
+                inventory: true,
+                dynamicAttributes: {
+                    include: { definition: true }
+                }
+            }
         });
 
         if (!location) {
@@ -409,7 +414,43 @@ export class PutawayService {
             return { available: false, reason: 'Product not found' };
         }
 
-        // Check volume capacity
+        // --- 1. Check Pallet Capacity (Ti-Hi) ---
+        const maxPalletsAttr = location.dynamicAttributes.find(la => la.definition.name === 'Max Pallets');
+        if (maxPalletsAttr && maxPalletsAttr.value) {
+            const maxPallets = Number(maxPalletsAttr.value);
+
+            // Helper to get pallet size
+            const getPalletSize = async (pId: string) => {
+                const pkg = await this.prisma.productPackaging.findFirst({
+                    where: { productId: pId, unitType: 'PALLET' }
+                });
+                // Fallback logic: check for Ti-Hi or default
+                if (pkg) return pkg.quantity;
+
+                // If no specific pallet packaging, assume standard 100 or check dimensions?
+                // For safety, let's look for any packaging with Ti/Hi
+                return 100; // Safe default default to avoid division by zero or blocking
+            };
+
+            const incomingUnitsPerPallet = await getPalletSize(productId);
+            const incomingPallets = quantity / incomingUnitsPerPallet;
+
+            let currentPallets = 0;
+            // Optimize: pre-fetch packagings? For now, simple loop is fine for typical bin sizes
+            for (const inv of location.inventory) {
+                const units = await getPalletSize(inv.productId);
+                currentPallets += inv.quantity / units;
+            }
+
+            if (currentPallets + incomingPallets > maxPallets) {
+                return {
+                    available: false,
+                    reason: `Insufficient pallet capacity (Max: ${maxPallets}, Current: ${currentPallets.toFixed(2)}, Needed: ${incomingPallets.toFixed(2)})`
+                };
+            }
+        }
+
+        // --- 2. Check Volume Capacity ---
         if (location.maxVolume && product.width && product.height && product.depth) {
             const productVolume = (product.width / 100) * (product.height / 100) * (product.depth / 100);
             const totalVolume = productVolume * quantity;
@@ -428,7 +469,7 @@ export class PutawayService {
             }
         }
 
-        // Check weight capacity
+        // --- 3. Check Weight Capacity ---
         if (location.maxWeight && product.weight) {
             const totalWeight = product.weight * quantity;
 
@@ -668,6 +709,68 @@ export class PutawayService {
         }
 
         return this.getActiveSession(warehouseId);
+    }
+
+    /**
+     * Create putaway tasks for a specific manual batch
+     * Called from InventoryService.addBatch
+     */
+    async createTasksForBatch(
+        batchId: string,
+        warehouseId: string
+    ) {
+        console.log(`[PutawayService] Creating tasks for manual batch ${batchId}`);
+
+        const batch = await this.prisma.inventoryBatch.findUnique({
+            where: { id: batchId },
+            include: { product: true, location: true }
+        });
+
+        if (!batch) throw new Error('Batch not found');
+
+        // Check active session
+        let session = await this.prisma.putawaySession.findFirst({
+            where: {
+                warehouseId,
+                status: { in: ['PLANNED', 'IN_PROGRESS'] }
+            }
+        });
+
+        if (!session) {
+            session = await this.prisma.putawaySession.create({
+                data: { warehouseId, status: 'PLANNED' }
+            });
+        }
+
+        // Find best location
+        const destinationLocation = await this.findBestLocation(
+            batch.productId,
+            batch.currentQuantity,
+            warehouseId,
+            batch.locationId || undefined
+        );
+
+        if (destinationLocation) {
+            // Check if we are already AT the best location (e.g. direct putaway)
+            if (batch.locationId === destinationLocation.id) {
+                console.log(`[PutawayService] Batch ${batchId} already at optimal location ${destinationLocation.name}. No task needed.`);
+                return;
+            }
+
+            await this.prisma.putawayTask.create({
+                data: {
+                    sessionId: session.id,
+                    productId: batch.productId,
+                    sourceLocationId: batch.locationId!, // Manual batch has initial location
+                    destinationLocationId: destinationLocation.id,
+                    quantity: batch.currentQuantity,
+                    originalQuantity: batch.currentQuantity,
+                    status: 'PENDING',
+                    // receiptId is optional now, so we can omit it
+                }
+            });
+            console.log(`[PutawayService] Created pending task for batch ${batchId} -> ${destinationLocation.name}`);
+        }
     }
 
     /**

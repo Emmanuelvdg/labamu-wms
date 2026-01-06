@@ -35,6 +35,9 @@ interface Packaging {
     barcode?: string;
     maxStacking?: number;
     storageRequirements?: string[];
+    // [NEW] Ti-Hi properties
+    ti?: number;
+    hi?: number;
 }
 
 export default function ProductPackagingPage() {
@@ -53,7 +56,9 @@ export default function ProductPackagingPage() {
     });
     const [newPackaging, setNewPackaging] = useState<Partial<Packaging>>({
         type: 'BOX',
-        quantity: 1
+        quantity: 1,
+        ti: 0,
+        hi: 0
     });
 
     useEffect(() => {
@@ -126,13 +131,16 @@ export default function ProductPackagingPage() {
                     height: newPackaging.height ? Number(newPackaging.height) : undefined,
                     depth: newPackaging.depth ? Number(newPackaging.depth) : undefined,
                     weight: newPackaging.weight ? Number(newPackaging.weight) : undefined,
+                    // [NEW] Send Ti-Hi
+                    ti: newPackaging.ti ? Number(newPackaging.ti) : 0,
+                    hi: newPackaging.hi ? Number(newPackaging.hi) : 0
                 })
             });
 
             if (!res.ok) throw new Error('Failed to create');
 
             toast.success('Packaging unit created');
-            setNewPackaging({ type: 'BOX', quantity: 1 });
+            setNewPackaging({ type: 'BOX', quantity: 1, ti: 0, hi: 0 });
             fetchPackaging();
         } catch (error) {
             toast.error('Failed to create packaging unit');
@@ -147,7 +155,7 @@ export default function ProductPackagingPage() {
                 method: 'DELETE',
             });
 
-            if (!res.ok) throw new Error('Failed to delete');
+            if (!res.ok) throw new Error('Failed to create');
 
             toast.success('Packaging unit deleted');
             fetchPackaging();
@@ -255,6 +263,33 @@ export default function ProductPackagingPage() {
                                 onChange={e => setNewPackaging({ ...newPackaging, quantity: Number(e.target.value) })}
                             />
                         </div>
+
+                        {/* [NEW] Ti-Hi Inputs, visible only when PALLET */}
+                        {newPackaging.type === 'PALLET' && (
+                            <div className="grid grid-cols-2 gap-2 bg-muted/20 p-2 rounded">
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold">Ti (Cartons/Layer)</Label>
+                                    <Input
+                                        type="number"
+                                        placeholder="e.g. 10"
+                                        value={newPackaging.ti || ''}
+                                        onChange={e => setNewPackaging({ ...newPackaging, ti: Number(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs font-semibold">Hi (Layers)</Label>
+                                    <Input
+                                        type="number"
+                                        placeholder="e.g. 5"
+                                        value={newPackaging.hi || ''}
+                                        onChange={e => setNewPackaging({ ...newPackaging, hi: Number(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="col-span-2 text-xs text-muted-foreground">
+                                    Total Pallet Qty: {Number(newPackaging.ti || 0) * Number(newPackaging.hi || 0) * (product ? product.baseUnitQuantity || 1 : 1)} units approx.
+                                </div>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-2">
@@ -371,7 +406,14 @@ export default function ProductPackagingPage() {
                                 {packagingList.map(pkg => (
                                     <div key={pkg.id} className="flex items-center justify-between p-4 border rounded-lg">
                                         <div>
-                                            <div className="font-medium">{pkg.name}</div>
+                                            <div className="font-medium flex items-center gap-2">
+                                                {pkg.name}
+                                                {pkg.type === 'PALLET' && (pkg.ti || pkg.hi) && (
+                                                    <Badge variant="outline" className="text-xs">
+                                                        Ti: {pkg.ti || '-'} / Hi: {pkg.hi || '-'}
+                                                    </Badge>
+                                                )}
+                                            </div>
                                             <div className="text-sm text-muted-foreground">
                                                 {pkg.type} • {pkg.quantity} items
                                             </div>

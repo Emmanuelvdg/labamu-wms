@@ -569,6 +569,14 @@ export class InventoryService {
             },
         });
 
+        // 5. Trigger Putaway Logic
+        try {
+            await this.putawayService.createTasksForBatch(batch.id, data.warehouseId);
+        } catch (error) {
+            console.error(`[InventoryService] Failed to create putaway tasks for batch ${batch.id}:`, error);
+            // Don't fail the batch creation if putaway fails
+        }
+
         return batch;
     }
 

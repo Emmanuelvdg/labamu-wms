@@ -153,8 +153,8 @@ function renderFulfillmentTable(data: any[]) {
                 <tbody className="bg-white divide-y divide-gray-200">
                     {data.map((row, idx) => (
                         <tr key={idx} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{row.orderId.substring(0, 8)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{row.customerName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{row.orderId?.substring(0, 8) || 'N/A'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{row.customerName || 'N/A'}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.status === 'SHIPPED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                                     }`}>
@@ -220,8 +220,8 @@ function renderPendingOrdersTable(data: any[]) {
                 <tbody className="bg-white divide-y divide-gray-200">
                     {data.map((row, idx) => (
                         <tr key={idx} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{row.orderId.substring(0, 8)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{row.customerName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{row.orderId?.substring(0, 8) || 'N/A'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{row.customerName || 'N/A'}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                                 <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                                     {row.status}
@@ -254,8 +254,8 @@ function renderCycleTimeTable(data: any[]) {
                 <tbody className="bg-white divide-y divide-gray-200">
                     {data.map((row, idx) => (
                         <tr key={idx} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{row.orderId.substring(0, 8)}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{row.customerName}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{row.orderId?.substring(0, 8) || 'N/A'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{row.customerName || 'N/A'}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(row.createdAt).toLocaleDateString()}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(row.shippedAt).toLocaleDateString()}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{row.cycleTimeHours}</td>

@@ -251,6 +251,10 @@ model ProductPackaging {
   length Float @default(0) // cm matches depth
   weight Float @default(0) // kg
 
+  // Ti-Hi Logic (Palletization)
+  ti     Int   @default(0) // Tier (Cartons per layer)
+  hi     Int   @default(0) // High (Layers per pallet)
+
   barcode String?
 
   storageRequirements String? // JSON: ["refrigerated", "heavy_duty"]
@@ -458,8 +462,8 @@ model PutawayTask {
   id                    String          @id @default(uuid())
   sessionId             String?
   session               PutawaySession? @relation(fields: [sessionId], references: [id])
-  receiptId             String
-  receipt               Receipt        @relation(fields: [receiptId], references: [id])
+  receiptId             String?
+  receipt               Receipt?        @relation(fields: [receiptId], references: [id])
   productId             String
   product               Product        @relation(fields: [productId], references: [id])
   sourceLocationId      String         // Receiving/Staging location

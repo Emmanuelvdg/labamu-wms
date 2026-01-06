@@ -21,13 +21,14 @@
           - generic [ref=e22]:
             - generic [ref=e23]:
               - text: Email address
-              - textbox "Email address" [ref=e24]
+              - textbox "Email address" [ref=e24]: admin@example.com
             - generic [ref=e25]:
               - text: Password
-              - textbox "Password" [ref=e26]
-          - button "Sign in" [ref=e28]
+              - textbox "Password" [ref=e26]: admin123
+          - generic [ref=e27]: Internal server error
+          - button "Sign in" [ref=e29]
   - region "Notifications alt+T"
-  - button "Open Next.js Dev Tools" [ref=e34] [cursor=pointer]:
-    - img [ref=e35]
-  - alert [ref=e38]
+  - button "Open Next.js Dev Tools" [ref=e35] [cursor=pointer]:
+    - img [ref=e36]
+  - alert [ref=e39]
 ```
