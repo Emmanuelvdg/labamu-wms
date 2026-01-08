@@ -661,6 +661,7 @@ export async function createUser(data: any) {
     });
 }
 
+
 export async function updateUser(id: string, data: any) {
     return fetchWithRetry(`${API_URL}/settings/users/${id}`, {
         method: 'PUT',
@@ -674,6 +675,26 @@ export async function deleteUser(id: string) {
         method: 'DELETE',
     });
 }
+
+// Categories
+export async function fetchCategories() {
+    return fetchWithRetry(`${API_URL}/settings/categories`);
+}
+
+export async function createCategory(data: any) {
+    return fetchWithRetry(`${API_URL}/settings/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteCategory(id: string) {
+    return fetchWithRetry(`${API_URL}/settings/categories/${id}`, {
+        method: 'DELETE',
+    });
+}
+
 
 export const api = {
     get: (url: string) => fetchWithRetry(`${API_URL}${url}`),

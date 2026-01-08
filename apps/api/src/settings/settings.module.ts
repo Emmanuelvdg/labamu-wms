@@ -6,8 +6,10 @@ import { AttributeService } from './attribute.service';
 import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
 import { PrismaService } from '../prisma.service';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
+    imports: [CategoriesModule],
     controllers: [RolesController, AttributeController, UsersController],
     providers: [RolesService, AttributeService, UsersService, PrismaService],
 })

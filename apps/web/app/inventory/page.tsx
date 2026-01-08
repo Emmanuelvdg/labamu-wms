@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchInventory, createProduct, fetchWarehouses, fetchAttributeDefinitions } from '@/lib/api';
+import { fetchInventory, createProduct, fetchWarehouses, fetchAttributeDefinitions, fetchCategories } from '@/lib/api';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
 
@@ -12,6 +12,7 @@ export default function InventoryPage() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [attributes, setAttributes] = useState<any[]>([]); // Phase 4: Dynamic attributes
+    const [categories, setCategories] = useState<any[]>([]);
 
     // Filter State
     const [filters, setFilters] = useState({
@@ -39,19 +40,7 @@ export default function InventoryPage() {
         load();
         loadWarehouses();
         fetchAttributeDefinitions().then(setAttributes).catch(console.error); // Phase 4: Fetch attributes
-    }, []);
-
-
-
-
-
-
-
-
-
-    useEffect(() => {
-        load();
-        loadWarehouses();
+        fetchCategories().then(setCategories).catch(console.error);
     }, []);
 
     // Debounce search or just load on effect?
@@ -172,11 +161,10 @@ export default function InventoryPage() {
                     onChange={(e) => handleFilterChange('category', e.target.value)}
                 >
                     <option value="">All Categories</option>
-                    {/* Ideally populate dynamically, but for now hardcode common ones or fetch distinct */}
-                    <option value="Electronics">Electronics</option>
-                    <option value="Clothing">Clothing</option>
-                    <option value="Furniture">Furniture</option>
-                    <option value="Raw Material">Raw Material</option>
+                    {categories.map(c => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                    {categories.length === 0 && <option value="" disabled>No categories defined</option>}
                 </select>
                 <select
                     className="border rounded-lg px-4 py-2"
@@ -296,14 +284,18 @@ export default function InventoryPage() {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">Category</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             required
                                             data-testid="product-category-input"
                                             className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
                                             value={newProduct.category}
                                             onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                                        />
+                                        >
+                                            <option value="">Select Category</option>
+                                            {categories.map(c => (
+                                                <option key={c.id} value={c.name}>{c.name}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">Unit of Measure</label>
