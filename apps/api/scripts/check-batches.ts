@@ -3,24 +3,29 @@ import { PrismaClient } from '@labamu/database';
 
 const prisma = new PrismaClient();
 
-async function checkStock() {
+async function checkBatches() {
     const sku = 'E2E-PROD-NEW';
     const product = await prisma.product.findUnique({
         where: { sku },
         include: {
-            inventory: true
+            inventory: true,
+            batches: true
         }
     });
 
     if (!product) {
         console.log(`Product with SKU ${sku} not found.`);
-    } else {
-        console.log(`Product found: ${product.name} (${product.id})`);
-        console.log('Inventory levels:', product.inventory);
+        return;
     }
+
+    console.log(`Product: ${product.name} (${product.id})`);
+    console.log('--- Aggregate Inventory ---');
+    console.table(product.inventory);
+    console.log('--- Inventory Batches ---');
+    console.table(product.batches);
 }
 
-checkStock()
+checkBatches()
     .catch(e => {
         console.error(e);
         process.exit(1);

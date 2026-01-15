@@ -54,6 +54,7 @@ const navigation: NavSection[] = [
     {
         title: 'System',
         items: [
+            { name: 'Getting Started', href: '/getting-started' },
             { name: 'User Guide', href: '/user-guide' },
             { name: 'Settings', href: '/settings' },
         ]
@@ -66,7 +67,7 @@ export default function Sidebar() {
 
     const isItemVisible = (item: NavItem) => {
         // Public/Common items
-        if (item.href === '/' || item.href === '/user-guide') return true;
+        if (item.href === '/' || item.href === '/user-guide' || item.href === '/getting-started') return true;
 
         // Inventory
         if (item.href.startsWith('/inventory')) {
