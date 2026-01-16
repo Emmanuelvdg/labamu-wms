@@ -136,3 +136,30 @@ This document outlines the End-to-End (E2E) test scenarios for the Labamu IMS ap
     - **Status**: PASSED (Verified via API Script)
     - **Action**: Trigger Logistics Sync.
     - **Expected**: Mock tracking updates (`JNE-001`) are processed.
+
+## 9. Returns Management (RMA)
+**Goal**: Verify return request processing and potential restocking.
+- [x] **Scenario 9.1: Create & Process Return**
+    - **Status**: PASSED (Verified via API Script)
+    - **Action**: Create Return for Order `ORD-123`, receive item as `SELLABLE`.
+    - **Expected**: Order status `COMPLETED`. Item added back to stock (or staging).
+- [x] **Scenario 9.2: Return to Quarantine**
+    - **Status**: PASSED (Verified via API Script)
+    - **Action**: Receive return as `DAMAGED`.
+    - **Expected**: Item moves to `Returns Quarantine` location.
+
+## 10. Stocktaking
+**Goal**: Verify count and reconciliation flows.
+- [x] **Scenario 10.1: Create Cycle Count Session**
+    - **Status**: PASSED (Manual Browser Verification)
+    - **Action**: Create "Cycle Count" for Warehouse.
+    - **Expected**: Session created, tasks generated for current stock.
+- [x] **Scenario 10.2: Perform Count**
+    - **Status**: PASSED (Manual Browser Verification)
+    - **Action**: Enter count for Task (e.g., 5).
+    - **Expected**: Task status `COUNTED`.
+- [x] **Scenario 10.3: Reconcile & Adjust**
+    - **Status**: PASSED (Manual Browser Verification)
+    - **Action**: Approve variance.
+    - **Expected**: Session `COMPLETED`. Inventory updated with `ADJUSTMENT` transaction.
+

@@ -20,6 +20,7 @@ const navigation: NavSection[] = [
             { name: 'Locations', href: '/inventory/locations' },
             { name: 'Warehouses', href: '/inventory/warehouses' },
             { name: 'Adjustments', href: '/inventory/adjustments' },
+            { name: 'Stocktaking', href: '/stocktaking' },
             { name: 'Scrap Orders', href: '/inventory/scrap' },
             { name: 'Partner Locations', href: '/inventory/partners' },
             { name: 'Routes', href: '/inventory/routes' },
@@ -39,6 +40,7 @@ const navigation: NavSection[] = [
         items: [
             { name: 'Orders', href: '/orders' },
             { name: 'Picking', href: '/picking' },
+            { name: 'Returns (RMA)', href: '/returns' },
             { name: 'Delivery Methods', href: '/configuration/delivery-methods' },
             { name: 'Invoices', href: '/invoices' },
         ]
@@ -89,6 +91,7 @@ export default function Sidebar() {
 
         // Orders
         if (item.href === '/orders') return hasPermission('ORDERS', 'READ');
+        if (item.href === '/returns') return hasPermission('ORDERS', 'READ'); // Assuming Orders permissions cover Returns for now
         if (item.href === '/picking') return hasPermission('ORDERS', 'UPDATE');
         if (item.href === '/configuration/delivery-methods') return hasPermission('SETTINGS', 'READ');
 

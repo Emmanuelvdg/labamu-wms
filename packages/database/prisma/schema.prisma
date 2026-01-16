@@ -65,6 +65,7 @@ model Product {
   requiredAttribute   LocationAttributeDefinition? @relation(fields: [requiredAttributeId], references: [id])
   rotationRules       RotationRule[]
   attributes          ProductAttribute[]
+  stocktakeTasks      StocktakeTask[]
 }
 
 model Route {
@@ -148,6 +149,7 @@ model Warehouse {
   rotationRules    RotationRule[]
   functionalAreas  WarehouseFunctionalArea[]
   lalamoveConfig   LalamoveConfig?
+  stocktakeSessions StocktakeSession[]
 }
 
 model WarehouseFunctionalArea {
@@ -237,6 +239,7 @@ model Location {
   
   // Phase 3B: Dynamic attributes (replacing JSON)
   dynamicAttributes  LocationAttribute[]
+  stocktakeTasks     StocktakeTask[]
 }
 
 model ProductPackaging {
@@ -376,6 +379,10 @@ model OrderItem {
   productId String
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int
+
+  // RMA Fields
+  returnReason String? // Defective, Wrong Item, etc.
+  condition    String? // Sellable, Damaged, etc.
 }
 
 model Reservation {
@@ -1124,4 +1131,45 @@ model RotationRule {
   active           Boolean    @default(true)
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
+}
+
+// --- Stocktaking Models ---
+
+model StocktakeSession {
+  id          String    @id @default(uuid())
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  status      String    @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+  type        String    // FULL, CYCLE_COUNT, SPOT_CHECK
+  
+  description String?
+  
+  tasks       StocktakeTask[]
+  
+  createdBy   String?   // User ID
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model StocktakeTask {
+  id               String           @id @default(uuid())
+  sessionId        String
+  session          StocktakeSession @relation(fields: [sessionId], references: [id])
+  
+  locationId       String
+  location         Location         @relation(fields: [locationId], references: [id])
+  
+  productId        String?          // Nullable if blind counting location without pre-specified product
+  product          Product?         @relation(fields: [productId], references: [id])
+
+  systemQuantity   Int              // Expected quantity at start
+  countedQuantity  Int?             // Null = Not yet counted
+  
+  status           String           @default("PENDING") // PENDING, COUNTED, VERIFIED
+  
+  countedBy        String?          // User ID
+  countedAt        DateTime?
+  
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }

@@ -20,6 +20,8 @@ import { WarehouseModule } from './warehouse/warehouse.module';
 import { PutawayModule } from './inventory/putaway.module';
 import { ApiKeyModule } from './api-key/api-key.module';
 import { LalamoveModule } from './lalamove/lalamove.module';
+import { ReturnsModule } from './returns/returns.module';
+import { StocktakingModule } from './stocktaking/stocktaking.module';
 
 import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
 import { PrismaService } from './prisma.service';
@@ -45,6 +47,8 @@ import { PrismaService } from './prisma.service';
         PutawayModule,
         ApiKeyModule,
         LalamoveModule,
+        ReturnsModule,
+        StocktakingModule,
     ],
     controllers: [DeliveryMethodsController],
     providers: [PrismaService],

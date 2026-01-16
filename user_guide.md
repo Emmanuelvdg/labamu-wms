@@ -254,7 +254,68 @@ The system includes a Model Context Protocol (MCP) server that allows AI assista
 - "Generate purchase orders via natural language commands"
 - "Automate warehouse task management through AI"
 
+
+## Returns Management (RMA)
+
+### Overview
+**Purpose:** Manage customer returns efficiently, including validation, receiving, condition assessment, and inventory restocking.
+
+### Process Flow
+1. **Create Return Request:**
+   - Initiate a return from an existing Sales Order.
+   - Select items and quantities to return.
+   - Assign a reason (e.g., "Damaged", "Wrong Item") and expected condition.
+
+2. **Receive Return:**
+   - Warehouse staff receives the returned items.
+   - **Condition Check:** Verify if the item is `SELLABLE`, `DAMAGED`, or `REFURBISH`.
+   - **Quality Control:** 
+     - `SELLABLE`: Automatically restocked to a picking or storage location.
+     - `DAMAGED`: Quarantined or scrapped.
+
+3. **Restocking:**
+   - The system automatically creates a `StockTransaction` (Transaction Type: `RETURN`) to increase inventory.
+   - Financial adjustments (Refunds/Credits) are triggered based on the return status.
+
+### How to Use
+1. Navigate to **Orders > Returns**.
+2. Click **New Return** and select the original Sales Order.
+3. Once the physical item arrives, click **Receive**.
+4. Input the **Received Quantity** and assessed **Condition**.
+5. Click **Process Return** to finalize and update stock.
+
 ---
+
+## Stocktaking & Cycle Counting
+
+### Overview
+**Purpose:** Maintain exact inventory accuracy through regular physical counts and reconciliation.
+
+### Types of Stocktakes
+- **Cycle Count:** Frequent, small-scale counts of high-velocity items (A-Class) or specific zones. Does not require shutting down the warehouse.
+- **Full Stocktake:** Complete wall-to-wall count of the entire facility. Usually done annually.
+- **Spot Check:** Ad-hoc count of a specific location or product to investigate a discrepancy.
+
+### Workflow
+1. **Create Session:** Define the scope (Warehouse, Zone, or Product Category).
+2. **Generate Tasks:** System creates counting tasks for every location containing the target products.
+3. **Count:**
+   - Workers navigate to the location.
+   - Enter the **Physical Quantity** found.
+   - Blind counting supported (system doesn't show expected quantity).
+4. **Reconcile:**
+   - Manager reviews the **Discrepancy Report** (Variance between System vs. Counted).
+   - **Approve Adjustments:** System automatically creates `StockTransaction` records (Type: `ADJUSTMENT`) to correct the inventory balance.
+
+### How to Use
+1. Navigate to **Inventory > Stocktaking**.
+2. Click **New Session** and choose "Cycle Count".
+3. Click **Generate Tasks**.
+4. Open the **Counting Interface** and enter values for each task.
+5. Click **Reconcile** → **Approve & Adjust Inventory** to finalize.
+
+---
+
 
 ## End-to-End Examples
 

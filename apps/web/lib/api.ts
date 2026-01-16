@@ -602,6 +602,28 @@ export async function getRole(id: string) {
     return fetchWithRetry(`${API_URL}/settings/roles/${id}`);
 }
 
+// --- Returns (RMA) ---
+
+export async function createReturnRequest(data: any) {
+    return fetchWithRetry(`${API_URL}/returns`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function receiveReturn(id: string, data: any) {
+    return fetchWithRetry(`${API_URL}/returns/${id}/receive`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function fetchReturnsByOrder(orderId: string) {
+    return fetchWithRetry(`${API_URL}/returns/order/${orderId}`);
+}
+
 export async function createRole(data: any) {
     return fetchWithRetry(`${API_URL}/settings/roles`, {
         method: 'POST',
@@ -692,6 +714,45 @@ export async function createCategory(data: any) {
 export async function deleteCategory(id: string) {
     return fetchWithRetry(`${API_URL}/settings/categories/${id}`, {
         method: 'DELETE',
+    });
+}
+
+// --- Stocktaking ---
+
+export async function fetchStocktakeSessions(warehouseId?: string) {
+    const query = warehouseId ? `?warehouseId=${warehouseId}` : '';
+    return fetchWithRetry(`${API_URL}/stocktaking/sessions${query}`);
+}
+
+export async function createStocktakeSession(data: { warehouseId: string; type: string; description?: string }) {
+    return fetchWithRetry(`${API_URL}/stocktaking/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function fetchStocktakeSession(id: string) {
+    return fetchWithRetry(`${API_URL}/stocktaking/sessions/${id}`);
+}
+
+export async function generateStocktakeTasks(id: string) {
+    return fetchWithRetry(`${API_URL}/stocktaking/sessions/${id}/generate-tasks`, {
+        method: 'POST',
+    });
+}
+
+export async function submitStocktakeCount(taskId: string, countedQuantity: number, countedBy: string) {
+    return fetchWithRetry(`${API_URL}/stocktaking/tasks/${taskId}/count`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ countedQuantity, countedBy }),
+    });
+}
+
+export async function reconcileStocktakeSession(id: string) {
+    return fetchWithRetry(`${API_URL}/stocktaking/sessions/${id}/reconcile`, {
+        method: 'POST',
     });
 }
 

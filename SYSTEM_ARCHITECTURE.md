@@ -157,6 +157,8 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 | **ShippingModule** | Carrier management, delivery methods | `ShippingService` |
 | **InvoiceModule** | VAT invoicing, financial reporting | `InvoiceService` |
 | **SupplierModule** | Supplier catalog, partner management | `SupplierService` |
+| **ReturnsModule** | Returns Management (RMA), receiving, restocking conditions | `ReturnsService`, `ReturnsController` |
+| **StocktakingModule** | Cycle counts, full stocktakes, reconciliation | `StocktakingService`, `StocktakingController` |
 
 ### Frontend Structure
 
@@ -347,6 +349,25 @@ POST   /inventory/picking/sessions          Create picking session
 GET    /inventory/picking/sessions/:warehouseId/active  Get active session
 PATCH  /inventory/picking/tasks/:id         Update picking task
 PATCH  /inventory/picking/sessions/:id/complete  Complete session
+```
+
+#### Returns Management
+```
+GET    /returns                             List returns
+GET    /returns/:id                         Get details
+POST   /returns                             Create return request
+POST   /returns/:id/receive                 Receive & assess items
+GET    /returns/order/:orderId              Get returns by order
+```
+
+#### Stocktaking
+```
+GET    /stocktaking                         List sessions
+POST   /stocktaking                         Create session
+POST   /stocktaking/:id/tasks               Generate tasks
+GET    /stocktaking/:id/tasks               List tasks
+POST   /stocktaking/tasks/:id/count         Submit count
+POST   /stocktaking/:id/reconcile           Approve adjustments
 ```
 
 ### API Request/Response Formats
@@ -645,8 +666,11 @@ Order {
   pickingTasks: PickingTask[]
   
   createdAt: DateTime
+  createdAt: DateTime
   deliveryDate: DateTime?
 }
+
+> **Note on Returns:** Customer Returns are also modeled as `Order` entities with `type="RETURN"`. They reference the original Sales Order via `parentOrderId`.
 ```
 
 #### StockTransaction
@@ -718,6 +742,44 @@ StockMove {
   inputQuantity: float // Expected
   outputQuantity: float // Actual
   exceptionReason: string? // "QC Failed", "Damaged"
+}
+```
+
+#### StocktakeSession
+```typescript
+StocktakeSession {
+  id: string (UUID)
+  warehouseId: string
+  status: string    // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+  type: string      // FULL, CYCLE_COUNT, SPOT_CHECK
+  description: string?
+  
+  tasks: StocktakeTask[]
+  
+  createdBy: string?
+  createdAt: DateTime
+}
+```
+
+#### StocktakeTask
+```typescript
+StocktakeTask {
+  id: string (UUID)
+  sessionId: string
+  session: StocktakeSession
+  
+  locationId: string
+  location: Location
+  
+  productId: string?
+  
+  systemQuantity: int   // Expected
+  countedQuantity: int? // Actual (Null = pending)
+  
+  status: string        // PENDING, COUNTED, VERIFIED
+  
+  countedBy: string?
+  updatedAt: DateTime
 }
 ```
 

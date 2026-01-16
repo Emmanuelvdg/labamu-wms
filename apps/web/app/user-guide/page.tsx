@@ -56,6 +56,7 @@ export default function UserGuidePage() {
                                             <a onClick={(e) => scrollToSection(e, 'scrap')} href="#scrap" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Scrap Orders</a>
                                             <a onClick={(e) => scrollToSection(e, 'partner-locations')} href="#partner-locations" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Partner Locations</a>
                                             <a onClick={(e) => scrollToSection(e, 'routes')} href="#routes" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Routes</a>
+                                            <a onClick={(e) => scrollToSection(e, 'stocktaking')} href="#stocktaking" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Stocktaking</a>
                                         </div>
                                     </div>
 
@@ -78,6 +79,7 @@ export default function UserGuidePage() {
                                             <a onClick={(e) => scrollToSection(e, 'worker-interface')} href="#worker-interface" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Worker Interface</a>
                                             <a onClick={(e) => scrollToSection(e, 'delivery-methods')} href="#delivery-methods" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Delivery Methods</a>
                                             <a onClick={(e) => scrollToSection(e, 'invoices')} href="#invoices" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Invoices</a>
+                                            <a onClick={(e) => scrollToSection(e, 'returns')} href="#returns" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Returns (RMA)</a>
                                         </div>
                                     </div>
 
@@ -484,6 +486,33 @@ export default function UserGuidePage() {
                                 </Card>
                             </div>
 
+                            {/* Stocktaking Section */}
+                            <div id="stocktaking" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><ClipboardList className="h-5 w-5" /> Stocktaking & Cycle Counting</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Maintain exact inventory accuracy through regular physical counts and reconciliation.</p>
+                                        <div>
+                                            <h4 className="font-medium mb-1">Workflow:</h4>
+                                            <ul className="list-disc pl-5 text-muted-foreground space-y-1 text-sm">
+                                                <li><strong>Cycle Count:</strong> Frequent, small-scale counts of high-velocity items or zones.</li>
+                                                <li><strong>Full Stocktake:</strong> Complete wall-to-wall annual count.</li>
+                                                <li><strong>Reconciliation:</strong> System highlights variances; Managers approve adjustments to update stock.</li>
+                                            </ul>
+                                        </div>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>How to Use:</strong>
+                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                <li>Navigate to <strong>Inventory &rarr; Stocktaking</strong>.</li>
+                                                <li>Create a <strong>Session</strong> and generate tasks.</li>
+                                                <li>Mobile Interface: Workers count and submit quantities.</li>
+                                                <li><strong>Review & Reconcile:</strong> Approve variances to auto-create inventory adjustments.</li>
+                                            </ol>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
                         </div>
                     </section>
 
@@ -677,6 +706,35 @@ export default function UserGuidePage() {
                                             <p className="text-muted-foreground mt-1">
                                                 Complete putaway sessions within the same day as receiving. This keeps receiving locations clear, provides accurate stock data, and enables faster order fulfillment from organized storage locations.
                                             </p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                            </div>
+
+                            {/* Returns Management (RMA) */}
+                            <div id="returns" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Box className="h-5 w-5" /> Returns Management (RMA)</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Manage customer returns efficiently, including validation, receiving condition assessment, and inventory restocking.</p>
+
+                                        <div className="bg-blue-50 p-4 rounded-md text-sm">
+                                            <strong className="text-blue-900">Process Flow:</strong>
+                                            <ol className="list-decimal pl-5 mt-2 space-y-2 text-muted-foreground">
+                                                <li><strong>Request:</strong> Customer or Admin initiates return from Sales Order.</li>
+                                                <li><strong>Receive & Assess:</strong> Warehouse receives item. Condition tagged as SELLABLE, DAMAGED, or REFURBISH.</li>
+                                                <li><strong>Restock:</strong> SELLABLE items auto-restock. DAMAGED items go to Quarantine.</li>
+                                            </ol>
+                                        </div>
+
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>How to Use:</strong>
+                                            <ul className="list-disc pl-5 mt-1 space-y-1">
+                                                <li>Navigate to <strong>Orders &rarr; Returns</strong>.</li>
+                                                <li>Click <strong>New Return Request</strong>.</li>
+                                                <li>On arrival, click <strong>Receive</strong> and input condition.</li>
+                                            </ul>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -1383,7 +1441,7 @@ export default function UserGuidePage() {
                     </section>
 
                     <div className="h-20"></div>
-                </div>
+                </div >
             </div >
         </div >
     );
