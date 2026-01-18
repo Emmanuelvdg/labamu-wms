@@ -70,7 +70,7 @@ export default function FloorPlanPage() {
             // We need to find all descendants that are BAYS
             const room = findLocation(locations, selectedRoomId);
             const roomBays = flattenLocations(room?.children || [])
-                .filter(l => l.structuralType === 'BAY' || l.structuralType === 'ROW');
+                .filter(l => l.structuralType === 'BAY' || l.structuralType === 'ROW' || l.structuralType === 'BIN');
 
             // Filter by Shelf Layer if needed
             // The user requirement says: "The view is filtered for the first shelf layer."
@@ -221,6 +221,47 @@ export default function FloorPlanPage() {
         }));
     };
 
+    const [showHeatmap, setShowHeatmap] = useState(false);
+    const [utilizationData, setUtilizationData] = useState<Record<string, any>>({});
+
+    useEffect(() => {
+        if (showHeatmap && mappedBays.length > 0) {
+            loadBatchUtilisation();
+        }
+    }, [showHeatmap, mappedBays]);
+
+    const loadBatchUtilisation = async () => {
+        try {
+            const ids = mappedBays.map(b => b.id);
+            const res = await fetch(`${API_URL}/inventory/locations/utilisation-batch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ locationIds: ids })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setUtilizationData(data);
+            }
+        } catch (err) {
+            console.error("Failed to load heatmap data", err);
+        }
+    };
+
+    const getBayColor = (bay: Location) => {
+        if (!showHeatmap) return bay.attributes?.color || '#2563eb';
+
+        const util = utilizationData[bay.id];
+        if (!util) return '#94a3b8'; // Grey if no data
+
+        switch (util.status) {
+            case 'EMPTY': return '#10b981'; // Green
+            case 'PARTIAL': return '#f59e0b'; // Amber
+            case 'FULL': return '#ef4444'; // Red
+            case 'OVERSIZED': return '#7f1d1d'; // Dark Red
+            default: return '#94a3b8';
+        }
+    };
+
     return (
         <div className="h-[calc(100vh-4rem)] flex flex-col">
             {/* Header */}
@@ -270,6 +311,16 @@ export default function FloorPlanPage() {
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
+                    <Button
+                        variant={showHeatmap ? "default" : "outline"}
+                        onClick={() => setShowHeatmap(!showHeatmap)}
+                        className={showHeatmap ? "bg-purple-600 hover:bg-purple-700" : ""}
+                    >
+                        {showHeatmap ? "Heatmap On" : "Show Heatmap"}
+                    </Button>
+
+                    <div className="h-6 w-px bg-border mx-2" />
+
                     <Button variant="outline" size="icon" onClick={() => setScale(s => Math.max(0.5, s - 0.1))}>
                         <ZoomOut className="h-4 w-4" />
                     </Button>
@@ -331,16 +382,16 @@ export default function FloorPlanPage() {
                                 key={bay.id}
                                 draggable
                                 onDragStart={(e) => handleDragStart(e, bay, 'canvas')}
-                                className="absolute bg-blue-600 text-white rounded shadow-md cursor-move flex items-center justify-center group"
+                                className="absolute text-white rounded shadow-md cursor-move flex items-center justify-center group transition-colors duration-300"
                                 style={{
                                     left: bay.x,
                                     top: bay.y,
                                     width: bay.width || 50,
                                     height: bay.height || 50,
                                     transform: `rotate(${bay.rotation || 0}deg)`,
-                                    backgroundColor: bay.attributes?.color || '#2563eb'
+                                    backgroundColor: getBayColor(bay)
                                 }}
-                                title={bay.name}
+                                title={`${bay.name} ${showHeatmap && utilizationData[bay.id] ? `(${utilizationData[bay.id].status})` : ''}`}
                             >
                                 <span className="text-xs font-bold pointer-events-none select-none">{bay.name}</span>
 

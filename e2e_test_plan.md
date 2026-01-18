@@ -60,8 +60,8 @@ This document outlines the End-to-End (E2E) test scenarios for the Labamu IMS ap
     - **Status**: PASSED (Verified via browser automation - Order `deae9245` created for 'E2E Customer' with 'Standard Delivery')
     - **Action**: Use UI to create a `SALES` order for `E2E Test Product New` (Qty: 10) with "Standard Delivery".
     - **Expected**: Order created with status `PENDING`. Order total includes delivery fee.
-- [x] **Scenario 4.2: Allocate Order**
-    - **Status**: PASSED (Verified via DB: Order `deae9245...` is RESERVED)
+- [/] **Scenario 4.2: Allocate Order**
+    - **Status**: FAILED (Automated Script: Partial Allocation / Stock Check Fail)
     - **Action**: Trigger allocation logic.
     - **Expected**: Order status changes to `RESERVED`.
 - [x] **Scenario 4.3: Verify Stock Reservation**
@@ -106,8 +106,8 @@ This document outlines the End-to-End (E2E) test scenarios for the Labamu IMS ap
     - **Status**: PASSED (Verified via browser automation - Session created for E2E Warehouse)
     - **Action**: Navigate to Warehouse Operations > Picking. Create a new session for "E2E Warehouse".
     - **Expected**: Session created. Tasks generated for the allocated order from Scenario 4.
-- [x] **Scenario 6.2: Execute Picking**
-    - **Status**: PASSED (Verified via browser automation - Tasks for order deae9245 picked)
+- [/] **Scenario 6.2: Execute Picking**
+    - **Status**: SKIPPED (Automated Script: Dependency on Allocation failed)
     - **Action**: Open the picking task. Mark items as "Picked".
     - **Expected**: Task status updates to `COMPLETED`.
 - [x] **Scenario 6.3: Complete Session**
@@ -140,7 +140,7 @@ This document outlines the End-to-End (E2E) test scenarios for the Labamu IMS ap
 ## 9. Returns Management (RMA)
 **Goal**: Verify return request processing and potential restocking.
 - [x] **Scenario 9.1: Create & Process Return**
-    - **Status**: PASSED (Verified via API Script)
+    - **Status**: PASSED (Verified via E2E Script)
     - **Action**: Create Return for Order `ORD-123`, receive item as `SELLABLE`.
     - **Expected**: Order status `COMPLETED`. Item added back to stock (or staging).
 - [x] **Scenario 9.2: Return to Quarantine**
@@ -151,7 +151,7 @@ This document outlines the End-to-End (E2E) test scenarios for the Labamu IMS ap
 ## 10. Stocktaking
 **Goal**: Verify count and reconciliation flows.
 - [x] **Scenario 10.1: Create Cycle Count Session**
-    - **Status**: PASSED (Manual Browser Verification)
+    - **Status**: PASSED (Verified via E2E Script - Session Created)
     - **Action**: Create "Cycle Count" for Warehouse.
     - **Expected**: Session created, tasks generated for current stock.
 - [x] **Scenario 10.2: Perform Count**
@@ -162,4 +162,15 @@ This document outlines the End-to-End (E2E) test scenarios for the Labamu IMS ap
     - **Status**: PASSED (Manual Browser Verification)
     - **Action**: Approve variance.
     - **Expected**: Session `COMPLETED`. Inventory updated with `ADJUSTMENT` transaction.
+
+## 11. Warehouse Utilisation
+**Goal**: Verify location dimensions, code generation, and capacity logic.
+- [ ] **Scenario 11.1: Create Location with Dimensions**
+    - **Status**: PENDING
+    - **Action**: Create location via UI with L/W/H and Max Weight.
+    - **Expected**: Location created, `innerDimensions` persisted.
+- [ ] **Scenario 11.2: Check Auto-Generated Codes**
+    - **Status**: PENDING
+    - **Action**: Create hierarchy (Zone -> Row -> Bay) without manual codes.
+    - **Expected**: System generates `ZONE-A`, `ROW-1` codes and full addresses `ZONE-A.ROW-1`.
 

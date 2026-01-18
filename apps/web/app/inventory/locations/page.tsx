@@ -38,7 +38,13 @@ export default function LocationsPage() {
         structuralType: '', // WAREHOUSE, ROOM, ROW, BAY, SHELF, POSITION
         attributes: {} as any,
         removalStrategy: 'FIFO',
-        inventoryFrequency: 0
+        inventoryFrequency: 0,
+        // Phase 8
+        code: '',
+        innerLength: 0,
+        innerWidth: 0,
+        innerHeight: 0,
+        maxWeightKg: 0
     });
 
     const handleCreate = async () => {
@@ -57,7 +63,12 @@ export default function LocationsPage() {
                 structuralType: '',
                 attributes: {},
                 removalStrategy: 'FIFO',
-                inventoryFrequency: 0
+                inventoryFrequency: 0,
+                code: '',
+                innerLength: 0,
+                innerWidth: 0,
+                innerHeight: 0,
+                maxWeightKg: 0
             });
         } catch (error: any) {
             toast.error(error.message || 'Failed to create location');
@@ -134,6 +145,18 @@ export default function LocationsPage() {
                                     />
                                 </div>
 
+                                {/* Code (Phase 8) */}
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="code" className="text-right">Code (Optional)</Label>
+                                    <Input
+                                        id="code"
+                                        placeholder="Auto-generated if empty"
+                                        value={newLocation.code}
+                                        onChange={(e) => setNewLocation({ ...newLocation, code: e.target.value })}
+                                        className="col-span-3"
+                                    />
+                                </div>
+
                                 {/* Structural Type */}
                                 <div className="grid grid-cols-4 items-center gap-4">
                                     <Label htmlFor="structuralType" className="text-right">Structure</Label>
@@ -153,6 +176,38 @@ export default function LocationsPage() {
                                             <SelectItem value="POSITION">Position</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label className="text-right">Dimensions (mm)</Label>
+                                    <div className="col-span-3 flex space-x-2">
+                                        <Input
+                                            placeholder="L"
+                                            type="number"
+                                            value={newLocation.innerLength || ''}
+                                            onChange={(e) => setNewLocation({ ...newLocation, innerLength: parseFloat(e.target.value) })}
+                                        />
+                                        <Input
+                                            placeholder="W"
+                                            type="number"
+                                            value={newLocation.innerWidth || ''}
+                                            onChange={(e) => setNewLocation({ ...newLocation, innerWidth: parseFloat(e.target.value) })}
+                                        />
+                                        <Input
+                                            placeholder="H"
+                                            type="number"
+                                            value={newLocation.innerHeight || ''}
+                                            onChange={(e) => setNewLocation({ ...newLocation, innerHeight: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label className="text-right">Max Weight (kg)</Label>
+                                    <Input
+                                        className="col-span-3"
+                                        type="number"
+                                        value={newLocation.maxWeightKg || ''}
+                                        onChange={(e) => setNewLocation({ ...newLocation, maxWeightKg: parseFloat(e.target.value) })}
+                                    />
                                 </div>
 
                                 {/* Attributes based on Structure - REMOVED HARDCODED FIELDS to use Dynamic Attributes */}

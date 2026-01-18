@@ -247,13 +247,26 @@ export default function UserGuidePage() {
                                                             Set <code className="bg-white px-1 rounded">{`{"refrigerated": true}`}</code> on a ROOM → all ROWs, BAYs, SHELFs, and POSITIONs within that room automatically inherit this constraint.
                                                         </p>
                                                     </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t pt-4 border-blue-100 bg-blue-50/50 p-4 rounded-md">
+                                                <h4 className="font-medium mb-2 text-blue-900">✨ New: Address Codes & Capacity</h4>
+                                                <div className="space-y-4">
                                                     <div>
-                                                        <strong className="text-green-900">Common Use Cases:</strong>
-                                                        <ul className="list-disc pl-5 text-muted-foreground mt-1 space-y-0.5">
-                                                            <li>Temperature control zones (refrigerated, frozen)</li>
-                                                            <li>Hazardous material segregation</li>
-                                                            <li>Access control areas (restricted, secure)</li>
-                                                            <li>Special handling requirements (fragile, heavy)</li>
+                                                        <strong className="text-sm text-foreground">Address Codes</strong>
+                                                        <p className="text-sm text-muted-foreground mt-1">
+                                                            Locations now have granular <code>code</code> fields (e.g., <code>ZONE-A</code>, <code>ROW-1</code>). The system automatically rolls these up into a full address path (<code>WH1.ZONE-A.ROW-1</code>), ensuring every position has a unique, scannable identifier.
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <strong className="text-sm text-foreground">Capacity Planning</strong>
+                                                        <p className="text-sm text-muted-foreground mt-1">
+                                                            You can now define physical limits for any location to prevent overloading:
+                                                        </p>
+                                                        <ul className="list-disc pl-5 mt-1 text-sm text-muted-foreground">
+                                                            <li><strong>Dimensions (L x W x H):</strong> Inner usable space in mm.</li>
+                                                            <li><strong>Max Weight:</strong> Maximum load capacity in kg.</li>
                                                         </ul>
                                                     </div>
                                                 </div>

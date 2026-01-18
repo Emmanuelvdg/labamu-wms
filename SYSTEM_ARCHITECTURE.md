@@ -50,6 +50,8 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 
 ### 3. **Location Hierarchy**
 - All physical spaces modeled as `Location` entities with hierarchical relationships
+- **Materialized Path:** Uses `fullAddress` (e.g., `WH1.ZONE-A.ROW-1`) for efficient querying of trees without recursive joins.
+- **Capacity Constraints:** Locations define `innerDimensions` (L/W/H) and `maxWeightKg` to enforce physical limits during putaway.
 - Supports warehouse structures: `WAREHOUSE → ROOM → ROW → BAY → SHELF → POSITION`
 - Enables flexible spatial organization and zone-based optimization
 

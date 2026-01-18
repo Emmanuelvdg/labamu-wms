@@ -748,6 +748,12 @@ export class InventoryService {
         rotation?: number;
         zonePriority?: number;
         putawaySequence?: number;
+        // Phase 8 Canonical Fields
+        code?: string;
+        innerLength?: number;
+        innerWidth?: number;
+        innerHeight?: number;
+        maxWeightKg?: number;
     }) {
         try {
             if (data.structuralType) {
@@ -757,6 +763,21 @@ export class InventoryService {
                 if (data.parentId) {
                     await this.validateHierarchy(data.structuralType, data.parentId);
                 }
+            }
+
+            // Phase 8: Auto-generate Code and FullAddress
+            const code = data.code || data.name.toUpperCase().replace(/[^A-Z0-9]/g, '-').substring(0, 10);
+
+            let fullAddress = code;
+            if (data.parentId) {
+                const parent = await this.prisma.location.findUnique({ where: { id: data.parentId } });
+                if (parent) {
+                    const parentPrefix = (parent as any).fullAddress || (parent as any).code || parent.name.toUpperCase().replace(/[^A-Z0-9]/g, '-');
+                    fullAddress = `${parentPrefix}.${code}`;
+                }
+            } else if (data.structuralType === 'WAREHOUSE') {
+                // Root Warehouse
+                fullAddress = code;
             }
 
             // Check for duplicate name in the same scope (Parent or Warehouse)
@@ -789,7 +810,14 @@ export class InventoryService {
                     rotation: data.rotation,
                     zonePriority: data.zonePriority,
                     putawaySequence: data.putawaySequence,
-                },
+                    // Phase 8 Fields
+                    code,
+                    fullAddress,
+                    innerLength: data.innerLength,
+                    innerWidth: data.innerWidth,
+                    innerHeight: data.innerHeight,
+                    maxWeightKg: data.maxWeightKg
+                } as any,
             });
         } catch (e: any) {
             this.log(`Error creating location: ${e.message}`);
@@ -812,6 +840,12 @@ export class InventoryService {
         width?: number;
         height?: number;
         rotation?: number;
+        // Phase 8
+        code?: string;
+        innerLength?: number;
+        innerWidth?: number;
+        innerHeight?: number;
+        maxWeightKg?: number;
     }) {
         // Validation
         const current = await this.prisma.location.findUnique({ where: { id } });
@@ -829,6 +863,27 @@ export class InventoryService {
             // Optimization: only if type or parent changed.
             if (data.structuralType || data.parentId) {
                 await this.validateHierarchy(newStructuralType, newParentId);
+            }
+        }
+
+        // Phase 8: Recalculate Address if needed
+        let fullAddress = undefined;
+        let code = data.code || (current as any).code;
+
+        // If code changed OR parent changed, we must recalc fullAddress
+        // Also if current has no fullAddress (migration fix)
+        if (data.code || data.parentId !== undefined || !(current as any).fullAddress) {
+            const effectiveCode = code || (data.name || current.name).toUpperCase().replace(/[^A-Z0-9]/g, '-').substring(0, 10);
+            code = effectiveCode; // Ensure code is updated if it was missing
+
+            if (newParentId) {
+                const parent = await this.prisma.location.findUnique({ where: { id: newParentId } });
+                if (parent) {
+                    const parentPrefix = (parent as any).fullAddress || (parent as any).code || parent.name.toUpperCase().replace(/[^A-Z0-9]/g, '-');
+                    fullAddress = `${parentPrefix}.${effectiveCode}`;
+                }
+            } else if (newStructuralType === 'WAREHOUSE') {
+                fullAddress = effectiveCode;
             }
         }
 
@@ -872,7 +927,14 @@ export class InventoryService {
                 width: data.width,
                 height: data.height,
                 rotation: data.rotation,
-            },
+                // Phase 8
+                code: code,
+                fullAddress: fullAddress,
+                innerLength: data.innerLength,
+                innerWidth: data.innerWidth,
+                innerHeight: data.innerHeight,
+                maxWeightKg: data.maxWeightKg,
+            } as any,
         });
     }
 
@@ -1323,7 +1385,8 @@ export class InventoryService {
         packagingType?: string;
     }) {
         // Import PutawayService to use findBestLocation
-        const putawayService = new (await import('./putaway.service')).PutawayService(this.prisma);
+        const utilisationService = new (await import('./utilisation.service')).UtilisationService(this.prisma);
+        const putawayService = new (await import('./putaway.service')).PutawayService(this.prisma, utilisationService);
 
         const bestLocation = await putawayService.findBestLocation(
             data.productId,

@@ -196,9 +196,19 @@ model Location {
   inventoryFrequency Int       @default(0) // Days
   nextInventoryDate  DateTime?
 
-  // Capacity
-  maxVolume Float? // m3
-  maxWeight Float? // kg
+  // Capacity (Updated Phase 8)
+  maxVolume Float? // m3 (Legacy, consider deprecating for computed)
+  maxWeight Float? // kg (Legacy)
+  
+  // Canonical Physical Dimensions (Phase 8)
+  innerLength Float?    @default(0) // mm
+  innerWidth  Float?    @default(0) // mm
+  innerHeight Float?    @default(0) // mm
+  maxWeightKg Float?    @default(0) // kg (Canonical)
+
+  // Naming & Addressing (Phase 8)
+  code        String?   // Short code, e.g. "RCV". Unique per parent.
+  fullAddress String?   @unique // Materialized path: "WH01.RCV.01"
 
   // Floor Plan Coordinates (for Bays)
   x        Float? @default(0)
@@ -313,6 +323,14 @@ model Package {
   id          String            @id @default(uuid())
   name        String            @unique // Barcode / LPN
   type        String // Box, Pallet, etc. (Legacy/Simple)
+  
+  // Canonical Handling Unit Properties (Phase 8)
+  huType      String    @default("BOX") // PALLET, BOX, EACH
+  outerLength Float?    @default(0) // mm
+  outerWidth  Float?    @default(0) // mm
+  outerHeight Float?    @default(0) // mm
+  tareWeight  Float?    @default(0) // kg
+
   packagingId String?
   packaging   ProductPackaging? @relation(fields: [packagingId], references: [id])
   locationId  String?

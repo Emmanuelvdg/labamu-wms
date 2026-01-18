@@ -8,11 +8,12 @@ import { PutawayService } from './putaway.service';
 import { PutawayController } from './putaway.controller';
 import { RotationRuleResolverService } from './rotation-rule-resolver.service';
 import { StockMoveService } from './stock-move.service';
+import { UtilisationService } from './utilisation.service';
 
 @Module({
     controllers: [InventoryController, PutawayController],
-    providers: [InventoryService, PutawayService, RotationRuleResolverService, PackagingService, PrismaService, StockMoveService],
-    exports: [InventoryService, PutawayService, RotationRuleResolverService, PackagingService, StockMoveService],
+    providers: [InventoryService, PutawayService, RotationRuleResolverService, PackagingService, PrismaService, StockMoveService, UtilisationService],
+    exports: [InventoryService, PutawayService, RotationRuleResolverService, PackagingService, StockMoveService, UtilisationService],
 })
 export class InventoryModule { }
 

@@ -34,6 +34,7 @@ export default function LocationDetailsPage() {
     const [editForm, setEditForm] = useState<any>({});
     const [allLocations, setAllLocations] = useState<any[]>([]); // Store all locations for filtering
     const [attributeDefinitions, setAttributeDefinitions] = useState<any[]>([]);
+    const [utilizationReport, setUtilizationReport] = useState<any>(null);
 
     useEffect(() => {
         if (params.id) {
@@ -80,6 +81,7 @@ export default function LocationDetailsPage() {
         try {
             const data = await getLocationDetails(id);
             setLocation(data);
+            loadUtilisation(id);
 
             // Convert attributes object to array for editing
             const customAttributes = Object.entries(data.attributes || {})
@@ -102,6 +104,18 @@ export default function LocationDetailsPage() {
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadUtilisation = async (id: string) => {
+        try {
+            const res = await fetch(`http://localhost:3001/inventory/locations/${id}/utilisation`);
+            if (res.ok) {
+                const data = await res.json();
+                setUtilizationReport(data);
+            }
+        } catch (e) {
+            console.error("Failed to load utilisation", e);
         }
     };
 
@@ -499,6 +513,86 @@ export default function LocationDetailsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Capacity & Utilisation */}
+                    <div className="md:col-span-2">
+                        <h3 className="text-lg font-semibold mb-4">Capacity & Utilisation</h3>
+                        {utilizationReport ? (
+                            <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {/* Overall Status */}
+                                <div className="flex flex-col items-center justify-center border-r border-gray-100 pr-4">
+                                    <span className="text-sm text-gray-500 uppercase tracking-wider mb-2">Status</span>
+                                    <span className={`text-2xl font-bold px-3 py-1 rounded ${utilizationReport.status === 'OVERSIZED' ? 'bg-red-100 text-red-800' :
+                                        utilizationReport.status === 'FULL' ? 'bg-orange-100 text-orange-800' :
+                                            utilizationReport.status === 'PARTIAL' ? 'bg-green-100 text-green-800' :
+                                                'bg-gray-100 text-gray-800'
+                                        }`}>
+                                        {utilizationReport.status}
+                                    </span>
+                                </div>
+
+                                {/* Metrics */}
+                                <div className="col-span-2 space-y-4">
+                                    {/* Weight */}
+                                    <div>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="font-medium text-gray-700">Weight</span>
+                                            <span className="text-gray-500">
+                                                {utilizationReport.details.currentWeight.toFixed(1)} / {utilizationReport.details.maxWeight || '∞'} kg
+                                                ({utilizationReport.weightUtilisation.toFixed(1)}%)
+                                            </span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                            <div
+                                                className={`h-2.5 rounded-full ${utilizationReport.weightUtilisation > 100 ? 'bg-red-600' : utilizationReport.weightUtilisation > 80 ? 'bg-yellow-400' : 'bg-green-500'}`}
+                                                style={{ width: `${Math.min(utilizationReport.weightUtilisation, 100)}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Volume */}
+                                    <div>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="font-medium text-gray-700">Volume</span>
+                                            <span className="text-gray-500">
+                                                {utilizationReport.details.currentVolume.toFixed(3)} / {utilizationReport.details.maxVolume || '∞'} m³
+                                                ({utilizationReport.volumeUtilisation.toFixed(1)}%)
+                                            </span>
+                                        </div>
+                                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                            <div
+                                                className={`h-2.5 rounded-full ${utilizationReport.volumeUtilisation > 100 ? 'bg-red-600' : utilizationReport.volumeUtilisation > 80 ? 'bg-yellow-400' : 'bg-green-500'}`}
+                                                style={{ width: `${Math.min(utilizationReport.volumeUtilisation, 100)}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Pallets (only if relevant) */}
+                                    {utilizationReport.details.maxPallets > 0 && (
+                                        <div>
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="font-medium text-gray-700">Pallets</span>
+                                                <span className="text-gray-500">
+                                                    {utilizationReport.details.currentPallets.toFixed(1)} / {utilizationReport.details.maxPallets}
+                                                    ({utilizationReport.palletUtilisation.toFixed(1)}%)
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                                <div
+                                                    className={`h-2.5 rounded-full ${utilizationReport.palletUtilisation > 100 ? 'bg-red-600' : utilizationReport.palletUtilisation > 80 ? 'bg-yellow-400' : 'bg-green-500'}`}
+                                                    style={{ width: `${Math.min(utilizationReport.palletUtilisation, 100)}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-gray-50 p-6 rounded-lg border border-dashed border-gray-300 text-center text-gray-500">
+                                Loading utilization data...
+                            </div>
+                        )}
+                    </div>
+
                     {/* Attributes */}
                     <div>
                         <h3 className="text-lg font-semibold mb-4">Attributes</h3>

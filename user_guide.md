@@ -48,8 +48,14 @@ Comprehensive documentation for the Labamu Inventory Management System.
 **Structural Hierarchy:**
 WAREHOUSE → ROOM → ROW → BAY → SHELF → POSITION
 
-**Attribute Inheritance:**
 Attributes set at a parent level automatically apply to all child locations unless explicitly overridden. For example, setting `{ "refrigerated": true }` on a ROOM applies to all locations within it.
+
+**✨ New: Address Codes & Capacity**
+- **Address Codes:** Locations now have granular codes (e.g., `ZONE-A`, `ROW-1`) that automatically roll up into full addresses (e.g., `WH1.ZONE-A.ROW-1.BAY-3`). This ensures distinct, scannable identifiers for every position.
+- **Capacity Planning:** You can now define physical limits for locations:
+    - **Dimensions (L x W x H):** Inner usable space in mm.
+    - **Max Weight:** Weight limit in kg.
+These constraints are used by the system to prevent overloading locations during putaway recommendations.
 
 ### Warehouses
 **Purpose:** Top-level facilities that act as the root of your location hierarchy.

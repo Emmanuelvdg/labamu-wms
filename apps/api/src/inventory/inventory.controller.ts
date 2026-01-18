@@ -3,6 +3,7 @@ import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { InventoryService } from './inventory.service';
 import { PackagingService } from './packaging.service';
+import { UtilisationService } from './utilisation.service';
 import { Product, Warehouse, ProductInventory } from '@labamu/database';
 
 import * as fs from 'fs';
@@ -18,7 +19,8 @@ export class InventoryController {
 
     constructor(
         private readonly inventoryService: InventoryService,
-        private readonly packagingService: PackagingService
+        private readonly packagingService: PackagingService,
+        private readonly utilisationService: UtilisationService
     ) { }
 
     @Post('packaging')
@@ -189,6 +191,16 @@ export class InventoryController {
     @Get('locations/tree')
     getLocationsTree(@Query('warehouseId') warehouseId?: string) {
         return this.inventoryService.getLocationsTree(warehouseId);
+    }
+
+    @Get('locations/:id/utilisation')
+    getLocationUtilisation(@Param('id') id: string) {
+        return this.utilisationService.getLocationUtilisation(id);
+    }
+
+    @Post('locations/utilisation-batch')
+    getBatchUtilisation(@Body() data: { locationIds: string[] }) {
+        return this.utilisationService.getBatchUtilisation(data.locationIds);
     }
 
     @Get('locations')

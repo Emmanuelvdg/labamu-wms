@@ -1,9 +1,14 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
+import { UtilisationService } from './utilisation.service';
+
 @Injectable()
 export class PutawayService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private utilisationService: UtilisationService
+    ) { }
 
     /**
      * PHASE 3: Find matching putaway rules based on comprehensive criteria
@@ -386,107 +391,15 @@ export class PutawayService {
 
     /**
      * Check if a location has capacity for the given product/quantity
+     * Uses centralized UtilisationService
      */
     async checkLocationCapacity(
         locationId: string,
         productId: string,
         quantity: number
     ): Promise<{ available: boolean; reason?: string }> {
-        const location = await this.prisma.location.findUnique({
-            where: { id: locationId },
-            include: {
-                inventory: true,
-                dynamicAttributes: {
-                    include: { definition: true }
-                }
-            }
-        });
-
-        if (!location) {
-            return { available: false, reason: 'Location not found' };
-        }
-
-        const product = await this.prisma.product.findUnique({
-            where: { id: productId }
-        });
-
-        if (!product) {
-            return { available: false, reason: 'Product not found' };
-        }
-
-        // --- 1. Check Pallet Capacity (Ti-Hi) ---
-        const maxPalletsAttr = location.dynamicAttributes.find(la => la.definition.name === 'Max Pallets');
-        if (maxPalletsAttr && maxPalletsAttr.value) {
-            const maxPallets = Number(maxPalletsAttr.value);
-
-            // Helper to get pallet size
-            const getPalletSize = async (pId: string) => {
-                const pkg = await this.prisma.productPackaging.findFirst({
-                    where: { productId: pId, unitType: 'PALLET' }
-                });
-                // Fallback logic: check for Ti-Hi or default
-                if (pkg) return pkg.quantity;
-
-                // If no specific pallet packaging, assume standard 100 or check dimensions?
-                // For safety, let's look for any packaging with Ti/Hi
-                return 100; // Safe default default to avoid division by zero or blocking
-            };
-
-            const incomingUnitsPerPallet = await getPalletSize(productId);
-            const incomingPallets = quantity / incomingUnitsPerPallet;
-
-            let currentPallets = 0;
-            // Optimize: pre-fetch packagings? For now, simple loop is fine for typical bin sizes
-            for (const inv of location.inventory) {
-                const units = await getPalletSize(inv.productId);
-                currentPallets += inv.quantity / units;
-            }
-
-            if (currentPallets + incomingPallets > maxPallets) {
-                return {
-                    available: false,
-                    reason: `Insufficient pallet capacity (Max: ${maxPallets}, Current: ${currentPallets.toFixed(2)}, Needed: ${incomingPallets.toFixed(2)})`
-                };
-            }
-        }
-
-        // --- 2. Check Volume Capacity ---
-        if (location.maxVolume && product.width && product.height && product.depth) {
-            const productVolume = (product.width / 100) * (product.height / 100) * (product.depth / 100);
-            const totalVolume = productVolume * quantity;
-
-            let currentVolume = 0;
-            for (const inv of location.inventory) {
-                const invProduct = await this.prisma.product.findUnique({ where: { id: inv.productId } });
-                if (invProduct && invProduct.width && invProduct.height && invProduct.depth) {
-                    const invVolume = (invProduct.width / 100) * (invProduct.height / 100) * (invProduct.depth / 100);
-                    currentVolume += invVolume * inv.quantity;
-                }
-            }
-
-            if (currentVolume + totalVolume > location.maxVolume) {
-                return { available: false, reason: 'Insufficient volume capacity' };
-            }
-        }
-
-        // --- 3. Check Weight Capacity ---
-        if (location.maxWeight && product.weight) {
-            const totalWeight = product.weight * quantity;
-
-            let currentWeight = 0;
-            for (const inv of location.inventory) {
-                const invProduct = await this.prisma.product.findUnique({ where: { id: inv.productId } });
-                if (invProduct && invProduct.weight) {
-                    currentWeight += invProduct.weight * inv.quantity;
-                }
-            }
-
-            if (currentWeight + totalWeight > location.maxWeight) {
-                return { available: false, reason: 'Insufficient weight capacity' };
-            }
-        }
-
-        return { available: true };
+        const check = await this.utilisationService.canAccept(locationId, productId, quantity);
+        return { available: check.allowed, reason: check.reason };
     }
 
     /**
