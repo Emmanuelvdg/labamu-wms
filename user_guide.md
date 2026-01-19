@@ -8,7 +8,8 @@ Comprehensive documentation for the Labamu Inventory Management System.
 3. [Inbound Operations](#inbound-operations)
 4. [Outbound Operations](#outbound-operations)
 5. [Reporting & Admin](#reporting--admin)
-6. [End-to-End Examples](#end-to-end-examples)
+6. [Mobile Warehouse App](#mobile-warehouse-app)
+7. [End-to-End Examples](#end-to-end-examples)
 
 ---
 
@@ -322,6 +323,59 @@ The system includes a Model Context Protocol (MCP) server that allows AI assista
 
 ---
 
+
+
+## Mobile Warehouse App
+
+### Overview
+**Purpose:** A dedicated, touch-friendly interface designed for warehouse workers to perform operations directly on the floor using handheld devices or tablets.
+
+**Access:**
+- URL: `/mobile/dashboard`
+- **Features:** Large buttons, high contrast, simplified navigation, and barcode scanning support.
+
+### Dashboard
+The Mobile Dashboard provides quick access to core workflows:
+- **Picking:** Process active picking sessions.
+- **Putaway:** Handle incoming goods from receiving.
+- **Stocktake:** Perform counting tasks.
+- **Scan:** Quick lookup for Locations or Products.
+
+### Workflows
+
+#### 1. Picking
+**Goal:** Fulfill customer orders by picking items from storage.
+- **Process:**
+  1. **Start Session:** App assigns a batch of tasks.
+  2. **Navigate:** Go to the suggested Location.
+  3. **Scan Location:** Verify you are at the correct bin (Green checkmark).
+  4. **Scan Product:** Verify the item SKU/Barcode.
+  5. **Confirm Qty:** Enter the quantity picked.
+  6. **Next Task:** Automatically advances to the next optimized location.
+
+#### 2. Putaway
+**Goal:** Store received items in optimized locations.
+- **Process:**
+  1. **From:** See items in `Receiving Dock`.
+  2. **To:** App suggests a destination based on putaway rules.
+  3. **Execute:** Move item to target.
+  4. **Scan Target:** Validate destination location.
+  5. **Confirm:** Inventory is officially moved.
+
+#### 3. Stocktaking
+**Goal:** Verify physical inventory counts.
+- **Process:**
+  1. **Select Session:** Choosing an active count session.
+  2. **Blind/Guided:** See expected quantity (Guided) or just input what you see (Blind).
+  3. **Scan or Select:** Scan a bin to find tasks for that location.
+  4. **Input:** Enter physical count.
+
+#### 4. Universal Scanner (Quick Lookup)
+**Goal:** Instant information without navigating menus.
+- **Location Scan:** Shows location type and full address.
+- **Product Scan:** Shows "On Hand" and "Available" stock levels for that item.
+
+---
 
 ## End-to-End Examples
 

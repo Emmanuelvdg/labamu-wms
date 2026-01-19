@@ -22,6 +22,7 @@ import { ApiKeyModule } from './api-key/api-key.module';
 import { LalamoveModule } from './lalamove/lalamove.module';
 import { ReturnsModule } from './returns/returns.module';
 import { StocktakingModule } from './stocktaking/stocktaking.module';
+import { PrintingModule } from './printing/printing.module';
 
 import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
 import { PrismaService } from './prisma.service';
@@ -49,6 +50,7 @@ import { PrismaService } from './prisma.service';
         LalamoveModule,
         ReturnsModule,
         StocktakingModule,
+        PrintingModule,
     ],
     controllers: [DeliveryMethodsController],
     providers: [PrismaService],

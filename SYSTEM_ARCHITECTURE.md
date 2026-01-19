@@ -82,6 +82,14 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 
 ---
 
+
+### 9. **Mobile-First Worker UX**
+- Dedicated Next.js Route Group `(mobile)` for isolated layouts
+- Simplified UI optimized for touch targets and handheld scanners
+- Context-aware navigation (Back/Home/Exit)
+
+---
+
 ## Architecture
 
 ### High-Level Architecture

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getProduct, fetchBatches, fetchTransactions, addBatch, fetchWarehouses } from '@/lib/api';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { PrintButton } from '@/components/ui/print-button';
 
 export default function MaterialDetailsPage() {
     const params = useParams();
@@ -83,11 +84,14 @@ export default function MaterialDetailsPage() {
                 <div className="text-sm text-gray-500 mb-1">Materials &gt; {product.name}</div>
                 <div className="flex justify-between items-center">
                     <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-                    <Link href={`/inventory/products/${id}/packaging`}>
-                        <button className="bg-white border text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">
-                            Manage Packaging
-                        </button>
-                    </Link>
+                    <div className="flex gap-2">
+                        <PrintButton endpoint={`/printing/product/${id}/pdf`} label="Print LPN" />
+                        <Link href={`/inventory/products/${id}/packaging`}>
+                            <button className="bg-white border text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">
+                                Manage Packaging
+                            </button>
+                        </Link>
+                    </div>
                 </div>
             </div>
 

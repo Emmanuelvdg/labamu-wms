@@ -442,6 +442,28 @@ export async function fetchPutawayRules() {
     return fetchWithRetry(`${API_URL}/inventory/putaway-rules`);
 }
 
+// --- Putaway Session Management ---
+
+export async function createPutawaySession(warehouseId: string, workerId?: string) {
+    return fetchWithRetry(`${API_URL}/inventory/putaway/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ warehouseId, workerId }),
+    });
+}
+
+export async function getActivePutawaySession(warehouseId: string) {
+    return fetchWithRetry(`${API_URL}/inventory/putaway/sessions/${warehouseId}/active`);
+}
+
+export async function updatePutawayTask(taskId: string, data: any) {
+    return fetchWithRetry(`${API_URL}/inventory/putaway/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
 // Phase 4: Fetch attribute definitions for dynamic forms
 export async function fetchAttributeDefinitions() {
     return fetchWithRetry(`${API_URL}/inventory/attributes/definitions`);

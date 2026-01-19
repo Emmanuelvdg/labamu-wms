@@ -93,6 +93,11 @@ export default function UserGuidePage() {
                                         </div>
                                     </div>
 
+                                    <div className="mb-4">
+                                        <h4 className="font-semibold text-foreground mb-1">Mobile App</h4>
+                                        <a onClick={(e) => scrollToSection(e, 'mobile-app')} href="#mobile-app" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Overview & Workflows</a>
+                                    </div>
+
                                     <a onClick={(e) => scrollToSection(e, 'examples')} href="#examples" className="font-bold hover:text-primary py-1.5 transition-colors">End-to-End Examples</a>
                                 </nav>
                             </ScrollArea>
@@ -1404,6 +1409,105 @@ export default function UserGuidePage() {
                                 </Card>
                             </div>
 
+                        </div>
+                    </section>
+
+                    <Separator className="my-12" />
+
+                    {/* Mobile Warehouse App */}
+                    <section id="mobile-app" className="scroll-mt-24">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Box className="h-6 w-6 text-primary" />
+                            <h2 className="text-3xl font-bold text-foreground">Mobile Warehouse App</h2>
+                        </div>
+
+                        <Card className="mb-8">
+                            <CardContent className="pt-6 space-y-4">
+                                <p><strong>Purpose:</strong> A dedicated, touch-friendly interface designed for warehouse workers to perform operations directly on the floor using handheld devices or tablets.</p>
+                                <div className="bg-primary/5 p-4 rounded-md text-sm border border-primary/20">
+                                    <strong className="text-primary block mb-2">📱 Mobile-First Experience</strong>
+                                    <ul className="list-disc pl-5 space-y-1">
+                                        <li><strong>Access:</strong> Navigate to <code>/mobile/dashboard</code> on any device.</li>
+                                        <li><strong>Features:</strong> Large touch targets, high contrast for visibility, and streamlined workflows.</li>
+                                        <li><strong>Context Aware:</strong> Simplified navigation with quick 'Back', 'Home', and 'Exit' actions.</li>
+                                    </ul>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Picking */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Picking Workflow</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <p className="text-sm text-muted-foreground">Fulfill customer orders by picking items from storage with guided navigation.</p>
+                                    <div className="bg-muted p-4 rounded-md text-sm">
+                                        <strong>Process:</strong>
+                                        <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                            <li><strong>Start:</strong> Select an active session to receive a batch of tasks.</li>
+                                            <li><strong>Navigate:</strong> App directs you to the exact Bin location.</li>
+                                            <li><strong>Scan:</strong> Validates Location and Product barcodes.</li>
+                                            <li><strong>Pick:</strong> Confirm quantity and move to the next item.</li>
+                                        </ol>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Putaway */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Putaway Workflow</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <p className="text-sm text-muted-foreground">Store received items in optimized locations efficiently.</p>
+                                    <div className="bg-muted p-4 rounded-md text-sm">
+                                        <strong>Process:</strong>
+                                        <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                            <li><strong>Source:</strong> View items waiting in Receiving Dock.</li>
+                                            <li><strong>Suggest:</strong> App calculates and suggests the best storage bin.</li>
+                                            <li><strong>Action:</strong> Scan destination bin to confirm placement.</li>
+                                            <li><strong>Verify:</strong> Quantity defaults to expected; adjust if needed.</li>
+                                        </ol>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Stocktaking */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Stocktaking</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <p className="text-sm text-muted-foreground">Verify physical inventory precision with digital counts.</p>
+                                    <div className="bg-muted p-4 rounded-md text-sm">
+                                        <strong>Features:</strong>
+                                        <ul className="list-disc pl-5 mt-1 space-y-1">
+                                            <li><strong>Blind Counts:</strong> Hide expected quantity to ensure unbiased counting.</li>
+                                            <li><strong>Guided Mode:</strong> Show system quantity for speed.</li>
+                                            <li><strong>Review:</strong> Variances are flagged for manager approval.</li>
+                                        </ul>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Universal Scanner */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Universal Scanner</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <p className="text-sm text-muted-foreground">Instant information lookup without navigating complex menus.</p>
+                                    <div className="bg-muted p-4 rounded-md text-sm">
+                                        <strong>Capabilities:</strong>
+                                        <ul className="list-disc pl-5 mt-1 space-y-1">
+                                            <li><strong>Scan Location:</strong> See full address path and type.</li>
+                                            <li><strong>Scan Product:</strong> View Real-time 'On Hand' and 'Available' stock.</li>
+                                        </ul>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
 

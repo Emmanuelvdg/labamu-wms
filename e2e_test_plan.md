@@ -171,6 +171,21 @@ This document outlines the End-to-End (E2E) test scenarios for the Labamu IMS ap
     - **Expected**: Location created, `innerDimensions` persisted.
 - [ ] **Scenario 11.2: Check Auto-Generated Codes**
     - **Status**: PENDING
-    - **Action**: Create hierarchy (Zone -> Row -> Bay) without manual codes.
     - **Expected**: System generates `ZONE-A`, `ROW-1` codes and full addresses `ZONE-A.ROW-1`.
+
+## 12. Mobile App Workflows
+**Goal**: Verify mobile-specific interfaces and workflows.
+- [ ] **Scenario 12.1: Mobile Dashboard Access**
+    - **Status**: PENDING
+    - **Action**: Navigate to `/mobile/dashboard`.
+    - **Expected**: View Mobile Dashboard with 4 main action cards (Picking, Putaway, Stocktake, Scan).
+- [ ] **Scenario 12.2: Mobile Picking Flow**
+    - **Status**: PENDING
+    - **Action**: Start Picking Session. Scan Location (valid) -> Scan Product (valid) -> Confirm Qty.
+    - **Expected**: Task completes, UI advances or returns to list.
+- [ ] **Scenario 12.3: Mobile Quick Scan**
+    - **Status**: PENDING
+    - **Action**: Go to `/mobile/scan`. Type/Scan a location code.
+    - **Expected**: Location details appear (Type, Name).
+
 
