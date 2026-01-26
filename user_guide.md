@@ -173,6 +173,20 @@ Manually adding an inventory batch (e.g., "Found stock") now triggers a standard
 - **Fixed Price:** Flat rate shipping cost
 - **Rule-based:** Calculate based on weight, volume, and dimensions
 - **Lalamove (On-Demand):** Real-time delivery quotations from Lalamove API
+- **Manual/Carrier:** Standard carrier shipping (DHL, FedEx, etc.)
+
+### Shipping Execution
+**Purpose:** Finalizing the outbound process by confirming shipment details.
+
+**How to Ship an Order:**
+1. Navigate to the Order Details page (Order must be in `PACKING` status).
+2. Locate the **Process Shipment** section at the bottom of the "Shipping & Delivery" card.
+3. Click **Ship Order**.
+4. Enter the **Carrier Name** (e.g., DHL, FedEx) and **Tracking ID**.
+5. Click **Confirm Shipment**.
+   - The Order Status changes to `SHIPPED`.
+   - Inventory is deducted from the system.
+   - Tracking details are saved to the order.
 
 **✨ Lalamove Integration:**
 The system provides seamless integration with Lalamove for on-demand delivery services in supported markets (Indonesia, Singapore, Thailand, Philippines, Vietnam).
