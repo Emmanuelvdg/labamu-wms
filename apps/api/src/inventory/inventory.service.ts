@@ -37,6 +37,7 @@ export class InventoryService {
                 type: productData.type,
                 unitOfMeasure: productData.unitOfMeasure,
                 averageCost: productData.averageCost,
+                price: productData.price,
                 status: productData.status,
                 tracking: productData.tracking || 'none',
                 // Dimensions

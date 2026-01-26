@@ -18,6 +18,7 @@ model Product {
   isStockable    Boolean   @default(true)
   status         String    @default("Active")
   averageCost    Float     @default(0)
+  price          Float     @default(0)
   description    String?
   tracking       String    @default("none") // none, lot, serial
   expiryDate     DateTime? // Keep for legacy/simple use, but Batches are preferred

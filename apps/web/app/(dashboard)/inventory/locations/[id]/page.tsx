@@ -674,6 +674,7 @@ export default function LocationDetailsPage() {
                         </div>
                     </div>
                 </div>
-            </div >
-            );
+            </div>
+        </div>
+    );
 }

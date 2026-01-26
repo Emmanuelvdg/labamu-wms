@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { Truck } from 'lucide-react';
 
 export default function OrderShipping({ order, onUpdate }: { order: any, onUpdate: () => void }) {
     const [methods, setMethods] = useState<any[]>([]);
@@ -11,6 +12,11 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
     const [lalamoveQuotationId, setLalamoveQuotationId] = useState<string | null>(null);
     const [lalamoveQuoteDetails, setLalamoveQuoteDetails] = useState<any>(null);
     const [bookingDelivery, setBookingDelivery] = useState(false);
+
+    // Shipping Modal State
+    const [isShipping, setIsShipping] = useState(false);
+    const [carrier, setCarrier] = useState('');
+    const [trackingId, setTrackingId] = useState('');
 
     useEffect(() => {
         // Fetch active methods
@@ -142,6 +148,29 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
         }
     };
 
+    const handleShipOrder = async () => {
+        if (!carrier || !trackingId) {
+            alert('Please enter Carrier and Tracking ID');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            await api.post('/orders/ship', {
+                orderId: order.id,
+                carrier,
+                trackingId
+            });
+            setIsShipping(false);
+            onUpdate();
+        } catch (error: any) {
+            console.error('Failed to ship order:', error);
+            alert(`Failed to ship order: ${error.message || 'Unknown error'}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="bg-white p-4 rounded shadow mt-4">
             <h3 className="font-bold text-lg mb-4">Shipping & Delivery</h3>
@@ -248,12 +277,70 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                         )}
                     </div>
                 )}
+
+                {/* Manual Shipping Flow for PACKING status */}
+                {order.status === 'PACKING' && (
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                        <h4 className="font-semibold text-gray-900 mb-2">Process Shipment</h4>
+
+                        {!isShipping ? (
+                            <button
+                                onClick={() => setIsShipping(true)}
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <Truck className="h-5 w-5" />
+                                Ship Order
+                            </button>
+                        ) : (
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Carrier</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. DHL, FedEx, Local Courier"
+                                        value={carrier}
+                                        onChange={(e) => setCarrier(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Tracking ID</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. TRACK-123456789"
+                                        value={trackingId}
+                                        onChange={(e) => setTrackingId(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
+                                </div>
+                                <div className="flex gap-2 justify-end">
+                                    <button
+                                        onClick={() => setIsShipping(false)}
+                                        disabled={loading}
+                                        className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleShipOrder}
+                                        disabled={loading}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                                    >
+                                        {loading ? 'Processing...' : 'Confirm Shipment'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
-            {order.shippingCostInCOGS && (
-                <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-1 rounded inline-block">
-                    Included in COGS (STO/IWT)
-                </div>
-            )}
-        </div>
+            {
+                order.shippingCostInCOGS && (
+                    <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-1 rounded inline-block">
+                        Included in COGS (STO/IWT)
+                    </div>
+                )
+            }
+        </div >
     );
 }
