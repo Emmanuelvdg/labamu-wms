@@ -73,11 +73,12 @@ export default function UserGuidePage() {
                                     <div>
                                         <h4 className="font-semibold text-foreground mb-1">Outbound Operations</h4>
                                         <div className="flex flex-col space-y-1">
-                                            <a onClick={(e) => scrollToSection(e, 'orders')} href="#orders" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Creating Orders</a>
+                                            <a onClick={(e) => scrollToSection(e, 'orders')} href="#orders" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Creating & Managing Orders</a>
                                             <a onClick={(e) => scrollToSection(e, 'picking-strategies')} href="#picking-strategies" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Picking Strategies</a>
                                             <a onClick={(e) => scrollToSection(e, 'rotation-policies')} href="#rotation-policies" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Rotation Policies</a>
                                             <a onClick={(e) => scrollToSection(e, 'worker-interface')} href="#worker-interface" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Worker Interface</a>
                                             <a onClick={(e) => scrollToSection(e, 'delivery-methods')} href="#delivery-methods" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Delivery Methods</a>
+                                            <a onClick={(e) => scrollToSection(e, 'shipping-execution')} href="#shipping-execution" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Shipping Execution</a>
                                             <a onClick={(e) => scrollToSection(e, 'invoices')} href="#invoices" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Invoices</a>
                                             <a onClick={(e) => scrollToSection(e, 'returns')} href="#returns" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Returns (RMA)</a>
                                         </div>
@@ -974,6 +975,36 @@ export default function UserGuidePage() {
                                                 <li><strong>Confirm:</strong> Moves order to the Picking Queue.</li>
                                             </ol>
                                         </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Order Lifecycle Management:</h4>
+
+                                            <div className="space-y-4">
+                                                <div className="bg-muted p-4 rounded-md text-sm">
+                                                    <strong className="block mb-2">Cancelling Orders</strong>
+                                                    <p className="text-muted-foreground">
+                                                        You can cancel orders that haven't been shipped (e.g. <code>PENDING</code>, <code>RESERVED</code>, <code>PICKING</code>).
+                                                        Cancelling immediately:
+                                                    </p>
+                                                    <ul className="list-disc pl-5 mt-1 text-muted-foreground">
+                                                        <li>Releases all reserved stock back to "Available"</li>
+                                                        <li>Cancels any active picking tasks</li>
+                                                        <li>Sets status to <code>CANCELLED</code></li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="bg-muted p-4 rounded-md text-sm">
+                                                    <strong className="block mb-2">Deleting Orders</strong>
+                                                    <p className="text-muted-foreground">
+                                                        Deletion is restricted to preserve data integrity:
+                                                    </p>
+                                                    <ul className="list-disc pl-5 mt-1 text-muted-foreground">
+                                                        <li>✅ <strong>Allowed:</strong> Only for <code>CANCELLED</code> orders or <code>PENDING</code> orders with no reservations.</li>
+                                                        <li>🚫 <strong>Blocked:</strong> Any order with active reservations or that has been <code>SHIPPED</code> cannot be deleted.</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </div>
@@ -1225,6 +1256,32 @@ export default function UserGuidePage() {
                                             <p className="text-muted-foreground mt-1">
                                                 Go to <strong>Configuration → Delivery Methods</strong> to define methods. These will appear in the Sales Order shipping dropdown for automatic cost calculation and booking.
                                             </p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Shipping Execution */}
+                            <div id="shipping-execution" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Truck className="h-5 w-5" /> Shipping Execution</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Finalizing the outbound process by confirming shipment details.</p>
+
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong className="block mb-2">How to Ship an Order:</strong>
+                                            <ol className="list-decimal pl-5 space-y-1">
+                                                <li>Navigate to the Order Details page (Order must be in <code>PACKING</code> status).</li>
+                                                <li>Locate the <strong>Process Shipment</strong> section at the bottom of the "Shipping & Delivery" card.</li>
+                                                <li>Click <strong>Ship Order</strong>.</li>
+                                                <li>Enter the <strong>Carrier Name</strong> (e.g., DHL, FedEx) and <strong>Tracking ID</strong>.</li>
+                                                <li>Click <strong>Confirm Shipment</strong>.</li>
+                                            </ol>
+                                            <ul className="list-disc pl-5 mt-2 space-y-1 text-muted-foreground">
+                                                <li>The Order Status changes to <code>SHIPPED</code>.</li>
+                                                <li>Inventory is deducted from the system.</li>
+                                                <li>Tracking details are saved to the order.</li>
+                                            </ul>
                                         </div>
                                     </CardContent>
                                 </Card>

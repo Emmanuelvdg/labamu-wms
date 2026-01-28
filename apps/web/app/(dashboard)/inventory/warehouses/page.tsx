@@ -13,9 +13,11 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, MapPin, Building, Layout } from 'lucide-react';
+import { Plus, MapPin, Building, Layout, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { DeleteConfirmationModal } from '@/components/DeleteConfirmationModal';
+import { deleteWarehouse } from '@/lib/api';
 
 export default function WarehousesPage() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
@@ -36,6 +38,9 @@ export default function WarehousesPage() {
         manufactureSteps: '1_step',
         buyToResupply: false,
     });
+
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [warehouseToDelete, setWarehouseToDelete] = useState<any>(null);
 
     useEffect(() => {
         loadWarehouses();
@@ -76,12 +81,21 @@ export default function WarehousesPage() {
                 manufactureToResupply: false,
                 manufactureSteps: '1_step',
                 buyToResupply: false,
+
             });
             loadWarehouses();
         } catch (err) {
             toast.error('Failed to create warehouse');
         }
     }
+
+    const confirmDelete = async () => {
+        if (!warehouseToDelete) return;
+        await deleteWarehouse(warehouseToDelete.id);
+        toast.success('Warehouse deleted');
+        loadWarehouses();
+        setWarehouseToDelete(null);
+    };
 
     if (loading) return <div className="p-8">Loading...</div>;
 
@@ -236,7 +250,22 @@ export default function WarehousesPage() {
                                         {warehouse.shortName || 'N/A'}
                                     </span>
                                 </div>
-                                <Building className="h-5 w-5 text-gray-500" />
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setWarehouseToDelete(warehouse);
+                                            setDeleteModalOpen(true);
+                                        }}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                    <Building className="h-5 w-5 text-gray-500" />
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <div className="flex items-center text-sm text-gray-500 mt-2">
@@ -271,6 +300,16 @@ export default function WarehousesPage() {
                     </Link>
                 ))}
             </div>
+
+
+            <DeleteConfirmationModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                resourceName={warehouseToDelete?.name}
+                resourceType="Warehouse"
+                dependencyCheckUrl={warehouseToDelete ? `/warehouses/${warehouseToDelete.id}/dependencies` : undefined}
+            />
         </div>
     );
 }

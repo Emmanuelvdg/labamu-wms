@@ -323,6 +323,72 @@ export class OrderService {
         }
     }
 
+    async cancelOrder(id: string) {
+        return this.prisma.$transaction(async (tx) => {
+            const order = await tx.order.findUnique({
+                where: { id },
+                include: { reservations: true }
+            });
+
+            if (!order) throw new Error('Order not found');
+            if (['SHIPPED', 'DELIVERED'].includes(order.status)) {
+                throw new BadRequestException('Cannot cancel shipped or delivered order');
+            }
+            if (order.status === 'CANCELLED') {
+                return order;
+            }
+
+            // Release Reservations
+            for (const res of order.reservations) {
+                // Find inventory to release (Best effort match)
+                const inventory = await tx.productInventory.findFirst({
+                    where: { productId: res.productId, reserved: { gte: res.quantity } }
+                });
+
+                if (inventory) {
+                    await tx.productInventory.update({
+                        where: { id: inventory.id },
+                        data: { reserved: { decrement: res.quantity } }
+                    });
+                }
+            }
+
+            // Remove Reservation Records
+            await tx.reservation.deleteMany({ where: { orderId: id } });
+
+            // Update Picking Tasks? (Cancel them)
+            await tx.pickingTask.updateMany({
+                where: { orderId: id },
+                data: { status: 'CANCELLED' }
+            });
+
+            // Update Order Status
+            return tx.order.update({
+                where: { id },
+                data: { status: 'CANCELLED' }
+            });
+        });
+    }
+
+    async deleteOrder(id: string) {
+        const order = await this.prisma.order.findUnique({
+            where: { id },
+            include: { reservations: true, shipment: true }
+        });
+
+        if (!order) throw new Error('Order not found');
+
+        // Allow delete if Pending (no reservations), Draft (if exists), or Cancelled
+        const isCleanPending = order.status === 'PENDING' && order.reservations.length === 0 && !order.shipment;
+        const isCancelled = order.status === 'CANCELLED';
+
+        if (!isCleanPending && !isCancelled) {
+            throw new BadRequestException('Can only delete Pending (empty) or Cancelled orders. Please Cancel first.');
+        }
+
+        return this.prisma.order.delete({ where: { id } });
+    }
+
     async updateOrder(id: string, data: any): Promise<Order> {
         return this.prisma.order.update({
             where: { id },

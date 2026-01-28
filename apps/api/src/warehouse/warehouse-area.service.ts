@@ -328,4 +328,91 @@ export class WarehouseAreaService {
             }
         });
     }
+    async checkWarehouseDependencies(id: string) {
+        const errors: string[] = [];
+        let blocking = false;
+
+        // 1. Check Inventory
+        const inventoryCount = await this.prisma.productInventory.count({
+            where: {
+                warehouseId: id,
+                quantity: { gt: 0 }
+            }
+        });
+
+        if (inventoryCount > 0) {
+            errors.push(`${inventoryCount} Active Inventory Items`);
+            blocking = true;
+        }
+
+        // 2. Check Inventory Batches
+        const batchCount = await this.prisma.inventoryBatch.count({
+            where: {
+                warehouseId: id,
+                status: 'Active'
+            }
+        });
+
+        if (batchCount > 0) {
+            errors.push(`${batchCount} Active Batches`);
+            blocking = true;
+        }
+
+        // 3. Check Active Orders (Source or Destination)
+        const activeOrders = await this.prisma.order.count({
+            where: {
+                OR: [
+                    { warehouseId: id },
+                    { destinationWarehouseId: id }
+                ],
+                status: {
+                    notIn: ['SHIPPED', 'DELIVERED', 'CANCELLED']
+                }
+            }
+        });
+
+        if (activeOrders > 0) {
+            errors.push(`${activeOrders} Active Orders`);
+            blocking = true;
+        }
+
+        // 4. Check Open Tasks (Picking/Putaway)
+        const openPickingSessions = await this.prisma.pickingSession.count({
+            where: { warehouseId: id, status: { not: 'COMPLETED' } }
+        });
+
+        if (openPickingSessions > 0) {
+            errors.push(`${openPickingSessions} Open Picking Sessions`);
+            blocking = true;
+        }
+
+        return {
+            hasDependencies: errors.length > 0,
+            dependencies: errors,
+            blocking
+        };
+    }
+
+    async deleteWarehouse(id: string) {
+        const check = await this.checkWarehouseDependencies(id);
+        if (check.blocking) {
+            throw new Error(`Cannot delete warehouse: ${check.dependencies.join(', ')}`);
+        }
+
+        // Safe to delete related data first (Cascade)
+
+        // 1. Delete empty inventory records (0 qty)
+        await this.prisma.productInventory.deleteMany({ where: { warehouseId: id } });
+
+        // 2. Delete Functional Areas
+        await this.prisma.warehouseFunctionalArea.deleteMany({ where: { warehouseId: id } });
+
+        // 3. Delete Locations
+        await this.prisma.location.deleteMany({ where: { warehouseId: id } });
+
+        // 4. Delete Warehouse
+        return this.prisma.warehouse.delete({
+            where: { id }
+        });
+    }
 }

@@ -1,20 +1,37 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { fetchOrder, checkAvailability, updateCustomer } from '@/lib/api';
+import { fetchOrder, checkAvailability, updateCustomer, cancelOrder, deleteOrder } from '@/lib/api';
 import { Button } from '@/components/ui/button';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { DeleteConfirmationModal } from '@/components/DeleteConfirmationModal';
 import Link from 'next/link';
-import { ArrowLeft, Package, Truck, AlertCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Package, Truck, AlertCircle, Ban, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 import OrderShipping from '@/components/OrderShipping';
 
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
+    const router = useRouter();
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [customerPhone, setCustomerPhone] = useState('');
     const [savingPhone, setSavingPhone] = useState(false);
+
+    const [showCancelDialog, setShowCancelDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     useEffect(() => {
         loadOrder();
@@ -39,6 +56,30 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
         } catch (error: any) {
             console.error('Failed to check availability:', error);
             alert(error.message || 'Failed to check availability');
+        }
+    };
+
+
+
+    const handleCancel = async () => {
+        try {
+            await cancelOrder(id);
+            toast.success('Order cancelled');
+            setShowCancelDialog(false);
+            loadOrder();
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to cancel order');
+        }
+    };
+
+    const handleDelete = async () => {
+        try {
+            await deleteOrder(id);
+            toast.success('Order deleted');
+            setShowDeleteDialog(false); // Clean up though we redirect
+            router.push('/orders');
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to delete order');
         }
     };
 
@@ -94,13 +135,62 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 </div>
 
                 {order.status === 'PENDING' && (
-                    <div className="mt-4 flex justify-end">
+                    <div className="mt-4 flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setShowCancelDialog(true)} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                            <Ban className="w-4 h-4 mr-2" />
+                            Cancel Order
+                        </Button>
                         <Button onClick={handleCheckAvailability}>
                             Check Availability
                         </Button>
                     </div>
                 )}
+                {/* Allow Cancel for Reserved/Exception too */}
+                {['RESERVED', 'EXCEPTION', 'PICKING'].includes(order.status) && (
+                    <div className="mt-4 flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setShowCancelDialog(true)} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                            <Ban className="w-4 h-4 mr-2" />
+                            Cancel Order
+                        </Button>
+                    </div>
+                )}
+                {/* Allow Delete for Cancelled or Draft/Pending-Clean */}
+                {(order.status === 'CANCELLED' || (order.status === 'PENDING' && (!order.reservations || order.reservations.length === 0))) && (
+                    <div className="mt-4 flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setShowDeleteDialog(true)} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete Order
+                        </Button>
+                    </div>
+                )}
             </div>
+
+            {/* Dialogs */}
+            <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Cancel Order?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to cancel this order? Any reservations will be released. This action can be undone by creating a new order.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleCancel} className="bg-red-600 hover:bg-red-700">Yes, Cancel Order</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <DeleteConfirmationModal
+                isOpen={showDeleteDialog}
+                onClose={() => setShowDeleteDialog(false)}
+                onConfirm={handleDelete}
+                resourceName={`Order #${order.id.substring(0, 8)}`}
+                resourceType="Order"
+                // Orders don't have standard dependency checks in this flow usually, or we can add one if needed.
+                // For now, assume force delete or no check needed if it meets the criteria above.
+                dependencyCheckUrl={undefined}
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
                 {/* Order Summary Card */}

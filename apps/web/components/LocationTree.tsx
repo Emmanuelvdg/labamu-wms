@@ -3,6 +3,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { DeleteConfirmationModal } from '@/components/DeleteConfirmationModal';
+import { deleteLocation } from '@/lib/api';
+import { toast } from 'sonner';
+import { Edit2, Trash2 } from 'lucide-react';
 
 interface LocationNode {
     id: string;
@@ -18,6 +22,27 @@ interface LocationTreeProps {
 
 export default function LocationTree({ locations }: LocationTreeProps) {
     const router = useRouter();
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [nodeToDelete, setNodeToDelete] = useState<LocationNode | null>(null);
+
+    const handleDeleteClick = (node: LocationNode) => {
+        setNodeToDelete(node);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!nodeToDelete) return;
+        try {
+            await deleteLocation(nodeToDelete.id);
+            toast.success('Location deleted');
+            router.refresh(); // Refresh to update tree
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to delete location');
+        } finally {
+            setNodeToDelete(null);
+        }
+    };
 
     const renderNode = (node: LocationNode, level: number) => {
         const [expanded, setExpanded] = useState(false);
@@ -51,15 +76,26 @@ export default function LocationTree({ locations }: LocationTreeProps) {
                         </span>
                         <span>{node.name}</span>
                     </div>
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-gray-400 flex gap-2">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(`/inventory/locations/${node.id}`);
                             }}
-                            className="hover:text-blue-600"
+                            className="hover:text-blue-600 p-1"
+                            title="Edit"
                         >
-                            Edit
+                            <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(node);
+                            }}
+                            className="hover:text-destructive text-gray-400 hover:text-red-600 p-1"
+                            title="Delete"
+                        >
+                            <Trash2 className="h-4 w-4" />
                         </button>
                     </div>
                 </div>
@@ -75,6 +111,15 @@ export default function LocationTree({ locations }: LocationTreeProps) {
     return (
         <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
             {locations.map(loc => renderNode(loc, 0))}
+
+            <DeleteConfirmationModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                resourceName={nodeToDelete?.name || ''}
+                resourceType="Location"
+                dependencyCheckUrl={nodeToDelete ? `/inventory/locations/${nodeToDelete.id}/dependencies` : undefined}
+            />
         </div>
     );
 }

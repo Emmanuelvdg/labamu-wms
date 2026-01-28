@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Put, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Put, UseGuards, Delete } from '@nestjs/common';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { OrderService } from './order.service';
@@ -38,9 +38,21 @@ export class OrderController {
         return this.orderService.checkAvailability(id);
     }
 
+    @Post(':id/cancel')
+    @RequirePermission('ORDERS', 'UPDATE')
+    cancelOrder(@Param('id') id: string) {
+        return this.orderService.cancelOrder(id);
+    }
+
     @Put(':id')
     @RequirePermission('ORDERS', 'UPDATE')
     updateOrder(@Param('id') id: string, @Body() data: any) {
         return this.orderService.updateOrder(id, data);
+    }
+
+    @Delete(':id')
+    @RequirePermission('ORDERS', 'DELETE')
+    deleteOrder(@Param('id') id: string) {
+        return this.orderService.deleteOrder(id);
     }
 }

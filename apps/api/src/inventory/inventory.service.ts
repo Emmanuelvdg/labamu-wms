@@ -826,6 +826,90 @@ export class InventoryService {
         }
     }
 
+    async checkLocationDependencies(id: string) {
+        const errors: string[] = [];
+        let blocking = false;
+
+        // 1. Check Children
+        const childrenCount = await this.prisma.location.count({
+            where: { parentId: id }
+        });
+        if (childrenCount > 0) {
+            errors.push(`${childrenCount} Child Locations`);
+            blocking = true;
+        }
+
+        // 2. Check Active Inventory
+        const inventoryCount = await this.prisma.productInventory.count({
+            where: {
+                locationId: id,
+                quantity: { gt: 0 }
+            }
+        });
+        if (inventoryCount > 0) {
+            errors.push(`${inventoryCount} Inventory Records with Stock`);
+            blocking = true;
+        }
+
+        // 3. Check Active Batches
+        const batchCount = await this.prisma.inventoryBatch.count({
+            where: {
+                locationId: id,
+                status: 'Active'
+            }
+        });
+        if (batchCount > 0) {
+            errors.push(`${batchCount} Active Batches`);
+            blocking = true;
+        }
+
+        // 4. Check Open Tasks (Picking)
+        const pickingTasks = await this.prisma.pickingTask.count({
+            where: { sourceLocationId: id, status: { not: 'PICKED' } }
+        });
+        if (pickingTasks > 0) {
+            errors.push(`${pickingTasks} Active Picking Tasks`);
+            blocking = true;
+        }
+
+        // 5. Check Open Tasks (Putaway)
+        const putawayTasks = await this.prisma.putawayTask.count({
+            where: {
+                OR: [{ sourceLocationId: id }, { destinationLocationId: id }],
+                status: { not: 'COMPLETED' }
+            }
+        });
+        if (putawayTasks > 0) {
+            errors.push(`${putawayTasks} Active Putaway Tasks`);
+            blocking = true;
+        }
+
+        return {
+            hasDependencies: errors.length > 0,
+            dependencies: errors,
+            blocking
+        };
+    }
+
+    async deleteLocation(id: string) {
+        const check = await this.checkLocationDependencies(id);
+        if (check.blocking) {
+            throw new Error(`Cannot delete location: ${check.dependencies.join(', ')}`);
+        }
+
+        // Safe cleanup
+        // 1. Delete empty inventory
+        await this.prisma.productInventory.deleteMany({ where: { locationId: id } });
+
+        // 2. Delete empty batches (if any remain that are not Active?)
+        await this.prisma.inventoryBatch.deleteMany({ where: { locationId: id, status: { not: 'Active' } } });
+
+        // 4. Delete Location
+        return this.prisma.location.delete({
+            where: { id }
+        });
+    }
+
     async updateLocation(id: string, data: {
         name?: string;
         parentId?: string | null;

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getLocationDetails, updateLocation } from '@/lib/api';
+import { getLocationDetails, updateLocation, deleteLocation } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { DeleteConfirmationModal } from '@/components/DeleteConfirmationModal';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { PrintButton } from '@/components/ui/print-button';
 import {
@@ -32,6 +33,7 @@ export default function LocationDetailsPage() {
     const [location, setLocation] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [editForm, setEditForm] = useState<any>({});
     const [allLocations, setAllLocations] = useState<any[]>([]); // Store all locations for filtering
     const [attributeDefinitions, setAttributeDefinitions] = useState<any[]>([]);
@@ -200,6 +202,21 @@ export default function LocationDetailsPage() {
                 </Button>
                 <div className="flex gap-2">
                     <PrintButton endpoint={`/printing/location/${location.id}/pdf`} />
+                    <Button variant="destructive" size="icon" onClick={() => setIsDeleteOpen(true)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <DeleteConfirmationModal
+                        isOpen={isDeleteOpen}
+                        onClose={() => setIsDeleteOpen(false)}
+                        onConfirm={async () => {
+                            await deleteLocation(location.id);
+                            toast.success('Location deleted');
+                            router.push('/inventory/locations');
+                        }}
+                        resourceName={location.name}
+                        resourceType="Location"
+                        dependencyCheckUrl={`/inventory/locations/${location.id}/dependencies`}
+                    />
                     <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline">Edit Location</Button>

@@ -219,6 +219,17 @@ export class InventoryController {
         return this.inventoryService.getLocationDetails(id);
     }
 
+    @Get('locations/:id/dependencies')
+    checkLocationDependencies(@Param('id') id: string) {
+        return this.inventoryService.checkLocationDependencies(id);
+    }
+
+    @Delete('locations/:id')
+    @RequirePermission('LOCATIONS', 'DELETE')
+    deleteLocation(@Param('id') id: string) {
+        return this.inventoryService.deleteLocation(id);
+    }
+
     @Put('locations/:id')
     @RequirePermission('LOCATIONS', 'UPDATE')
     updateLocation(@Param('id') id: string, @Body() data: any) {

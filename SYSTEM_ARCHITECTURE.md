@@ -310,7 +310,8 @@ POST   /warehouses                          Create warehouse
 GET    /warehouses/:id/locations            Get location hierarchy
 POST   /warehouses/:id/locations            Create location
 PATCH  /locations/:id                       Update location
-DELETE /locations/:id                       Delete location
+DELETE /locations/:id                       Delete location (Safe Delete)
+GET    /locations/:id/dependencies          Check for blocking dependencies
 ```
 
 #### Purchase Orders
@@ -332,7 +333,8 @@ PATCH  /orders/:id                          Update order
 POST   /orders/:id/reserve                  Reserve inventory
 POST   /orders/:id/unreserve                Release reservations
 POST   /orders/:id/fulfill                  Mark as fulfilled
-POST   /orders/:id/cancel                   Cancel order
+POST   /orders/:id/cancel                   Cancel order (Release stock)
+DELETE /orders/:id                          Delete order (If clean/cancelled)
 ```
 
 #### Putaway Operations

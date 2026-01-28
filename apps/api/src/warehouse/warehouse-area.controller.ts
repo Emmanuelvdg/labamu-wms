@@ -82,5 +82,14 @@ export class WarehouseAreaController {
     ) {
         return this.warehouseAreaService.updateFloorPlan(warehouseId, data);
     }
+    @Get(':id/dependencies')
+    async checkDependencies(@Param('id') id: string) {
+        return this.warehouseAreaService.checkWarehouseDependencies(id);
+    }
+
+    @Delete(':id')
+    async deleteWarehouse(@Param('id') id: string) {
+        return this.warehouseAreaService.deleteWarehouse(id);
+    }
 }
 

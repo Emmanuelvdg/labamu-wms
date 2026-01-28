@@ -56,7 +56,15 @@ Attributes set at a parent level automatically apply to all child locations unle
 - **Capacity Planning:** You can now define physical limits for locations:
     - **Dimensions (L x W x H):** Inner usable space in mm.
     - **Max Weight:** Weight limit in kg.
+    - **Dimensions (L x W x H):** Inner usable space in mm.
+    - **Max Weight:** Weight limit in kg.
 These constraints are used by the system to prevent overloading locations during putaway recommendations.
+
+**✨ Safe Deletion:**
+Locations can only be deleted if they are empty and unused. The system prevents accidental data loss by blocking deletion if the location contains:
+- **Child Locations:** Sub-locations must be removed first (e.g. remove Bins before checking Shelf).
+- **Active Inventory:** Locations with stock cannot be deleted.
+- **Open Tasks:** Any active Picking or Putaway tasks targeting this location must be completed or cancelled.
 
 ### Warehouses
 **Purpose:** Top-level facilities that act as the root of your location hierarchy.
@@ -165,6 +173,19 @@ Manually adding an inventory batch (e.g., "Found stock") now triggers a standard
 ### Worker Interface
 **Purpose:** Mobile-focused screen for picking execution.
 - Scan Location -> Scan Product -> Confirm Pick.
+
+### Managing Orders
+**Cancelling Orders:**
+Orders can be cancelled if they have not yet been shipped. Cancelling an order automatically:
+- Releases any reserved stock back to "Available".
+- Cancels associated picking tasks.
+- Updates the order status to `CANCELLED`.
+
+**Deleting Orders:**
+For data integrity, multiple restrictions apply to deleting orders:
+- **Allowed:** You can safely delete `PENDING` orders (if no stock is reserved) or `CANCELLED` orders.
+- **Blocked:** Active orders (`RESERVED`, `PICKING`, `PACKING`) cannot be deleted. You must Cancel them first to release the stock.
+- **Blocked:** `SHIPPED` orders cannot be deleted to preserve the historical ledger.
 
 ### Delivery Methods
 **Purpose:** Calculating shipping costs and managing delivery logistics.

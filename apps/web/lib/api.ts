@@ -72,6 +72,12 @@ export async function createWarehouse(warehouse: any) {
     });
 }
 
+export async function deleteWarehouse(id: string) {
+    return fetchWithRetry(`${API_URL}/warehouses/${id}`, {
+        method: 'DELETE',
+    });
+}
+
 export async function updateWarehouse(id: string, data: {
     address?: string;
     city?: string;
@@ -134,6 +140,12 @@ export async function updateLocation(id: string, data: any) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+    });
+}
+
+export async function deleteLocation(id: string) {
+    return fetchWithRetry(`${API_URL}/inventory/locations/${id}`, {
+        method: 'DELETE',
     });
 }
 
@@ -264,6 +276,18 @@ export async function createOrder(order: any) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(order),
+    });
+}
+
+export async function cancelOrder(id: string) {
+    return fetchWithRetry(`${API_URL}/orders/${id}/cancel`, {
+        method: 'POST',
+    });
+}
+
+export async function deleteOrder(id: string) {
+    return fetchWithRetry(`${API_URL}/orders/${id}`, {
+        method: 'DELETE',
     });
 }
 
