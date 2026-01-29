@@ -37,18 +37,18 @@ This test plan builds upon Test Plan 2.0 by adding "Day 2" scenarios focused on 
     - **Action**: Click "Delete Order".
     - **Expected**: Order is permanently deleted.
 
-- [ ] **Scenario 5.6: Attempt to Cancel Shipped Order**
+- [x] **Scenario 5.6: Attempt to Cancel Shipped Order**
     - **Action**: Open the Shipped Order from Scenario 4.5.
     - **Action**: Verify "Cancel Order" button is NOT visible or disabled.
     - **Action**: (API Test) Try `POST /orders/:id/cancel`.
     - **Expected**: Error 400 "Cannot cancel shipped order".
 
 ## Phase 6: Edge Cases
-- [ ] **Scenario 6.1: Delete Location with Children**
+- [x] **Scenario 6.1: Delete Location with Children**
     - **Action**: Try to delete "Zone A" (Parent of Row 1 -> Shelf 1).
     - **Expected**: Blocked due to "Child Locations".
 
-- [ ] **Scenario 6.2: Delete Location with Open Tasks**
+- [x] **Scenario 6.2: Delete Location with Open Tasks**
     - **Action**: Create PO -> Receive. Do NOT Putaway.
     - **Action**: Try to delete "Receiving Dock 1".
     - **Expected**: Blocked due to "Inventory" or "Active Batches".
