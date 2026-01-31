@@ -1,9 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { UtilisationService } from './utilisation.service';
 
 @Injectable()
 export class StockMoveService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private utilisationService: UtilisationService
+    ) { }
 
     // Helper to find location by type or name
     private async findLocation(warehouseId: string, name: string) {
@@ -156,6 +160,17 @@ export class StockMoveService {
         const move = await this.prisma.stockMove.findUnique({ where: { id: moveId }, include: { nextMove: true, transferOrder: true } });
         if (!move) throw new Error('Move not found');
 
+        // Capacity Check
+        const { allowed, reason } = await this.utilisationService.canAccept(
+            destinationLocationId,
+            move.productId,
+            quantity
+        );
+
+        if (!allowed) {
+            throw new BadRequestException(`Capacity Limit Reached: ${reason}`);
+        }
+
         // 2. Exception Check
         const isException = (move.inputQuantity && quantity < move.inputQuantity) || (move.destinationLocationId && destinationLocationId !== move.destinationLocationId);
 
@@ -205,3 +220,4 @@ export class StockMoveService {
         }
     }
 }
+

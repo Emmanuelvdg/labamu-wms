@@ -1,4 +1,4 @@
-﻿import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
 
@@ -7,6 +7,7 @@ import * as path from 'path';
 
 import { PackagingService } from './packaging.service';
 import { PutawayService } from './putaway.service';
+import { UtilisationService } from './utilisation.service';
 import { getRequiredAreaTypes, AREA_TYPE_LABELS } from '../warehouse/area-types';
 
 @Injectable()
@@ -19,7 +20,8 @@ export class InventoryService {
     constructor(
         private prisma: PrismaService,
         private packagingService: PackagingService,
-        private putawayService: PutawayService
+        private putawayService: PutawayService,
+        private utilisationService: UtilisationService
     ) { }
 
     async createProduct(data: any): Promise<Product> {
@@ -1175,6 +1177,18 @@ export class InventoryService {
     private async _applyAdjustmentLogic(tx: any, adjustment: any) {
         await this.validateLocationForStock(adjustment.locationId);
 
+        // Capacity Check 
+        if (adjustment.quantity > 0) {
+            const { allowed, reason } = await this.utilisationService.canAccept(
+                adjustment.locationId,
+                adjustment.productId,
+                adjustment.quantity
+            );
+            if (!allowed) {
+                throw new BadRequestException(`Capacity Limit Reached: ${reason}`);
+            }
+        }
+
         // 1. Update Aggregate Inventory (ProductInventory)
         const inventory = await tx.productInventory.findFirst({
             where: {
@@ -1675,6 +1689,17 @@ export class InventoryService {
     async createTransfer(data: { productId: string; sourceLocationId: string; destinationLocationId: string; quantity: number; reason?: string }) {
         await this.validateLocationForStock(data.destinationLocationId);
 
+        // Capacity Check
+        const { allowed, reason } = await this.utilisationService.canAccept(
+            data.destinationLocationId,
+            data.productId,
+            data.quantity
+        );
+
+        if (!allowed) {
+            throw new BadRequestException(`Capacity Limit Reached: ${reason}`);
+        }
+
         return this.prisma.$transaction(async (tx) => {
             // 1. Decrement source
             const sourceBatch = await tx.inventoryBatch.findFirst({
@@ -1982,6 +2007,19 @@ export class InventoryService {
             const move = await tx.stockMove.findUnique({ where: { id } });
             if (!move) throw new Error('Stock move not found');
             if (move.status === 'DONE') throw new Error('Stock move already done');
+
+            // Capacity Check (if moving to a destination)
+            if (move.destinationLocationId) {
+                const { allowed, reason } = await this.utilisationService.canAccept(
+                    move.destinationLocationId,
+                    move.productId,
+                    move.quantity
+                );
+
+                if (!allowed) {
+                    throw new BadRequestException(`Capacity Limit Reached: ${reason}`);
+                }
+            }
 
             // 1. Execute the Move (Update Inventory)
             if (move.sourceLocationId && move.destinationLocationId) {
