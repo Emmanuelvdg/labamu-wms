@@ -41,19 +41,21 @@ async function main() {
         data: {
             type: 'SALES',
             status: 'CONFIRMED',
+            priority: 'NORMAL',
             fulfillmentStatus: 'ALLOCATED', // Force allocation state
-            warehouseId: warehouse.id,
+            warehouse: { connect: { id: warehouse.id } },
             customer: {
-                connectOrCreate: {
-                    where: { email: 'mobile-test@example.com' },
-                    create: { name: 'Mobile Test Customer', email: 'mobile-test@example.com' }
+                create: {
+                    name: 'Mobile Test Customer',
+                    // Email removed as it is not in the schema
                 }
             },
             items: {
                 create: {
                     productId: product.id,
                     quantity: 1,
-                    unitPrice: 1000
+
+
                 }
             }
         }

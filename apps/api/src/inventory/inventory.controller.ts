@@ -358,7 +358,7 @@ export class InventoryController {
     }
 
     @Get()
-    getInventory(@Query('productId') productId?: string) {
-        return this.inventoryService.getInventory(productId);
+    getInventory(@Query('productId') productId?: string, @Query('locationId') locationId?: string) {
+        return this.inventoryService.getInventory(productId, locationId);
     }
 }

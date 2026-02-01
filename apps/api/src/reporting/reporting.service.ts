@@ -275,6 +275,187 @@ export class ReportingService {
 
         return { startDate, endDate };
     }
+
+    async getUtilisationHistory(query?: any): Promise<any> {
+        const { startDate, endDate } = this.parseDateRange(query);
+        const warehouseId = query.warehouseId;
+        const locationId = query.locationId;
+
+        // 1. Identify Target Locations (Scope)
+        let locationIds: string[] = [];
+
+        if (locationId) {
+            // Fetch all locations to build descendant tree
+            const allLocs = await this.prisma.location.findMany({
+                where: warehouseId ? { warehouseId } : {},
+                select: { id: true, parentId: true }
+            });
+
+            // Build tree helper
+            const buildDescendants = (rootId: string): string[] => {
+                const results = [rootId];
+                const queue = [rootId];
+                while (queue.length > 0) {
+                    const curr = queue.shift();
+                    const children = allLocs.filter(l => l.parentId === curr).map(l => l.id);
+                    results.push(...children);
+                    queue.push(...children);
+                }
+                return results;
+            }
+            locationIds = buildDescendants(locationId);
+
+        } else if (warehouseId) {
+            const locs = await this.prisma.location.findMany({
+                where: { warehouseId },
+                select: { id: true }
+            });
+            locationIds = locs.map(l => l.id);
+        } else {
+            // Default: All locations
+            const locs = await this.prisma.location.findMany({ select: { id: true } });
+            locationIds = locs.map(l => l.id);
+        }
+
+        const locationSet = new Set(locationIds);
+
+        // 2. Get Current Inventory & Capacity
+        const locations = await this.prisma.location.findMany({
+            where: { id: { in: locationIds } },
+            include: {
+                inventory: { include: { product: true } }
+            }
+        });
+
+        let currentUsedVolume = 0;
+        let totalMaxVolume = 0;
+
+        for (const loc of locations) {
+            if (loc.maxVolume) totalMaxVolume += loc.maxVolume;
+            for (const inv of loc.inventory) {
+                const p = inv.product;
+                if (p.width && p.height && p.depth) {
+                    const volM3 = (p.width * p.height * p.depth) / 1_000_000;
+                    currentUsedVolume += volM3 * inv.quantity;
+                }
+            }
+        }
+
+        // 3. Fetch History (Stock Moves)
+        const moves = await this.prisma.stockMove.findMany({
+            where: {
+                createdAt: { gte: startDate },
+                OR: [
+                    { sourceLocationId: { in: locationIds } },
+                    { destinationLocationId: { in: locationIds } }
+                ]
+            },
+            include: { product: true },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        // 4. Reverse Walk
+        const historyMap = new Map<string, { used: number, max: number }>();
+        let cursorUsedVolume = currentUsedVolume;
+        const toDateKey = (d: Date) => d.toISOString().split('T')[0];
+
+        const now = new Date();
+        const start = new Date(startDate);
+
+        let moveIndex = 0;
+
+        // Loop backwards from NOW to START
+        for (let d = new Date(now); d >= start; d.setDate(d.getDate() - 1)) {
+            const dateKey = toDateKey(d);
+
+            // Record state at END of day D
+            if (d <= new Date(endDate) || !endDate) {
+                historyMap.set(dateKey, { used: cursorUsedVolume, max: totalMaxVolume });
+            }
+
+            // Find moves that happened on this day
+            while (moveIndex < moves.length) {
+                const move = moves[moveIndex];
+                const moveDate = new Date(move.createdAt);
+                if (toDateKey(moveDate) !== dateKey) {
+                    break;
+                }
+
+                // Process Reversal (Undo the move to get state at Start of D / End of D-1)
+                const p = move.product;
+                const volM3 = (p.width && p.height && p.depth) ? (p.width * p.height * p.depth) / 1_000_000 : 0;
+                const volChange = volM3 * move.quantity;
+
+                const sourceInScope = move.sourceLocationId && locationSet.has(move.sourceLocationId);
+                const destInScope = move.destinationLocationId && locationSet.has(move.destinationLocationId);
+
+                if (sourceInScope && !destInScope) {
+                    cursorUsedVolume += volChange; // Outbound -> Add back
+                } else if (!sourceInScope && destInScope) {
+                    cursorUsedVolume -= volChange; // Inbound -> Remove
+                }
+                moveIndex++;
+            }
+        }
+
+        // 5. Format Output
+        const history = Array.from(historyMap.entries()).map(([date, val]) => ({
+            date,
+            usedVolume: Number(Math.max(0, val.used).toFixed(2)),
+            maxVolume: val.max,
+            utilization: val.max > 0 ? Number((Math.max(0, val.used) / val.max * 100).toFixed(1)) : 0
+        })).sort((a, b) => a.date.localeCompare(b.date));
+
+        return {
+            current: {
+                usedVolume: Number(currentUsedVolume.toFixed(2)),
+                maxVolume: totalMaxVolume,
+                utilization: totalMaxVolume > 0 ? Number(((currentUsedVolume / totalMaxVolume) * 100).toFixed(1)) : 0
+            },
+            history
+        };
+    }
+    async getCycleTimeTrend(query?: any): Promise<any[]> {
+        const { startDate, endDate } = this.parseDateRange(query);
+        // Group by day for now
+        const orders = await this.prisma.order.findMany({
+            where: {
+                status: 'SHIPPED',
+                updatedAt: {
+                    gte: startDate,
+                    lte: endDate
+                }
+            },
+            select: { createdAt: true, updatedAt: true }
+        });
+
+        const grouped = new Map<string, { totalHours: number, count: number }>();
+
+        // Pre-fill dates to ensure continuous chart
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            const key = d.toISOString().split('T')[0];
+            grouped.set(key, { totalHours: 0, count: 0 });
+        }
+
+        for (const order of orders) {
+            const key = new Date(order.updatedAt).toISOString().split('T')[0];
+            if (grouped.has(key)) {
+                const created = new Date(order.createdAt).getTime();
+                const shipped = new Date(order.updatedAt).getTime();
+                const hours = (shipped - created) / (1000 * 60 * 60);
+
+                const entry = grouped.get(key)!;
+                entry.totalHours += hours;
+                entry.count += 1;
+            }
+        }
+
+        const result = Array.from(grouped.entries()).map(([date, val]) => ({
+            date,
+            averageCycleTime: val.count > 0 ? Number((val.totalHours / val.count).toFixed(1)) : 0,
+            orderCount: val.count
+        })).sort((a, b) => a.date.localeCompare(b.date));
+
+        return result;
+    }
 }
-
-

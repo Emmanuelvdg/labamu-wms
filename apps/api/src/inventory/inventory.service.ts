@@ -433,8 +433,11 @@ export class InventoryService {
         });
     }
 
-    async getInventory(productId?: string) {
-        const where = productId ? { productId } : {};
+    async getInventory(productId?: string, locationId?: string) {
+        const where: any = {};
+        if (productId) where.productId = productId;
+        if (locationId) where.locationId = locationId;
+
         return this.prisma.productInventory.findMany({
             where,
             include: { product: true, warehouse: true, location: true },
@@ -771,12 +774,17 @@ export class InventoryService {
             // Phase 8: Auto-generate Code and FullAddress
             const code = data.code || data.name.toUpperCase().replace(/[^A-Z0-9]/g, '-').substring(0, 10);
 
+            let inheritedWarehouseId = data.warehouseId;
             let fullAddress = code;
             if (data.parentId) {
                 const parent = await this.prisma.location.findUnique({ where: { id: data.parentId } });
                 if (parent) {
                     const parentPrefix = (parent as any).fullAddress || (parent as any).code || parent.name.toUpperCase().replace(/[^A-Z0-9]/g, '-');
                     fullAddress = `${parentPrefix}.${code}`;
+                    // Inherit warehouseId if not provided
+                    if (!inheritedWarehouseId) {
+                        inheritedWarehouseId = parent.warehouseId;
+                    }
                 }
             } else if (data.structuralType === 'WAREHOUSE') {
                 // Root Warehouse
@@ -788,7 +796,7 @@ export class InventoryService {
                 where: {
                     name: data.name,
                     parentId: data.parentId || null, // Specific parent or Root (null)
-                    warehouseId: data.parentId ? undefined : data.warehouseId // If root, must match warehouse
+                    warehouseId: data.parentId ? undefined : inheritedWarehouseId // If root, must match warehouse
                 }
             });
 
@@ -800,7 +808,7 @@ export class InventoryService {
             return await this.prisma.location.create({
                 data: {
                     name: data.name,
-                    warehouseId: data.warehouseId,
+                    warehouseId: inheritedWarehouseId,
                     parentId: data.parentId,
                     type: data.type || 'INTERNAL',
                     structuralType: data.structuralType,

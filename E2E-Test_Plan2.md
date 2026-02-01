@@ -85,3 +85,12 @@ This test plan simulates a "Day 1" deployment, starting with a clean environment
     - **Action**: Order Details > Ship Order.
     - **Action**: Enter Carrier: "DHL Test", Tracking: "TRACK-999".
     - **Expected**: Order Status: `SHIPPED`. Inventory deducted.
+
+## Phase 5: Reporting & Analytics
+**Persona**: Warehouse Manager
+
+- [x] **Scenario 5.1: Cycle Time Analysis**
+    - **Action**: Navigation > Reporting > Cycle Time.
+    - **Expected**: Cycle Time Trend chart is visible with data bars and trendline.
+    - **Action**: Click "Last 7 Days" filter.
+    - **Expected**: Chart updates to show data for the selected period. Verified via Browser Subagent.

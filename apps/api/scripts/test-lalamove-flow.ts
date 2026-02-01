@@ -9,7 +9,7 @@ const cryptoLib = require('crypto');
 
 // Polyfill fetch if needed
 if (typeof fetch === 'undefined') {
-    try { global.fetch = require('node-fetch'); } catch (e) { console.warn('node-fetch not found, fetch might fail'); }
+    try { (global as any).fetch = require('node-fetch'); } catch (e) { console.warn('node-fetch not found, fetch might fail'); }
 }
 
 dotenv.config({ path: path.join(__dirname, '../.env') });

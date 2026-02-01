@@ -1,9 +1,10 @@
+export { }; // Ensure module scope
 
-const fetch = require('node-fetch');
+const nodeFetch = require('node-fetch');
 
 const API_URL = 'http://127.0.0.1:3001';
 
-async function request(path, options = {}, userId = null) {
+async function request(path: string, options: any = {}, userId: string | null = null) {
     options.headers = {
         ...options.headers,
         'Content-Type': 'application/json'
@@ -12,7 +13,8 @@ async function request(path, options = {}, userId = null) {
         options.headers['x-user-id'] = userId;
     }
 
-    const res = await fetch(`${API_URL}${path}`, options);
+    // @ts-ignore
+    const res = await (global.fetch ? fetch : nodeFetch)(`${API_URL}${path}`, options);
     if (!res.ok) {
         const text = await res.text();
         throw new Error(`API Error ${res.status}: ${text}`);
@@ -33,7 +35,7 @@ async function main() {
         });
         user = loginRes.user || loginRes;
         console.log(`Logged in as: ${user.email} (${user.id})`);
-    } catch (e) {
+    } catch (e: any) {
         console.error('Login failed:', e.message);
     }
     const userId = user ? user.id : 'user-1';
@@ -58,7 +60,7 @@ async function main() {
             customerId = customers[0].id;
             console.log(`Using Customer: ${customers[0].name} (${customerId})`);
         }
-    } catch (e) { console.warn('Failed to fetch customers', e.message); }
+    } catch (e: any) { console.warn('Failed to fetch customers', e.message); }
 
     if (!customerId) {
         // Create one? Or try to post without it if allowed?
@@ -66,7 +68,7 @@ async function main() {
         console.log('Creating generic customer...');
         const newCust = await request('/customers', {
             method: 'POST',
-            body: JSON.stringify({ name: 'Mobile Test Customer', email: 'mobile-test@example.com' })
+            body: JSON.stringify({ name: 'Mobile Test Customer' })
         }, userId);
         customerId = newCust.id;
     }
@@ -95,7 +97,7 @@ async function main() {
                 body: JSON.stringify({ fulfillmentStatus: 'ALLOCATED', status: 'CONFIRMED' })
             }, userId);
             console.log(`Order Updated: ${order.fulfillmentStatus}`);
-        } catch (e) {
+        } catch (e: any) {
             console.warn('Update failed:', e.message);
         }
     }
@@ -106,7 +108,7 @@ async function main() {
 (async () => {
     if (typeof fetch === 'undefined') {
         try {
-            global.fetch = require('node-fetch');
+            (global as any).fetch = require('node-fetch');
         } catch (e) {
             console.error('node-fetch not found');
             process.exit(1);

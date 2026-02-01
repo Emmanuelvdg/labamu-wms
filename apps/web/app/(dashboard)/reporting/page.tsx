@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { fetchAnalytics } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+import Link from 'next/link';
+
 export default function ReportingPage() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -38,62 +40,86 @@ export default function ReportingPage() {
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Inventory Value</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(data.totalStockValue)}
-                        </div>
-                    </CardContent>
-                </Card>
+                <Link href="/inventory" className="block hover:opacity-80 transition-opacity">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Inventory Value</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">
+                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(data.totalStockValue)}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Order Fulfillment Rate</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{data.fulfillmentRate}%</div>
-                    </CardContent>
-                </Card>
+                <Link href="/orders" className="block hover:opacity-80 transition-opacity">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Order Fulfillment Rate</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{data.fulfillmentRate}%</div>
+                        </CardContent>
+                    </Card>
+                </Link>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Stockout Rate</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-red-600">{data.stockoutRate}%</div>
-                    </CardContent>
-                </Card>
+                <Link href="/inventory" className="block hover:opacity-80 transition-opacity">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Stockout Rate</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-red-600">{data.stockoutRate}%</div>
+                        </CardContent>
+                    </Card>
+                </Link>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Pending Orders</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-yellow-600">{data.pendingOrders}</div>
-                    </CardContent>
-                </Card>
+                <Link href="/orders?status=PENDING" className="block hover:opacity-80 transition-opacity">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Pending Orders</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-yellow-600">{data.pendingOrders}</div>
+                        </CardContent>
+                    </Card>
+                </Link>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Avg Cycle Time</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{data.avgCycleTime} hrs</div>
-                    </CardContent>
-                </Card>
+                <Link href="/reporting/cycle-time" className="block hover:opacity-80 transition-opacity">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Avg Cycle Time</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{data.avgCycleTime} hrs</div>
+                        </CardContent>
+                    </Card>
+                </Link>
 
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-500">Storage Capacity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-blue-600">{data.capacityUtilization}%</div>
-                        <p className="text-xs text-muted-foreground">Used vs Available</p>
-                    </CardContent>
-                </Card>
+                <Link href="/reporting/utilisation" className="block hover:opacity-80 transition-opacity">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Storage Capacity</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-blue-600">{data.capacityUtilization}%</div>
+                            <p className="text-xs text-muted-foreground">Used vs Available &rarr;</p>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                <Link href="/reporting/compliance" className="block hover:opacity-80 transition-opacity">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Compliance</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-green-600">VAT / SAF-T</div>
+                            <p className="text-xs text-muted-foreground">Tax Reporting &rarr;</p>
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
 
             {/* Charts Section */}
@@ -132,37 +158,40 @@ export default function ReportingPage() {
                 </Card>
 
                 {/* Daily Sales Trend */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Daily Sales Trend (Last 5 Days)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-end gap-4 h-64 border-b border-l p-4">
-                            {data.dailySales.map((item: any, index: number) => {
-                                // Handle both old (number) and new ({ date, count }) formats safely during transition
-                                const value = typeof item === 'number' ? item : item.count;
-                                const label = typeof item === 'number' ? `Day ${index + 1}` : item.date;
-                                const maxSales = Math.max(...data.dailySales.map((d: any) => typeof d === 'number' ? d : d.count), 1);
+                {/* Daily Sales Trend */}
+                <Link href="/orders" className="block hover:opacity-80 transition-opacity">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Daily Sales Trend (Last 5 Days)</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-end gap-4 h-64 border-b border-l p-4">
+                                {data.dailySales.map((item: any, index: number) => {
+                                    // Handle both old (number) and new ({ date, count }) formats safely during transition
+                                    const value = typeof item === 'number' ? item : item.count;
+                                    const label = typeof item === 'number' ? `Day ${index + 1}` : item.date;
+                                    const maxSales = Math.max(...data.dailySales.map((d: any) => typeof d === 'number' ? d : d.count), 1);
 
-                                return (
-                                    <div key={index} className="flex-1 flex flex-col items-center gap-2">
-                                        <div className="relative w-full flex items-end justify-center h-full group">
-                                            {/* Tooltip */}
-                                            <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10 whitespace-nowrap">
-                                                {value} orders
+                                    return (
+                                        <div key={index} className="flex-1 flex flex-col items-center gap-2">
+                                            <div className="relative w-full flex items-end justify-center h-full group">
+                                                {/* Tooltip */}
+                                                <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10 whitespace-nowrap">
+                                                    {value} orders
+                                                </div>
+                                                <div
+                                                    className="w-full mx-1 bg-green-500 rounded-t opacity-80 hover:opacity-100 transition-all"
+                                                    style={{ height: `${(value / maxSales) * 100}%` }}
+                                                ></div>
                                             </div>
-                                            <div
-                                                className="w-full mx-1 bg-green-500 rounded-t opacity-80 hover:opacity-100 transition-all"
-                                                style={{ height: `${(value / maxSales) * 100}%` }}
-                                            ></div>
+                                            <span className="text-xs text-gray-500 font-medium">{label}</span>
                                         </div>
-                                        <span className="text-xs text-gray-500 font-medium">{label}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </CardContent>
-                </Card>
+                                    );
+                                })}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
         </div>
     );

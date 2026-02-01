@@ -49,6 +49,20 @@ async function main() {
             console.log(`- SAF-T Report Generated: ${saftReport.transactions.length} transactions`);
         }
 
+        // 4. Utilisation History
+        console.log('\nFetching Utilisation History...');
+        const history = await service.getUtilisationHistory({ period: '30d' });
+        console.log('Utilisation History Result:');
+        console.log(`- Current Used Volume: ${history.current.usedVolume} m3`);
+        console.log(`- Current Utilization: ${history.current.utilization}%`);
+        console.log(`- History Points: ${history.history.length}`);
+        if (history.history.length > 0) {
+            console.log(`- First Point Date: ${history.history[0].date}`);
+            console.log(`- Last Point Date: ${history.history[history.history.length - 1].date}`);
+        } else {
+            console.log('- No history points found (check stock moves)');
+        }
+
         console.log('\nReporting Verification Successful!');
 
     } catch (error) {

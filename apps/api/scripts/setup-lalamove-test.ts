@@ -1,3 +1,4 @@
+export { };
 
 const { PrismaClient } = require('@labamu/database');
 const dotenv = require('dotenv');

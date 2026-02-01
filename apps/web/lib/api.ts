@@ -48,6 +48,12 @@ export async function fetchInventory(filters?: {
     return fetchWithRetry(`${API_URL}/inventory/products?${params.toString()}`);
 }
 
+export async function fetchLocationInventory(locationId: string) {
+    const params = new URLSearchParams();
+    params.append('locationId', locationId);
+    return fetchWithRetry(`${API_URL}/inventory?${params.toString()}`);
+}
+
 export async function getProduct(id: string) {
     return fetchWithRetry(`${API_URL}/inventory/products/${id}`);
 }
@@ -545,6 +551,36 @@ export async function generateReport(type: string, period: string) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, period }),
     });
+}
+
+export async function fetchUtilisationHistory(params: {
+    warehouseId?: string;
+    locationId?: string;
+    period?: string;
+    startDate?: string;
+    endDate?: string;
+}) {
+    const searchParams = new URLSearchParams();
+    if (params.warehouseId) searchParams.append('warehouseId', params.warehouseId);
+    if (params.locationId) searchParams.append('locationId', params.locationId);
+    if (params.period) searchParams.append('period', params.period);
+    if (params.startDate) searchParams.append('startDate', params.startDate);
+    if (params.endDate) searchParams.append('endDate', params.endDate);
+
+    return fetchWithRetry(`${API_URL}/reporting/utilisation/history?${searchParams.toString()}`);
+}
+
+export async function fetchCycleTimeTrend(params: {
+    period?: string;
+    startDate?: string;
+    endDate?: string;
+}) {
+    const searchParams = new URLSearchParams();
+    if (params.period) searchParams.append('period', params.period);
+    if (params.startDate) searchParams.append('startDate', params.startDate);
+    if (params.endDate) searchParams.append('endDate', params.endDate);
+
+    return fetchWithRetry(`${API_URL}/reporting/cycle-time/trend?${searchParams.toString()}`);
 }
 
 // --- Supplier Management ---

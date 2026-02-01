@@ -48,8 +48,9 @@ const navigation: NavSection[] = [
     {
         title: 'Reporting',
         items: [
-            { name: 'Reports', href: '/reports' },
-            { name: 'Inventory Ledger', href: '/inventory/ledger' },
+            { name: 'Dashboard', href: '/reporting' },
+            { name: 'Utilisation', href: '/reporting/utilisation' },
+            { name: 'Compliance', href: '/reporting/compliance' },
             { name: 'Stock Moves', href: '/inventory/moves' },
         ]
     },
@@ -96,7 +97,7 @@ export default function Sidebar() {
         if (item.href === '/configuration/delivery-methods') return hasPermission('SETTINGS', 'READ');
 
         // Reports
-        if (item.href === '/reports') return hasPermission('REPORTS', 'READ');
+        if (item.href.startsWith('/reporting')) return hasPermission('REPORTS', 'READ');
         if (item.href === '/inventory/ledger') return hasPermission('REPORTS', 'READ');
 
         // Settings

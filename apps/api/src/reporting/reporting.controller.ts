@@ -20,6 +20,12 @@ export class AnalyticsQueryDto {
     @IsOptional()
     @IsISO8601()
     endDate?: string;
+
+    @IsOptional()
+    warehouseId?: string;
+
+    @IsOptional()
+    locationId?: string;
 }
 
 @Controller('reporting')
@@ -41,6 +47,18 @@ export class ReportingController {
     @RequirePermission('REPORTS', 'READ')
     getAnalytics(@Query() query: AnalyticsQueryDto) {
         return this.reportingService.getDashboardAnalytics(query);
+    }
+
+    @Get('utilisation/history')
+    @RequirePermission('REPORTS', 'READ')
+    getUtilisationHistory(@Query() query: AnalyticsQueryDto) {
+        return this.reportingService.getUtilisationHistory(query);
+    }
+
+    @Get('cycle-time/trend')
+    @RequirePermission('REPORTS', 'READ')
+    getCycleTimeTrend(@Query() query: AnalyticsQueryDto) {
+        return this.reportingService.getCycleTimeTrend(query);
     }
 
     // Drill-down endpoints for detailed metric data
