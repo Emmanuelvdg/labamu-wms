@@ -7,9 +7,10 @@ Comprehensive documentation for the Labamu Inventory Management System.
 2. [Inventory Management](#inventory-management)
 3. [Inbound Operations](#inbound-operations)
 4. [Outbound Operations](#outbound-operations)
-5. [Reporting & Admin](#reporting--admin)
-6. [Mobile Warehouse App](#mobile-warehouse-app)
-7. [End-to-End Examples](#end-to-end-examples)
+5. [Transfer Operations](#transfer-operations)
+6. [Reporting & Admin](#reporting--admin)
+7. [Mobile Warehouse App](#mobile-warehouse-app)
+8. [End-to-End Examples](#end-to-end-examples)
 
 ---
 
@@ -240,6 +241,90 @@ The system automatically selects the appropriate service type based on order wei
 
 ### Invoices
 **Purpose:** Financial documents. Sales Invoices (AR) and Vendor Bills (AP).
+
+---
+
+## Transfer Operations
+
+### Overview
+**Purpose:** Manage internal stock transfers between warehouses to optimize inventory distribution, rebalance stock levels, or resupply remote locations.
+
+Transfer Operations enable controlled movement of inventory between facilities with a two-stage approval workflow and full audit trail. This is essential for multi-warehouse operations where stock needs to be redistributed based on demand.
+
+### Creating a Transfer Request
+
+**How to Create:**
+1. Navigate to **Internal Operations > Transfer Operations**.
+2. Click **New Transfer**.
+3. Fill in the transfer details:
+   - **Source Warehouse:** The warehouse sending the inventory.
+   - **Destination Warehouse:** The warehouse receiving the inventory.
+   - **Products:** Add one or more products with quantities to transfer.
+   - **Notes (Optional):** Add any relevant context (e.g., "Emergency restocking for Store A").
+4. Click **Create Transfer**.
+
+The transfer is created with status `PENDING` and awaits approval.
+
+### Transfer Status Workflow
+
+Transfers progress through the following statuses:
+
+| Status | Description | Actions Available |
+|--------|-------------|-------------------|
+| **PENDING** | Transfer request created, awaiting approval | Approve, Cancel |
+| **APPROVED** | Transfer approved by manager, ready for execution | Begin picking/shipment |
+| **IN_TRANSIT** | Items picked from source, in transit to destination | Update tracking |
+| **COMPLETED** | Items received at destination warehouse | View history |
+| **CANCELLED** | Transfer cancelled before completion | None |
+
+### Approving Transfer Requests
+
+**Approval Workflow:**
+1. Manager navigates to **Transfer Operations**.
+2. Reviews pending transfers (status: `PENDING`).
+3. Verifies:
+   - Source warehouse has sufficient stock.
+   - Destination warehouse needs the inventory.
+   - Transfer aligns with business goals.
+4. Clicks **Approve** button.
+5. Transfer status changes to `APPROVED`.
+
+**Best Practices:**
+- Approve transfers during low-activity periods to minimize disruption.
+- Verify stock availability before approving large transfers.
+- Use notes to communicate special handling instructions.
+
+### Managing Transfers
+
+**Viewing Transfer History:**
+- All transfers are displayed in a table with:
+  - Transfer ID (shortened hash)
+  - Source and Destination warehouses
+  - Number of items
+  - Current status
+  - Initiator and approver names
+  - Creation date
+
+**Filtering Transfers:**
+- (Future enhancement) Filter by warehouse, status, or date range.
+
+**Cancelling Transfers:**
+- Transfers in `PENDING` or `APPROVED` status can be cancelled.
+- Once `IN_TRANSIT` or `COMPLETED`, transfers cannot be cancelled.
+
+### Integration with Warehouse Operations
+
+**Impact on Inventory:**
+- **Source Warehouse:** Stock is reserved when transfer is `APPROVED`, deducted when `IN_TRANSIT`.
+- **Destination Warehouse:** Stock is added when transfer is `COMPLETED`.
+
+**Picking Integration:**
+- Once approved, transfers generate picking tasks at the source warehouse.
+- Workers use the standard Picking interface to prepare items for shipment.
+
+**Receiving Integration:**
+- Destination warehouse receives items via standard Receiving workflow.
+- Transfer is marked `COMPLETED` upon final receipt confirmation.
 
 ---
 

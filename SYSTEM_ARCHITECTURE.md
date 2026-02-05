@@ -164,6 +164,7 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 | **ReportingModule** | Analytics, dashboards, compliance reports, inventory ledger | `ReportingService`, `DrillDownService`, `InventoryLedgerService` |
 | **IntegrationModule** | External system integrations, webhooks | `IntegrationService` |
 | **StoModule** | Stock Transfer Orders (inter-warehouse) | `StoService` |
+| **TransferModule** | Inter-warehouse transfer requests, approvals, tracking | `TransferService`, `TransferController` |
 | **ShippingModule** | Carrier management, delivery methods | `ShippingService` |
 | **InvoiceModule** | VAT invoicing, financial reporting | `InvoiceService` |
 | **SupplierModule** | Supplier catalog, partner management | `SupplierService` |
@@ -181,16 +182,18 @@ apps/web/
 │   │       ├── putaway-rules/
 │   │       └── putaway/
 │   │           └── sessions/
-│   ├── inventory/               # Inventory Pages
-│   │   ├── products/
-│   │   ├── locations/
-│   │   ├── warehouses/
-│   │   ├── adjustments/
-│   │   └── putaway-rules/
-│   ├── orders/                  # Order Management
-│   ├── picking/                 # Picking Operations
-│   ├── putaway/                 # Putaway Operations
-│   ├── user-guide/              # Documentation
+│   ├── (dashboard)/             # Main dashboard route group
+│   │   ├── inventory/           # Inventory Pages
+│   │   │   ├── products/
+│   │   │   ├── locations/
+│   │   │   ├── warehouses/
+│   │   │   ├── adjustments/
+│   │   │   └── putaway-rules/
+│   │   ├── orders/              # Order Management
+│   │   ├── picking/             # Picking Operations
+│   │   ├── putaway/             # Putaway Operations
+│   │   ├── transfers/           # Transfer Operations
+│   │   └── user-guide/          # Documentation
 │   └── layout.tsx               # Root Layout
 ├── components/                  # Reusable UI Components
 │   ├── ui/                      # shadcn/ui components
@@ -200,7 +203,8 @@ apps/web/
 ├── lib/                         # Utilities & API Clients
 │   ├── api.ts                   # Core API client
 │   ├── auth.tsx                 # Auth Context
-│   └── putaway-api.ts           # Putaway-specific API
+│   ├── putaway-api.ts           # Putaway-specific API
+│   └── transfer-api.ts          # Transfer-specific API
 └── hooks/                       # Custom React Hooks
     └── usePermission.ts
 ```
@@ -380,6 +384,16 @@ POST   /stocktaking/:id/tasks               Generate tasks
 GET    /stocktaking/:id/tasks               List tasks
 POST   /stocktaking/tasks/:id/count         Submit count
 POST   /stocktaking/:id/reconcile           Approve adjustments
+```
+
+#### Transfer Operations
+```
+GET    /transfers                           List transfer requests
+GET    /transfers/:id                       Get transfer details
+POST   /transfers                           Create transfer request
+POST   /transfers/:id/approve               Approve transfer
+POST   /transfers/:id/cancel                Cancel transfer
+PATCH  /transfers/:id                       Update transfer details
 ```
 
 ### API Request/Response Formats
@@ -792,6 +806,52 @@ StocktakeTask {
   
   countedBy: string?
   updatedAt: DateTime
+}
+```
+
+#### TransferRequest
+```typescript
+TransferRequest {
+  id: string (UUID)
+  
+  sourceWarehouseId: string
+  sourceWarehouse: Warehouse
+  
+  destinationWarehouseId: string
+  destinationWarehouse: Warehouse
+  
+  status: string  // PENDING, APPROVED, IN_TRANSIT, COMPLETED, CANCELLED
+  
+  items: TransferItem[]
+  notes: string?
+  
+  initiatorId: string
+  initiator: User
+  
+  approverId: string?
+  approver: User?
+  
+  createdAt: DateTime
+  updatedAt: DateTime
+  approvedAt: DateTime?
+  completedAt: DateTime?
+}
+```
+
+#### TransferItem
+```typescript
+TransferItem {
+  id: string (UUID)
+  
+  transferRequestId: string
+  transferRequest: TransferRequest
+  
+  productId: string
+  product: Product
+  
+  quantity: float
+  
+  createdAt: DateTime
 }
 ```
 
@@ -1378,6 +1438,94 @@ Common errors and resolutions:
 - **Caching**: Consider Redis for frequently accessed data (products, locations)
 - **Pagination**: All list endpoints support pagination (default: 50 items)
 - **Query Optimization**: Prisma queries use `select` and `include` for optimal data fetching
+
+---
+
+## E2E Testing Infrastructure
+
+### Overview
+
+The system includes specialized scripts for End-to-End (E2E) testing that enable automated setup, teardown, and verification of complex warehouse scenarios.
+
+### Test Scripts
+
+**Location**: `apps/api/scripts/`
+
+#### inject-stock.ts
+
+**Purpose**: Programmatically inject stock into specific locations for testing outbound operations.
+
+**Usage**:
+```bash
+npx ts-node apps/api/scripts/inject-stock.ts
+```
+
+**What it does**:
+- Creates inventory batches in specific warehouse locations
+- Bypasses normal receiving/putaway workflows
+- Sets up precise stock levels for predictable test scenarios
+- Useful for testing picking, order fulfillment, and transfer operations
+
+**Example Scenario**:
+```typescript
+// Inject 10 units of "Pro Laptop X" into "Bin 01" at DC1
+// Allows immediate testing of picking without going through PO receiving
+```
+
+#### recover-e2e-infrastructure.ts
+
+**Purpose**: Restore warehouse infrastructure (warehouses, locations, functional areas) to a known E2E test state.
+
+**Usage**:
+```bash
+npx ts-node apps/api/scripts/recover-e2e-infrastructure.ts
+```
+
+**What it does**:
+- Creates "Distribution Center 1" (DC1) warehouse
+- Builds hierarchical location structure:
+  - Zone A → Row 1 → Shelf 1 → Bin 01, Bin 02
+- Sets up functional areas (Receiving Dock, Main Storage, Shipping Dock)
+- Ensures consistent infrastructure for regression testing
+
+**Use Case**:
+After running `flush-user-data.ts` to clear the database, this script rebuilds the exact warehouse structure expected by E2E test scenarios documented in `E2E-Test_Plan5.md`.
+
+### E2E Test Plans
+
+The repository includes comprehensive E2E test plans:
+
+- **E2E-Test_Plan5.md**: Master regression suite consolidating all E2E scenarios
+- Covers full workflows: Infrastructure Setup → Inbound → Outbound → Transfers → Reporting
+- Designed for browser extension-based testing
+
+### Testing Workflow
+
+1. **Reset Environment**:
+   ```bash
+   npx ts-node apps/api/scripts/flush-user-data.ts
+   ```
+
+2. **Rebuild Infrastructure**:
+   ```bash
+   npx ts-node apps/api/scripts/recover-e2e-infrastructure.ts
+   ```
+
+3. **Inject Test Data** (optional):
+   ```bash
+   npx ts-node apps/api/scripts/inject-stock.ts
+   ```
+
+4. **Run E2E Tests**: Execute scenarios from E2E-Test_Plan5.md via browser extension
+
+### Benefits
+
+- **Repeatability**: Consistent starting state for all test runs
+- **Speed**: Skip manual warehouse setup for each test cycle
+- **Isolation**: Test-specific data doesn't interfere with production-like scenarios
+- **Automation-Ready**: Scripts can be integrated into CI/CD pipelines
+
+---
 
 ### Future Enhancements
 

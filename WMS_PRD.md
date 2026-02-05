@@ -2,7 +2,7 @@
 
 **Version:** 1.0
 **Status:** Approved
-**Date:** 2024-12-30
+**Date:** 2026-02-05
 
 ## 1. Executive Summary
 
@@ -58,7 +58,15 @@ This section outlines the key differentiators of Labamu WMS, aligned with specif
 - **Locations:** Create and manage infinite hierarchy of locations with capacity constraints (Volume/Weight).
 - **Zones:** Logical grouping of locations for defining pick paths and storage rules.
 
-### 4.5 Reporting & Analytics
+### 4.5 Transfer Operations
+- **Inter-Warehouse Transfers:** Create and manage stock movement between warehouses.
+- **Transfer Requests:** Initiate transfers with source warehouse, destination warehouse, and item details.
+- **Approval Workflow:** Two-stage approval process (PENDING → APPROVED → IN_TRANSIT → COMPLETED).
+- **Status Tracking:** Monitor transfers through multiple states with full visibility.
+- **Transfer History:** Audit trail of all inter-warehouse movements with initiator and approver records.
+- **Cancellation:** Support for cancelling pending or approved transfers before execution.
+
+### 4.6 Reporting & Analytics
 - **Live Dashboard:** Key Performance Indicators (KPIs) for daily operations.
 - **Valuation Report:** Current inventory value based on Average Cost or Standard Cost.
 - **Transaction History:** Immutable ledger of all moves for audit trails.
