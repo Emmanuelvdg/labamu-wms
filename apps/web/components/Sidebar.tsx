@@ -27,6 +27,12 @@ const navigation: NavSection[] = [
         ]
     },
     {
+        title: 'Internal Operations',
+        items: [
+            { name: 'Transfer Operations', href: '/transfers' },
+        ]
+    },
+    {
         title: 'Inbound Operations',
         items: [
             { name: 'Suppliers', href: '/inventory/suppliers' },
@@ -86,6 +92,9 @@ export default function Sidebar() {
         // Putaway
         if (item.href === '/putaway') return hasPermission('INVENTORY', 'UPDATE');
         if (item.href === '/inventory/putaway-rules') return hasPermission('INVENTORY', 'UPDATE');
+
+        // Transfer Operations
+        if (item.href === '/transfers') return hasPermission('FULFILLMENT', 'READ');
 
         // Invoices
         if (item.href === '/invoices') return hasPermission('INVOICES', 'READ');

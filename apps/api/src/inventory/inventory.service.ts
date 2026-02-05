@@ -1040,18 +1040,21 @@ export class InventoryService {
         const parentType = parent.structuralType;
         if (!parentType) return; // If parent has no structural type, assume it's flexible (migration support)
 
-        // Strict Hierarchy: Child -> Allowed Parent
+        // Flexible but Strict Hierarchy: Define valid parent types for each child type
+        // Allows skipping intermediate levels (e.g., SHELF directly under ROW)
         const validParents: { [key: string]: string[] } = {
-            'POSITION': ['SHELF'],
-            'SHELF': ['BAY'],
-            'BAY': ['ROW'],
-            'ROW': ['ROOM'],
             'ROOM': ['WAREHOUSE'],
+            'ZONE': ['WAREHOUSE'], // Alias for ROOM
+            'ROW': ['ROOM', 'ZONE', 'WAREHOUSE'], // Can be under zones or directly under warehouse
+            'BAY': ['ROW', 'ROOM', 'ZONE'], // Can be under rows or zones
+            'SHELF': ['BAY', 'ROW', 'ROOM', 'ZONE'], // Can be under bays, rows, or zones
+            'POSITION': ['SHELF', 'BAY', 'ROW'], // Can be under shelves, bays, or rows
+            'BIN': ['SHELF', 'BAY', 'ROW'], // Alias for POSITION
         };
 
         const allowedParents = validParents[childType];
         if (allowedParents && !allowedParents.includes(parentType)) {
-            throw new Error(`Invalid hierarchy: ${childType} must be a child of ${allowedParents.join(' or ')}.Found parent type: ${parentType}`);
+            throw new Error(`Invalid hierarchy: ${childType} must be a child of ${allowedParents.join(' or ')}. Found parent type: ${parentType}`);
         }
     }
 

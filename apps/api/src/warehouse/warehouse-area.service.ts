@@ -386,6 +386,16 @@ export class WarehouseAreaService {
             blocking = true;
         }
 
+        // 5. Check Locations (Prevent accidental deletion of hierarchy)
+        const locationCount = await this.prisma.location.count({
+            where: { warehouseId: id }
+        });
+
+        if (locationCount > 0) {
+            errors.push(`${locationCount} Locations defined`);
+            blocking = true;
+        }
+
         return {
             hasDependencies: errors.length > 0,
             dependencies: errors,
