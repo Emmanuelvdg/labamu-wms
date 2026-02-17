@@ -128,6 +128,38 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                     required: ['taskId'],
                 },
             },
+            {
+                name: 'export_locations',
+                description: 'Export all locations for a warehouse to CSV format',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        warehouseId: {
+                            type: 'string',
+                            description: 'ID of the warehouse to export locations from',
+                        },
+                    },
+                    required: ['warehouseId'],
+                },
+            },
+            {
+                name: 'import_locations',
+                description: 'Import locations from CSV content',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        warehouseId: {
+                            type: 'string',
+                            description: 'ID of the warehouse to import to',
+                        },
+                        csvContent: {
+                            type: 'string',
+                            description: 'CSV content string. Required columns: Name, StructuralType',
+                        },
+                    },
+                    required: ['warehouseId', 'csvContent'],
+                },
+            },
         ],
     };
 });
@@ -190,6 +222,56 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         {
                             type: 'text',
                             text: `Putaway task started:\n${JSON.stringify(result, null, 2)}`,
+                        },
+                    ],
+                };
+            }
+
+            case 'export_locations': {
+                const warehouseId = args?.warehouseId as string;
+                if (!warehouseId) throw new Error('warehouseId is required');
+
+                // Fetch the CSV text
+                const response = await fetch(`${WMS_API_URL}/inventory/locations/export?warehouseId=${warehouseId}`, {
+                    headers: {
+                        'X-API-KEY': WMS_API_KEY,
+                    },
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(`API Error (${response.status}): ${error}`);
+                }
+
+                const csvContent = await response.text();
+
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: csvContent,
+                        },
+                    ],
+                };
+            }
+
+            case 'import_locations': {
+                const warehouseId = args?.warehouseId as string;
+                const csvContent = args?.csvContent as string;
+
+                if (!warehouseId) throw new Error('warehouseId is required');
+                if (!csvContent) throw new Error('csvContent is required');
+
+                const result = await callWmsApi('/inventory/locations/import', {
+                    method: 'POST',
+                    body: JSON.stringify({ warehouseId, csv: csvContent }),
+                });
+
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `Import complete:\n${JSON.stringify(result, null, 2)}`,
                         },
                     ],
                 };
