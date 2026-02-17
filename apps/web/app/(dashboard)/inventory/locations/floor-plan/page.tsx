@@ -9,6 +9,7 @@ import { fetchLocationsTree, API_URL } from '@/lib/api';
 import { ArrowLeft, Save, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { ImportLocationsModal } from './ImportLocationsModal';
 
 interface Location {
     id: string;
@@ -57,7 +58,14 @@ export default function FloorPlanPage() {
     const [attributeDefinitions, setAttributeDefinitions] = useState<AttributeDefinition[]>([]);
     const [selectedAttributeFilter, setSelectedAttributeFilter] = useState<string>('none');
 
+    // Import/Export State
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
     const canvasRef = useRef<HTMLDivElement>(null);
+
+    const [showHeatmap, setShowHeatmap] = useState(false);
+    const [heatmapMetric, setHeatmapMetric] = useState<'UTILISATION' | 'VELOCITY' | 'CONGESTION'>('UTILISATION');
+    const [utilizationData, setUtilizationData] = useState<Record<string, any>>({});
 
     useEffect(() => {
         loadData();
@@ -68,8 +76,6 @@ export default function FloorPlanPage() {
             const warehouse = locations.find(l => l.id === selectedWarehouseId);
             // Find rooms (children of warehouse or children of stock location)
             // Assuming simplified hierarchy for now: Warehouse -> Room
-            // Or Warehouse -> Stock -> Room
-            // Let's flatten and find all ROOMs belonging to this warehouse
             const warehouseRooms = flattenLocations(warehouse?.children || [])
                 .filter(l => l.structuralType === 'ROOM');
             setRooms(warehouseRooms);
@@ -85,24 +91,12 @@ export default function FloorPlanPage() {
         if (selectedRoomId) {
             // Find all bays in this room
             // In our hierarchy: Room -> Row -> Bay
-            // We need to find all descendants that are BAYS
+            // We need to find all descendants that are BAYS, ROWS or BINS
             const room = findLocation(locations, selectedRoomId);
             const roomBays = flattenLocations(room?.children || [])
                 .filter(l => l.structuralType === 'BAY' || l.structuralType === 'ROW' || l.structuralType === 'BIN');
 
-            // Filter by Shelf Layer if needed
-            // The user requirement says: "The view is filtered for the first shelf layer."
-            // This implies we might want to show bays that HAVE a shelf at layer 1.
-            // For now, let's just show all bays, or filter if we can determine layers.
-            // Let's assume all bays are visible for the floor plan layout.
-
-            console.log('Selected Room:', room);
-            console.log('Selected Room Children:', room?.children);
-            // reused roomBays from above
-            console.log('Found Bays:', roomBays);
-
             // Treat as mapped only if x or y is non-zero (and defined)
-            // Ideally non-zero, assuming 0,0 is the "spawn point" or default.
             const isMapped = (b: Location) => (b.x && b.x !== 0) || (b.y && b.y !== 0);
 
             const mapped = roomBays.filter(b => isMapped(b));
@@ -113,15 +107,17 @@ export default function FloorPlanPage() {
         }
     }, [selectedRoomId, locations]);
 
+    useEffect(() => {
+        if (showHeatmap && mappedBays.length > 0) {
+            loadBatchUtilisation();
+        }
+    }, [showHeatmap, mappedBays, heatmapMetric]);
+
     async function loadData() {
         try {
             const tree = await fetchLocationsTree();
             setLocations(tree);
             // Find warehouses (roots or children of roots)
-            // Our tree roots are usually View Locations, which contain Warehouses?
-            // Or Warehouses are linked to View Locations.
-            // Let's find locations with structuralType 'WAREHOUSE' or type 'VIEW' that have children.
-            // Actually, let's just look for structuralType 'WAREHOUSE' in the flattened list
             const all = flattenLocations(tree);
             const whs = all.filter(l => l.structuralType === 'WAREHOUSE');
             setWarehouses(whs);
@@ -223,10 +219,6 @@ export default function FloorPlanPage() {
                 })
             ));
 
-            // Also save unmapped bays (reset coordinates to 0 if moved back?)
-            // For now, we don't support moving back to sidebar explicitly in UI, 
-            // but if we did, we'd set x=0, y=0.
-
             toast.success("Floor plan has been updated successfully.");
         } catch (err) {
             console.error(err);
@@ -238,23 +230,11 @@ export default function FloorPlanPage() {
         setMappedBays(mappedBays.map(b => {
             if (b.id === bayId) {
                 const newRotation = ((b.rotation || 0) + 90) % 360;
-                // Swap width/height if rotating 90 degrees?
-                // Visual rotation is enough for now.
                 return { ...b, rotation: newRotation };
             }
             return b;
         }));
     };
-
-    const [showHeatmap, setShowHeatmap] = useState(false);
-    const [heatmapMetric, setHeatmapMetric] = useState<'UTILISATION' | 'VELOCITY' | 'CONGESTION'>('UTILISATION');
-    const [utilizationData, setUtilizationData] = useState<Record<string, any>>({});
-
-    useEffect(() => {
-        if (showHeatmap && mappedBays.length > 0) {
-            loadBatchUtilisation();
-        }
-    }, [showHeatmap, mappedBays, heatmapMetric]);
 
     const loadBatchUtilisation = async () => {
         try {
@@ -270,6 +250,30 @@ export default function FloorPlanPage() {
             }
         } catch (err) {
             console.error("Failed to load heatmap data", err);
+        }
+    };
+
+    const handleExport = async () => {
+        if (!selectedWarehouseId) return;
+        try {
+            const res = await fetch(`${API_URL}/inventory/locations/export?warehouseId=${selectedWarehouseId}`);
+            if (res.ok) {
+                const csv = await res.text();
+                // Download file
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `locations-export-${selectedWarehouseId}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                toast.error("Export failed");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("Export error");
         }
     };
 
@@ -309,11 +313,7 @@ export default function FloorPlanPage() {
         if (selectedAttributeFilter !== 'none') {
             const attrValue = bay.attributes?.[selectedAttributeFilter];
             if (attrValue) {
-                // If it's a boolean attribute and true, show as distinct color
                 if (attrValue === 'true' || attrValue === true) return '#ec4899'; // Pink
-
-                // If it's a select/text attribute, maybe hash the string to a color?
-                // For now, let's just highlight it.
                 return '#8b5cf6'; // Violet
             } else {
                 return '#e2e8f0'; // Dimmed/Grey out non-matching
@@ -382,10 +382,18 @@ export default function FloorPlanPage() {
                                 ))}
                             </SelectContent>
                         </Select>
+
+                        <div className="h-6 w-px bg-border mx-2" />
+
+                        <Button variant="outline" size="sm" onClick={() => setIsImportModalOpen(true)} disabled={!selectedWarehouseId}>
+                            Import
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleExport} disabled={!selectedWarehouseId}>
+                            Export
+                        </Button>
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                    {/* Heatmap Controls */}
                     <div className="flex items-center space-x-1 bg-muted/50 rounded-lg p-1">
                         <Button
                             variant={showHeatmap ? "default" : "ghost"}
@@ -487,7 +495,6 @@ export default function FloorPlanPage() {
                                 <div className="flex flex-wrap gap-1 justify-center mt-1 px-1">
                                     {(bay.attributes && Object.entries(bay.attributes).map(([key, value]) => {
                                         if (key === 'color' || key === '_dynamic') return null;
-                                        // Only show if value is true/truthy and not a complex object (unless it's our mapped dynamic)
                                         if (value === 'true' || value === true) {
                                             return (
                                                 <Badge key={key} variant="secondary" className="text-[8px] h-3 px-1 py-0 pointer-events-none">
@@ -545,6 +552,13 @@ export default function FloorPlanPage() {
                     </div>
                 </div>
             )}
+
+            <ImportLocationsModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onSuccess={loadData}
+                warehouseId={selectedWarehouseId}
+            />
         </div>
     );
 }

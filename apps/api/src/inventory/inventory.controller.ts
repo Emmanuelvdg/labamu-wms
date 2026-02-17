@@ -208,6 +208,16 @@ export class InventoryController {
         return this.inventoryService.getLocations(warehouseId);
     }
 
+    @Get('locations/export')
+    async exportLocations(@Query('warehouseId') warehouseId: string) {
+        return this.inventoryService.exportLocations(warehouseId);
+    }
+
+    @Post('locations/import')
+    async importLocations(@Body() data: { csv: string; warehouseId: string }) {
+        return this.inventoryService.importLocations(data.csv, data.warehouseId);
+    }
+
     @Post('locations')
     @RequirePermission('LOCATIONS', 'CREATE')
     createLocation(@Body() data: any) {
