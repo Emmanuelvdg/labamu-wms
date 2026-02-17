@@ -161,6 +161,156 @@ export class WarehouseAreaService {
         }));
     }
 
+    async getZones(warehouseId: string) {
+        const zones = await this.prisma.location.findMany({
+            where: {
+                warehouseId,
+                structuralType: { in: ['ROOM', 'ROW', 'BAY', 'AISLE'] } // Added AISLE
+            },
+            include: {
+                children: {
+                    select: { id: true, name: true }
+                }
+            },
+            orderBy: [
+                { structuralType: 'asc' },
+                { name: 'asc' }
+            ]
+        });
+
+        return zones.map(zone => ({
+            id: zone.id,
+            name: zone.name,
+            code: zone.code,
+            structuralType: zone.structuralType,
+            x: zone.x || 0,
+            y: zone.y || 0,
+            width: zone.width || 5, // Defaults if missing
+            height: zone.height || 3,
+            rotation: zone.rotation || 0,
+            parentId: zone.parentId,
+            childCount: zone.children.length
+        }));
+    }
+
+    async getBinUtilization(warehouseId: string) {
+        // Query bins directly for the specified warehouse
+        const bins = await this.prisma.location.findMany({
+            where: {
+                warehouseId: warehouseId,
+                OR: [
+                    { structuralType: 'POSITION' },
+                    { structuralType: 'BIN' },
+                    { structuralType: 'SHELF' }
+                ]
+            },
+            include: {
+                batches: {
+                    where: { currentQuantity: { gt: 0 } },
+                    include: {
+                        product: {
+                            select: {
+                                sku: true,
+                                name: true,
+                                weight: true
+                            }
+                        }
+                    }
+                },
+                parent: {
+                    include: {
+                        parent: {
+                            include: {
+                                parent: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        return bins.map(bin => this.calculateBinUtilization(bin));
+    }
+
+    private calculateBinUtilization(bin: any) {
+        // Calculate current weight from batches
+        const currentWeight = bin.batches.reduce((sum: number, batch: any) => {
+            const productWeight = batch.product?.weight || 0;
+            return sum + (productWeight * batch.currentQuantity);
+        }, 0);
+
+        // Calculate total items
+        const currentItems = bin.batches.reduce((sum: number, batch: any) =>
+            sum + batch.currentQuantity, 0
+        );
+
+        // Calculate utilization percentages
+        const maxWeight = bin.maxWeight || bin.maxWeightKg || 0;
+        const maxVolume = bin.maxVolume || 0;
+
+        const weightUtilization = maxWeight > 0 ? (currentWeight / maxWeight) * 100 : 0;
+        const volumeUtilization = 0; // TODO: Calculate from product volumes
+        const itemUtilization = 0; // Would need maxItems field
+
+        const overallUtilization = Math.max(weightUtilization, volumeUtilization, itemUtilization);
+
+        // Build location path
+        const locationPath = this.buildLocationPath(bin);
+
+        return {
+            id: bin.id,
+            name: bin.name,
+            code: bin.code || bin.name,
+            locationPath,
+
+            // Position
+            x: bin.x || 0,
+            y: bin.y || 0,
+            width: bin.width || 1,
+            height: bin.height || 1,
+            rotation: bin.rotation || 0,
+
+            // Capacity
+            maxWeight: maxWeight,
+            maxVolume: maxVolume,
+            maxItems: 0,
+
+            // Current Usage
+            currentWeight: Math.round(currentWeight * 100) / 100,
+            currentVolume: 0,
+            currentItems,
+
+            // Utilization Percentages
+            weightUtilization: Math.round(weightUtilization * 10) / 10,
+            volumeUtilization: Math.round(volumeUtilization * 10) / 10,
+            itemUtilization: Math.round(itemUtilization * 10) / 10,
+            overallUtilization: Math.round(overallUtilization * 10) / 10,
+
+            // Stock info
+            stockItems: bin.batches.map((batch: any) => ({
+                productCode: batch.product?.sku || 'UNKNOWN',
+                productName: batch.product?.name || 'Unknown Product',
+                quantity: batch.currentQuantity,
+                weight: ((batch.product?.weight || 0) * batch.currentQuantity),
+                volume: 0
+            }))
+        };
+    }
+
+    private buildLocationPath(location: any): string {
+        const parts: string[] = [];
+        let current = location;
+
+        while (current) {
+            if (current.name) {
+                parts.unshift(current.name);
+            }
+            current = current.parent;
+        }
+
+        return parts.join(' > ');
+    }
+
     async getSuggestedLayout(warehouseId: string, layoutType: 'I' | 'U' | 'L'): Promise<LayoutTemplate> {
         const suggestedAreas = await this.getSuggestedAreas(warehouseId);
 

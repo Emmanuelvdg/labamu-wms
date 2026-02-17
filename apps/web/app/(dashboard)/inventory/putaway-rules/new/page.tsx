@@ -51,10 +51,13 @@ export default function NewPutawayRulePage() {
     const [locations, setLocations] = useState<any[]>([]);
     const [attributes, setAttributes] = useState<any[]>([]); // Phase 4: Dynamic attributes
     const [loading, setLoading] = useState(false);
+    const [dataLoaded, setDataLoaded] = useState(false);
 
     useEffect(() => {
         fetchData();
-        fetchAttributeDefinitions().then(setAttributes).catch(console.error); // Phase 4: Fetch attributes
+        fetchAttributeDefinitions()
+            .then(data => setAttributes(Array.isArray(data) ? data : []))
+            .catch(() => setAttributes([])); // Gracefully handle errors — show no attributes
         if (duplicateId) {
             duplicateRule(duplicateId);
         }
@@ -62,17 +65,24 @@ export default function NewPutawayRulePage() {
 
     async function fetchData() {
         try {
+            const userId = localStorage.getItem('userId') || '';
+            const headers: Record<string, string> = { 'x-user-id': userId };
             const [whResponse, prodResponse, locResponse] = await Promise.all([
-                fetch('/api/inventory/warehouses', { headers: { 'x-user-id': localStorage.getItem('userId') || '' } }),
-                fetch('/api/inventory/products', { headers: { 'x-user-id': localStorage.getItem('userId') || '' } }),
-                fetch('/api/inventory/locations', { headers: { 'x-user-id': localStorage.getItem('userId') || '' } }),
+                fetch('/api/inventory/warehouses', { headers }),
+                fetch('/api/inventory/products', { headers }),
+                fetch('/api/inventory/locations', { headers }),
             ]);
 
-            setWarehouses(await whResponse.json());
-            setProducts(await prodResponse.json());
-            setLocations(await locResponse.json());
+            const whData = await whResponse.json();
+            const prodData = await prodResponse.json();
+            const locData = await locResponse.json();
+            setWarehouses(Array.isArray(whData) ? whData : []);
+            setProducts(Array.isArray(prodData) ? prodData : []);
+            setLocations(Array.isArray(locData) ? locData : []);
+            setDataLoaded(true);
         } catch (error) {
             console.error('Error fetching data:', error);
+            setDataLoaded(true); // Mark as loaded even on error so UI isn't stuck
         }
     }
 
@@ -319,7 +329,7 @@ export default function NewPutawayRulePage() {
                                 ))}
                             </div>
                             {attributes.length === 0 && (
-                                <p className="text-sm text-gray-500 mt-2">Loading attributes...</p>
+                                <p className="text-sm text-gray-500 mt-2">No storage attributes defined</p>
                             )}
                         </div>
 
@@ -389,8 +399,8 @@ export default function NewPutawayRulePage() {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="">Any Source</option>
-                                {locations.filter(l => l.type === 'INTERNAL').map(loc => (
-                                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                                {locations.map(loc => (
+                                    <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
                                 ))}
                             </select>
                             <p className="mt-1 text-xs text-gray-500">Apply rule only when items come from this location</p>
@@ -452,8 +462,8 @@ export default function NewPutawayRulePage() {
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="">Select location...</option>
-                                    {locations.filter(l => l.type === 'INTERNAL').map(loc => (
-                                        <option key={loc.id} value={loc.id}>{loc.name}</option>
+                                    {locations.map(loc => (
+                                        <option key={loc.id} value={loc.id}>{loc.name} ({loc.type})</option>
                                     ))}
                                 </select>
                             </div>

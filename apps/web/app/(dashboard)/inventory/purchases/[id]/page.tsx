@@ -5,6 +5,7 @@ import { fetchPurchaseOrders, receivePurchaseOrder, fetchLocations, fetchPurchas
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
+import Cookies from 'js-cookie';
 
 export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -51,7 +52,12 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
         if (!destinationId) return;
         setReceiving(true);
         try {
-            await receivePurchaseOrder(po.id, destinationId);
+            // Build items to receive (receive all items fully)
+            const itemsToReceive = po.items.map((item: any) => ({
+                poItemId: item.id,
+                quantity: item.quantity
+            }));
+            await receivePurchaseOrder(po.id, destinationId, itemsToReceive);
             alert('Goods Received Successfully!');
             loadData(); // Reload to show status update
         } catch (e) {
@@ -64,16 +70,23 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
 
     async function handleAction(action: 'submit' | 'approve' | 'reject') {
         try {
-            const body: any = { userId: 'user-123' }; // Mock User ID
+            const userId = Cookies.get('user_id') || '';
+            const body: any = { userId };
             if (action === 'reject') body.reason = prompt('Enter rejection reason:') || 'No reason provided';
 
             const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/purchase-orders/${po.id}/${action}`;
             const res = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-id': userId,
+                },
                 body: JSON.stringify(body),
             });
-            if (!res.ok) throw new Error('Failed to perform action');
+            if (!res.ok) {
+                const errText = await res.text();
+                throw new Error(`Failed to ${action}: ${errText}`);
+            }
 
             loadData();
         } catch (e) {

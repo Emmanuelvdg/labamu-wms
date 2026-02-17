@@ -199,13 +199,13 @@ model Location {
 
   // Capacity (Updated Phase 8)
   maxVolume Float? // m3 (Legacy, consider deprecating for computed)
-  maxWeight Float? // kg (Legacy)
+  maxWeight Float? // DEPRECATED: Use maxWeightKg instead. Kept for legacy compatibility.
   
   // Canonical Physical Dimensions (Phase 8)
   innerLength Float?    @default(0) // mm
   innerWidth  Float?    @default(0) // mm
   innerHeight Float?    @default(0) // mm
-  maxWeightKg Float?    @default(0) // kg (Canonical)
+  maxWeightKg Float?    @default(0) // kg (Canonical source of truth)
 
   // Naming & Addressing (Phase 8)
   code        String?   // Short code, e.g. "RCV". Unique per parent.

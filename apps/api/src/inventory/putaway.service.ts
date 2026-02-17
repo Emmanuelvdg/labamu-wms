@@ -88,7 +88,7 @@ export class PutawayService {
 
                 // Check if product has ALL required attributes from rule
                 const hasAllRequired = rule.requiredAttributes.every(reqAttr =>
-                    params.productAttributeIds.includes(reqAttr.attributeDefinitionId)
+                    (params.productAttributeIds || []).includes(reqAttr.attributeDefinitionId)
                 );
 
                 if (!hasAllRequired) return false;
@@ -142,11 +142,11 @@ export class PutawayService {
                     attr => attr.definitionId
                 );
                 const productAttrIds = product.attributes.map(
-                    attr => attr.attributeDefinitionId
+                    (attr: any) => attr.attributeDefinitionId
                 );
 
                 // Location must support ALL product attribute requirements
-                const hasAllAttributes = productAttrIds.every(reqId =>
+                const hasAllAttributes = productAttrIds.every((reqId: any) =>
                     locationAttrIds.includes(reqId)
                 );
 
@@ -275,8 +275,8 @@ export class PutawayService {
         const matchingRules = await this.findMatchingPutawayRules({
             productId,
             category: product.category,
-            velocity: product.velocity,
-            abcClass: product.abcClass,
+            velocity: product.velocity ?? undefined,
+            abcClass: product.abcClass ?? undefined,
             productAttributeIds, // Pass attribute IDs instead of JSON
             packagingType,
             totalWeight,
@@ -918,7 +918,7 @@ export class PutawayService {
                 data: {
                     productId,
                     locationId: destinationLocationId,
-                    warehouseId: location.warehouseId,
+                    warehouseId: location!.warehouseId!,
                     quantity
                 }
             });

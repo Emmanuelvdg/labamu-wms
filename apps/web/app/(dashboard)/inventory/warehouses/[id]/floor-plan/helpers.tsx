@@ -1,4 +1,4 @@
-M// Floor Plan Helper Functions
+// Floor Plan Helper Functions
 // Copy these functions into your floor-plan/page.tsx file after the renderResizeHandles function
 
 export interface FunctionalArea {

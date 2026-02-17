@@ -57,6 +57,10 @@ This section outlines the key differentiators of Labamu WMS, aligned with specif
 - **Multi-Warehouse:** Support for multiple physical facilities within a single tenant.
 - **Locations:** Create and manage infinite hierarchy of locations with capacity constraints (Volume/Weight).
 - **Zones:** Logical grouping of locations for defining pick paths and storage rules.
+- **Unified Floor Plan:** Visual drag-and-drop editor for warehouse layout.
+    -   **Grid System:** Meter-based coordinate system (x, y) for precise mapping.
+    -   **Visual Management:** Drag-and-drop locations, rotate elements, and visualize functional areas (Receiving, Shipping).
+    -   **Capacity Visualization:** (Future) Heatmaps for utilization.
 
 ### 4.5 Transfer Operations
 - **Inter-Warehouse Transfers:** Create and manage stock movement between warehouses.

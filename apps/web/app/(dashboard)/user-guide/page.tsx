@@ -52,6 +52,7 @@ export default function UserGuidePage() {
                                             <a onClick={(e) => scrollToSection(e, 'products')} href="#products" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Products</a>
                                             <a onClick={(e) => scrollToSection(e, 'locations')} href="#locations" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Locations</a>
                                             <a onClick={(e) => scrollToSection(e, 'warehouses')} href="#warehouses" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Warehouses</a>
+                                            <a onClick={(e) => scrollToSection(e, 'floor-plan')} href="#floor-plan" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Unified Floor Plan</a>
                                             <a onClick={(e) => scrollToSection(e, 'adjustments')} href="#adjustments" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Adjustments</a>
                                             <a onClick={(e) => scrollToSection(e, 'scrap')} href="#scrap" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Scrap Orders</a>
                                             <a onClick={(e) => scrollToSection(e, 'partner-locations')} href="#partner-locations" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Partner Locations</a>
@@ -274,6 +275,9 @@ export default function UserGuidePage() {
                                                             <li><strong>Dimensions (L x W x H):</strong> Inner usable space in mm.</li>
                                                             <li><strong>Max Weight:</strong> Maximum load capacity in kg.</li>
                                                         </ul>
+                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                            <strong>Note:</strong> The system validates these limits during stock moves. If a move exceeds capacity, you will receive a specific alert (e.g., "Capacity Limit Reached: Exceeds max weight (50kg)").
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -389,6 +393,38 @@ export default function UserGuidePage() {
                                                 <li>System automatically creates functional areas and locations.</li>
                                                 <li>Click on warehouse to edit and add complete address information.</li>
                                                 <li>Assign <strong>Users</strong> to the warehouse to restrict their access/visibility.</li>
+                                            </ol>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Unified Floor Plan */}
+                            <div id="floor-plan" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><LayoutGrid className="h-5 w-5" /> Unified Floor Plan</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> A visual, interactive editor for managing your warehouse layout.</p>
+                                        <div className="bg-primary/5 p-4 rounded-md text-sm border border-primary/20">
+                                            <strong className="text-primary block mb-2">✨ New: Drag &amp; Drop Editor</strong>
+                                            <p className="mb-2">
+                                                Easily check your warehouse layout by dragging elements across a meter-based grid.
+                                            </p>
+                                            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                                                <li><strong>Visual Mapping:</strong> See Zones, Rows, and Bays in their physical relation to each other.</li>
+                                                <li><strong>Meter-Based Coordinates:</strong> Precise (x, y) positioning for accurate digital twins.</li>
+                                                <li><strong>Quick Edits:</strong> Drag to move, create new locations from the palette, and double-click to edit constraints.</li>
+                                                <li><strong>Capacity Validation:</strong> Visual feedback when locations exceed max weight or volume.</li>
+                                            </ul>
+                                        </div>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>How to Use:</strong>
+                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                <li>Navigate to <strong>Settings &rarr; Floor Plan</strong>.</li>
+                                                <li>Select a Warehouse to visualize.</li>
+                                                <li><strong>Drag</strong> elements from the sidebar to the canvas.</li>
+                                                <li><strong>Drop</strong> them into position. Valid coordinates are saved automatically.</li>
+                                                <li><strong>Click</strong> a location to view its details or add child locations.</li>
                                             </ol>
                                         </div>
                                     </CardContent>

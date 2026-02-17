@@ -41,12 +41,18 @@ export default function StockMovesPage() {
 
     const handleValidate = async (id: string) => {
         try {
-            await fetch(`${API_URL}/inventory/moves/${id}/validate`, {
+            const res = await fetch(`${API_URL}/inventory/moves/${id}/validate`, {
                 method: 'POST',
             });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.message || 'Failed to validate move');
+            }
+
             load();
-        } catch (err) {
-            alert('Failed to validate move');
+        } catch (err: any) {
+            alert(err.message || 'Failed to validate move');
         }
     };
 

@@ -1,4 +1,3 @@
-
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
@@ -171,9 +170,14 @@ export class UtilisationService {
         // Check Weight
         if (report.details.maxWeight && report.details.maxWeight > 0) {
             const incomingWeight = (product.weight || 0) * quantity;
+            console.log(`[UtilisationService] Checking Weight: Current: ${report.details.currentWeight}, Incoming: ${incomingWeight}, Max: ${report.details.maxWeight}`);
             if (report.details.currentWeight + incomingWeight > report.details.maxWeight) {
-                return { allowed: false, reason: `Exceeds max weight (${report.details.maxWeight}kg)` };
+                const details = `Max: ${report.details.maxWeight}, Current: ${report.details.currentWeight}, Incoming: ${incomingWeight}, ProductWeight: ${product.weight || 0}`;
+                // console.log(`[UtilisationService] REJECTED due to weight overflow: ${details}`);
+                return { allowed: false, reason: `Exceeds max weight (${report.details.maxWeight}kg). DEBUG: ${details}` };
             }
+        } else {
+            // console.log(`[UtilisationService] Skipping Weight Check (Max: ${report.details.maxWeight})`);
         }
 
         // Check Volume

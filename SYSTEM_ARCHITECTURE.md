@@ -493,12 +493,18 @@ Location {
   removalStrategy: string?         // FIFO, LIFO, FEFO
   
   // Capacity
-  maxVolume: float?  // m³
-  maxWeight: float?  // kg
+  maxVolume: float?  // m³ (Legacy)
+  maxWeight: float?  // DEPRECATED (Use maxWeightKg)
+  
+  // Canonical Physical Dimensions (Phase 8)
+  innerLength: float?    // mm
+  innerWidth: float?     // mm
+  innerHeight: float?    // mm
+  maxWeightKg: float?    // kg (Canonical source of truth)
   
   // Floor Plan Coordinates
-  x: float?
-  y: float?
+  x: float?  // Meters (relative to origin)
+  y: float?  // Meters
   width: float?
   height: float?
   rotation: float?

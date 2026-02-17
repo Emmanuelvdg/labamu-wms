@@ -2,9 +2,6 @@
 import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
 
-import * as fs from 'fs';
-import * as path from 'path';
-
 import { PackagingService } from './packaging.service';
 import { PutawayService } from './putaway.service';
 import { UtilisationService } from './utilisation.service';
@@ -13,8 +10,9 @@ import { getRequiredAreaTypes, AREA_TYPE_LABELS } from '../warehouse/area-types'
 @Injectable()
 export class InventoryService {
     private log(message: string) {
-        const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
-        fs.appendFileSync(logPath, `[InventoryService] ${message}\n`);
+        // const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
+        // fs.appendFileSync(logPath, `[InventoryService] ${message}\n`);
+        console.log(`[InventoryService] ${message}`);
     }
 
     constructor(
@@ -635,7 +633,7 @@ export class InventoryService {
     }
 
     async reserveStock(data: { orderId: string; items: { productId: string; quantity: number }[]; strategy: string; warehouseId?: string }): Promise<any> {
-        const results = [];
+        const results: any[] = [];
 
         // Simple transaction to ensure atomicity
         await this.prisma.$transaction(async (tx) => {
@@ -783,7 +781,7 @@ export class InventoryService {
                     fullAddress = `${parentPrefix}.${code}`;
                     // Inherit warehouseId if not provided
                     if (!inheritedWarehouseId) {
-                        inheritedWarehouseId = parent.warehouseId;
+                        inheritedWarehouseId = parent.warehouseId || undefined;
                     }
                 }
             } else if (data.structuralType === 'WAREHOUSE') {
@@ -1515,7 +1513,7 @@ export class InventoryService {
         const matchingRules = await this.prisma.putawayRule.findMany({
             where: {
                 active: true,
-                warehouseId: { in: [data.warehouseId, null] },
+                warehouseId: { in: [data.warehouseId, null as any] },
                 OR: [
                     { productId: data.productId },
                     { categoryId: product?.category },
@@ -1698,54 +1696,100 @@ export class InventoryService {
     }
 
     async createTransfer(data: { productId: string; sourceLocationId: string; destinationLocationId: string; quantity: number; reason?: string }) {
-        await this.validateLocationForStock(data.destinationLocationId);
+        try {
+            await this.validateLocationForStock(data.destinationLocationId);
 
-        // Capacity Check
-        const { allowed, reason } = await this.utilisationService.canAccept(
-            data.destinationLocationId,
-            data.productId,
-            data.quantity
-        );
+            // Capacity Check
+            const { allowed, reason } = await this.utilisationService.canAccept(
+                data.destinationLocationId,
+                data.productId,
+                data.quantity
+            );
 
-        if (!allowed) {
-            throw new BadRequestException(`Capacity Limit Reached: ${reason}`);
-        }
-
-        return this.prisma.$transaction(async (tx) => {
-            // 1. Decrement source
-            const sourceBatch = await tx.inventoryBatch.findFirst({
-                where: {
-                    productId: data.productId,
-                    locationId: data.sourceLocationId,
-                    currentQuantity: { gte: data.quantity },
-                    status: 'Active',
-                },
-                orderBy: { purchaseDate: 'asc' }, // FIFO by default for now
-            });
-
-            if (!sourceBatch) {
-                throw new Error('Insufficient stock in source location');
+            if (!allowed) {
+                throw new BadRequestException(`Capacity Limit Reached: ${reason}`);
             }
 
-            await tx.inventoryBatch.update({
-                where: { id: sourceBatch.id },
-                data: { currentQuantity: { decrement: data.quantity } },
+            return await this.prisma.$transaction(async (tx) => {
+                // 1. Decrement source
+                const sourceBatch = await tx.inventoryBatch.findFirst({
+                    where: {
+                        productId: data.productId,
+                        locationId: data.sourceLocationId,
+                        currentQuantity: { gte: data.quantity },
+                        status: 'Active',
+                    },
+                    orderBy: { purchaseDate: 'asc' }, // FIFO by default for now
+                });
+
+                if (!sourceBatch) {
+                    throw new BadRequestException('Insufficient stock in source location');
+                }
+
+                await tx.inventoryBatch.update({
+                    where: { id: sourceBatch.id },
+                    data: { currentQuantity: { decrement: data.quantity } },
+                });
+
+                // 2. Increment destination
+                const destBatch = await tx.inventoryBatch.findFirst({
+                    where: {
+                        productId: data.productId,
+                        locationId: data.destinationLocationId,
+                        batchNumber: sourceBatch.batchNumber,
+                        status: 'Active'
+                    }
+                });
+
+                if (destBatch) {
+                    await tx.inventoryBatch.update({
+                        where: { id: destBatch.id },
+                        data: { currentQuantity: { increment: data.quantity } }
+                    });
+                } else {
+                    // If moving across warehouses, we should check destination warehouse logic
+                    // For now assuming same warehouse concept or inheriting properties
+                    const destLoc = await tx.location.findUnique({ where: { id: data.destinationLocationId } });
+
+                    // Generate unique batch number if splitting
+                    const newBatchNumber = `${sourceBatch.batchNumber}-T${Date.now().toString().slice(-6)}`;
+
+                    await tx.inventoryBatch.create({
+                        data: {
+                            productId: data.productId,
+                            locationId: data.destinationLocationId,
+                            warehouseId: destLoc?.warehouseId || sourceBatch.warehouseId,
+                            batchNumber: newBatchNumber,
+                            initialQuantity: data.quantity,
+                            currentQuantity: data.quantity,
+                            costPerUnit: sourceBatch.costPerUnit,
+                            purchaseDate: sourceBatch.purchaseDate,
+                            expiryDate: sourceBatch.expiryDate,
+                            status: 'Active',
+                            vendor: sourceBatch.vendor
+                        }
+                    });
+                }
+
+                // 3. Log transaction
+                await tx.stockTransaction.create({
+                    data: {
+                        productId: data.productId,
+                        quantity: data.quantity,
+                        type: 'TRANSFER',
+                        // locationId: data.destinationLocationId, 
+                        // reason: data.reason || 'Internal Transfer',
+                    },
+                });
+
+                return { success: true };
             });
-
-
-            // 3. Log transaction
-            await tx.stockTransaction.create({
-                data: {
-                    productId: data.productId,
-                    quantity: data.quantity,
-                    type: 'TRANSFER',
-                    // locationId: data.destinationLocationId, 
-                    // reason: data.reason || 'Internal Transfer',
-                },
-            });
-
-            return { success: true };
-        });
+        } catch (error: any) {
+            console.error('CreateTransfer Error:', error);
+            if (error instanceof BadRequestException) throw error;
+            if (error instanceof NotFoundException) throw error;
+            throw new BadRequestException(`Transfer Failed: ${error.message}`);
+        }
     }
 
     // Reordering Rules
@@ -2021,11 +2065,13 @@ export class InventoryService {
 
             // Capacity Check (if moving to a destination)
             if (move.destinationLocationId) {
+                // console.log(`[InventoryService] Validating Move ${id} - Checking Capacity for Loc ${move.destinationLocationId}`);
                 const { allowed, reason } = await this.utilisationService.canAccept(
                     move.destinationLocationId,
                     move.productId,
                     move.quantity
                 );
+                // console.log(`[InventoryService] Capacity Check Result: allowed=${allowed}, reason=${reason}`);
 
                 if (!allowed) {
                     throw new BadRequestException(`Capacity Limit Reached: ${reason}`);
@@ -2254,7 +2300,7 @@ export class InventoryService {
             // 1. Check Packaging Support
             if (packaging && loc.supportedPackaging) {
                 const supported = JSON.parse(loc.supportedPackaging);
-                if (Array.isArray(supported) && !supported.includes(packaging.type)) {
+                if (Array.isArray(supported) && !supported.includes(packaging.unitType)) {
                     return false;
                 }
             }

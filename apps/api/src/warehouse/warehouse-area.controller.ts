@@ -31,6 +31,34 @@ export class WarehouseAreaController {
         });
     }
 
+    @Get(':id')
+    async getWarehouse(@Param('id') id: string) {
+        return this.prisma.warehouse.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                shortName: true,
+                address: true,
+                city: true,
+                state: true,
+                postalCode: true,
+                country: true,
+                latitude: true,
+                longitude: true,
+                type: true,
+                floorPlanShape: true,
+                viewLocationId: true,
+                floorPlanVertices: true,
+                floorPlanWidth: true,
+                floorPlanHeight: true,
+                gridEnabled: true,
+                gridSize: true,
+                snapToGrid: true,
+            },
+        });
+    }
+
     @Patch(':id')
     async updateWarehouse(@Param('id') id: string, @Body() data: any) {
         return this.warehouseAreaService.updateWarehouse(id, data);
@@ -44,6 +72,16 @@ export class WarehouseAreaController {
     @Get(':id/areas/suggested')
     async getSuggestedAreas(@Param('id') warehouseId: string) {
         return this.warehouseAreaService.getSuggestedAreas(warehouseId);
+    }
+
+    @Get(':id/bins/utilization')
+    async getBinUtilization(@Param('id') warehouseId: string) {
+        return this.warehouseAreaService.getBinUtilization(warehouseId);
+    }
+
+    @Get(':id/zones')
+    async getZones(@Param('id') warehouseId: string) {
+        return this.warehouseAreaService.getZones(warehouseId);
     }
 
     @Get(':id/areas/layout/:type')
@@ -92,4 +130,3 @@ export class WarehouseAreaController {
         return this.warehouseAreaService.deleteWarehouse(id);
     }
 }
-
