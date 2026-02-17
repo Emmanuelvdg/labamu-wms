@@ -697,7 +697,12 @@ export class InventoryService {
     async getLocationsTree(warehouseId?: string) {
         const locations = await this.prisma.location.findMany({
             where: warehouseId ? { warehouseId } : {},
-            orderBy: { name: 'asc' }
+            orderBy: { name: 'asc' },
+            include: {
+                dynamicAttributes: {
+                    include: { definition: true }
+                }
+            }
         });
 
         const locationMap = new Map();
@@ -705,12 +710,27 @@ export class InventoryService {
 
         // 1. Initialize map
         locations.forEach(loc => {
-            let parsedAttributes = {};
+            let parsedAttributes: any = {};
             try {
                 parsedAttributes = loc.attributes ? JSON.parse(loc.attributes) : {};
             } catch (e) {
                 // ignore
             }
+
+            // Merge dynamic attributes
+            if (loc.dynamicAttributes) {
+                loc.dynamicAttributes.forEach(attr => {
+                    parsedAttributes[attr.definition.name] = attr.value;
+                    // Also store full object if needed for UI details
+                    if (!parsedAttributes._dynamic) parsedAttributes._dynamic = [];
+                    parsedAttributes._dynamic.push({
+                        name: attr.definition.name,
+                        type: attr.definition.type,
+                        value: attr.value
+                    });
+                });
+            }
+
             locationMap.set(loc.id, { ...loc, attributes: parsedAttributes, children: [] });
         });
 

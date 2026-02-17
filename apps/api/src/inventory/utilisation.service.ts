@@ -14,6 +14,9 @@ export interface UtilizationReport {
         maxPallets?: number;
         currentPallets: number;
     };
+    // Phase 2: New Metrics
+    velocityScore?: number; // 0-100 (Relative pick frequency)
+    congestionScore?: number; // 0-100 (Current active tasks)
 }
 
 @Injectable()
@@ -39,7 +42,7 @@ export class UtilisationService {
     /**
      * Batch fetch utilisation for multiple locations
      */
-    async getBatchUtilisation(locationIds: string[]): Promise<Record<string, UtilizationReport>> {
+    async getBatchUtilisation(locationIds: string[], metric: 'UTILISATION' | 'VELOCITY' | 'CONGESTION' = 'UTILISATION'): Promise<Record<string, UtilizationReport>> {
         const locations = await this.prisma.location.findMany({
             where: { id: { in: locationIds } },
             include: {
@@ -50,7 +53,15 @@ export class UtilisationService {
 
         const results: Record<string, UtilizationReport> = {};
         for (const loc of locations) {
-            results[loc.id] = await this.calculateUtilisation(loc);
+            const report = await this.calculateUtilisation(loc);
+
+            if (metric === 'VELOCITY') {
+                report.velocityScore = await this.calculateVelocity(loc.id);
+            } else if (metric === 'CONGESTION') {
+                report.congestionScore = await this.calculateCongestion(loc.id);
+            }
+
+            results[loc.id] = report;
         }
         return results;
     }
@@ -58,6 +69,38 @@ export class UtilisationService {
     /**
      * Internal calculation logic (shared)
      */
+    private async calculateVelocity(locationId: string): Promise<number> {
+        // Count picking tasks in the last 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const taskCount = await this.prisma.pickingTask.count({
+            where: {
+                sourceLocationId: locationId,
+                createdAt: { gte: thirtyDaysAgo }
+            }
+        });
+
+        // Normalize: Assume > 50 picks/month is "High Velocity" (100%)
+        // This should theoretically be relative to the warehouse max, but absolute is easier for MVP.
+        return Math.min(100, (taskCount / 50) * 100);
+    }
+
+    private async calculateCongestion(locationId: string): Promise<number> {
+        // Count CURRENTLY ACTIVE tasks (IN_PROGRESS) targeting this location (Pick + Putaway)
+        const activePicks = await this.prisma.pickingTask.count({
+            where: { sourceLocationId: locationId, status: 'IN_PROGRESS' }
+        });
+        const activePutaways = await this.prisma.putawayTask.count({
+            where: { destinationLocationId: locationId, status: 'IN_PROGRESS' }
+        });
+
+        const totalActive = activePicks + activePutaways;
+
+        // Normalize: > 5 concurrent tasks is "Congested"
+        return Math.min(100, (totalActive / 5) * 100);
+    }
+
     private async calculateUtilisation(location: any): Promise<UtilizationReport> {
         // 1. Calculate Constraints
         const maxWeight = (location as any).maxWeightKg || location.maxWeight || 0;

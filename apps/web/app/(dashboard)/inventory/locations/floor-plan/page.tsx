@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { fetchLocationsTree, API_URL } from '@/lib/api';
 import { ArrowLeft, Save, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
 import Link from 'next/link';
@@ -22,7 +23,19 @@ interface Location {
     height?: number;
     rotation?: number;
     warehouseId?: string;
-    attributes?: { color?: string;[key: string]: any };
+    attributes?: {
+        color?: string;
+        _dynamic?: { name: string; type: string; value: any }[];
+        [key: string]: any
+    };
+    dynamicAttributes?: any[]; // For type safety if passed directly, though usually mapped to attributes
+}
+
+interface AttributeDefinition {
+    id: string;
+    name: string;
+    type: string;
+    options?: string;
 }
 
 export default function FloorPlanPage() {
@@ -39,6 +52,11 @@ export default function FloorPlanPage() {
 
     const [draggedBay, setDraggedBay] = useState<Location | null>(null);
     const [scale, setScale] = useState(1);
+
+    // Attribute Filtering
+    const [attributeDefinitions, setAttributeDefinitions] = useState<AttributeDefinition[]>([]);
+    const [selectedAttributeFilter, setSelectedAttributeFilter] = useState<string>('none');
+
     const canvasRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -108,6 +126,13 @@ export default function FloorPlanPage() {
             const whs = all.filter(l => l.structuralType === 'WAREHOUSE');
             setWarehouses(whs);
             if (whs.length > 0) setSelectedWarehouseId(whs[0].id);
+
+            // Fetch Attribute Definitions
+            const attrRes = await fetch(`${API_URL}/inventory/attributes/definitions`);
+            if (attrRes.ok) {
+                const attrs = await attrRes.json();
+                setAttributeDefinitions(attrs);
+            }
         } catch (err) {
             console.error(err);
         }
@@ -222,13 +247,14 @@ export default function FloorPlanPage() {
     };
 
     const [showHeatmap, setShowHeatmap] = useState(false);
+    const [heatmapMetric, setHeatmapMetric] = useState<'UTILISATION' | 'VELOCITY' | 'CONGESTION'>('UTILISATION');
     const [utilizationData, setUtilizationData] = useState<Record<string, any>>({});
 
     useEffect(() => {
         if (showHeatmap && mappedBays.length > 0) {
             loadBatchUtilisation();
         }
-    }, [showHeatmap, mappedBays]);
+    }, [showHeatmap, mappedBays, heatmapMetric]);
 
     const loadBatchUtilisation = async () => {
         try {
@@ -236,7 +262,7 @@ export default function FloorPlanPage() {
             const res = await fetch(`${API_URL}/inventory/locations/utilisation-batch`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ locationIds: ids })
+                body: JSON.stringify({ locationIds: ids, metric: heatmapMetric })
             });
             if (res.ok) {
                 const data = await res.json();
@@ -248,18 +274,54 @@ export default function FloorPlanPage() {
     };
 
     const getBayColor = (bay: Location) => {
-        if (!showHeatmap) return bay.attributes?.color || '#2563eb';
+        // Priority 1: Heatmap
+        if (showHeatmap) {
+            const util = utilizationData[bay.id];
+            if (!util) return '#94a3b8'; // Grey if no data
 
-        const util = utilizationData[bay.id];
-        if (!util) return '#94a3b8'; // Grey if no data
-
-        switch (util.status) {
-            case 'EMPTY': return '#10b981'; // Green
-            case 'PARTIAL': return '#f59e0b'; // Amber
-            case 'FULL': return '#ef4444'; // Red
-            case 'OVERSIZED': return '#7f1d1d'; // Dark Red
-            default: return '#94a3b8';
+            switch (heatmapMetric) {
+                case 'UTILISATION':
+                    switch (util.status) {
+                        case 'EMPTY': return '#10b981'; // Green
+                        case 'PARTIAL': return '#f59e0b'; // Amber
+                        case 'FULL': return '#ef4444'; // Red
+                        case 'OVERSIZED': return '#7f1d1d'; // Dark Red
+                        default: return '#94a3b8';
+                    }
+                case 'VELOCITY':
+                    // Velocity Score 0-100. Heatmap from Blue (Cold) to Red (Hot)
+                    const v = util.velocityScore || 0;
+                    if (v < 20) return '#3b82f6'; // Blue (Low)
+                    if (v < 50) return '#22c55e'; // Green (Medium)
+                    if (v < 80) return '#f59e0b'; // Orange (High)
+                    return '#ef4444'; // Red (Very High)
+                case 'CONGESTION':
+                    // Congestion Score 0-100.
+                    const c = util.congestionScore || 0;
+                    if (c === 0) return '#10b981'; // Green (Clear)
+                    if (c < 50) return '#f59e0b'; // Orange (Busy)
+                    return '#ef4444'; // Red (Congested)
+                default: return '#94a3b8';
+            }
         }
+
+        // Priority 2: Attribute Filter
+        if (selectedAttributeFilter !== 'none') {
+            const attrValue = bay.attributes?.[selectedAttributeFilter];
+            if (attrValue) {
+                // If it's a boolean attribute and true, show as distinct color
+                if (attrValue === 'true' || attrValue === true) return '#ec4899'; // Pink
+
+                // If it's a select/text attribute, maybe hash the string to a color?
+                // For now, let's just highlight it.
+                return '#8b5cf6'; // Violet
+            } else {
+                return '#e2e8f0'; // Dimmed/Grey out non-matching
+            }
+        }
+
+        // Priority 3: Default / Custom Color
+        return bay.attributes?.color || '#2563eb';
     };
 
     return (
@@ -308,16 +370,42 @@ export default function FloorPlanPage() {
                                 <SelectItem value="4">Shelf Layer 4</SelectItem>
                             </SelectContent>
                         </Select>
+
+                        <Select value={selectedAttributeFilter} onValueChange={setSelectedAttributeFilter}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Filter Attribute" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">No Filter</SelectItem>
+                                {attributeDefinitions.map(attr => (
+                                    <SelectItem key={attr.id} value={attr.name}>{attr.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Button
-                        variant={showHeatmap ? "default" : "outline"}
-                        onClick={() => setShowHeatmap(!showHeatmap)}
-                        className={showHeatmap ? "bg-purple-600 hover:bg-purple-700" : ""}
-                    >
-                        {showHeatmap ? "Heatmap On" : "Show Heatmap"}
-                    </Button>
+                    {/* Heatmap Controls */}
+                    <div className="flex items-center space-x-1 bg-muted/50 rounded-lg p-1">
+                        <Button
+                            variant={showHeatmap ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => setShowHeatmap(!showHeatmap)}
+                            className={showHeatmap ? "bg-purple-600 hover:bg-purple-700 text-white" : ""}
+                        >
+                            {showHeatmap ? "On" : "Off"}
+                        </Button>
+                        <Select value={heatmapMetric} onValueChange={(v: any) => setHeatmapMetric(v)} disabled={!showHeatmap}>
+                            <SelectTrigger className="w-[140px] h-8 border-none bg-transparent focus:ring-0">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="UTILISATION">Utilisation</SelectItem>
+                                <SelectItem value="VELOCITY">Velocity</SelectItem>
+                                <SelectItem value="CONGESTION">Congestion</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
                     <div className="h-6 w-px bg-border mx-2" />
 
@@ -395,6 +483,22 @@ export default function FloorPlanPage() {
                             >
                                 <span className="text-xs font-bold pointer-events-none select-none">{bay.name}</span>
 
+                                {/* Attribute Badges */}
+                                <div className="flex flex-wrap gap-1 justify-center mt-1 px-1">
+                                    {(bay.attributes && Object.entries(bay.attributes).map(([key, value]) => {
+                                        if (key === 'color' || key === '_dynamic') return null;
+                                        // Only show if value is true/truthy and not a complex object (unless it's our mapped dynamic)
+                                        if (value === 'true' || value === true) {
+                                            return (
+                                                <Badge key={key} variant="secondary" className="text-[8px] h-3 px-1 py-0 pointer-events-none">
+                                                    {key.substring(0, 3).toUpperCase()}
+                                                </Badge>
+                                            );
+                                        }
+                                        return null;
+                                    }))}
+                                </div>
+
                                 {/* Controls */}
                                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:flex bg-white text-black shadow-lg rounded p-1 space-x-1">
                                     <button
@@ -409,6 +513,38 @@ export default function FloorPlanPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Legend Overlay */}
+            {showHeatmap && (
+                <div className="absolute bottom-6 right-6 z-10 bg-white/90 backdrop-blur border p-3 rounded shadow-lg text-xs">
+                    <h4 className="font-bold mb-2 uppercase tracking-wider text-muted-foreground">{heatmapMetric} Legend</h4>
+                    <div className="space-y-1.5">
+                        {heatmapMetric === 'UTILISATION' && (
+                            <>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#10b981] mr-2" /> Empty</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#f59e0b] mr-2" /> Partial</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#ef4444] mr-2" /> Full</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#7f1d1d] mr-2" /> Oversized</div>
+                            </>
+                        )}
+                        {heatmapMetric === 'VELOCITY' && (
+                            <>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#3b82f6] mr-2" /> Low (&lt;20%)</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#22c55e] mr-2" /> Medium (&lt;50%)</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#f59e0b] mr-2" /> High (&lt;80%)</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#ef4444] mr-2" /> Very High</div>
+                            </>
+                        )}
+                        {heatmapMetric === 'CONGESTION' && (
+                            <>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#10b981] mr-2" /> Clear</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#f59e0b] mr-2" /> Busy</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#ef4444] mr-2" /> Congested</div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

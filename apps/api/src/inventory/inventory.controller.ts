@@ -199,8 +199,8 @@ export class InventoryController {
     }
 
     @Post('locations/utilisation-batch')
-    getBatchUtilisation(@Body() data: { locationIds: string[] }) {
-        return this.utilisationService.getBatchUtilisation(data.locationIds);
+    getBatchUtilisation(@Body() data: { locationIds: string[]; metric?: 'UTILISATION' | 'VELOCITY' | 'CONGESTION' }) {
+        return this.utilisationService.getBatchUtilisation(data.locationIds, data.metric);
     }
 
     @Get('locations')
