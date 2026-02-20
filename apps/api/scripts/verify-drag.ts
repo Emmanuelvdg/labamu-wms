@@ -44,3 +44,5 @@ async function verifyDrag() {
 }
 
 verifyDrag();
+
+export { };

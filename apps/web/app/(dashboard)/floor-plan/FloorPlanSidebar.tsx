@@ -12,10 +12,11 @@ interface FloorPlanSidebarProps {
     elementType: 'area' | 'zone' | 'bin';
     onUpdate: (id: string, updates: any) => void;
     onDelete: (id: string) => void;
+    onRemoveFromPlan?: (id: string) => void;
     onClose: () => void;
 }
 
-export function FloorPlanSidebar({ element, elementType, onUpdate, onDelete, onClose }: FloorPlanSidebarProps) {
+export function FloorPlanSidebar({ element, elementType, onUpdate, onDelete, onRemoveFromPlan, onClose }: FloorPlanSidebarProps) {
     const [formData, setFormData] = useState({ ...element });
 
     // Update form data when element changes
@@ -35,8 +36,19 @@ export function FloorPlanSidebar({ element, elementType, onUpdate, onDelete, onC
     };
 
     const handleDelete = () => {
-        if (confirm('Are you sure you want to delete this element?')) {
+        if (confirm('Are you sure you want to permanently delete this element from the system?')) {
             onDelete(element.id);
+        }
+    };
+
+    const handleRemoveFromPlan = () => {
+        if (confirm('Are you sure you want to remove this element from the floor plan? (It will remain in the system hierarchy)')) {
+            if (onRemoveFromPlan) {
+                onRemoveFromPlan(element.id);
+            } else {
+                // Fallback for areas
+                onDelete(element.id);
+            }
         }
     };
 
@@ -90,9 +102,17 @@ export function FloorPlanSidebar({ element, elementType, onUpdate, onDelete, onC
                     )}
 
                     {(elementType === 'zone' || elementType === 'bin') && (
-                        <div className="space-y-2">
-                            <Label>Structural Type</Label>
-                            <Input value={formData.structuralType} disabled className="bg-muted" />
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Structural Type</Label>
+                                <Input value={formData.structuralType} disabled className="bg-muted" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Location Path</Label>
+                                <div className="text-sm font-medium bg-muted p-2 rounded border truncate break-all" title={formData.locationPath || 'Root / Top Level'}>
+                                    {formData.locationPath || 'Root / Top Level'}
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -196,13 +216,20 @@ export function FloorPlanSidebar({ element, elementType, onUpdate, onDelete, onC
                 )}
             </div>
 
-            <div className="p-4 border-t bg-gray-50 flex justify-between space-x-2">
-                <Button variant="destructive" onClick={handleDelete} className="flex-1">
-                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+            <div className="p-4 border-t bg-gray-50 flex flex-col space-y-2">
+                <Button onClick={handleSave} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                    <Save className="h-4 w-4 mr-2" /> Save Changes
                 </Button>
-                <Button onClick={handleSave} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
-                    <Save className="h-4 w-4 mr-2" /> Save
-                </Button>
+                <div className="flex space-x-2">
+                    {(elementType === 'zone' || elementType === 'bin') && (
+                        <Button variant="outline" onClick={handleRemoveFromPlan} className="flex-1 text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200">
+                            <X className="h-4 w-4 mr-2" /> Remove
+                        </Button>
+                    )}
+                    <Button variant="outline" onClick={handleDelete} className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete DB
+                    </Button>
+                </div>
             </div>
         </div>
     );

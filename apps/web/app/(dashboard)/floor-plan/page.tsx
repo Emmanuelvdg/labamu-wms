@@ -201,6 +201,7 @@ export default function UnifiedFloorPlanPage() {
         height: number;
     } | null>(null);
     const [newElementName, setNewElementName] = useState('');
+    const [selectedExistingLocationId, setSelectedExistingLocationId] = useState<string>('new');
     const [locationOptions, setLocationOptions] = useState<StorageZone[]>([]);
     const [selectedLocationId, setSelectedLocationId] = useState<string>('');
     const [rootLocationId, setRootLocationId] = useState<string>('');
@@ -653,10 +654,11 @@ export default function UnifiedFloorPlanPage() {
                 });
 
                 // Pre-fill name based on type
-                const count = zones.filter(z => z.structuralType === elementData.type).length + 1;
+                const count = zones.filter(z => z.structuralType === elementData.type).length + bins.filter(b => b.structuralType === elementData.type).length + 1;
                 setNewElementName(`${elementData.name} ${count}`);
 
                 setSelectedLocationId(detectedParentId);
+                setSelectedExistingLocationId('new');
                 setIsCreateModalOpen(true);
             } else if (from === 'canvas') {
                 // Update existing element position
@@ -684,53 +686,85 @@ export default function UnifiedFloorPlanPage() {
     const handleCreateConfirm = async () => {
         if (!pendingCreate || !warehouse) return;
 
-        // Ensure parent is selected for non-WAREHOUSE/ROOM types if root not found
-        // But for MVP, if no parent selected, it might try to create as root (which fails backend validation for child types)
-
         try {
-            const res = await fetch('/api/inventory/locations', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-id': getUserId(),
-                },
-                body: JSON.stringify({
-                    name: newElementName,
-                    structuralType: pendingCreate.type,
-                    parentId: selectedLocationId || undefined, // Send undefined if empty
-                    warehouseId: selectedWarehouseId,
-                    x: pendingCreate.x,
-                    y: pendingCreate.y,
-                    width: pendingCreate.width,
-                    height: pendingCreate.height
-                })
-            });
+            if (selectedExistingLocationId !== 'new') {
+                // Map existing location to floor plan
+                const res = await fetch(`/api/locations/${selectedExistingLocationId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-user-id': getUserId(),
+                    },
+                    body: JSON.stringify({
+                        x: pendingCreate.x,
+                        y: pendingCreate.y,
+                        width: pendingCreate.width,
+                        height: pendingCreate.height,
+                        parentId: selectedLocationId || undefined
+                    })
+                });
 
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.details || err.message || 'Failed to create location');
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.message || 'Failed to place location');
+                }
+
+                const updated = await res.json();
+
+                if (pendingCreate.type === 'ROOM' || pendingCreate.type === 'ROW' || pendingCreate.type === 'AISLE' || pendingCreate.type === 'BAY') {
+                    // It's a zone, reload zones or update local state
+                    setZones(prev => prev.map(z => z.id === updated.id ? { ...z, ...updated } : z));
+                } else {
+                    // It's a bin, enable layer and reload
+                    setLayerConfig(prev => ({ ...prev, bins: true }));
+                    loadBins(selectedWarehouseId);
+                }
+
+                toast.success(`${pendingCreate.type} placed successfully`);
+            } else {
+                // Create entirely new location
+                const res = await fetch('/api/inventory/locations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-user-id': getUserId(),
+                    },
+                    body: JSON.stringify({
+                        name: newElementName,
+                        structuralType: pendingCreate.type,
+                        parentId: selectedLocationId || undefined,
+                        warehouseId: selectedWarehouseId,
+                        x: pendingCreate.x,
+                        y: pendingCreate.y,
+                        width: pendingCreate.width,
+                        height: pendingCreate.height
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.details || err.message || 'Failed to create location');
+                }
+
+                const newLocation = await res.json();
+
+                if (pendingCreate.type === 'ROOM' || pendingCreate.type === 'ROW' || pendingCreate.type === 'AISLE' || pendingCreate.type === 'BAY') {
+                    setZones([...zones, { ...newLocation, structuralType: pendingCreate.type }]);
+                } else if (pendingCreate.type === 'BIN' || pendingCreate.type === 'SHELF' || pendingCreate.type === 'POSITION') {
+                    setLayerConfig(prev => ({ ...prev, bins: true }));
+                    loadBins(selectedWarehouseId);
+                }
+
+                toast.success(`${pendingCreate.type} created successfully`);
             }
 
-            const newLocation = await res.json();
-
-            // Refresh the relevant layer data
-            if (pendingCreate.type === 'ROOM' || pendingCreate.type === 'ROW' || pendingCreate.type === 'AISLE' || pendingCreate.type === 'BAY') {
-                // Add to zones
-                setZones([...zones, { ...newLocation, structuralType: pendingCreate.type }]);
-            } else if (pendingCreate.type === 'BIN' || pendingCreate.type === 'SHELF' || pendingCreate.type === 'POSITION') {
-                // Auto-enable the Bins layer
-                setLayerConfig(prev => ({ ...prev, bins: true }));
-                loadBins(selectedWarehouseId);
-            }
-
-            toast.success(`${pendingCreate.type} created successfully`);
             setIsCreateModalOpen(false);
             setPendingCreate(null);
             setSelectedLocationId('');
             setNewElementName('');
         } catch (err: any) {
-            console.error('Failed to create element:', err);
-            toast.error(err.message || 'Failed to create element');
+            console.error('Failed to save element:', err);
+            toast.error(err.message || 'Failed to save element');
         }
     };
 
@@ -1087,9 +1121,19 @@ export default function UnifiedFloorPlanPage() {
                             <RotateCw className="h-3 w-3" />
                         </button>
                         <button
-                            className="p-1 hover:bg-red-100 rounded text-red-600"
-                            onClick={(e) => { e.stopPropagation(); handleDelete(element.id, type as any); }}
-                            title="Delete"
+                            className="p-1 hover:bg-orange-100 rounded text-orange-600"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (type === 'area') {
+                                    handleDelete(element.id, 'areas');
+                                } else {
+                                    if (confirm('Remove this element from the floor plan? (It remains in the system hierarchy)')) {
+                                        handleUpdateElement(element.id, { x: null, y: null, width: null, height: null, rotation: null });
+                                        setSelectedElementId(null);
+                                    }
+                                }
+                            }}
+                            title={type === 'area' ? "Delete Area" : "Remove from Plan"}
                         >
                             <Trash2 className="h-3 w-3" />
                         </button>
@@ -1262,6 +1306,10 @@ export default function UnifiedFloorPlanPage() {
     const selectedElementType =
         functionalAreas.find(a => a.id === selectedElementId) ? 'area' :
             zones.find(z => z.id === selectedElementId) ? 'zone' : 'bin';
+
+    const availableExistingElements = (pendingCreate?.type === 'BIN' || pendingCreate?.type === 'POSITION' || pendingCreate?.type === 'SHELF')
+        ? bins.filter(b => b.structuralType === pendingCreate.type && (b.x === null || b.y === null || b.x === undefined))
+        : zones.filter(z => z.structuralType === pendingCreate?.type && (z.x === null || z.y === null || z.x === undefined));
 
     return (
         <div className="h-[calc(100vh-4rem)] flex flex-col">
@@ -1538,7 +1586,7 @@ export default function UnifiedFloorPlanPage() {
                             ))}
 
                             {/* LAYER 2: Zones */}
-                            {layerConfig.zones && zones.filter(z => z.structuralType !== 'BIN' && z.structuralType !== 'SHELF' && z.structuralType !== 'POSITION').map(zone => (
+                            {layerConfig.zones && zones.filter(z => z.structuralType !== 'BIN' && z.structuralType !== 'SHELF' && z.structuralType !== 'POSITION' && z.x !== null && z.y !== null && z.x !== undefined).map(zone => (
                                 <g
                                     key={zone.id}
                                     transform={`translate(${(zone.x || 0) * pixelsPerMeter}, ${(zone.y || 0) * pixelsPerMeter}) rotate(${zone.rotation || 0})`}
@@ -1570,8 +1618,11 @@ export default function UnifiedFloorPlanPage() {
                             ))}
 
                             {/* LAYER 3: Bins */}
-                            {layerConfig.bins && bins.map(bin => (
-                                <g key={bin.id}>
+                            {layerConfig.bins && bins.filter(b => b.x !== null && b.y !== null && b.x !== undefined).map(bin => (
+                                <g
+                                    key={bin.id}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedElementId(bin.id); }}
+                                >
                                     <rect
                                         x={bin.x * pixelsPerMeter}
                                         y={bin.y * pixelsPerMeter}
@@ -1620,6 +1671,7 @@ export default function UnifiedFloorPlanPage() {
                         elementType={selectedElementType as 'area' | 'zone' | 'bin'}
                         onUpdate={handleUpdateElement}
                         onDelete={handleDeleteElement}
+                        onRemoveFromPlan={(id) => handleUpdateElement(id, { x: null, y: null, width: null, height: null, rotation: null })}
                         onClose={() => setSelectedElementId(null)}
                     />
                 )}
@@ -1667,22 +1719,48 @@ export default function UnifiedFloorPlanPage() {
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Create New {pendingCreate?.type}</DialogTitle>
+                        <DialogTitle>{selectedExistingLocationId === 'new' ? `Create New ${pendingCreate?.type}` : `Place Existing ${pendingCreate?.type}`}</DialogTitle>
                     </DialogHeader>
                     <div className="py-4 space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="elementName">Name</Label>
-                            <Input
-                                id="elementName"
-                                value={newElementName}
-                                onChange={(e) => setNewElementName(e.target.value)}
-                                placeholder="e.g. Room 1"
-                            />
-                        </div>
+                        {availableExistingElements.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                                <Label>Unmapped Elements in System</Label>
+                                <Select value={selectedExistingLocationId} onValueChange={(val) => {
+                                    setSelectedExistingLocationId(val);
+                                    if (val !== 'new') {
+                                        const el = availableExistingElements.find(e => e.id === val);
+                                        setNewElementName(el?.name || '');
+                                        if (el?.parentId) setSelectedLocationId(el.parentId);
+                                    }
+                                }}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select existing or create new..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="new">+ Create entirely new element</SelectItem>
+                                        {availableExistingElements.map(el => (
+                                            <SelectItem key={el.id} value={el.id}>{el.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
+                        {selectedExistingLocationId === 'new' && (
+                            <div className="space-y-2">
+                                <Label htmlFor="elementName">Name</Label>
+                                <Input
+                                    id="elementName"
+                                    value={newElementName}
+                                    onChange={(e) => setNewElementName(e.target.value)}
+                                    placeholder="e.g. Room 1"
+                                />
+                            </div>
+                        )}
 
                         <div className="space-y-2">
-                            <Label htmlFor="locationSelect">Parent Location</Label>
-                            <Select value={selectedLocationId} onValueChange={setSelectedLocationId}>
+                            <Label htmlFor="locationSelect">Parent Location (Hierarchy)</Label>
+                            <Select value={selectedLocationId || ''} onValueChange={setSelectedLocationId}>
                                 <SelectTrigger>
                                     <SelectValue placeholder={
                                         pendingCreate?.type === 'ROOM' ? 'Root Warehouse (Default)' : 'Select Parent Location...'
@@ -1707,7 +1785,12 @@ export default function UnifiedFloorPlanPage() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleCreateConfirm} disabled={!newElementName || (!selectedLocationId && pendingCreate?.type !== 'ROOM')}>Create</Button>
+                        <Button
+                            onClick={handleCreateConfirm}
+                            disabled={(selectedExistingLocationId === 'new' && !newElementName) || (!selectedLocationId && pendingCreate?.type !== 'ROOM')}
+                        >
+                            {selectedExistingLocationId === 'new' ? 'Create' : 'Place on Plan'}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

@@ -74,6 +74,7 @@ const navigation: NavItem[] = [
         href: '#warehouse',
         icon: Map,
         items: [
+            { name: 'Locations', href: '/inventory/locations', permission: { resource: 'SETTINGS', action: 'READ' } },
             { name: 'Warehouses', href: '/inventory/warehouses', permission: { resource: 'SETTINGS', action: 'READ' } },
             { name: 'Floor Plan', href: '/floor-plan', permission: { resource: 'SETTINGS', action: 'READ' } },
             { name: 'Routes', href: '/inventory/routes', permission: { resource: 'INVENTORY', action: 'READ' } },

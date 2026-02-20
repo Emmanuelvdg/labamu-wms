@@ -115,3 +115,5 @@ mergeFunctionalAreas()
     .finally(async () => {
         await prisma.$disconnect();
     });
+
+export { };

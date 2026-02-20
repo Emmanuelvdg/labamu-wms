@@ -1280,7 +1280,7 @@ export class InventoryService {
             'BAY': ['ROW', 'AISLE', 'ROOM', 'ZONE'], // Can be under rows or zones
             'SHELF': ['BAY', 'ROW', 'ROOM', 'ZONE'], // Can be under bays, rows, or zones
             'POSITION': ['SHELF', 'BAY', 'ROW'], // Can be under shelves, bays, or rows
-            'BIN': ['SHELF', 'BAY', 'ROW'], // Alias for POSITION
+            'BIN': ['SHELF', 'BAY', 'ROW', 'POSITION'], // Alias for POSITION
         };
 
         const allowedParents = validParents[childType];

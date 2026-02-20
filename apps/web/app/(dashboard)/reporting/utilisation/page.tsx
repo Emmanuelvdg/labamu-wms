@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { fetchWarehouses, fetchLocations, fetchUtilisationHistory } from '@/lib/api';
-import { Loader2, RefreshCw, Warehouse, box, Layers } from 'lucide-react';
+import { Loader2, RefreshCw, Warehouse, Box, Layers } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 
 export default function UtilisationReportPage() {
@@ -172,7 +172,7 @@ export default function UtilisationReportPage() {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Max Capacity</CardTitle>
-                        <box className="h-4 w-4 text-muted-foreground" />
+                        <Box className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{data?.current?.maxVolume?.toFixed(2)} m³</div>

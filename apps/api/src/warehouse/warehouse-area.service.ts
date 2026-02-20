@@ -245,13 +245,14 @@ export class WarehouseAreaService {
 
     private calculateBinUtilization(bin: any) {
         // Calculate current weight from batches
-        const currentWeight = bin.batches.reduce((sum: number, batch: any) => {
+        const batches = bin.batches || [];
+        const currentWeight = batches.reduce((sum: number, batch: any) => {
             const productWeight = batch.product?.weight || 0;
             return sum + (productWeight * batch.currentQuantity);
         }, 0);
 
         // Calculate total items
-        const currentItems = bin.batches.reduce((sum: number, batch: any) =>
+        const currentItems = batches.reduce((sum: number, batch: any) =>
             sum + batch.currentQuantity, 0
         );
 
@@ -298,7 +299,7 @@ export class WarehouseAreaService {
             overallUtilization: Math.round(overallUtilization * 10) / 10,
 
             // Stock info
-            stockItems: bin.batches.map((batch: any) => ({
+            stockItems: batches.map((batch: any) => ({
                 productCode: batch.product?.sku || 'UNKNOWN',
                 productName: batch.product?.name || 'Unknown Product',
                 quantity: batch.currentQuantity,
