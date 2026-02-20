@@ -178,19 +178,30 @@ export class WarehouseAreaService {
             ]
         });
 
-        return zones.map(zone => ({
-            id: zone.id,
-            name: zone.name,
-            code: zone.code,
-            structuralType: zone.structuralType,
-            x: zone.x || 0,
-            y: zone.y || 0,
-            width: zone.width || 5, // Defaults if missing
-            height: zone.height || 3,
-            rotation: zone.rotation || 0,
-            parentId: zone.parentId,
-            childCount: zone.children.length
-        }));
+        return zones.map(zone => {
+            let color = undefined;
+            if (zone.attributes) {
+                try {
+                    const attrs = JSON.parse(zone.attributes);
+                    color = attrs.color;
+                } catch (e) { }
+            }
+
+            return {
+                id: zone.id,
+                name: zone.name,
+                code: zone.code,
+                structuralType: zone.structuralType,
+                x: zone.x || 0,
+                y: zone.y || 0,
+                width: zone.width || 5, // Defaults if missing
+                height: zone.height || 3,
+                rotation: zone.rotation || 0,
+                parentId: zone.parentId,
+                childCount: zone.children.length,
+                color
+            };
+        });
     }
 
     async getBinUtilization(warehouseId: string) {

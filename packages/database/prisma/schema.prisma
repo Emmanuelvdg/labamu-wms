@@ -96,6 +96,15 @@ model Warehouse {
   id             String    @id @default(uuid())
   name           String
   shortName      String? // Max 5 chars
+  status         String  @default("Enabled") // Enabled, Disabled
+
+  // Physical Dimensions (meters)
+  length         Float?  @default(0)
+  width          Float?  @default(0)
+  height         Float?  @default(0)
+  
+  // Capacity
+  maxWeight      Float?  @default(0) // Kg
   
   // Structured Address Fields
   address        String? // Street address
@@ -151,6 +160,9 @@ model Warehouse {
   functionalAreas  WarehouseFunctionalArea[]
   lalamoveConfig   LalamoveConfig?
   stocktakeSessions StocktakeSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model WarehouseFunctionalArea {
@@ -370,6 +382,7 @@ model Order {
   warehouse         Warehouse?      @relation(fields: [warehouseId], references: [id])
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+  totalAmount       Float           @default(0)
   pickingTasks      PickingTask[]
   transferOrders    TransferOrder[]
 

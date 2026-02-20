@@ -8,12 +8,16 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { API_URL } from '@/lib/api';
-import { ArrowLeft, Save, ZoomIn, ZoomOut, RotateCw, Trash2, Layers, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Save, ZoomIn, ZoomOut, RotateCw, Trash2, Layers, Eye, EyeOff, Upload, Download } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { ImportLocationsModal } from './ImportLocationsModal';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import Cookies from 'js-cookie';
 import { snapToGrid } from './lib/geometryUtils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { FloorPlanSidebar } from './FloorPlanSidebar';
 
 // LAYER 1: Functional Areas
 interface FunctionalArea {
@@ -143,6 +147,9 @@ export default function UnifiedFloorPlanPage() {
     const searchParams = useSearchParams();
     const initialWarehouseId = searchParams.get('warehouseId');
 
+    // Helper: read user ID from cookie (set by auth)
+    const getUserId = () => Cookies.get('user_id') || '';
+
     // Data state
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>(initialWarehouseId || '');
@@ -196,11 +203,35 @@ export default function UnifiedFloorPlanPage() {
     const [newElementName, setNewElementName] = useState('');
     const [locationOptions, setLocationOptions] = useState<StorageZone[]>([]);
     const [selectedLocationId, setSelectedLocationId] = useState<string>('');
+    const [rootLocationId, setRootLocationId] = useState<string>('');
+
+    // Heatmap state
+    const [showHeatmap, setShowHeatmap] = useState(false);
+    const [heatmapMetric, setHeatmapMetric] = useState<'UTILISATION' | 'VELOCITY' | 'CONGESTION'>('UTILISATION');
+    const [utilizationData, setUtilizationData] = useState<Record<string, any>>({});
+
+    // Attribute filter state
+    const [attributeDefinitions, setAttributeDefinitions] = useState<{ id: string; name: string; type: string }[]>([]);
+    const [selectedAttributeFilter, setSelectedAttributeFilter] = useState<string>('none');
+
+    // Import modal state
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
     // Load warehouses on mount
     useEffect(() => {
         loadWarehouses();
     }, []);
+
+    // Helper to determine valid parent types
+    const getParentTypes = (type: string) => {
+        switch (type) {
+            case 'ROOM': return ['WAREHOUSE'];
+            case 'ROW': return ['ROOM', 'ZONE', 'AISLE', 'WAREHOUSE'];
+            case 'BAY': return ['ROW', 'AISLE', 'ROOM', 'ZONE'];
+            case 'BIN': return ['BAY', 'SHELF', 'POSITION', 'ROW'];
+            default: return ['WAREHOUSE'];
+        }
+    };
 
     // Fetch location options when create modal opens
     useEffect(() => {
@@ -208,7 +239,7 @@ export default function UnifiedFloorPlanPage() {
             fetchLocationOptions(pendingCreate.type);
         } else {
             setLocationOptions([]);
-            setSelectedLocationId('');
+            // Don't clear selectedLocationId here if it was pre-set by drop
         }
     }, [isCreateModalOpen, pendingCreate, warehouse]);
 
@@ -217,7 +248,10 @@ export default function UnifiedFloorPlanPage() {
             const res = await fetch(`/api/inventory/locations?warehouseId=${warehouse?.id}`);
             if (!res.ok) throw new Error('Failed to fetch locations');
             const allLocations = await res.json();
-            const filtered = allLocations.filter((loc: any) => loc.structuralType === structuralType);
+
+            const parentTypes = getParentTypes(structuralType);
+            const filtered = allLocations.filter((loc: any) => parentTypes.includes(loc.structuralType));
+
             setLocationOptions(filtered);
         } catch (err) {
             console.error('Failed to fetch location options:', err);
@@ -272,6 +306,19 @@ export default function UnifiedFloorPlanPage() {
             if (layerConfig.bins) {
                 loadBins(warehouseId);
             }
+
+            // Load root location for creation parenting
+            try {
+                const rootRes = await fetch(`/api/inventory/locations?warehouseId=${warehouseId}&structuralType=WAREHOUSE`);
+                if (rootRes.ok) {
+                    const rootData = await rootRes.json();
+                    if (Array.isArray(rootData) && rootData.length > 0) {
+                        setRootLocationId(rootData[0].id);
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to load root location:', e);
+            }
         } catch (err) {
             console.error('Failed to load warehouse data:', err);
             toast.error('Failed to load warehouse data');
@@ -307,6 +354,114 @@ export default function UnifiedFloorPlanPage() {
             loadBins(selectedWarehouseId);
         }
     }
+
+    // Load attribute definitions on mount
+    useEffect(() => {
+        fetch(`${API_URL}/inventory/attributes/definitions`)
+            .then(r => r.ok ? r.json() : [])
+            .then(data => setAttributeDefinitions(Array.isArray(data) ? data : []))
+            .catch(() => { });
+    }, []);
+
+    // Reload heatmap when toggled, metric changes, or bins load
+    useEffect(() => {
+        if (showHeatmap && bins.length > 0 && selectedWarehouseId) {
+            const ids = bins.map(b => b.id);
+            fetch(`${API_URL}/inventory/locations/utilisation-batch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ locationIds: ids, metric: heatmapMetric })
+            })
+                .then(r => r.ok ? r.json() : {})
+                .then(data => setUtilizationData(data))
+                .catch(err => console.error('Failed to load heatmap data', err));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showHeatmap, heatmapMetric]);
+
+    const applyLayout = async (layoutType: 'I' | 'U' | 'L') => {
+        if (!selectedWarehouseId) return;
+        if (!confirm(`Apply ${layoutType}-shaped layout? This will replace all existing functional areas.`)) return;
+        try {
+            await Promise.all(functionalAreas.map(area =>
+                fetch(`/api/warehouses/${selectedWarehouseId}/areas/${area.id}`, { method: 'DELETE' })
+            ));
+            const res = await fetch(`/api/warehouses/${selectedWarehouseId}/areas/layout/${layoutType}`);
+            const template = await res.json();
+            const created = await Promise.all((template.areas || []).map((area: any) =>
+                fetch(`/api/warehouses/${selectedWarehouseId}/areas`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(area)
+                }).then(r => r.json())
+            ));
+            setFunctionalAreas(created);
+            toast.success(`${layoutType}-shaped layout applied!`);
+        } catch (err) {
+            console.error('Failed to apply layout:', err);
+            toast.error('Failed to apply layout');
+        }
+    };
+
+    const handleExport = async () => {
+        if (!selectedWarehouseId) return;
+        try {
+            const res = await fetch(`${API_URL}/inventory/locations/export?warehouseId=${selectedWarehouseId}`);
+            if (res.ok) {
+                const csv = await res.text();
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `locations-export-${selectedWarehouseId}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                toast.error('Export failed');
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('Export error');
+        }
+    };
+
+    const getBinColor = (bin: StorageBin) => {
+        if (showHeatmap) {
+            const util = utilizationData[bin.id];
+            if (!util) return '#94a3b8';
+            switch (heatmapMetric) {
+                case 'UTILISATION':
+                    switch (util.status) {
+                        case 'EMPTY': return '#10b981';
+                        case 'PARTIAL': return '#f59e0b';
+                        case 'FULL': return '#ef4444';
+                        case 'OVERSIZED': return '#7f1d1d';
+                        default: return '#94a3b8';
+                    }
+                case 'VELOCITY': {
+                    const v = util.velocityScore || 0;
+                    if (v < 20) return '#3b82f6';
+                    if (v < 50) return '#22c55e';
+                    if (v < 80) return '#f59e0b';
+                    return '#ef4444';
+                }
+                case 'CONGESTION': {
+                    const c = util.congestionScore || 0;
+                    if (c === 0) return '#10b981';
+                    if (c < 50) return '#f59e0b';
+                    return '#ef4444';
+                }
+                default: return '#94a3b8';
+            }
+        }
+        if (selectedAttributeFilter !== 'none') {
+            const attrValue = (bin as any).attributes?.[selectedAttributeFilter];
+            if (attrValue) return (attrValue === 'true' || attrValue === true) ? '#ec4899' : '#8b5cf6';
+            return '#e2e8f0';
+        }
+        return getUtilizationColor(bin.overallUtilization);
+    };
 
 
     // Global event listeners for drag
@@ -362,7 +517,10 @@ export default function UnifiedFloorPlanPage() {
                     if (elementType === 'zone' || elementType === 'bin') {
                         await fetch(`/api/locations/${elementId}`, {
                             method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'x-user-id': getUserId(),
+                            },
                             body: JSON.stringify({ x: finalElement.x, y: finalElement.y })
                         });
                         console.log('Location updated:', elementId);
@@ -471,6 +629,20 @@ export default function UnifiedFloorPlanPage() {
                 setFunctionalAreas([...functionalAreas, newArea]);
                 toast.success('Area added to floor plan');
             } else if (from === 'palette' && layer === 'generic') {
+                // Determine potential parent based on drop location
+                let detectedParentId = '';
+                if (elementData.type === 'ROOM') {
+                    detectedParentId = rootLocationId;
+                } else {
+                    // Find zones that contain this point
+                    const candidates = zones.filter(z =>
+                        snappedX >= (z.x || 0) && snappedX <= (z.x || 0) + (z.width || 0) &&
+                        snappedY >= (z.y || 0) && snappedY <= (z.y || 0) + (z.height || 0)
+                    ).sort((a, b) => ((a.width || 0) * (a.height || 0)) - ((b.width || 0) * (b.height || 0)));
+
+                    if (candidates.length > 0) detectedParentId = candidates[0].id;
+                }
+
                 // Open modal to name and confirm creation
                 setPendingCreate({
                     type: elementData.type,
@@ -479,7 +651,12 @@ export default function UnifiedFloorPlanPage() {
                     width: elementData.width,
                     height: elementData.height
                 });
-                setNewElementName(elementData.name);
+
+                // Pre-fill name based on type
+                const count = zones.filter(z => z.structuralType === elementData.type).length + 1;
+                setNewElementName(`${elementData.name} ${count}`);
+
+                setSelectedLocationId(detectedParentId);
                 setIsCreateModalOpen(true);
             } else if (from === 'canvas') {
                 // Update existing element position
@@ -505,14 +682,23 @@ export default function UnifiedFloorPlanPage() {
     };
 
     const handleCreateConfirm = async () => {
-        if (!pendingCreate || !warehouse || !selectedLocationId) return;
+        if (!pendingCreate || !warehouse) return;
+
+        // Ensure parent is selected for non-WAREHOUSE/ROOM types if root not found
+        // But for MVP, if no parent selected, it might try to create as root (which fails backend validation for child types)
 
         try {
-            // PATCH the selected location with the new coordinates
-            const res = await fetch(`/api/locations/${selectedLocationId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+            const res = await fetch('/api/inventory/locations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-id': getUserId(),
+                },
                 body: JSON.stringify({
+                    name: newElementName,
+                    structuralType: pendingCreate.type,
+                    parentId: selectedLocationId || undefined, // Send undefined if empty
+                    warehouseId: selectedWarehouseId,
                     x: pendingCreate.x,
                     y: pendingCreate.y,
                     width: pendingCreate.width,
@@ -520,35 +706,31 @@ export default function UnifiedFloorPlanPage() {
                 })
             });
 
-            if (!res.ok) throw new Error('Failed to update location');
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.details || err.message || 'Failed to create location');
+            }
 
-            const updatedLocation = await res.json();
+            const newLocation = await res.json();
 
             // Refresh the relevant layer data
-            if (pendingCreate.type === 'ROOM' || pendingCreate.type === 'ROW' || pendingCreate.type === 'AISLE') {
-                // Update or add to zones
-                const existingIndex = zones.findIndex(z => z.id === updatedLocation.id);
-                if (existingIndex >= 0) {
-                    setZones(zones.map(z => z.id === updatedLocation.id ? { ...z, ...updatedLocation } : z));
-                } else {
-                    setZones([...zones, { ...updatedLocation, structuralType: pendingCreate.type }]);
-                }
-            } else if (pendingCreate.type === 'BAY') {
-                // Reload zones to get the bay
-                const zonesRes = await fetch(`/api/warehouses/${selectedWarehouseId}/zones`);
-                const zonesData = await zonesRes.json();
-                setZones(Array.isArray(zonesData) ? zonesData : []);
-            } else if (pendingCreate.type === 'BIN') {
+            if (pendingCreate.type === 'ROOM' || pendingCreate.type === 'ROW' || pendingCreate.type === 'AISLE' || pendingCreate.type === 'BAY') {
+                // Add to zones
+                setZones([...zones, { ...newLocation, structuralType: pendingCreate.type }]);
+            } else if (pendingCreate.type === 'BIN' || pendingCreate.type === 'SHELF' || pendingCreate.type === 'POSITION') {
+                // Auto-enable the Bins layer
+                setLayerConfig(prev => ({ ...prev, bins: true }));
                 loadBins(selectedWarehouseId);
             }
 
-            toast.success(`${pendingCreate.type} placed successfully`);
+            toast.success(`${pendingCreate.type} created successfully`);
             setIsCreateModalOpen(false);
             setPendingCreate(null);
             setSelectedLocationId('');
-        } catch (err) {
-            console.error('Failed to place element:', err);
-            toast.error('Failed to place element');
+            setNewElementName('');
+        } catch (err: any) {
+            console.error('Failed to create element:', err);
+            toast.error(err.message || 'Failed to create element');
         }
     };
 
@@ -578,15 +760,26 @@ export default function UnifiedFloorPlanPage() {
         if (!confirm('Are you sure you want to delete this element?')) return;
 
         try {
+            let res: Response;
             if (layer === 'areas') {
-                await fetch(`/api/warehouses/${selectedWarehouseId}/areas/${elementId}`, {
+                res = await fetch(`/api/warehouses/${selectedWarehouseId}/areas/${elementId}`, {
                     method: 'DELETE'
                 });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.details || err.error || 'Failed to delete area');
+                }
                 setFunctionalAreas(functionalAreas.filter(a => a.id !== elementId));
             } else if (layer === 'zones' || layer === 'bins') {
-                await fetch(`/api/locations/${elementId}`, {
-                    method: 'DELETE'
+                res = await fetch(`/api/locations/${elementId}`, {
+                    method: 'DELETE',
+                    headers: { 'x-user-id': getUserId() },
                 });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    const msg = err.message || err.error || 'Failed to delete location';
+                    throw new Error(msg);
+                }
                 if (layer === 'zones') {
                     setZones(zones.filter(z => z.id !== elementId));
                 } else {
@@ -595,9 +788,9 @@ export default function UnifiedFloorPlanPage() {
             }
             setSelectedElementId(null);
             toast.success('Element deleted');
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to delete:', err);
-            toast.error('Failed to delete element');
+            toast.error(err.message || 'Failed to delete element');
         }
     };
 
@@ -687,6 +880,70 @@ export default function UnifiedFloorPlanPage() {
         }
 
         setResizing(null);
+    };
+
+    const handleUpdateElement = async (id: string, updates: any) => {
+        if (!warehouse) return;
+
+        // Determine type based on ID presence in arrays
+        const isArea = functionalAreas.find(a => a.id === id);
+        const isZone = zones.find(z => z.id === id);
+        const isBin = bins.find(b => b.id === id);
+
+        try {
+            if (isArea) {
+                // Update local state immediately for responsiveness
+                setFunctionalAreas(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+
+                // Save to backend
+                await fetch(`/api/warehouses/${selectedWarehouseId}/areas/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updates)
+                });
+            } else if (isZone || isBin) {
+                if (isZone) setZones(prev => prev.map(z => z.id === id ? { ...z, ...updates } : z));
+                if (isBin) setBins(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
+
+                await fetch(`/api/locations/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'x-user-id': getUserId() },
+                    body: JSON.stringify(updates)
+                });
+            }
+        } catch (err) {
+            console.error('Failed to update element:', err);
+            toast.error('Failed to update element');
+        }
+    };
+
+    const handleDeleteElement = async (id: string) => {
+        if (!warehouse) return;
+
+        const isArea = functionalAreas.find(a => a.id === id);
+        const isZone = zones.find(z => z.id === id);
+        const isBin = bins.find(b => b.id === id);
+
+        try {
+            if (isArea) {
+                await fetch(`/api/warehouses/${selectedWarehouseId}/areas/${id}`, {
+                    method: 'DELETE'
+                });
+                setFunctionalAreas(prev => prev.filter(a => a.id !== id));
+            } else if (isZone || isBin) {
+                await fetch(`/api/locations/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-user-id': getUserId() }
+                });
+                if (isZone) setZones(prev => prev.filter(z => z.id !== id));
+                if (isBin) setBins(prev => prev.filter(b => b.id !== id));
+            }
+            setSelectedElementId(null);
+            toast.success('Element deleted');
+        } catch (err) {
+            console.error('Failed to delete element:', err);
+            toast.error('Failed to delete element');
+        }
     };
 
     useEffect(() => {
@@ -997,6 +1254,15 @@ export default function UnifiedFloorPlanPage() {
         ];
     }
 
+    const selectedElement =
+        functionalAreas.find(a => a.id === selectedElementId) ||
+        zones.find(z => z.id === selectedElementId) ||
+        bins.find(b => b.id === selectedElementId);
+
+    const selectedElementType =
+        functionalAreas.find(a => a.id === selectedElementId) ? 'area' :
+            zones.find(z => z.id === selectedElementId) ? 'zone' : 'bin';
+
     return (
         <div className="h-[calc(100vh-4rem)] flex flex-col">
             {/* Header */}
@@ -1068,6 +1334,71 @@ export default function UnifiedFloorPlanPage() {
                         <Label htmlFor="snap-toggle" className="text-sm">Snap</Label>
                     </div>
 
+                    <div className="h-6 w-px bg-border" />
+
+                    {/* Layout Templates */}
+                    <Select onValueChange={(value) => applyLayout(value as 'I' | 'U' | 'L')}>
+                        <SelectTrigger className="w-[140px] h-8">
+                            <SelectValue placeholder="Apply Template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="I">I-Shaped Layout</SelectItem>
+                            <SelectItem value="U">U-Shaped Layout</SelectItem>
+                            <SelectItem value="L">L-Shaped Layout</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <div className="h-6 w-px bg-border" />
+
+                    {/* Heatmap */}
+                    <div className="flex items-center space-x-1 bg-muted/50 rounded-lg p-1">
+                        <Button
+                            variant={showHeatmap ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setShowHeatmap(!showHeatmap)}
+                            className={showHeatmap ? 'bg-purple-600 hover:bg-purple-700 text-white h-7 px-2 text-xs' : 'h-7 px-2 text-xs'}
+                        >
+                            {showHeatmap ? 'Heatmap On' : 'Heatmap'}
+                        </Button>
+                        {showHeatmap && (
+                            <Select value={heatmapMetric} onValueChange={(v: any) => setHeatmapMetric(v)}>
+                                <SelectTrigger className="w-[110px] h-7 border-none bg-transparent focus:ring-0 text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="UTILISATION">Utilisation</SelectItem>
+                                    <SelectItem value="VELOCITY">Velocity</SelectItem>
+                                    <SelectItem value="CONGESTION">Congestion</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        )}
+                    </div>
+
+                    {/* Attribute Filter */}
+                    <Select value={selectedAttributeFilter} onValueChange={setSelectedAttributeFilter}>
+                        <SelectTrigger className="w-[140px] h-8">
+                            <SelectValue placeholder="Filter Attr." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">No Filter</SelectItem>
+                            {attributeDefinitions.map(attr => (
+                                <SelectItem key={attr.id} value={attr.name}>{attr.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <div className="h-6 w-px bg-border" />
+
+                    {/* Import / Export */}
+                    <Button variant="outline" size="sm" className="h-8" onClick={() => setIsImportModalOpen(true)} disabled={!selectedWarehouseId}>
+                        <Upload className="h-3 w-3 mr-1" /> Import
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8" onClick={handleExport} disabled={!selectedWarehouseId}>
+                        <Download className="h-3 w-3 mr-1" /> Export
+                    </Button>
+
+                    <div className="h-6 w-px bg-border" />
+
                     <Button variant="outline" size="icon" onClick={() => setZoom(z => Math.max(0.5, z - 0.1))}>
                         <ZoomOut className="h-4 w-4" />
                     </Button>
@@ -1079,7 +1410,7 @@ export default function UnifiedFloorPlanPage() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overflow-hidden relative">
                 {/* Sidebar - Elements Palette */}
                 <div className="w-64 border-r bg-muted/10 p-4 overflow-y-auto">
                     <h3 className="font-medium mb-4 text-sm text-muted-foreground uppercase tracking-wider">
@@ -1144,6 +1475,7 @@ export default function UnifiedFloorPlanPage() {
                             }}
                             onDrop={handleDrop}
                             onDragOver={handleDragOver}
+                            onClick={() => setSelectedElementId(null)}
                         >
                             {/* Grid */}
                             {renderGrid()}
@@ -1160,40 +1492,6 @@ export default function UnifiedFloorPlanPage() {
                             <text x={5} y={15} fontSize={12} fill="#64748b">0,0</text>
                             <text x={width * pixelsPerMeter - 40} y={15} fontSize={12} fill="#64748b">{`${width}m`}</text>
                             <text x={5} y={height * pixelsPerMeter - 5} fontSize={12} fill="#64748b">{`${height}m`}</text>
-
-                            {/* LAYER 2: Zones */}
-                            {layerConfig.zones && zones.filter(z => z.structuralType !== 'BIN' && z.structuralType !== 'SHELF' && z.structuralType !== 'POSITION').map(zone => (
-                                <g
-                                    key={zone.id}
-                                    transform={`translate(${(zone.x || 0) * pixelsPerMeter}, ${(zone.y || 0) * pixelsPerMeter}) rotate(${zone.rotation || 0})`}
-                                    onClick={(e) => { e.stopPropagation(); setSelectedElementId(zone.id); }}
-                                    className="cursor-move"
-                                    onMouseDown={(e: any) => handleElementMouseDown(e, zone, 'zone')}
-                                >
-                                    <rect
-                                        width={(zone.width || 1) * pixelsPerMeter}
-                                        height={(zone.height || 1) * pixelsPerMeter}
-                                        fill={zone.color || '#e2e8f0'}
-                                        fillOpacity={0.5}
-                                        stroke="#94a3b8"
-                                        strokeWidth={1}
-                                    />
-                                    <text
-                                        x={((zone.width || 1) * pixelsPerMeter) / 2}
-                                        y={((zone.height || 1) * pixelsPerMeter) / 2}
-                                        textAnchor="middle"
-                                        dominantBaseline="middle"
-                                        fontSize={12}
-                                        fill="#475569"
-                                        pointerEvents="none"
-                                    >
-                                        {zone.name}
-                                    </text>
-                                    {renderSelectionControls(zone, 'zone')}
-                                </g>
-                            ))}
-
-
 
                             {/* LAYER 1: Functional Areas */}
                             {layerConfig.functionalAreas && functionalAreas.map(area => (
@@ -1279,7 +1577,7 @@ export default function UnifiedFloorPlanPage() {
                                         y={bin.y * pixelsPerMeter}
                                         width={bin.width * pixelsPerMeter}
                                         height={bin.height * pixelsPerMeter}
-                                        fill={getUtilizationColor(bin.overallUtilization)}
+                                        fill={getBinColor(bin)}
                                         fillOpacity={0.7}
                                         stroke="#374151"
                                         strokeWidth={1}
@@ -1316,37 +1614,100 @@ export default function UnifiedFloorPlanPage() {
                         </svg>
                     </div>
                 </div>
+                {selectedElement && (
+                    <FloorPlanSidebar
+                        element={selectedElement}
+                        elementType={selectedElementType as 'area' | 'zone' | 'bin'}
+                        onUpdate={handleUpdateElement}
+                        onDelete={handleDeleteElement}
+                        onClose={() => setSelectedElementId(null)}
+                    />
+                )}
             </div >
+
+            {/* Heatmap Legend */}
+            {showHeatmap && (
+                <div className="absolute bottom-6 right-6 z-10 bg-white/90 backdrop-blur border p-3 rounded shadow-lg text-xs">
+                    <h4 className="font-bold mb-2 uppercase tracking-wider text-muted-foreground">{heatmapMetric} Legend</h4>
+                    <div className="space-y-1.5">
+                        {heatmapMetric === 'UTILISATION' && (
+                            <>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#10b981] mr-2" /> Empty</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#f59e0b] mr-2" /> Partial</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#ef4444] mr-2" /> Full</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#7f1d1d] mr-2" /> Oversized</div>
+                            </>
+                        )}
+                        {heatmapMetric === 'VELOCITY' && (
+                            <>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#3b82f6] mr-2" /> Low (&lt;20%)</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#22c55e] mr-2" /> Medium (&lt;50%)</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#f59e0b] mr-2" /> High (&lt;80%)</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#ef4444] mr-2" /> Very High</div>
+                            </>
+                        )}
+                        {heatmapMetric === 'CONGESTION' && (
+                            <>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#10b981] mr-2" /> Clear</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#f59e0b] mr-2" /> Busy</div>
+                                <div className="flex items-center"><div className="w-3 h-3 rounded bg-[#ef4444] mr-2" /> Congested</div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            <ImportLocationsModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onSuccess={() => loadWarehouseData(selectedWarehouseId)}
+                warehouseId={selectedWarehouseId}
+            />
 
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Create New {pendingCreate?.type}</DialogTitle>
                     </DialogHeader>
-                    <div className="py-4">
-                        <Label htmlFor="locationSelect" className="mb-2 block">Select Location</Label>
-                        {locationOptions.length > 0 ? (
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="elementName">Name</Label>
+                            <Input
+                                id="elementName"
+                                value={newElementName}
+                                onChange={(e) => setNewElementName(e.target.value)}
+                                placeholder="e.g. Room 1"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="locationSelect">Parent Location</Label>
                             <Select value={selectedLocationId} onValueChange={setSelectedLocationId}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder={`Select a ${pendingCreate?.type?.toLowerCase() || 'location'}...`} />
+                                    <SelectValue placeholder={
+                                        pendingCreate?.type === 'ROOM' ? 'Root Warehouse (Default)' : 'Select Parent Location...'
+                                    } />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {locationOptions.map(loc => (
-                                        <SelectItem key={loc.id} value={loc.id}>
-                                            {loc.name}
-                                        </SelectItem>
-                                    ))}
+                                    {locationOptions.length === 0 && pendingCreate?.type === 'ROOM' ? (
+                                        <SelectItem value={rootLocationId || 'root'}>Root Warehouse</SelectItem>
+                                    ) : (
+                                        locationOptions.map(loc => (
+                                            <SelectItem key={loc.id} value={loc.id}>
+                                                {loc.name} <span className="text-xs text-muted-foreground">({loc.structuralType})</span>
+                                            </SelectItem>
+                                        ))
+                                    )}
                                 </SelectContent>
                             </Select>
-                        ) : (
-                            <p className="text-muted-foreground text-sm">
-                                No {pendingCreate?.type?.toLowerCase()}s available. Create one in the Locations page first.
-                            </p>
-                        )}
+                            {pendingCreate?.type !== 'ROOM' && !selectedLocationId && (
+                                <p className="text-xs text-red-500">Parent location is required</p>
+                            )}
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
-                        <Button onClick={handleCreateConfirm}>Create</Button>
+                        <Button onClick={handleCreateConfirm} disabled={!newElementName || (!selectedLocationId && pendingCreate?.type !== 'ROOM')}>Create</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

@@ -195,54 +195,74 @@ export default function InventoryPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ABC Class (Velocity)</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Cost</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Manage</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Classification</th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">On Hand</th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-blue-600 uppercase tracking-wider">Inc.</th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-orange-600 uppercase tracking-wider">Out.</th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-green-600 uppercase tracking-wider">Free</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {products.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                                <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
                                     No inventory items found. Click "+ New Item" to add one.
                                 </td>
                             </tr>
                         ) : (
                             products.map((product) => (
-                                <tr key={product.id} className="hover:bg-gray-50">
+                                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">
-                                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                                        <div className="text-sm text-gray-500">{product.sku}</div>
+                                        <div className="flex items-center">
+                                            <div className="h-10 w-10 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 mr-3">
+                                                <span className="text-xs font-bold">{product.sku.substring(0, 2)}</span>
+                                            </div>
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                                                <div className="text-sm text-gray-500">{product.sku}</div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-gray-500">{product.category}</td>
                                     <td className="px-6 py-4">
-                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                            {product.velocity || product.classification || 'N/A'}
-                                        </span>
+                                        {product.velocity && (
+                                            <span className={`px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                ${product.velocity === 'A' ? 'bg-green-100 text-green-800' :
+                                                    product.velocity === 'B' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                Class {product.velocity}
+                                            </span>
+                                        )}
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-500">{product.type || 'Raw'}</td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm text-gray-900">0.00 {product.unitOfMeasure || 'Unit'}</div>
-                                        <div className="text-xs text-gray-500">Total</div>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="text-sm font-medium text-gray-900">{product.onHand || 0}</div>
+                                        <div className="text-xs text-gray-400">{product.unitOfMeasure}</div>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-500">IDR {product.averageCost || 0}</td>
+                                    <td className="px-6 py-4 text-right text-sm text-blue-600 font-medium">
+                                        {product.incoming > 0 ? `+${product.incoming}` : '-'}
+                                    </td>
+                                    <td className="px-6 py-4 text-right text-sm text-orange-600 font-medium">
+                                        {product.outgoing > 0 ? `-${product.outgoing}` : '-'}
+                                    </td>
+                                    <td className="px-6 py-4 text-right text-sm text-green-600 font-bold">
+                                        {product.free || 0}
+                                    </td>
                                     <td className="px-6 py-4">
-                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                            ${product.status === 'Active' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                                             {product.status}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right text-sm font-medium">
-                                        <Link href={`/inventory/${product.id}`} className="text-indigo-600 hover:text-indigo-900">
-                                            →
+                                        <Link href={`/inventory/${product.id}`} className="text-blue-600 hover:text-blue-900 font-semibold bg-blue-50 px-3 py-1 rounded-md hover:bg-blue-100 transition-colors">
+                                            View
                                         </Link>
                                     </td>
                                 </tr>

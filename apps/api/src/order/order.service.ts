@@ -40,34 +40,30 @@ export class OrderService {
     }): Promise<Order> {
         let shippingCost = 0;
 
+        // FETCH PRODUCT DETAILS FOR CALCULATION (Always needed for Total Amount)
+        const productIds = data.items.map(i => i.productId);
+        const products = await this.prisma.product.findMany({ where: { id: { in: productIds } } });
+
+        let totalWeight = 0;
+        let totalVolume = 0;
+        let totalAmount = 0; // NEW: Calculate Order Total
+
+        for (const item of data.items) {
+            const p = products.find(prod => prod.id === item.productId);
+            if (p) {
+                totalWeight += (p.weight || 0) * item.quantity;
+                totalVolume += ((p.width || 0) * (p.height || 0) * (p.depth || 0) / 1000000) * item.quantity; // cm3 to m3
+                // Calculate Total Amount (Price * Qty)
+                totalAmount += (p.price || 0) * item.quantity;
+            }
+        }
+
         // Calculate Shipping if Method is Provided
         if (data.deliveryMethodId) {
-            // In real app, we fetch product weights. 
-            // We'll calculate total weight/volume/price here.
-            // Simplification: Assume 0 weight for now or fetch if critical
-            // Detailed implementation would require reading Product details for each item.
-
-            // FETCH PRODUCT DETAILS FOR CALCULATION
-            const productIds = data.items.map(i => i.productId);
-            const products = await this.prisma.product.findMany({ where: { id: { in: productIds } } });
-
-            let totalWeight = 0;
-            let totalVolume = 0;
-            let totalPrice = 0; // Requires item price which we don't have in input? Order items logic usually has price.
-            // Assume simplified weight/volume for now.
-
-            for (const item of data.items) {
-                const p = products.find(prod => prod.id === item.productId);
-                if (p) {
-                    totalWeight += (p.weight || 0) * item.quantity;
-                    totalVolume += ((p.width || 0) * (p.height || 0) * (p.depth || 0) / 1000000) * item.quantity; // cm3 to m3
-                }
-            }
-
             shippingCost = await this.shippingService.calculateCost(data.deliveryMethodId, {
                 weight: totalWeight,
                 volume: totalVolume,
-                price: 0 // Placeholder
+                price: totalAmount // Used for insurance if needed
             });
         }
 
@@ -86,6 +82,7 @@ export class OrderService {
                 deliveryMethodId: data.deliveryMethodId,
                 shippingCost: shippingCost,
                 shippingCostInCOGS: data.shippingCostInCOGS || false,
+                totalAmount: totalAmount, // Save Total Amount
                 items: {
                     create: data.items.map(item => ({
                         productId: item.productId,

@@ -289,12 +289,12 @@ export class InventoryService {
         category?: string;
         classification?: string;
         warehouseId?: string;
-    }): Promise<Product[]> {
+    }): Promise<any[]> {
         const where: any = {};
 
         if (filters?.search) {
             where.OR = [
-                { name: { contains: filters.search } }, // Case-insensitive by default in SQLite? No, usually need mode: 'insensitive' but let's check DB type. It's SQLite.
+                { name: { contains: filters.search } },
                 { sku: { contains: filters.search } },
             ];
         }
@@ -311,12 +311,54 @@ export class InventoryService {
             where.inventory = {
                 some: {
                     warehouseId: filters.warehouseId,
-                    quantity: { gt: 0 } // Only show products with stock in that warehouse? Or just any record? Let's say any record for now, or maybe > 0.
                 }
             };
         }
 
-        return this.prisma.product.findMany({ where });
+        const products = await this.prisma.product.findMany({
+            where,
+            include: {
+                inventory: {
+                    where: filters?.warehouseId ? { warehouseId: filters.warehouseId } : undefined
+                },
+                purchaseOrderItems: {
+                    where: {
+                        purchaseOrder: {
+                            status: { in: ['ORDERED', 'APPROVED', 'PARTIAL_RECEIVED'] }
+                        }
+                    },
+                    select: { quantity: true }
+                },
+                orderItems: {
+                    where: {
+                        order: {
+                            status: { in: ['RESERVED', 'PICKING', 'PACKING', 'PARTIAL'] }
+                        }
+                    },
+                    select: { quantity: true }
+                }
+            }
+        });
+
+        return products.map(p => {
+            const onHand = p.inventory.reduce((sum, inv) => sum + inv.quantity, 0);
+            const reserved = p.inventory.reduce((sum, inv) => sum + (inv.reserved || 0), 0);
+
+            // Incoming: Sum of active PO quantities
+            const incoming = p.purchaseOrderItems.reduce((sum, item) => sum + item.quantity, 0);
+
+            // Outgoing: Sum of active Order allocated quantities
+            const outgoing = p.orderItems.reduce((sum, item) => sum + item.quantity, 0);
+
+            return {
+                ...p,
+                onHand,
+                free: onHand - reserved, // Available for new orders
+                incoming,
+                outgoing,
+                reserved
+            };
+        });
     }
 
     async getProduct(id: string): Promise<Product | null> {
@@ -344,6 +386,18 @@ export class InventoryService {
         companyId: string;
         location: any;
         type: string;
+        // Physical Dimensions
+        length?: number;
+        width?: number;
+        height?: number;
+        maxWeight?: number;
+        status?: string;
+        // Address Details
+        city?: string;
+        state?: string;
+        postalCode?: string;
+        country?: string;
+        phone?: string;
         // Route Config
         incomingSteps?: string;
         outgoingSteps?: string;
@@ -1080,7 +1134,7 @@ export class InventoryService {
     async deleteLocation(id: string) {
         const check = await this.checkLocationDependencies(id);
         if (check.blocking) {
-            throw new Error(`Cannot delete location: ${check.dependencies.join(', ')}`);
+            throw new BadRequestException(`Cannot delete location: ${check.dependencies.join(', ')}`);
         }
 
         // Safe cleanup
@@ -1221,8 +1275,9 @@ export class InventoryService {
         const validParents: { [key: string]: string[] } = {
             'ROOM': ['WAREHOUSE'],
             'ZONE': ['WAREHOUSE'], // Alias for ROOM
-            'ROW': ['ROOM', 'ZONE', 'WAREHOUSE'], // Can be under zones or directly under warehouse
-            'BAY': ['ROW', 'ROOM', 'ZONE'], // Can be under rows or zones
+            'AISLE': ['ROOM', 'ZONE', 'WAREHOUSE'],
+            'ROW': ['AISLE', 'ROOM', 'ZONE', 'WAREHOUSE'], // Can be under zones or directly under warehouse
+            'BAY': ['ROW', 'AISLE', 'ROOM', 'ZONE'], // Can be under rows or zones
             'SHELF': ['BAY', 'ROW', 'ROOM', 'ZONE'], // Can be under bays, rows, or zones
             'POSITION': ['SHELF', 'BAY', 'ROW'], // Can be under shelves, bays, or rows
             'BIN': ['SHELF', 'BAY', 'ROW'], // Alias for POSITION

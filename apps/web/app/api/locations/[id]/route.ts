@@ -1,6 +1,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
+const API_BASE = process.env.API_URL || 'http://localhost:3001';
+
 export async function PATCH(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -9,19 +11,24 @@ export async function PATCH(
         const { id } = await params;
         const body = await request.json();
 
+        // Forward x-user-id from the client request
+        const userId = request.headers.get('x-user-id') || '';
+
         // Backend uses PUT for updates on /inventory/locations/:id
-        const response = await fetch(`${process.env.API_URL || 'http://localhost:3001'}/inventory/locations/${id}`, {
+        const response = await fetch(`${API_BASE}/inventory/locations/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                'x-user-id': userId,
             },
             body: JSON.stringify(body),
             cache: 'no-store'
         });
 
         if (!response.ok) {
+            const errorText = await response.text();
             return NextResponse.json(
-                { error: 'Failed to update location' },
+                { error: 'Failed to update location', detail: errorText },
                 { status: response.status }
             );
         }
@@ -44,11 +51,15 @@ export async function DELETE(
     try {
         const { id } = await params;
 
+        // Forward x-user-id from the client request
+        const userId = request.headers.get('x-user-id') || '';
+
         // Backend uses DELETE on /inventory/locations/:id
-        const response = await fetch(`${process.env.API_URL || 'http://localhost:3001'}/inventory/locations/${id}`, {
+        const response = await fetch(`${API_BASE}/inventory/locations/${id}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
+                'x-user-id': userId,
             },
             cache: 'no-store'
         });

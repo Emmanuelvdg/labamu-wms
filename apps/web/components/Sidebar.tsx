@@ -3,159 +3,175 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
+import {
+    LayoutDashboard,
+    FileText,
+    Box,
+    Layers,
+    Package,
+    Map,
+    Settings,
+    ChevronDown,
+    ChevronRight,
+    Truck,
+    ShoppingCart,
+    ClipboardList,
+} from 'lucide-react';
+import { useState } from 'react';
 
-type NavItem = { name: string; href: string };
-type NavSection = { title?: string; items: NavItem[] };
+type NavItem = {
+    name: string;
+    href: string;
+    icon?: any;
+    items?: { name: string; href: string; permission?: { resource: string, action: string } }[];
+    permission?: { resource: string, action: string };
+};
 
-const navigation: NavSection[] = [
+const navigation: NavItem[] = [
+    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Report', href: '/reporting', icon: FileText, permission: { resource: 'REPORTS', action: 'READ' } },
+    { name: 'Product', href: '/inventory', icon: Box, permission: { resource: 'INVENTORY', action: 'READ' } },
+    { name: 'Lot Number', href: '/inventory/batches', icon: Layers, permission: { resource: 'INVENTORY', action: 'READ' } },
+    { name: 'Package', href: '/inventory/packages', icon: Package, permission: { resource: 'INVENTORY', action: 'READ' } },
     {
+        name: 'Inbound',
+        href: '#inbound',
+        icon: Truck,
         items: [
-            { name: 'Dashboard', href: '/' },
+            { name: 'Suppliers', href: '/inventory/suppliers', permission: { resource: 'SUPPLIERS', action: 'READ' } },
+            { name: 'Purchase Orders', href: '/inventory/purchases', permission: { resource: 'PURCHASE_ORDERS', action: 'READ' } },
+            { name: 'Putaway', href: '/putaway', permission: { resource: 'INVENTORY', action: 'UPDATE' } },
+            { name: 'Putaway Rules', href: '/inventory/putaway-rules', permission: { resource: 'INVENTORY', action: 'UPDATE' } },
         ]
     },
     {
-        title: 'Inventory',
+        name: 'Outbound',
+        href: '#outbound',
+        icon: ShoppingCart,
         items: [
-            { name: 'Products', href: '/inventory' },
-            { name: 'Locations', href: '/inventory/locations' },
-            { name: 'Warehouses', href: '/inventory/warehouses' },
-            { name: 'Adjustments', href: '/inventory/adjustments' },
-            { name: 'Stocktaking', href: '/stocktaking' },
-            { name: 'Scrap Orders', href: '/inventory/scrap' },
-            { name: 'Partner Locations', href: '/inventory/partners' },
-            { name: 'Routes', href: '/inventory/routes' },
+            { name: 'Orders', href: '/orders', permission: { resource: 'ORDERS', action: 'READ' } },
+            { name: 'Picking', href: '/picking', permission: { resource: 'ORDERS', action: 'UPDATE' } },
+            { name: 'Returns (RMA)', href: '/returns', permission: { resource: 'ORDERS', action: 'READ' } },
+            { name: 'Shipments', href: '/shipments', permission: { resource: 'ORDERS', action: 'READ' } },
+            { name: 'Invoices', href: '/invoices', permission: { resource: 'INVOICES', action: 'READ' } },
         ]
     },
     {
-        title: 'Internal Operations',
+        name: 'Inventory',
+        href: '#inventory',
+        icon: ClipboardList,
         items: [
-            { name: 'Transfer Operations', href: '/transfers' },
+            { name: 'Inventory List', href: '/inventory', permission: { resource: 'INVENTORY', action: 'READ' } },
+            { name: 'Stocktaking', href: '/stocktaking', permission: { resource: 'INVENTORY', action: 'UPDATE' } },
+            { name: 'Moves', href: '/inventory/moves', permission: { resource: 'INVENTORY', action: 'READ' } },
+            { name: 'Transfers', href: '/transfers', permission: { resource: 'FULFILLMENT', action: 'READ' } },
+            { name: 'Adjustments', href: '/inventory/adjustments', permission: { resource: 'INVENTORY', action: 'UPDATE' } },
+            { name: 'Scrap', href: '/inventory/scrap', permission: { resource: 'INVENTORY', action: 'UPDATE' } },
         ]
     },
     {
-        title: 'Inbound Operations',
+        name: 'Warehouse',
+        href: '#warehouse',
+        icon: Map,
         items: [
-            { name: 'Suppliers', href: '/inventory/suppliers' },
-            { name: 'Purchase Orders', href: '/inventory/purchases' },
-            { name: 'Putaway', href: '/putaway' },
-            { name: 'Putaway Rules', href: '/inventory/putaway-rules' },
+            { name: 'Warehouses', href: '/inventory/warehouses', permission: { resource: 'SETTINGS', action: 'READ' } },
+            { name: 'Floor Plan', href: '/floor-plan', permission: { resource: 'SETTINGS', action: 'READ' } },
+            { name: 'Routes', href: '/inventory/routes', permission: { resource: 'INVENTORY', action: 'READ' } },
         ]
     },
-    {
-        title: 'Outbound Operations',
-        items: [
-            { name: 'Orders', href: '/orders' },
-            { name: 'Picking', href: '/picking' },
-            { name: 'Returns (RMA)', href: '/returns' },
-            { name: 'Delivery Methods', href: '/configuration/delivery-methods' },
-            { name: 'Invoices', href: '/invoices' },
-        ]
-    },
-    {
-        title: 'Reporting',
-        items: [
-            { name: 'Dashboard', href: '/reporting' },
-            { name: 'Utilisation', href: '/reporting/utilisation' },
-            { name: 'Compliance', href: '/reporting/compliance' },
-            { name: 'Stock Moves', href: '/inventory/moves' },
-        ]
-    },
-    {
-        title: 'System',
-        items: [
-            { name: 'Getting Started', href: '/getting-started' },
-            { name: 'User Guide', href: '/user-guide' },
-            { name: 'Settings', href: '/settings' },
-        ]
-    }
+    { name: 'Settings', href: '/settings', icon: Settings, permission: { resource: 'SETTINGS', action: 'READ' } },
 ];
 
 export default function Sidebar() {
     const pathname = usePathname();
     const { hasPermission } = useAuth();
+    const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+        'Inbound': true,
+        'Outbound': true,
+        'Inventory': true,
+        'Warehouse': true
+    });
 
-    const isItemVisible = (item: NavItem) => {
-        // Public/Common items
-        if (item.href === '/' || item.href === '/user-guide' || item.href === '/getting-started') return true;
+    const toggleSection = (name: string) => {
+        setOpenSections(prev => ({ ...prev, [name]: !prev[name] }));
+    };
 
-        // Inventory
-        if (item.href.startsWith('/inventory')) {
-            if (item.href === '/inventory/purchases') return hasPermission('PURCHASE_ORDERS', 'READ');
-            if (item.href === '/inventory/suppliers') return hasPermission('SUPPLIERS', 'READ');
-            if (item.href === '/inventory/routes') return hasPermission('INVENTORY', 'READ');
-            if (item.href === '/inventory/moves') return hasPermission('INVENTORY', 'READ');
-            if (item.href === '/inventory/adjustments') return hasPermission('INVENTORY', 'UPDATE');
-            if (item.href === '/inventory/scrap') return hasPermission('INVENTORY', 'UPDATE');
-            return hasPermission('INVENTORY', 'READ');
-        }
-
-        // Putaway
-        if (item.href === '/putaway') return hasPermission('INVENTORY', 'UPDATE');
-        if (item.href === '/inventory/putaway-rules') return hasPermission('INVENTORY', 'UPDATE');
-
-        // Transfer Operations
-        if (item.href === '/transfers') return hasPermission('FULFILLMENT', 'READ');
-
-        // Invoices
-        if (item.href === '/invoices') return hasPermission('INVOICES', 'READ');
-
-        // Orders
-        if (item.href === '/orders') return hasPermission('ORDERS', 'READ');
-        if (item.href === '/returns') return hasPermission('ORDERS', 'READ'); // Assuming Orders permissions cover Returns for now
-        if (item.href === '/picking') return hasPermission('ORDERS', 'UPDATE');
-        if (item.href === '/configuration/delivery-methods') return hasPermission('SETTINGS', 'READ');
-
-        // Reports
-        if (item.href.startsWith('/reporting')) return hasPermission('REPORTS', 'READ');
-        if (item.href === '/inventory/ledger') return hasPermission('REPORTS', 'READ');
-
-        // Settings
-        if (item.href === '/settings') return hasPermission('SETTINGS', 'READ');
-
-        return true;
+    const isVisible = (item: NavItem | { permission?: { resource: string, action: string } }) => {
+        if (!item.permission) return true;
+        return hasPermission(item.permission.resource as any, item.permission.action as any);
     };
 
     return (
-        <div className="flex flex-col w-64 bg-gray-800 min-h-screen text-white">
-            <div className="flex items-center justify-center h-16 border-b border-gray-700">
-                <span className="text-xl font-bold">Labamu WMS</span>
+        <div className="flex flex-col w-64 bg-white border-r border-gray-200 min-h-screen text-gray-600 font-sans">
+            <div className="flex items-center h-16 px-6 border-b border-gray-100">
+                <span className="text-xl font-bold text-blue-600">Labamu</span>
             </div>
-            <nav className="flex-1 px-2 py-4 space-y-6 overflow-y-auto">
-                {navigation.map((section, sectionIdx) => {
-                    const visibleItems = section.items.filter(isItemVisible);
 
-                    if (visibleItems.length === 0) return null;
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                {navigation.map((item) => {
+                    const hasSubItems = item.items && item.items.length > 0;
+
+                    if (hasSubItems) {
+                        const visibleChildren = item.items!.filter(isVisible);
+                        if (visibleChildren.length === 0) return null;
+
+                        const isActive = pathname === item.href || (item.items && item.items.some(sub => pathname.startsWith(sub.href)));
+                        const isOpen = openSections[item.name];
+
+                        return (
+                            <div key={item.name} className="py-1">
+                                <button
+                                    onClick={() => toggleSection(item.name)}
+                                    className={`flex items-center justify-between w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors select-none
+                                        ${isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    <div className="flex items-center">
+                                        {item.icon && <item.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />}
+                                        {item.name}
+                                    </div>
+                                    {isOpen ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+                                </button>
+
+                                {isOpen && (
+                                    <div className="pl-9 mt-1 space-y-1">
+                                        {visibleChildren.map(subItem => {
+                                            const isSubActive = pathname === subItem.href || pathname.startsWith(subItem.href + '/');
+                                            return (
+                                                <Link
+                                                    key={subItem.name}
+                                                    href={subItem.href}
+                                                    className={`block px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                                                        ${isSubActive ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'}`}
+                                                >
+                                                    {subItem.name}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    }
+
+                    if (!isVisible(item)) return null;
+                    const isActive = pathname === item.href;
 
                     return (
-                        <div key={sectionIdx}>
-                            {section.title && (
-                                <h3 className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                                    {section.title}
-                                </h3>
-                            )}
-                            <div className="space-y-1">
-                                {visibleItems.map((item) => {
-                                    const isActive = pathname === item.href;
-                                    return (
-                                        <Link
-                                            key={item.name}
-                                            href={item.href}
-                                            className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${isActive
-                                                ? 'bg-gray-900 text-white'
-                                                : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                                                }`}
-                                        >
-                                            {item.name}
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                        <Link
+                            key={item.name}
+                            href={item.href}
+                            className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors mb-1
+                                ${isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                        >
+                            {item.icon && <item.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />}
+                            {item.name}
+                        </Link>
                     );
                 })}
             </nav>
-            <div className="p-4 border-t border-gray-700">
-                <Link href="/login" className="text-sm text-gray-400 hover:text-white">
+
+            <div className="p-4 border-t border-gray-100">
+                <Link href="/login" className="flex items-center px-3 py-2 text-sm font-medium text-gray-500 rounded-lg hover:bg-gray-50 hover:text-gray-900 w-full">
                     Sign Out
                 </Link>
             </div>
