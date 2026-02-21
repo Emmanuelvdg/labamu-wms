@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Save, TestTube } from 'lucide-react';
 
@@ -24,7 +24,7 @@ const STORAGE_ATTRIBUTES = [
     'frozen',
 ];
 
-export default function EditPutawayRulePage() {
+function EditPutawayRuleForm() {
     const router = useRouter();
     const params = useParams();
     const ruleId = params?.id as string;
@@ -365,8 +365,8 @@ export default function EditPutawayRulePage() {
                                     <label
                                         key={strategy.value}
                                         className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${formData.strategy === strategy.value
-                                                ? 'border-blue-500 bg-blue-50'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-blue-500 bg-blue-50'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         <input
@@ -463,5 +463,13 @@ export default function EditPutawayRulePage() {
                 </div>
             </form>
         </div>
+    );
+}
+
+export default function EditPutawayRulePage() {
+    return (
+        <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading form...</div>}>
+            <EditPutawayRuleForm />
+        </Suspense>
     );
 }

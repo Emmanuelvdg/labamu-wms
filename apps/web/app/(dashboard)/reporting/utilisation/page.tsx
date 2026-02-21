@@ -220,7 +220,7 @@ export default function UtilisationReportPage() {
                                     />
                                     <Tooltip
                                         contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                                        formatter={(value: number) => [`${value}%`, 'Utilisation']}
+                                        formatter={(value: number | undefined) => [`${value || 0}%`, 'Utilisation']}
                                     />
                                     <Legend />
                                     <Area

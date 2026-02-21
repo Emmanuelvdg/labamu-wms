@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { fetchAnalytics } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
+import { format } from 'date-fns';
 import Link from 'next/link';
 
 export default function ReportingPage() {

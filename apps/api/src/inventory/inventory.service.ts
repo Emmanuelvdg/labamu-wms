@@ -113,7 +113,7 @@ export class InventoryService {
                 if (!name || !structuralType) continue;
 
                 // Resolve Parent
-                let parentId = null;
+                let parentId: string | undefined = undefined;
                 if (parentCode && codeMap.has(parentCode)) {
                     parentId = codeMap.get(parentCode);
                 } else if (parentCode) {
@@ -800,6 +800,29 @@ export class InventoryService {
         return this.prisma.inventoryBatch.findMany({
             where: { productId },
             include: { warehouse: true, location: true },
+        });
+    }
+
+    async getAllBatches(warehouseId?: string) {
+        return this.prisma.inventoryBatch.findMany({
+            where: warehouseId ? { warehouseId } : undefined,
+            include: {
+                product: {
+                    select: { name: true, sku: true, category: true }
+                },
+                location: {
+                    select: { name: true, fullAddress: true }
+                },
+                warehouse: {
+                    select: { name: true }
+                },
+                package: {
+                    select: { name: true }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
         });
     }
 

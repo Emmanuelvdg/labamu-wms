@@ -105,6 +105,13 @@ export async function fetchBatches(productId: string) {
     return fetchWithRetry(`${API_URL}/inventory/batch/${productId}`);
 }
 
+export async function fetchAllBatches(warehouseId?: string) {
+    const url = warehouseId
+        ? `${API_URL}/inventory/batches?warehouseId=${warehouseId}`
+        : `${API_URL}/inventory/batches`;
+    return fetchWithRetry(url);
+}
+
 export async function fetchTransactions(productId: string) {
     return fetchWithRetry(`${API_URL}/inventory/transactions/${productId}`);
 }

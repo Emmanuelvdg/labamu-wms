@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { fetchOrders } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function OrdersPage() {
+function OrdersPageContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const [orders, setOrders] = useState<any[]>([]);
@@ -128,8 +128,8 @@ export default function OrdersPage() {
                         key={tab.value}
                         onClick={() => handleFilterChange('status', tab.value)}
                         className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${filters.status === tab.value
-                                ? 'border-blue-600 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            ? 'border-blue-600 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                             }`}
                     >
                         {tab.label}
@@ -225,5 +225,13 @@ export default function OrdersPage() {
                 </table>
             </div>
         </div>
+    );
+}
+
+export default function OrdersPage() {
+    return (
+        <Suspense fallback={<div className="p-8">Loading orders...</div>}>
+            <OrdersPageContent />
+        </Suspense>
     );
 }

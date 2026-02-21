@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Save, TestTube } from 'lucide-react';
 import { fetchAttributeDefinitions } from '@/lib/api';
@@ -15,7 +15,7 @@ const STRATEGIES = [
 
 const PACKAGING_SIZES = ['INDIVIDUAL', 'BOX', 'PALLET'];
 
-export default function NewPutawayRulePage() {
+function NewPutawayRuleForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const duplicateId = searchParams?.get('duplicate');
@@ -526,5 +526,13 @@ export default function NewPutawayRulePage() {
                 </div>
             </form>
         </div>
+    );
+}
+
+export default function NewPutawayRulePage() {
+    return (
+        <Suspense fallback={<div className="p-8 text-center text-gray-500">Loading form...</div>}>
+            <NewPutawayRuleForm />
+        </Suspense>
     );
 }

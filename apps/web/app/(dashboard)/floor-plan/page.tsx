@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -143,7 +143,7 @@ const AREA_TYPE_LABELS: Record<string, string> = {
     SHIPPING: 'Shipping Dock',
 };
 
-export default function UnifiedFloorPlanPage() {
+function FloorPlanContent() {
     const searchParams = useSearchParams();
     const initialWarehouseId = searchParams.get('warehouseId');
 
@@ -1795,5 +1795,13 @@ export default function UnifiedFloorPlanPage() {
                 </DialogContent>
             </Dialog>
         </div >
+    );
+}
+
+export default function UnifiedFloorPlanPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading Floor Plan...</div>}>
+            <FloorPlanContent />
+        </Suspense>
     );
 }

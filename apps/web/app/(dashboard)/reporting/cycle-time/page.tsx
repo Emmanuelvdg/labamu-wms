@@ -143,7 +143,7 @@ export default function CycleTimeReportPage() {
                                             if (active && payload && payload.length) {
                                                 return (
                                                     <div className="bg-white p-3 border shadow-lg rounded-lg">
-                                                        <p className="font-semibold mb-2">{format(new Date(label), 'MMM d, yyyy')}</p>
+                                                        <p className="font-semibold mb-2">{label ? format(new Date(label as string), 'MMM d, yyyy') : ''}</p>
                                                         <div className="space-y-1 text-sm">
                                                             <p className="text-blue-600">Avg: {payload[0].value}h</p>
                                                             <p className="text-orange-500">Trend: {payload.find(p => p.name === 'Trendline')?.value}h</p>

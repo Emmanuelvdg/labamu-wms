@@ -94,6 +94,11 @@ export class InventoryController {
         });
     }
 
+    @Get('batches')
+    getAllBatches(@Query('warehouseId') warehouseId?: string) {
+        return this.inventoryService.getAllBatches(warehouseId);
+    }
+
     @Get('batch/:productId')
     getBatches(@Param('productId') productId: string) {
         return this.inventoryService.getBatches(productId);
