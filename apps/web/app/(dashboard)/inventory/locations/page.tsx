@@ -93,12 +93,15 @@ export default function LocationsPage() {
         if (!newLocation.structuralType) return flatLocations;
 
         const validParents: { [key: string]: string[] } = {
-            'POSITION': ['SHELF'],
-            'SHELF': ['BAY'],
-            'BAY': ['ROW'],
-            'ROW': ['ROOM'],
             'ROOM': ['WAREHOUSE'],
-            'WAREHOUSE': [] // Top level
+            'ZONE': ['WAREHOUSE'],
+            'AISLE': ['ROOM', 'ZONE', 'WAREHOUSE'],
+            'ROW': ['AISLE', 'ROOM', 'ZONE', 'WAREHOUSE'],
+            'BAY': ['ROW', 'AISLE', 'ROOM', 'ZONE'],
+            'SHELF': ['BAY', 'ROW', 'ROOM', 'ZONE'],
+            'POSITION': ['SHELF', 'BAY', 'ROW'],
+            'BIN': ['SHELF', 'BAY', 'ROW', 'POSITION'],
+            'WAREHOUSE': []
         };
 
         const requiredParentTypes = validParents[newLocation.structuralType];

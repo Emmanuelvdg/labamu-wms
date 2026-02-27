@@ -1,4 +1,5 @@
-﻿import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+﻿import * as fs from 'fs';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
 
@@ -10,8 +11,8 @@ import { getRequiredAreaTypes, AREA_TYPE_LABELS } from '../warehouse/area-types'
 @Injectable()
 export class InventoryService {
     private log(message: string) {
-        // const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
-        // fs.appendFileSync(logPath, `[InventoryService] ${message}\n`);
+        const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
+        fs.appendFileSync(logPath, `[InventoryService] ${message}\n`);
         console.log(`[InventoryService] ${message}`);
     }
 
@@ -1017,7 +1018,7 @@ export class InventoryService {
         try {
             if (data.structuralType) {
                 if (data.structuralType !== 'WAREHOUSE' && !data.parentId) {
-                    throw new Error(`Location of type ${data.structuralType} must have a parent.`);
+                    throw new BadRequestException(`Location of type ${data.structuralType} must have a parent.`);
                 }
                 if (data.parentId) {
                     await this.validateHierarchy(data.structuralType, data.parentId);
@@ -1308,7 +1309,7 @@ export class InventoryService {
 
         const allowedParents = validParents[childType];
         if (allowedParents && !allowedParents.includes(parentType)) {
-            throw new Error(`Invalid hierarchy: ${childType} must be a child of ${allowedParents.join(' or ')}. Found parent type: ${parentType}`);
+            throw new BadRequestException(`Invalid hierarchy: ${childType} must be a child of ${allowedParents.join(' or ')}. Found parent type: ${parentType}`);
         }
     }
 

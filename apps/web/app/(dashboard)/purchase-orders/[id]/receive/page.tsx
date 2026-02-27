@@ -3,18 +3,31 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { getPurchaseOrder, receivePurchaseOrder, fetchPurchaseOrderReceipts } from '@/lib/api';
+import { getPurchaseOrder, receivePurchaseOrder, fetchPurchaseOrderReceipts, fetchLocations } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import useSWR from 'swr';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
     const { hasPermission } = useAuth();
-    const { id } = use(params); // Unwrap params Promise for Next.js 15
+    const unwrappedParams = use(params);
+    const id = unwrappedParams.id;
     const [po, setPo] = useState<any>(null);
     const [receipts, setReceipts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [receiveQuantities, setReceiveQuantities] = useState<Record<string, number>>({});
     const [destinationLocationId, setDestinationLocationId] = useState('');
+
+    const { data: locations } = useSWR('locations', () => fetchLocations());
 
     useEffect(() => {
         loadData();
@@ -22,9 +35,10 @@ export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{
 
     async function loadData() {
         try {
-            const [poData, receiptsData] = await Promise.all([
-                getPurchaseOrder(id), // Use unwrapped id
-                fetchPurchaseOrderReceipts(id)
+            const [poData, receiptsData, locationsData] = await Promise.all([
+                getPurchaseOrder(id),
+                fetchPurchaseOrderReceipts(id),
+                fetchLocations()
             ]);
             setPo(poData);
             setReceipts(receiptsData);
@@ -36,8 +50,19 @@ export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{
             });
             setReceiveQuantities(initialQuantities);
 
+            // Auto-select a receiving location if possible
+            const receivingLoc = locationsData?.find((l: any) =>
+                l.name.toLowerCase().includes('receiving') ||
+                l.name.toLowerCase().includes('dock') ||
+                l.name.toLowerCase().includes('input')
+            );
+            if (receivingLoc) {
+                setDestinationLocationId(receivingLoc.id);
+            }
+
         } catch (err) {
             console.error('Failed to load PO data', err);
+            toast.error('Failed to load PO data');
         } finally {
             setLoading(false);
         }
@@ -52,11 +77,16 @@ export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{
     };
 
     const calculateRemaining = (item: any) => {
-        // This logic depends on how the backend returns data. 
-        // If backend returns 'receivedQuantity' on the item, use that.
-        // Otherwise, sum up from receipts.
-        // For now, assuming item.receivedQuantity is updated by backend.
-        return item.quantity - (item.receivedQuantity || 0);
+        const received = item.receivedQuantity || 0;
+        return Math.max(0, item.quantity - received);
+    };
+
+    const handleReceiveAll = () => {
+        const allQuantities: Record<string, number> = {};
+        po.items.forEach((item: any) => {
+            allQuantities[item.productId] = calculateRemaining(item);
+        });
+        setReceiveQuantities(allQuantities);
     };
 
     const handleSubmit = async () => {
@@ -83,11 +113,11 @@ export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{
 
         try {
             await receivePurchaseOrder(id, destinationLocationId, itemsToReceive);
-            alert('Receipt processed successfully!');
+            toast.success('Receipt processed successfully!');
             router.push(`/inventory/purchases/${id}`);
         } catch (err) {
             console.error('Failed to receive items', err);
-            alert('Failed to process receipt.');
+            toast.error('Failed to process receipt.');
         }
     };
 
@@ -104,16 +134,31 @@ export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{
             <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
                 <h1 className="text-2xl font-bold mb-6">Receive Purchase Order #{po.orderNumber}</h1>
 
-                <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Destination Location ID</label>
-                    <input
-                        type="text"
-                        value={destinationLocationId}
-                        onChange={(e) => setDestinationLocationId(e.target.value)}
-                        className="border rounded px-3 py-2 w-full max-w-xs"
-                        placeholder="e.g., LOC-001"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Enter the ID of the location where items will be stored.</p>
+                <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Destination Location</label>
+                        <Select
+                            value={destinationLocationId}
+                            onValueChange={setDestinationLocationId}
+                        >
+                            <SelectTrigger className="w-full" data-testid="receiving-location-select">
+                                <SelectValue placeholder="Select receiving location" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {locations?.map((loc: any) => (
+                                    <SelectItem key={loc.id} value={loc.id}>
+                                        {loc.name} {loc.code ? `(${loc.code})` : ''}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-gray-500 mt-1">Select the dock or receiving area.</p>
+                    </div>
+                    <div className="flex items-end pb-1">
+                        <Button variant="outline" onClick={handleReceiveAll} className="w-full">
+                            Receive All Quantities
+                        </Button>
+                    </div>
                 </div>
 
                 <table className="min-w-full divide-y divide-gray-200 mb-6">
@@ -158,12 +203,14 @@ export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{
                     >
                         Cancel
                     </button>
-                    <button
+                    <Button
+                        variant="default"
                         onClick={handleSubmit}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        className="bg-blue-600 hover:bg-blue-700"
+                        data-testid="confirm-receipt-btn"
                     >
                         Confirm Receipt
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

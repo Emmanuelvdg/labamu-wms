@@ -162,7 +162,7 @@ model Warehouse {
   stocktakeSessions StocktakeSession[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model WarehouseFunctionalArea {
