@@ -282,47 +282,68 @@ function FloorPlanContent() {
     }
 
     async function loadWarehouseData(warehouseId: string) {
+        // Load warehouse config
         try {
-            // Load warehouse config
             const warehouseRes = await fetch(`/api/warehouses/${warehouseId}`);
-            const warehouseData = await warehouseRes.json();
-            setWarehouse(warehouseData);
+            if (warehouseRes.ok) {
+                const warehouseData = await warehouseRes.json();
+                setWarehouse(warehouseData);
+            } else {
+                console.warn('Failed to load warehouse config:', warehouseRes.status);
+            }
+        } catch (e) { console.error('Warehouse config fetch error:', e); }
 
-            // LAYER 1: Load functional areas
+        // LAYER 1: Load functional areas
+        try {
             const areasRes = await fetch(`/api/warehouses/${warehouseId}/areas`);
-            const areasData = await areasRes.json();
-            setFunctionalAreas(Array.isArray(areasData) ? areasData : []);
+            if (areasRes.ok) {
+                const areasData = await areasRes.json();
+                setFunctionalAreas(Array.isArray(areasData) ? areasData : []);
+            } else {
+                console.warn('Failed to load areas:', areasRes.status);
+                setFunctionalAreas([]);
+            }
+        } catch (e) { console.error('Areas fetch error:', e); setFunctionalAreas([]); }
 
-            // Load suggested areas
+        // Load suggested areas
+        try {
             const suggestedRes = await fetch(`/api/warehouses/${warehouseId}/areas/suggested`);
-            const suggestedData = await suggestedRes.json();
-            setSuggestedAreas(Array.isArray(suggestedData) ? suggestedData : []);
+            if (suggestedRes.ok) {
+                const suggestedData = await suggestedRes.json();
+                setSuggestedAreas(Array.isArray(suggestedData) ? suggestedData : []);
+            } else {
+                setSuggestedAreas([]);
+            }
+        } catch (e) { console.error('Suggested areas fetch error:', e); setSuggestedAreas([]); }
 
-            // LAYER 2: Load zones (rooms, aisles, rows)
+        // LAYER 2: Load zones (rooms, aisles, rows)
+        try {
             const zonesRes = await fetch(`/api/warehouses/${warehouseId}/zones`);
-            const zonesData = await zonesRes.json();
-            setZones(Array.isArray(zonesData) ? zonesData : []);
-
-            // LAYER 3: Bins loaded on-demand when layer enabled
-            if (layerConfig.bins) {
-                loadBins(warehouseId);
+            if (zonesRes.ok) {
+                const zonesData = await zonesRes.json();
+                setZones(Array.isArray(zonesData) ? zonesData : []);
+            } else {
+                console.warn('Failed to load zones:', zonesRes.status);
+                setZones([]);
             }
+        } catch (e) { console.error('Zones fetch error:', e); setZones([]); }
 
-            // Load root location for creation parenting
-            try {
-                const rootRes = await fetch(`/api/inventory/locations?warehouseId=${warehouseId}&structuralType=WAREHOUSE`);
-                if (rootRes.ok) {
-                    const rootData = await rootRes.json();
-                    if (Array.isArray(rootData) && rootData.length > 0) {
-                        setRootLocationId(rootData[0].id);
-                    }
+        // LAYER 3: Bins loaded on-demand when layer enabled
+        if (layerConfig.bins) {
+            loadBins(warehouseId);
+        }
+
+        // Load root location for creation parenting
+        try {
+            const rootRes = await fetch(`/api/inventory/locations?warehouseId=${warehouseId}&structuralType=WAREHOUSE`);
+            if (rootRes.ok) {
+                const rootData = await rootRes.json();
+                if (Array.isArray(rootData) && rootData.length > 0) {
+                    setRootLocationId(rootData[0].id);
                 }
-            } catch (e) {
-                console.error('Failed to load root location:', e);
             }
-        } catch (err) {
-            console.error('Failed to load warehouse data:', err);
-            toast.error('Failed to load warehouse data');
+        } catch (e) {
+            console.error('Failed to load root location:', e);
         }
     }
 
@@ -1783,6 +1804,43 @@ function FloorPlanContent() {
                             )}
                         </div>
                     </div>
+
+                    {/* Dimension & Color Fields */}
+                    {pendingCreate && (
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="space-y-1">
+                                <Label htmlFor="elementWidth">Width (m)</Label>
+                                <Input
+                                    id="elementWidth"
+                                    type="number"
+                                    min="0.5"
+                                    step="0.5"
+                                    value={pendingCreate.width}
+                                    onChange={(e) => setPendingCreate({ ...pendingCreate, width: parseFloat(e.target.value) || 1 })}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="elementHeight">Height (m)</Label>
+                                <Input
+                                    id="elementHeight"
+                                    type="number"
+                                    min="0.5"
+                                    step="0.5"
+                                    value={pendingCreate.height}
+                                    onChange={(e) => setPendingCreate({ ...pendingCreate, height: parseFloat(e.target.value) || 1 })}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="elementColor">Color</Label>
+                                <Input
+                                    id="elementColor"
+                                    type="color"
+                                    defaultValue={GENERIC_ITEMS.find(g => g.type === pendingCreate.type)?.color || '#6366f1'}
+                                    className="h-9 p-1"
+                                />
+                            </div>
+                        </div>
+                    )}
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
                         <Button

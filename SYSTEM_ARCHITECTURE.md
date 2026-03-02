@@ -1,7 +1,7 @@
 # Labamu WMS - System Architecture
 
-**Version:** 1.0  
-**Last Updated:** December 28, 2024  
+**Version:** 2.0  
+**Last Updated:** February 27, 2026  
 **Status:** Production-Ready
 
 ---
@@ -155,10 +155,11 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 | **InventoryModule** | Product catalog, stock levels, adjustments, **stock moves** | `InventoryService`, `PackagingService`, `StockMoveService` |
 | **PutawayModule** | Inbound putaway operations, rule-based location assignment | `PutawayService`, `PutawayController` |
 | **OrderModule** | Sales orders, fulfillment, reservations | `OrderService`, `FulfillmentService` |
-| **PurchaseOrderModule** | Purchase orders, receipts, vendor management | `PurchaseOrderService` |
+| **PurchaseOrderModule** | Purchase orders, receipts, vendor management, **QA inspections, document attachments, 3-way match** | `PurchaseOrderService` |
 | **PickingModule** | Order picking, picking sessions, task management | `PickingService` (integrated in Inventory) |
 | **StrategyModule** | Reservation strategies, rotation rules | `StrategyService` |
 | **WarehouseModule** | Warehouse configuration, locations, functional areas | `WarehouseService` |
+| **FloorPlanModule** | Visual warehouse layout editor, drag-and-drop placement, spatial coordinates | `WarehouseService` (floor plan endpoints) |
 | **SettingsModule** | Attributes, custom fields, system configuration | `AttributeService` |
 | **AuthModule** | Authentication, user management, permissions | `AuthService` |
 | **ReportingModule** | Analytics, dashboards, compliance reports, inventory ledger | `ReportingService`, `DrillDownService`, `InventoryLedgerService` |
@@ -324,8 +325,21 @@ GET    /purchase-orders                     List POs
 GET    /purchase-orders/:id                 Get PO details
 POST   /purchase-orders                     Create PO
 PATCH  /purchase-orders/:id                 Update PO
-POST   /purchase-orders/:id/receive         Receive PO items
+POST   /purchase-orders/:id/receive         Receive PO items (generate GRN)
 POST   /purchase-orders/:id/close           Close PO
+POST   /purchase-orders/:id/documents       Upload document (multipart)
+GET    /purchase-orders/:id/documents       List attached documents
+POST   /purchase-orders/:id/inspections     Submit QA inspection results
+GET    /purchase-orders/:id/inspections     List QA inspections
+POST   /purchase-orders/:id/match           Run 3-way match verification
+```
+
+#### Floor Plan
+```
+GET    /warehouses/:id/floor-plan           Get floor plan objects
+PATCH  /warehouses/:id/floor-plan           Update object positions
+GET    /warehouses/:id/areas                List functional areas
+POST   /warehouses/:id/areas                Create floor plan object
 ```
 
 #### Sales Orders

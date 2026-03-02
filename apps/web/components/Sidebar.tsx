@@ -16,6 +16,7 @@ import {
     Truck,
     ShoppingCart,
     ClipboardList,
+    BookOpen,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -81,6 +82,7 @@ const navigation: NavItem[] = [
         ]
     },
     { name: 'Settings', href: '/settings', icon: Settings, permission: { resource: 'SETTINGS', action: 'READ' } },
+    { name: 'User Guide', href: '/user-guide', icon: BookOpen },
 ];
 
 export default function Sidebar() {

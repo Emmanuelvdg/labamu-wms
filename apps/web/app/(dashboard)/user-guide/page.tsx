@@ -599,7 +599,7 @@ export default function UserGuidePage() {
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Truck className="h-5 w-5" /> Purchase Orders & Receiving</h3>
                                 <Card>
                                     <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> The commercial agreement to buy goods and the act of accepting them.</p>
+                                        <p><strong>Purpose:</strong> The commercial agreement to buy goods, the act of accepting them, quality assurance, and payment verification.</p>
                                         <div className="bg-muted p-4 rounded-md text-sm">
                                             <strong>Detailed Workflow:</strong>
                                             <ol className="list-decimal pl-5 mt-1 space-y-1">
@@ -613,8 +613,22 @@ export default function UserGuidePage() {
                                                         <li><strong>LPN Generation:</strong> If receiving "Pallets", the system generates unique license plate numbers.</li>
                                                     </ul>
                                                 </li>
-                                                <li><strong>Tracking:</strong> For multi-step warehouses, receiving automatically triggers an inbound <code>TransferOrder</code> chain (e.g. Input &rarr; QC &rarr; Stock).</li>
+                                                <li><strong>Attach Documents:</strong> Upload invoices, delivery notes, or QA certificates via the Attachments tab.</li>
+                                                <li><strong>QA Inspection:</strong> Record accepted/rejected quantities per product. Rejects auto-adjust inventory.</li>
+                                                <li><strong>3-Way Match:</strong> Compare PO vs GRN vs Invoice to verify consistency before payment.</li>
                                             </ol>
+                                        </div>
+
+                                        <div className="bg-primary/5 p-4 rounded-md text-sm border border-primary/20">
+                                            <strong className="text-primary block mb-2">✨ New: Tabbed PO Detail Page</strong>
+                                            <p className="mb-2">Navigate to any Purchase Order to access 5 comprehensive tabs:</p>
+                                            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                                                <li><strong>Details:</strong> PO header info (buyer, dates, ASN, terms) and line items.</li>
+                                                <li><strong>Receipts:</strong> GRN history showing received quantities per receipt.</li>
+                                                <li><strong>Attachments:</strong> Drag-and-drop upload for Invoice, Delivery Note, QA Certificate, Photo files.</li>
+                                                <li><strong>QA Inspection:</strong> Record accepted/rejected quantities with reasons (Breakage, Damaged, Expired, Wrong Item). Rejections automatically adjust inventory.</li>
+                                                <li><strong>3-Way Match:</strong> Run verification comparing PO quantities vs. GRN quantities vs. Invoice totals. Shows pass/fail per line item.</li>
+                                            </ul>
                                         </div>
 
                                         <div className="bg-yellow-50 p-4 rounded-md text-sm">

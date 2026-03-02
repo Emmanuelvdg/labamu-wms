@@ -329,7 +329,7 @@ export default function LocationsPage() {
                                         value={newLocation.type}
                                         onValueChange={(value) => setNewLocation({ ...newLocation, type: value })}
                                     >
-                                        <SelectTrigger className="col-span-3">
+                                        <SelectTrigger className="col-span-3" data-testid="location-type-select">
                                             <SelectValue placeholder="Select usage type" />
                                         </SelectTrigger>
                                         <SelectContent>

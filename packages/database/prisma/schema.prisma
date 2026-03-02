@@ -67,6 +67,7 @@ model Product {
   rotationRules       RotationRule[]
   attributes          ProductAttribute[]
   stocktakeTasks      StocktakeTask[]
+  qaInspectionResults QaInspectionResult[]
 }
 
 model Route {
@@ -744,11 +745,18 @@ model PurchaseOrder {
   poNumber        String    @unique @default(cuid()) // Temporary default to avoid migration issues
   supplierId      String
   supplier        Supplier  @relation(fields: [supplierId], references: [id])
-  status          String    @default("DRAFT") // DRAFT, ORDERED, RECEIVED, CANCELLED
+  status          String    @default("DRAFT") // DRAFT, ORDERED, RECEIVING, RECEIVED, CANCELLED
   approvalStatus  String    @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
   approvedBy      String?
   approvedAt      DateTime?
   rejectionReason String?
+
+  // ASN (Advance Shipping Notice)
+  asnNumber       String?   // Supplier's ASN reference
+  asnExpectedDate DateTime? // Expected arrival from ASN
+
+  // 3-Way Match (PO vs GRN vs Invoice)
+  threeWayMatch   String    @default("PENDING") // PENDING, MATCHED, DISCREPANCY
 
   orderDate    DateTime  @default(now())
   expectedDate DateTime?
@@ -771,12 +779,14 @@ model PurchaseOrder {
   deliveryTerms String?
   notes         String?
 
-  items     PurchaseOrderItem[]
-  receipts  Receipt[]
-  invoices  Invoice[]
-  transfers TransferOrder[]
-  createdAt DateTime            @default(now())
-  updatedAt DateTime            @updatedAt
+  items       PurchaseOrderItem[]
+  receipts    Receipt[]
+  invoices    Invoice[]
+  transfers   TransferOrder[]
+  documents   DocumentAttachment[]
+  inspections QaInspection[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 }
 
 model PurchaseOrderItem {
@@ -794,12 +804,14 @@ model PurchaseOrderItem {
 
 model Receipt {
   id                    String        @id @default(uuid())
+  grnNumber             String?       @unique // Goods Receipt Note number, populated on creation
   purchaseOrderId       String
   purchaseOrder         PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
   status                String        @default("DONE") // DONE, CANCELLED
   receivedAt            DateTime      @default(now())
   destinationLocationId String
   destinationLocation   Location      @relation(fields: [destinationLocationId], references: [id])
+  notes                 String?       // Receiving notes
 
   items        ReceiptItem[]
   putawayTasks PutawayTask[]
@@ -856,6 +868,48 @@ model InvoiceItem {
   // 3-Way Match Links
   poItemId      String?
   receiptItemId String?
+}
+
+// --- QA Inspection Models ---
+
+model QaInspection {
+  id              String              @id @default(uuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder       @relation(fields: [purchaseOrderId], references: [id])
+  status          String              @default("PENDING") // PENDING, PASSED, FAILED, PARTIAL
+  inspectorId     String?
+  notes           String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  results         QaInspectionResult[]
+}
+
+model QaInspectionResult {
+  id              String       @id @default(uuid())
+  inspectionId    String
+  inspection      QaInspection @relation(fields: [inspectionId], references: [id])
+  productId       String
+  product         Product      @relation(fields: [productId], references: [id])
+  receivedQty     Int          // Total quantity received
+  acceptedQty     Int          // Quantity that passed QA
+  rejectedQty     Int          // Quantity rejected (breakage, defects, etc.)
+  rejectionReason String?      // Breakage, Wrong Item, Expired, Damaged, etc.
+  createdAt       DateTime     @default(now())
+}
+
+// --- Document Attachment Model ---
+
+model DocumentAttachment {
+  id              String        @id @default(uuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  documentType    String        // INVOICE, DELIVERY_NOTE, QA_CERT, PHOTO, OTHER
+  fileName        String
+  filePath        String        // Local file path relative to uploads dir
+  mimeType        String?       // e.g. application/pdf, image/jpeg
+  fileSize        Int?          // bytes
+  uploadedBy      String?       // User ID
+  uploadedAt      DateTime      @default(now())
 }
 
 model User {

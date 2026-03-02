@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchInventory, createOrder, fetchCustomers, createCustomer, fetchWarehouses, fetchWithRetry } from '@/lib/api';
+import { fetchProducts, createOrder, fetchCustomers, createCustomer, fetchWarehouses, fetchWithRetry } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 
 export default function NewOrderPage() {
@@ -37,10 +37,10 @@ export default function NewOrderPage() {
         async function loadData() {
             try {
                 const [prods, custs, whs, methods] = await Promise.all([
-                    fetchInventory(),
+                    fetchProducts(),
                     fetchCustomers(),
                     fetchWarehouses(),
-                    fetchWithRetry(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/configuration/delivery-methods`)
+                    fetchWithRetry(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/shipping/delivery-methods`)
                 ]);
                 setProducts(prods || []);
                 setCustomers(custs || []);
@@ -144,8 +144,8 @@ export default function NewOrderPage() {
         formData.items.forEach(item => {
             if (item.productId) {
                 const product = products.find(p => p.id === item.productId);
-                if (product && product.price) {
-                    subtotal += product.price * item.quantity;
+                if (product && product.price != null) {
+                    subtotal += (product.price || 0) * item.quantity;
                 }
             }
         });

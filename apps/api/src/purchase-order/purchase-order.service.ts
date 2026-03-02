@@ -452,5 +452,214 @@ export class PurchaseOrderService {
         console.log(`[PurchaseOrderService] Created new receiving location: ${newReceivingLoc.name} (${newReceivingLoc.id})`);
         return newReceivingLoc.id;
     }
-}
 
+    // ===== Document Attachments =====
+
+    async attachDocument(purchaseOrderId: string, data: {
+        documentType: string;
+        fileName: string;
+        filePath: string;
+        mimeType?: string;
+        fileSize?: number;
+        uploadedBy?: string;
+    }) {
+        return this.prisma.documentAttachment.create({
+            data: {
+                purchaseOrderId,
+                documentType: data.documentType,
+                fileName: data.fileName,
+                filePath: data.filePath,
+                mimeType: data.mimeType,
+                fileSize: data.fileSize,
+                uploadedBy: data.uploadedBy,
+            },
+        });
+    }
+
+    async getDocuments(purchaseOrderId: string) {
+        return this.prisma.documentAttachment.findMany({
+            where: { purchaseOrderId },
+            orderBy: { uploadedAt: 'desc' },
+        });
+    }
+
+    // ===== QA Inspection =====
+
+    async submitInspection(purchaseOrderId: string, data: {
+        inspectorId?: string;
+        notes?: string;
+        results: { productId: string; receivedQty: number; acceptedQty: number; rejectedQty: number; rejectionReason?: string }[];
+    }) {
+        return this.prisma.$transaction(async (tx) => {
+            // Determine overall status
+            const totalRejected = data.results.reduce((sum, r) => sum + r.rejectedQty, 0);
+            const totalAccepted = data.results.reduce((sum, r) => sum + r.acceptedQty, 0);
+            let status = 'PASSED';
+            if (totalAccepted === 0 && totalRejected > 0) status = 'FAILED';
+            else if (totalRejected > 0) status = 'PARTIAL';
+
+            // 1. Create the Inspection record
+            const inspection = await tx.qaInspection.create({
+                data: {
+                    purchaseOrderId,
+                    status,
+                    inspectorId: data.inspectorId,
+                    notes: data.notes,
+                    results: {
+                        create: data.results.map(r => ({
+                            productId: r.productId,
+                            receivedQty: r.receivedQty,
+                            acceptedQty: r.acceptedQty,
+                            rejectedQty: r.rejectedQty,
+                            rejectionReason: r.rejectionReason,
+                        })),
+                    },
+                },
+                include: { results: true },
+            });
+
+            // 2. Create Inventory Adjustments for rejected goods
+            // Find the PO's warehouse and receiving location
+            const po = await tx.purchaseOrder.findUnique({
+                where: { id: purchaseOrderId },
+                include: { receipts: { include: { items: true } } },
+            });
+
+            if (po && po.receipts.length > 0) {
+                const lastReceipt = po.receipts[po.receipts.length - 1];
+
+                for (const result of data.results) {
+                    if (result.rejectedQty > 0) {
+                        // Create an inventory adjustment to remove rejected quantity
+                        const existingInventory = await tx.productInventory.findFirst({
+                            where: {
+                                productId: result.productId,
+                                locationId: lastReceipt.destinationLocationId,
+                            },
+                        });
+
+                        if (existingInventory && existingInventory.quantity >= result.rejectedQty) {
+                            await tx.productInventory.update({
+                                where: { id: existingInventory.id },
+                                data: { quantity: { decrement: result.rejectedQty } },
+                            });
+                        }
+
+                        // Create adjustment record
+                        await tx.inventoryAdjustment.create({
+                            data: {
+                                locationId: lastReceipt.destinationLocationId,
+                                productId: result.productId,
+                                countedQuantity: result.acceptedQty,
+                                currentQuantity: result.receivedQty,
+                                quantity: -result.rejectedQty,
+                                reason: `QA Rejection: ${result.rejectionReason || 'Unspecified'}`,
+                                status: 'APPLIED',
+                            },
+                        });
+
+                        // Log stock transaction
+                        await tx.stockTransaction.create({
+                            data: {
+                                productId: result.productId,
+                                type: 'ADJUSTMENT',
+                                quantity: -result.rejectedQty,
+                                referenceId: inspection.id,
+                                date: new Date(),
+                            },
+                        });
+                    }
+                }
+            }
+
+            return inspection;
+        });
+    }
+
+    async getInspections(purchaseOrderId: string) {
+        return this.prisma.qaInspection.findMany({
+            where: { purchaseOrderId },
+            include: { results: { include: { product: true } } },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    // ===== 3-Way Match =====
+
+    async verifyThreeWayMatch(purchaseOrderId: string) {
+        const po = await this.prisma.purchaseOrder.findUnique({
+            where: { id: purchaseOrderId },
+            include: {
+                items: { include: { product: true } },
+                receipts: { include: { items: true } },
+                invoices: { include: { items: true } },
+                inspections: { include: { results: true } },
+            },
+        });
+
+        if (!po) throw new Error('Purchase Order not found');
+
+        const matchResults: any[] = [];
+        let overallMatch = true;
+
+        for (const poItem of po.items) {
+            // PO ordered quantity
+            const orderedQty = poItem.quantity;
+
+            // GRN received quantity (sum of all receipt items for this product)
+            const receivedQty = po.receipts.reduce((sum, r) =>
+                sum + r.items.filter(ri => ri.productId === poItem.productId)
+                    .reduce((s, ri) => s + ri.quantity, 0), 0);
+
+            // QA accepted quantity (if inspections exist)
+            const acceptedQty = po.inspections.reduce((sum, insp) =>
+                sum + insp.results.filter(r => r.productId === poItem.productId)
+                    .reduce((s, r) => s + r.acceptedQty, 0), 0);
+
+            // Invoice quantity (sum across all invoices for this product)
+            const invoicedQty = po.invoices.reduce((sum, inv) =>
+                sum + inv.items.filter(ii => ii.productId === poItem.productId)
+                    .reduce((s, ii) => s + ii.quantity, 0), 0);
+
+            // Invoice total for this product
+            const invoiceTotal = po.invoices.reduce((sum, inv) =>
+                sum + inv.items.filter(ii => ii.productId === poItem.productId)
+                    .reduce((s, ii) => s + ii.totalPrice, 0), 0);
+
+            // Expected cost (PO)
+            const expectedCost = orderedQty * poItem.unitCost;
+
+            const qtyMatch = orderedQty === receivedQty && (invoicedQty === 0 || invoicedQty === orderedQty);
+            const costMatch = invoiceTotal === 0 || Math.abs(invoiceTotal - expectedCost) < 0.01;
+
+            if (!qtyMatch || !costMatch) overallMatch = false;
+
+            matchResults.push({
+                productId: poItem.productId,
+                productName: poItem.product.name,
+                orderedQty,
+                receivedQty,
+                acceptedQty: po.inspections.length > 0 ? acceptedQty : receivedQty,
+                invoicedQty,
+                expectedCost,
+                invoiceTotal,
+                qtyMatch,
+                costMatch,
+            });
+        }
+
+        const matchStatus = overallMatch ? 'MATCHED' : 'DISCREPANCY';
+
+        // Update PO status
+        await this.prisma.purchaseOrder.update({
+            where: { id: purchaseOrderId },
+            data: { threeWayMatch: matchStatus },
+        });
+
+        return {
+            purchaseOrderId,
+            matchStatus,
+            items: matchResults,
+        };
+    }
+}

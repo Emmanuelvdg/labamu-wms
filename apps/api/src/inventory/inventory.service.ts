@@ -2157,8 +2157,6 @@ export class InventoryService {
             orderBy: { date: 'desc' },
             include: {
                 product: true,
-                // @ts-ignore
-                batch: { include: { location: true } },
             },
             take: 100, // Limit to last 100 moves for now
         });

@@ -5,12 +5,13 @@ Comprehensive documentation for the Labamu Inventory Management System.
 ## Table of Contents
 1. [Getting Started](#getting-started)
 2. [Inventory Management](#inventory-management)
-3. [Inbound Operations](#inbound-operations)
-4. [Outbound Operations](#outbound-operations)
-5. [Transfer Operations](#transfer-operations)
-6. [Reporting & Admin](#reporting--admin)
-7. [Mobile Warehouse App](#mobile-warehouse-app)
-8. [End-to-End Examples](#end-to-end-examples)
+3. [Floor Plan Management](#floor-plan-management)
+4. [Inbound Operations](#inbound-operations)
+5. [Outbound Operations](#outbound-operations)
+6. [Transfer Operations](#transfer-operations)
+7. [Reporting & Admin](#reporting--admin)
+8. [Mobile Warehouse App](#mobile-warehouse-app)
+9. [End-to-End Examples](#end-to-end-examples)
 
 ---
 
@@ -111,16 +112,85 @@ This structured address information is critical for automated delivery quotation
 
 ---
 
+## Floor Plan Management
+
+### Overview
+**Purpose:** A visual, interactive warehouse layout editor that provides a 2D representation of your warehouse's physical space. The floor plan enables warehouse managers to design, visualize, and manage the spatial organization of their facility.
+
+**Access:** Navigate to **Warehouse > Floor Plan** in the sidebar, or visit `/floor-plan`.
+
+### ✨ Unified Floor Plan Editor
+
+**Key Features:**
+- **Meter-Based Coordinate System:** All positions and dimensions are in real-world meters, providing accurate spatial representation.
+- **Snap-to-Grid:** Elements automatically snap to a configurable grid for clean, aligned layouts.
+- **Zoom & Pan:** Mouse wheel to zoom, click-and-drag on empty space to pan the canvas.
+- **Multi-Warehouse Support:** Use the warehouse selector dropdown to switch between facilities.
+
+### Element Palette
+Drag elements from the palette onto the canvas to build your layout:
+
+| Element | Description |
+|---------|-------------|
+| **Room** | Major areas (e.g., Cold Storage, Hazmat Room) |
+| **Row** | Shelf rows within a room |
+| **Bay** | Horizontal sections of a row |
+| **Shelf** | Vertical levels within a bay |
+| **Bin** | Individual storage positions |
+
+### Creating Floor Plan Objects
+1. **Drag** an element type from the palette onto the canvas.
+2. A **creation modal** appears with:
+   - **Location Dropdown:** Select an existing location from the hierarchy (filtered by structural type).
+   - **Dimensions:** Set width and height in meters.
+   - **Color:** Choose a visual color for the element.
+3. Click **Create** to place the element on the canvas.
+
+### Editing & Moving Elements
+- **Click** an element to select it (shows resize handles).
+- **Drag** to reposition — element snaps to grid.
+- **Resize** by dragging corner handles.
+- Changes are **auto-saved** to the database.
+- Positions persist across page refreshes.
+
+### Functional Areas
+When a warehouse is created, the system auto-generates functional areas (Receiving Dock, Main Storage, Shipping Dock) which appear on the floor plan with distinct colors. These areas are linked to physical locations and represent the workflow zones of your warehouse.
+
+---
+
 ## Inbound Operations
 
 ### Suppliers
 **Purpose:** CRM for your vendors, tracking payment terms and lead times.
 
 ### Purchase Orders & Receiving
-**Purpose:** The commercial agreement to buy goods and the act of accepting them.
-1. **Draft:** Create PO.
-2. **Order:** Confirm PO.
-3. **Receive:** Receive goods into a receiving location. Supports partial receiving.
+**Purpose:** The commercial agreement to buy goods, the act of accepting them, quality assurance, and payment verification.
+
+**Process Flow:**
+1. **Create PO:** Draft purchase order with supplier, items, quantities, and costs.
+2. **Confirm PO:** Order status changes to `ORDERED`.
+3. **Receive Goods (GRN):** Receive goods into a receiving location. Supports partial receiving. Each receipt generates a Goods Receipt Note (GRN).
+4. **Attach Documents:** Upload invoices, delivery notes, QA certificates, or photos against the PO.
+5. **QA Inspection:** Record accepted/rejected quantities per product with rejection reasons (Breakage, Damaged, Expired, Wrong Item, Quality Issue).
+6. **Inventory Adjustment:** Rejected quantities are automatically deducted from inventory with audit trail.
+7. **3-Way Match:** Compare PO quantities vs. GRN received quantities vs. Invoice amounts to verify consistency before payment.
+
+**✨ New: PO Detail Page (Tabbed Interface)**
+Navigate to any Purchase Order to see a comprehensive 5-tab interface:
+- **Details Tab:** PO header info (buyer, dates, ASN, terms) and line items table.
+- **Receipts Tab:** GRN history showing received quantities per receipt.
+- **Attachments Tab:** Drag-and-drop document upload zone. Supports Invoice, Delivery Note, QA Certificate, Photo, and Other types. Files stored securely with unique identifiers.
+- **QA Inspection Tab:** Form to record accepted/rejected quantities per product line. Selecting a rejection reason triggers automatic inventory adjustments and stock transaction logging.
+- **3-Way Match Tab:** Run a verification comparing PO ordered quantities, GRN received quantities, and Invoice quantities/costs. Shows pass/fail status per line item.
+
+**Document Types:**
+| Type | Code | Purpose |
+|------|------|---------|
+| Invoice | `INVOICE` | Vendor invoice for payment processing |
+| Delivery Note | `DELIVERY_NOTE` | Carrier delivery confirmation |
+| QA Certificate | `QA_CERT` | Quality assurance documentation |
+| Photo | `PHOTO` | Visual evidence of delivery condition |
+| Other | `OTHER` | Miscellaneous supporting documents |
 
 ### Putaway Operations
 **Purpose:** Moving received goods from receiving areas to their designated storage locations.

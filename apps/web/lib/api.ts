@@ -360,6 +360,49 @@ export async function fetchPurchaseOrderReceipts(id: string) {
     return fetchWithRetry(`${API_URL}/purchase-orders/${id}/receipts`);
 }
 
+// --- PO Documents ---
+
+export async function uploadPODocument(poId: string, file: File, documentType: string) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('documentType', documentType);
+    return fetchWithRetry(`${API_URL}/purchase-orders/${poId}/documents`, {
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type — browser will set it with boundary for FormData
+    });
+}
+
+export async function fetchPODocuments(poId: string) {
+    return fetchWithRetry(`${API_URL}/purchase-orders/${poId}/documents`);
+}
+
+// --- PO QA Inspections ---
+
+export async function submitPOInspection(poId: string, data: {
+    inspectorId?: string;
+    notes?: string;
+    results: { productId: string; receivedQty: number; acceptedQty: number; rejectedQty: number; rejectionReason?: string }[];
+}) {
+    return fetchWithRetry(`${API_URL}/purchase-orders/${poId}/inspections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function fetchPOInspections(poId: string) {
+    return fetchWithRetry(`${API_URL}/purchase-orders/${poId}/inspections`);
+}
+
+// --- PO 3-Way Match ---
+
+export async function verifyPOThreeWayMatch(poId: string) {
+    return fetchWithRetry(`${API_URL}/purchase-orders/${poId}/match`, {
+        method: 'POST',
+    });
+}
+
 // --- Rules & Strategies ---
 
 export async function fetchStrategies(type: 'picking' | 'reservation', warehouseId?: string) {

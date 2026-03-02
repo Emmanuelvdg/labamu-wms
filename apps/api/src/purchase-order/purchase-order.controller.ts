@@ -1,7 +1,13 @@
-import { Controller, Post, Body, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { PurchaseOrderService } from './purchase-order.service';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { randomUUID } from 'crypto';
+
+const uploadDir = join(process.cwd(), 'uploads', 'po-documents');
 
 @Controller('purchase-orders')
 @UseGuards(PermissionsGuard)
@@ -60,5 +66,73 @@ export class PurchaseOrderController {
     @RequirePermission('PURCHASE_ORDERS', 'APPROVE')
     reject(@Param('id') id: string, @Body() data: { userId: string; reason: string }) {
         return this.purchaseOrderService.rejectPurchaseOrder(id, data.userId, data.reason);
+    }
+
+    // ===== Document Attachments =====
+
+    @Post(':id/documents')
+    @RequirePermission('PURCHASE_ORDERS', 'UPDATE')
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: uploadDir,
+            filename: (req, file, cb) => {
+                const uniqueName = `${randomUUID()}${extname(file.originalname)}`;
+                cb(null, uniqueName);
+            },
+        }),
+        limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    }))
+    uploadDocument(
+        @Param('id') id: string,
+        @UploadedFile() file: any,
+        @Body() data: { documentType: string },
+        @Req() req: any,
+    ) {
+        const userId = req.headers['x-user-id'] || null;
+        return this.purchaseOrderService.attachDocument(id, {
+            documentType: data.documentType,
+            fileName: file.originalname,
+            filePath: file.filename, // stored filename on disk
+            mimeType: file.mimetype,
+            fileSize: file.size,
+            uploadedBy: userId,
+        });
+    }
+
+    @Get(':id/documents')
+    @RequirePermission('PURCHASE_ORDERS', 'READ')
+    getDocuments(@Param('id') id: string) {
+        return this.purchaseOrderService.getDocuments(id);
+    }
+
+    // ===== QA Inspection =====
+
+    @Post(':id/inspections')
+    @RequirePermission('PURCHASE_ORDERS', 'UPDATE')
+    submitInspection(
+        @Param('id') id: string,
+        @Body() data: {
+            inspectorId?: string;
+            notes?: string;
+            results: { productId: string; receivedQty: number; acceptedQty: number; rejectedQty: number; rejectionReason?: string }[];
+        },
+        @Req() req: any,
+    ) {
+        const inspectorId = data.inspectorId || req.headers['x-user-id'] || null;
+        return this.purchaseOrderService.submitInspection(id, { ...data, inspectorId });
+    }
+
+    @Get(':id/inspections')
+    @RequirePermission('PURCHASE_ORDERS', 'READ')
+    getInspections(@Param('id') id: string) {
+        return this.purchaseOrderService.getInspections(id);
+    }
+
+    // ===== 3-Way Match =====
+
+    @Post(':id/match')
+    @RequirePermission('PURCHASE_ORDERS', 'UPDATE')
+    verifyThreeWayMatch(@Param('id') id: string) {
+        return this.purchaseOrderService.verifyThreeWayMatch(id);
     }
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import useSWR from 'swr';
-import { fetchScrapOrders, createScrapOrder, fetchInventory, fetchLocations } from '@/lib/api';
+import { fetchScrapOrders, createScrapOrder, fetchProducts, fetchLocations } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -26,7 +26,7 @@ import { Trash2, Plus } from 'lucide-react';
 
 export default function ScrapPage() {
     const { data: scrapOrders, mutate } = useSWR('scrap-orders', fetchScrapOrders);
-    const { data: products } = useSWR('products', fetchInventory);
+    const { data: products } = useSWR('products', fetchProducts);
     const { data: locations } = useSWR('locations', () => fetchLocations());
 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -69,7 +69,7 @@ export default function ScrapPage() {
                                     value={newScrap.productId}
                                     onValueChange={(value) => setNewScrap({ ...newScrap, productId: value })}
                                 >
-                                    <SelectTrigger className="col-span-3">
+                                    <SelectTrigger className="col-span-3" data-testid="scrap-product-select">
                                         <SelectValue placeholder="Select product" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -85,7 +85,7 @@ export default function ScrapPage() {
                                     value={newScrap.locationId}
                                     onValueChange={(value) => setNewScrap({ ...newScrap, locationId: value })}
                                 >
-                                    <SelectTrigger className="col-span-3">
+                                    <SelectTrigger className="col-span-3" data-testid="scrap-location-select">
                                         <SelectValue placeholder="Select location" />
                                     </SelectTrigger>
                                     <SelectContent>

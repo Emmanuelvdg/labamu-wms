@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { API_URL } from '@/lib/api';
+import { API_URL, fetchWithRetry } from '@/lib/api';
 import {
     Dialog,
     DialogContent,
@@ -27,8 +27,7 @@ export default function RoutesPage() {
 
     async function load() {
         try {
-            const res = await fetch(`${API_URL}/inventory/routes`);
-            const data = await res.json();
+            const data = await fetchWithRetry(`${API_URL}/inventory/routes`);
             setRoutes(data);
         } catch (err) {
             console.error(err);
@@ -38,7 +37,7 @@ export default function RoutesPage() {
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await fetch(`${API_URL}/inventory/routes`, {
+            await fetchWithRetry(`${API_URL}/inventory/routes`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newRoute),

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Plus, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { API_URL, fetchLocationsTree } from '@/lib/api';
+import { API_URL, fetchLocationsTree, fetchWithRetry } from '@/lib/api';
 import {
     Dialog,
     DialogContent,
@@ -44,11 +44,10 @@ export default function RouteDetailPage() {
 
     async function load() {
         try {
-            const [routesRes, locsData] = await Promise.all([
-                fetch(`${API_URL}/inventory/routes`),
+            const [routesData, locsData] = await Promise.all([
+                fetchWithRetry(`${API_URL}/inventory/routes`),
                 fetchLocationsTree()
             ]);
-            const routesData = await routesRes.json();
 
             const currentRoute = routesData.find((r: any) => r.id === params.id);
             setRoute(currentRoute);
@@ -88,7 +87,7 @@ export default function RouteDetailPage() {
 
             const method = editingRule ? 'PUT' : 'POST';
 
-            await fetch(url, {
+            await fetchWithRetry(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
