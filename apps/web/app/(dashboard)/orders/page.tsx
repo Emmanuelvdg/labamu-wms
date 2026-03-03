@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { SearchX } from 'lucide-react';
 
 function OrdersPageContent() {
     const searchParams = useSearchParams();
@@ -163,8 +164,20 @@ function OrdersPageContent() {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {filteredOrders.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
-                                    No orders found matching the criteria.
+                                <td colSpan={8} className="px-6 py-16 text-center">
+                                    <div className="flex flex-col items-center justify-center space-y-3">
+                                        <div className="bg-gray-50 p-4 rounded-full">
+                                            <SearchX className="h-8 w-8 text-gray-400" />
+                                        </div>
+                                        <h3 className="text-lg font-medium text-gray-900">No orders found</h3>
+                                        <p className="text-sm text-gray-500 max-w-sm">We couldn't find any orders matching your current filters.</p>
+                                        <button
+                                            onClick={() => setFilters({ id: '', type: 'ALL', customer: '', status: 'ALL', priority: '', date: '', items: '' })}
+                                            className="mt-4 text-blue-600 font-medium hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors"
+                                        >
+                                            Clear Filters
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ) : (

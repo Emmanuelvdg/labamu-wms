@@ -2,6 +2,8 @@ import { Controller, Post, Body, Get, Param, UseGuards, UseInterceptors, Uploade
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
+import { CreatePurchaseOrderDto } from './dto/create-purchase-order.dto';
+import { ReceiveGoodsDto } from './dto/receive-goods.dto';
 import { PurchaseOrderService } from './purchase-order.service';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
@@ -16,7 +18,7 @@ export class PurchaseOrderController {
 
     @Post()
     @RequirePermission('PURCHASE_ORDERS', 'CREATE')
-    create(@Body() data: { supplierId: string; expectedDate?: Date; items: { productId: string; quantity: number; unitCost: number }[] }) {
+    create(@Body() data: CreatePurchaseOrderDto) {
         return this.purchaseOrderService.createPurchaseOrder(data);
     }
 
@@ -46,8 +48,8 @@ export class PurchaseOrderController {
 
     @Post(':id/receive')
     @RequirePermission('PURCHASE_ORDERS', 'UPDATE')
-    receive(@Param('id') id: string, @Body() data: { destinationLocationId: string; itemsToReceive?: { poItemId: string; quantity: number }[] }) {
-        return this.purchaseOrderService.receiveGoods(id, data.destinationLocationId, data.itemsToReceive);
+    receive(@Param('id') id: string, @Body() data: ReceiveGoodsDto) {
+        return this.purchaseOrderService.receiveGoods(id, data.locationId!, data.items || []);
     }
 
     @Post(':id/submit')

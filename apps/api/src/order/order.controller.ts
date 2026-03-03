@@ -1,5 +1,6 @@
 import { Controller, Post, Body, Get, Param, Put, UseGuards, Delete } from '@nestjs/common';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
+import { CreateOrderDto } from './dto/create-order.dto';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { OrderService } from './order.service';
 
@@ -10,7 +11,7 @@ export class OrderController {
 
     @Post()
     @RequirePermission('ORDERS', 'CREATE')
-    createOrder(@Body() data: { customerId: string; priority: string; items: { productId: string; quantity: number }[]; expectedDate?: Date; warehouseId?: string }) {
+    createOrder(@Body() data: CreateOrderDto) {
         return this.orderService.createOrder(data);
     }
 

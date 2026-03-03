@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { fetchInventory, createProduct, fetchWarehouses, fetchAttributeDefinitions, fetchCategories } from '@/lib/api';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
+import { PackageSearch } from 'lucide-react';
 
 export default function InventoryPage() {
     const { hasPermission } = useAuth();
@@ -213,8 +214,22 @@ export default function InventoryPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {products.length === 0 ? (
                             <tr>
-                                <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
-                                    No inventory items found. Click "+ New Item" to add one.
+                                <td colSpan={9} className="px-6 py-16 text-center">
+                                    <div className="flex flex-col items-center justify-center space-y-3">
+                                        <div className="bg-blue-50 p-4 rounded-full">
+                                            <PackageSearch className="h-8 w-8 text-blue-500" />
+                                        </div>
+                                        <h3 className="text-lg font-medium text-gray-900">No inventory items found</h3>
+                                        <p className="text-sm text-gray-500 max-w-sm">Get started by creating your first product or adjusting your filters.</p>
+                                        {hasPermission('INVENTORY', 'CREATE') && (
+                                            <button
+                                                onClick={() => setShowCreateModal(true)}
+                                                className="mt-4 bg-white border border-gray-300 text-gray-700 font-medium px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                                            >
+                                                + Create New Item
+                                            </button>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ) : (

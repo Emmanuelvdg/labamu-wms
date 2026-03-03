@@ -254,7 +254,18 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {products.slice(0, 10).map((product) => {
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="bg-gray-50 p-3 rounded-full">
+                        <Package className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <p className="text-gray-500 font-medium text-sm">No recent inventory items.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : products.slice(0, 10).map((product) => {
                 const totalStock = product.inventory?.reduce((sum: number, i: any) => sum + i.quantity, 0) || 0;
                 return (
                   <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">

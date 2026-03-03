@@ -1,5 +1,6 @@
 ﻿import * as fs from 'fs';
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
+import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
 
@@ -10,10 +11,12 @@ import { getRequiredAreaTypes, AREA_TYPE_LABELS } from '../warehouse/area-types'
 
 @Injectable()
 export class InventoryService {
+    private readonly logger = new Logger(InventoryService.name);
+
     private log(message: string) {
         const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
         fs.appendFileSync(logPath, `[InventoryService] ${message}\n`);
-        console.log(`[InventoryService] ${message}`);
+        this.logger.debug(`[InventoryService] ${message}`);
     }
 
     constructor(
@@ -126,7 +129,7 @@ export class InventoryService {
                         where: { warehouseId, code: parentCode }
                     });
                     if (p) parentId = p.id;
-                    else throw new Error(`Parent code ${parentCode} not found`);
+                    else throw new AppError('PARENT_CODE_NOT_FOUND', { parentCode });
                 }
 
                 const locationData = {
@@ -414,7 +417,7 @@ export class InventoryService {
         });
 
         if (existing) {
-            throw new Error('Warehouse with this name already exists');
+            throw new AppError('WAREHOUSE_DUPLICATE', { name: data.name });
         }
 
         return this.prisma.$transaction(async (tx) => {
@@ -667,14 +670,14 @@ export class InventoryService {
         batchNumber?: string; // Optional: Allow manual batch/serial number
     }): Promise<InventoryBatch> {
         const product = await this.prisma.product.findUnique({ where: { id: data.productId } });
-        if (!product) throw new Error('Product not found');
+        if (!product) throw new AppError('PRODUCT_NOT_FOUND', { productId: data.productId });
 
         if (product.tracking === 'serial') {
             if (data.quantity !== 1) {
-                throw new Error('Serial tracked products must be added one by one (quantity 1)');
+                throw new AppError('SERIAL_QUANTITY_ERROR', { productId: data.productId });
             }
             if (!data.batchNumber) {
-                throw new Error('Serial number is required for serial tracked products');
+                throw new AppError('SERIAL_NUMBER_REQUIRED', { productId: data.productId });
             }
         }
 
@@ -688,7 +691,7 @@ export class InventoryService {
                 initialQuantity: data.quantity,
                 currentQuantity: data.quantity,
                 costPerUnit: data.costPerUnit,
-                purchaseDate: data.purchaseDate,
+                purchaseDate: data.purchaseDate || new Date(),
                 expiryDate: data.expiryDate,
                 status: 'Active',
                 vendor: data.vendor,
@@ -921,7 +924,7 @@ export class InventoryService {
                 }
 
                 if (remainingQty > 0) {
-                    throw new Error(`Insufficient stock for product ${item.productId}${data.warehouseId ? ` in warehouse ${data.warehouseId}` : ''}`);
+                    throw new AppError('INSUFFICIENT_STOCK', { productId: item.productId, warehouseInfo: data.warehouseId ? ` in warehouse ${data.warehouseId}` : '' });
                 }
 
             }
@@ -1055,7 +1058,7 @@ export class InventoryService {
             });
 
             if (existing) {
-                console.log('DUPLICATE FOUND! Throwing ConflictException');
+                this.logger.warn('DUPLICATE FOUND! Throwing ConflictException');
                 throw new ConflictException(`A location with the name "${data.name}" already exists in this scope.`);
             }
 
@@ -1198,13 +1201,13 @@ export class InventoryService {
     }) {
         // Validation
         const current = await this.prisma.location.findUnique({ where: { id } });
-        if (!current) throw new Error('Location not found');
+        if (!current) throw new AppError('LOCATION_NOT_FOUND', { locationId: id });
 
         const newStructuralType = data.structuralType !== undefined ? data.structuralType : current.structuralType;
         const newParentId = data.parentId !== undefined ? data.parentId : current.parentId;
 
         if (newStructuralType && newStructuralType !== 'WAREHOUSE' && !newParentId) {
-            throw new Error(`Location of type ${newStructuralType} must have a parent.`);
+            throw new AppError('PARENT_REQUIRED', { structuralType: newStructuralType });
         }
 
         if (newStructuralType && newParentId) {
@@ -1289,7 +1292,7 @@ export class InventoryService {
 
     private async validateHierarchy(childType: string, parentId: string) {
         const parent = await this.prisma.location.findUnique({ where: { id: parentId } });
-        if (!parent) throw new Error('Parent location not found');
+        if (!parent) throw new AppError('PARENT_LOCATION_NOT_FOUND', { parentId });
 
         const parentType = parent.structuralType;
         if (!parentType) return; // If parent has no structural type, assume it's flexible (migration support)
@@ -1426,8 +1429,8 @@ export class InventoryService {
     async applyAdjustment(id: string) {
         return this.prisma.$transaction(async (tx) => {
             const adjustment = await tx.inventoryAdjustment.findUnique({ where: { id } });
-            if (!adjustment) throw new Error('Adjustment not found');
-            if (adjustment.status === 'APPLIED') throw new Error('Adjustment already applied');
+            if (!adjustment) throw new AppError('ADJUSTMENT_NOT_FOUND', { adjustmentId: id });
+            if (adjustment.status === 'APPLIED') throw new AppError('ADJUSTMENT_ALREADY_APPLIED', { adjustmentId: id });
 
             // Update status
             await tx.inventoryAdjustment.update({
@@ -1568,7 +1571,7 @@ export class InventoryService {
             }
 
             if (remainingQty > 0) {
-                throw new Error('Insufficient stock in batches to scrap');
+                throw new AppError('INSUFFICIENT_STOCK_TO_SCRAP', { productId: data.productId, locationId: data.locationId, quantity: data.quantity });
             }
 
             // Update Aggregate Inventory
@@ -1580,7 +1583,7 @@ export class InventoryService {
             });
 
             if (!inventory || inventory.quantity < data.quantity) {
-                throw new Error('Insufficient stock in aggregate inventory to scrap');
+                throw new AppError('INSUFFICIENT_STOCK_TO_SCRAP', { productId: data.productId, locationId: data.locationId, quantity: data.quantity });
             }
 
             await tx.productInventory.update({
@@ -1622,7 +1625,7 @@ export class InventoryService {
             let parent = await this.prisma.location.findUnique({ where: { id: newParentId } });
             while (parent) {
                 if (parent.id === locationId) {
-                    throw new Error('Cannot move a location inside itself');
+                    throw new AppError('CANNOT_MOVE_INTO_SELF');
                 }
                 if (!parent.parentId) break;
                 parent = await this.prisma.location.findUnique({ where: { id: parent.parentId } });
@@ -1858,7 +1861,7 @@ export class InventoryService {
 
     async suggestRemoval(locationId: string, productId: string, quantity: number) {
         const location = await this.prisma.location.findUnique({ where: { id: locationId } });
-        if (!location) throw new Error('Location not found');
+        if (!location) throw new AppError('LOCATION_NOT_FOUND', { locationId });
 
         const strategy = location.removalStrategy || 'FIFO'; // Default to FIFO
 
@@ -2226,9 +2229,9 @@ export class InventoryService {
     private async validateLocationForStock(locationId: string) {
         // @ts-ignore
         const location = await this.prisma.location.findUnique({ where: { id: locationId } });
-        if (!location) throw new Error('Location not found');
+        if (!location) throw new AppError('LOCATION_NOT_FOUND', { locationId });
         if (location.type === 'VIEW') {
-            throw new Error(`Cannot store stock in a VIEW location: ${location.name} `);
+            throw new AppError('CANNOT_STORE_IN_VIEW', { locationName: location.name });
         }
     }
     async checkProcurement(productId: string, quantity: number, locationId: string, tx: any) {
@@ -2315,8 +2318,8 @@ export class InventoryService {
     async validateStockMove(id: string) {
         return this.prisma.$transaction(async (tx) => {
             const move = await tx.stockMove.findUnique({ where: { id } });
-            if (!move) throw new Error('Stock move not found');
-            if (move.status === 'DONE') throw new Error('Stock move already done');
+            if (!move) throw new AppError('STOCK_MOVE_NOT_FOUND', { moveId: id });
+            if (move.status === 'DONE') throw new AppError('STOCK_MOVE_ALREADY_DONE', { moveId: id });
 
             // Capacity Check (if moving to a destination)
             if (move.destinationLocationId) {

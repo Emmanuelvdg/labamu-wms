@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
 import { AreaType, getRequiredAreaTypes, WarehouseConfig, AREA_TYPE_COLORS } from './area-types';
 
@@ -69,7 +70,7 @@ export class WarehouseAreaService {
         });
 
         if (!warehouse) {
-            throw new Error('Warehouse not found');
+            throw new AppError('WAREHOUSE_NOT_FOUND', { warehouseId });
         }
 
         const requiredTypes = getRequiredAreaTypes({
@@ -78,7 +79,7 @@ export class WarehouseAreaService {
         });
 
         if (!requiredTypes.includes(data.areaType as AreaType)) {
-            throw new Error(`Area type ${data.areaType} not allowed for current warehouse configuration`);
+            throw new AppError('AREA_TYPE_NOT_ALLOWED', { areaType: data.areaType });
         }
 
         return this.prisma.warehouseFunctionalArea.create({
@@ -145,7 +146,7 @@ export class WarehouseAreaService {
         });
 
         if (!warehouse) {
-            throw new Error('Warehouse not found');
+            throw new AppError('WAREHOUSE_NOT_FOUND', { warehouseId });
         }
 
         const requiredTypes = getRequiredAreaTypes({
@@ -568,7 +569,7 @@ export class WarehouseAreaService {
     async deleteWarehouse(id: string) {
         const check = await this.checkWarehouseDependencies(id);
         if (check.blocking) {
-            throw new Error(`Cannot delete warehouse: ${check.dependencies.join(', ')}`);
+            throw new AppError('CANNOT_DELETE_WAREHOUSE', { dependencies: check.dependencies.join(', ') });
         }
 
         // Safe to delete related data first (Cascade)

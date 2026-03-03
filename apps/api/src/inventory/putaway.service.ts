@@ -1,10 +1,13 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
 
 import { UtilisationService } from './utilisation.service';
 
 @Injectable()
 export class PutawayService {
+    private readonly logger = new Logger(PutawayService.name);
+
     constructor(
         private prisma: PrismaService,
         private utilisationService: UtilisationService
@@ -264,7 +267,7 @@ export class PutawayService {
             }
         });
 
-        if (!product) throw new Error('Product not found');
+        if (!product) throw new AppError('PRODUCT_NOT_FOUND', { productId });
 
         const totalWeight = product.weight ? product.weight * quantity : 0;
 
@@ -339,13 +342,13 @@ export class PutawayService {
             const selected = this.applyStrategy(rule.strategy, compatibleLocations, product);
 
             if (selected) {
-                console.log(`✅ Selected location via rule "${rule.name}" (strategy: ${rule.strategy})`);
+                this.logger.debug(`Selected location via rule "${rule.name}" (strategy: ${rule.strategy})`);
                 return selected;
             }
         }
 
         // 6. Fallback to default velocity-based heuristic
-        console.log('⚠️  No matching rules, falling back to velocity-based selection');
+        this.logger.warn('No matching rules, falling back to velocity-based selection');
         return this.defaultLocationSelection(product, quantity, warehouseId);
     }
 
@@ -415,7 +418,7 @@ export class PutawayService {
             where: { id: productId }
         });
 
-        if (!product) throw new Error('Product not found');
+        if (!product) throw new AppError('PRODUCT_NOT_FOUND', { productId });
 
         const locations = await this.prisma.location.findMany({
             where: {
@@ -632,14 +635,14 @@ export class PutawayService {
         batchId: string,
         warehouseId: string
     ) {
-        console.log(`[PutawayService] Creating tasks for manual batch ${batchId}`);
+        this.logger.debug(`Creating tasks for manual batch ${batchId}`);
 
         const batch = await this.prisma.inventoryBatch.findUnique({
             where: { id: batchId },
             include: { product: true, location: true }
         });
 
-        if (!batch) throw new Error('Batch not found');
+        if (!batch) throw new AppError('BATCH_NOT_FOUND', { batchId });
 
         // Check active session
         let session = await this.prisma.putawaySession.findFirst({
@@ -666,7 +669,7 @@ export class PutawayService {
         if (destinationLocation) {
             // Check if we are already AT the best location (e.g. direct putaway)
             if (batch.locationId === destinationLocation.id) {
-                console.log(`[PutawayService] Batch ${batchId} already at optimal location ${destinationLocation.name}. No task needed.`);
+                this.logger.debug(`Batch ${batchId} already at optimal location ${destinationLocation.name}. No task needed.`);
                 return;
             }
 
@@ -682,7 +685,7 @@ export class PutawayService {
                     // receiptId is optional now, so we can omit it
                 }
             });
-            console.log(`[PutawayService] Created pending task for batch ${batchId} -> ${destinationLocation.name}`);
+            this.logger.debug(`Created pending task for batch ${batchId} -> ${destinationLocation.name}`);
         }
     }
 
@@ -695,7 +698,7 @@ export class PutawayService {
         tx: any,
         params: { receiptId: string; warehouseId: string }
     ) {
-        console.log(`[PutawayService] Auto-creating putaway tasks for receipt ${params.receiptId}`);
+        this.logger.log(`Auto-creating putaway tasks for receipt ${params.receiptId}`);
 
         const receipt = await tx.receipt.findUnique({
             where: { id: params.receiptId },
@@ -707,10 +710,10 @@ export class PutawayService {
 
         if (!receipt) {
             console.error(`[PutawayService] Receipt ${params.receiptId} not found`);
-            throw new Error('Receipt not found');
+            throw new AppError('RECEIPT_NOT_FOUND', { receiptId: params.receiptId });
         }
 
-        console.log(`[PutawayService] Processing ${receipt.items.length} items from receipt at ${receipt.destinationLocation.name}`);
+        this.logger.debug(`Processing ${receipt.items.length} items from receipt at ${receipt.destinationLocation.name}`);
 
         // Check if there's an active session for this warehouse
         let session = await tx.putawaySession.findFirst({
@@ -722,7 +725,7 @@ export class PutawayService {
 
         // If no active session, create one
         if (!session) {
-            console.log(`[PutawayService] Creating new putaway session for warehouse ${params.warehouseId}`);
+            this.logger.debug(`Creating new putaway session for warehouse ${params.warehouseId}`);
             session = await tx.putawaySession.create({
                 data: {
                     warehouseId: params.warehouseId,
@@ -765,7 +768,7 @@ export class PutawayService {
             tasksCreated++;
         }
 
-        console.log(`[PutawayService] Created ${tasksCreated} putaway tasks for receipt ${params.receiptId}`);
+        this.logger.log(`Created ${tasksCreated} putaway tasks for receipt ${params.receiptId}`);
         return tasksCreated;
     }
 
@@ -776,7 +779,7 @@ export class PutawayService {
     async getActiveSession(warehouseId: string) {
         // Validate warehouseId
         if (!warehouseId || warehouseId === 'undefined') {
-            console.log('[PutawayService] Invalid warehouseId provided to getActiveSession');
+            this.logger.warn('Invalid warehouseId provided to getActiveSession');
             return null;
         }
 

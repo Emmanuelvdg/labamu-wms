@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
 import { StrategyService } from '../strategy/strategy.service';
 import { InventoryService } from '../inventory/inventory.service';
@@ -280,7 +281,7 @@ export class OrderService {
     }
     async checkAvailability(id: string): Promise<Order> {
         let order = await this.getOrder(id) as any;
-        if (!order) throw new Error('Order not found');
+        if (!order) throw new AppError('ORDER_NOT_FOUND', { orderId: id });
 
         // 1. Ensure Allocation
         if (!order.warehouseId) {
@@ -327,7 +328,7 @@ export class OrderService {
                 include: { reservations: true }
             });
 
-            if (!order) throw new Error('Order not found');
+            if (!order) throw new AppError('ORDER_NOT_FOUND', { orderId: id });
             if (['SHIPPED', 'DELIVERED'].includes(order.status)) {
                 throw new BadRequestException('Cannot cancel shipped or delivered order');
             }
@@ -373,7 +374,7 @@ export class OrderService {
             include: { reservations: true, shipment: true }
         });
 
-        if (!order) throw new Error('Order not found');
+        if (!order) throw new AppError('ORDER_NOT_FOUND', { orderId: id });
 
         // Allow delete if Pending (no reservations), Draft (if exists), or Cancelled
         const isCleanPending = order.status === 'PENDING' && order.reservations.length === 0 && !order.shipment;

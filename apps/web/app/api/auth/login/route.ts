@@ -5,8 +5,11 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { email, password } = body;
 
+
+        const apiUrl = process.env.API_URL || 'http://127.0.0.1:3001';
+
         // Call Backend API
-        const apiResponse = await fetch('http://127.0.0.1:3001/auth/login', {
+        const apiResponse = await fetch(`${apiUrl}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -20,11 +23,13 @@ export async function POST(request: Request) {
 
         const response = NextResponse.json({ success: true, user });
 
+        const isProd = process.env.NODE_ENV === 'production';
+
         // Set auth cookie
         response.cookies.set('auth', 'true', {
             path: '/',
             httpOnly: true,
-            secure: false, // Force false for localhost
+            secure: isProd,
             maxAge: 60 * 60 * 24 * 7, // 1 week
         });
 
@@ -32,16 +37,20 @@ export async function POST(request: Request) {
         response.cookies.set('user_id', user.id, {
             path: '/',
             httpOnly: false, // Allow client JS to read
-            secure: false,
+            secure: isProd,
             maxAge: 60 * 60 * 24 * 7,
         });
 
-        // Set user_data cookie with full user object including roles and permissions
-        // This is used by usePermission hook for frontend permission checks
-        response.cookies.set('user_data', JSON.stringify(user), {
+        // Set localized user_data cookie with minimal claims
+        response.cookies.set('user_data', JSON.stringify({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            permissions: user.roles?.flatMap((r: any) => r.permissions?.map((p: any) => p.name)) || []
+        }), {
             path: '/',
             httpOnly: false, // Allow client JS to read for permission checks
-            secure: false,
+            secure: isProd,
             maxAge: 60 * 60 * 24 * 7,
         });
 

@@ -1,0 +1,303 @@
+{
+  "PRODUCT_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Product '{{productId}}' not found.",
+    "userMessage": "The product you selected could not be found. It may have been deleted.",
+    "severity": "error",
+    "category": "inventory"
+  },
+  "CAPACITY_EXCEEDED": {
+    "httpStatus": 400,
+    "message": "Cannot add {{requestedWeight}} kg to '{{locationName}}'. Current: {{currentWeight}} kg / {{maxWeight}} kg limit ({{availableWeight}} kg available).",
+    "userMessage": "This location is over capacity. Please choose a different bin or contact your warehouse manager.",
+    "severity": "warning",
+    "category": "inventory"
+  },
+  "INSUFFICIENT_STOCK": {
+    "httpStatus": 400,
+    "message": "Insufficient stock for product '{{productId}}'{{warehouseInfo}}.",
+    "userMessage": "There is not enough stock available to complete this operation.",
+    "severity": "error",
+    "category": "inventory"
+  },
+  "INSUFFICIENT_STOCK_TO_SCRAP": {
+    "httpStatus": 400,
+    "message": "Insufficient stock to scrap {{quantity}} unit(s) of product '{{productId}}' at location '{{locationId}}'.",
+    "userMessage": "There is not enough stock at this location to scrap the requested quantity.",
+    "severity": "error",
+    "category": "scrap"
+  },
+  "CANNOT_STORE_IN_VIEW": {
+    "httpStatus": 400,
+    "message": "Cannot store stock in VIEW location '{{locationName}}'.",
+    "userMessage": "This location is a view-only grouping and cannot hold physical stock. Please select a storage bin.",
+    "severity": "warning",
+    "category": "inventory"
+  },
+  "SERIAL_QUANTITY_ERROR": {
+    "httpStatus": 400,
+    "message": "Serial tracked products must be added one by one (quantity 1).",
+    "userMessage": "Serial-tracked products must be received individually. Please set quantity to 1.",
+    "severity": "warning",
+    "category": "inventory"
+  },
+  "SERIAL_NUMBER_REQUIRED": {
+    "httpStatus": 400,
+    "message": "Serial number is required for serial tracked products.",
+    "userMessage": "This product requires a serial number. Please scan or enter the serial number.",
+    "severity": "warning",
+    "category": "inventory"
+  },
+  "LOCATION_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Location '{{locationId}}' not found.",
+    "userMessage": "The location you selected could not be found.",
+    "severity": "error",
+    "category": "location"
+  },
+  "DUPLICATE_LOCATION": {
+    "httpStatus": 409,
+    "message": "A location with the name '{{locationName}}' already exists in this scope.",
+    "userMessage": "A location with this name already exists. Please choose a different name.",
+    "severity": "warning",
+    "category": "location"
+  },
+  "PARENT_LOCATION_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Parent location '{{parentId}}' not found.",
+    "userMessage": "The parent location could not be found. Please refresh and try again.",
+    "severity": "error",
+    "category": "location"
+  },
+  "PARENT_REQUIRED": {
+    "httpStatus": 400,
+    "message": "Location of type '{{structuralType}}' must have a parent.",
+    "userMessage": "This type of location requires a parent. Please select a parent location.",
+    "severity": "warning",
+    "category": "location"
+  },
+  "INVALID_HIERARCHY": {
+    "httpStatus": 400,
+    "message": "Invalid hierarchy: {{childType}} must be a child of {{allowedParents}}. Found parent type: {{parentType}}.",
+    "userMessage": "This location type cannot be placed under the selected parent. Check the location hierarchy rules.",
+    "severity": "warning",
+    "category": "location"
+  },
+  "CANNOT_DELETE_LOCATION": {
+    "httpStatus": 400,
+    "message": "Cannot delete location: {{dependencies}}.",
+    "userMessage": "This location cannot be deleted because it has dependent items. Remove all stock and child locations first.",
+    "severity": "warning",
+    "category": "location"
+  },
+  "CANNOT_MOVE_INTO_SELF": {
+    "httpStatus": 400,
+    "message": "Cannot move a location inside itself.",
+    "userMessage": "A location cannot be moved inside itself.",
+    "severity": "error",
+    "category": "location"
+  },
+  "ORDER_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Order '{{orderId}}' not found.",
+    "userMessage": "The order could not be found. It may have been deleted.",
+    "severity": "error",
+    "category": "order"
+  },
+  "CANNOT_CANCEL_SHIPPED": {
+    "httpStatus": 400,
+    "message": "Cannot cancel order '{{orderId}}' — status is '{{status}}'.",
+    "userMessage": "This order has already been shipped or delivered and cannot be cancelled.",
+    "severity": "warning",
+    "category": "order"
+  },
+  "CANNOT_DELETE_ACTIVE_ORDER": {
+    "httpStatus": 400,
+    "message": "Can only delete Pending (empty) or Cancelled orders. Current status: '{{status}}'.",
+    "userMessage": "Only pending or cancelled orders can be deleted. Please cancel the order first.",
+    "severity": "warning",
+    "category": "order"
+  },
+  "PO_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Purchase Order '{{purchaseOrderId}}' not found.",
+    "userMessage": "The purchase order could not be found.",
+    "severity": "error",
+    "category": "purchase"
+  },
+  "PO_ALREADY_CLOSED": {
+    "httpStatus": 400,
+    "message": "Purchase Order is '{{status}}'.",
+    "userMessage": "This purchase order has already been completed or cancelled and cannot be modified.",
+    "severity": "warning",
+    "category": "purchase"
+  },
+  "PO_ITEM_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "PO Item '{{poItemId}}' not found in PO '{{purchaseOrderId}}'.",
+    "userMessage": "The selected item was not found in this purchase order.",
+    "severity": "error",
+    "category": "purchase"
+  },
+  "NO_ITEMS_TO_RECEIVE": {
+    "httpStatus": 400,
+    "message": "No items to receive.",
+    "userMessage": "There are no items available to receive. All items may have already been received.",
+    "severity": "warning",
+    "category": "purchase"
+  },
+  "WAREHOUSE_NOT_DETERMINED": {
+    "httpStatus": 400,
+    "message": "Could not determine warehouse for receiving.",
+    "userMessage": "Unable to determine the receiving warehouse. Please ensure the purchase order is properly configured.",
+    "severity": "error",
+    "category": "purchase"
+  },
+  "NO_USERS_IN_SYSTEM": {
+    "httpStatus": 500,
+    "message": "No users found in system.",
+    "userMessage": "System configuration error — no users exist. Please contact an administrator.",
+    "severity": "error",
+    "category": "purchase"
+  },
+  "PRIMARY_LOCATION_NOT_FOUND": {
+    "httpStatus": 400,
+    "message": "No primary location found for warehouse '{{warehouseId}}'. Cannot auto-create receiving location.",
+    "userMessage": "The warehouse does not have a primary receiving location. Please set one up in warehouse settings.",
+    "severity": "error",
+    "category": "purchase"
+  },
+  "BATCH_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Batch '{{batchId}}' not found.",
+    "userMessage": "The inventory batch could not be found.",
+    "severity": "error",
+    "category": "putaway"
+  },
+  "RECEIPT_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Receipt '{{receiptId}}' not found.",
+    "userMessage": "The goods receipt could not be found.",
+    "severity": "error",
+    "category": "putaway"
+  },
+  "PUTAWAY_SESSION_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Putaway session not found.",
+    "userMessage": "The putaway session could not be found. It may have been completed or expired.",
+    "severity": "error",
+    "category": "putaway"
+  },
+  "PUTAWAY_TASK_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Putaway task not found.",
+    "userMessage": "The putaway task could not be found.",
+    "severity": "error",
+    "category": "putaway"
+  },
+  "WAREHOUSE_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Warehouse '{{warehouseId}}' not found.",
+    "userMessage": "The warehouse could not be found.",
+    "severity": "error",
+    "category": "warehouse"
+  },
+  "WAREHOUSE_DUPLICATE": {
+    "httpStatus": 409,
+    "message": "Warehouse with name '{{name}}' already exists.",
+    "userMessage": "A warehouse with this name already exists. Please choose a different name.",
+    "severity": "warning",
+    "category": "warehouse"
+  },
+  "CANNOT_DELETE_WAREHOUSE": {
+    "httpStatus": 400,
+    "message": "Cannot delete warehouse: {{dependencies}}.",
+    "userMessage": "This warehouse cannot be deleted because it contains locations or inventory.",
+    "severity": "warning",
+    "category": "warehouse"
+  },
+  "AREA_TYPE_NOT_ALLOWED": {
+    "httpStatus": 400,
+    "message": "Area type '{{areaType}}' not allowed for current warehouse configuration.",
+    "userMessage": "This area type is not supported for the selected warehouse.",
+    "severity": "warning",
+    "category": "warehouse"
+  },
+  "STOCK_MOVE_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Stock move '{{moveId}}' not found.",
+    "userMessage": "The stock move could not be found.",
+    "severity": "error",
+    "category": "stock"
+  },
+  "STOCK_MOVE_ALREADY_DONE": {
+    "httpStatus": 400,
+    "message": "Stock move '{{moveId}}' is already completed.",
+    "userMessage": "This stock move has already been completed.",
+    "severity": "warning",
+    "category": "stock"
+  },
+  "STOCK_CONFIG_MISSING": {
+    "httpStatus": 400,
+    "message": "Stock configuration missing for warehouse '{{warehouseName}}'.",
+    "userMessage": "The warehouse stock configuration is incomplete. Please contact an administrator.",
+    "severity": "error",
+    "category": "stock"
+  },
+  "INPUT_LOCATION_MISSING": {
+    "httpStatus": 400,
+    "message": "Input location missing for multi-step receiving.",
+    "userMessage": "The receiving location has not been configured for this warehouse.",
+    "severity": "error",
+    "category": "stock"
+  },
+  "QC_LOCATION_MISSING": {
+    "httpStatus": 400,
+    "message": "Quality Control location missing for 3-step receiving.",
+    "userMessage": "The quality control location has not been configured. Please set it up in warehouse settings.",
+    "severity": "error",
+    "category": "stock"
+  },
+  "ADJUSTMENT_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Adjustment '{{adjustmentId}}' not found.",
+    "userMessage": "The inventory adjustment could not be found.",
+    "severity": "error",
+    "category": "inventory"
+  },
+  "ADJUSTMENT_ALREADY_APPLIED": {
+    "httpStatus": 400,
+    "message": "Adjustment '{{adjustmentId}}' has already been applied.",
+    "userMessage": "This adjustment has already been applied and cannot be modified.",
+    "severity": "warning",
+    "category": "inventory"
+  },
+  "PARENT_CODE_NOT_FOUND": {
+    "httpStatus": 400,
+    "message": "Parent code '{{parentCode}}' not found during CSV import.",
+    "userMessage": "A parent location referenced in the CSV file could not be found.",
+    "severity": "error",
+    "category": "location"
+  },
+  "INVALID_CSV_FORMAT": {
+    "httpStatus": 400,
+    "message": "Invalid CSV format. Required columns: Name, StructuralType.",
+    "userMessage": "The CSV file format is incorrect. Please ensure it has 'Name' and 'StructuralType' columns.",
+    "severity": "warning",
+    "category": "location"
+  },
+  "PICKING_NO_ORDERS": {
+    "httpStatus": 400,
+    "message": "No orders available for picking.",
+    "userMessage": "There are no orders ready for picking at this time.",
+    "severity": "info",
+    "category": "order"
+  },
+  "PICKING_SESSION_NOT_FOUND": {
+    "httpStatus": 404,
+    "message": "Picking session '{{sessionId}}' not found.",
+    "userMessage": "The picking session could not be found.",
+    "severity": "error",
+    "category": "order"
+  }
+}

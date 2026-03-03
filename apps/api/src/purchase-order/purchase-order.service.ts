@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { RuleService } from '../rule/rule.service';
@@ -149,8 +150,8 @@ export class PurchaseOrderService {
                 include: { items: { include: { packaging: true, receiptItems: true } } },
             });
 
-            if (!po) throw new Error('Purchase Order not found');
-            if (po.status === 'RECEIVED' || po.status === 'CANCELLED') throw new Error(`Purchase Order is ${po.status}`);
+            if (!po) throw new AppError('PO_NOT_FOUND', { purchaseOrderId });
+            if (po.status === 'RECEIVED' || po.status === 'CANCELLED') throw new AppError('PO_ALREADY_CLOSED', { status: po.status });
 
             // Determine items to process
             let itemsToProcess: { poItem: any; quantity: number }[] = [];
@@ -159,7 +160,7 @@ export class PurchaseOrderService {
                 // Validate and map provided items
                 for (const reqItem of itemsToReceive) {
                     const poItem = po.items.find(i => i.id === reqItem.poItemId);
-                    if (!poItem) throw new Error(`PO Item ${reqItem.poItemId} not found in PO ${purchaseOrderId}`);
+                    if (!poItem) throw new AppError('PO_ITEM_NOT_FOUND', { poItemId: reqItem.poItemId, purchaseOrderId });
                     itemsToProcess.push({ poItem, quantity: reqItem.quantity });
                 }
             } else {
@@ -174,7 +175,7 @@ export class PurchaseOrderService {
             }
 
             if (itemsToProcess.length === 0) {
-                throw new Error('No items to receive');
+                throw new AppError('NO_ITEMS_TO_RECEIVE');
             }
 
             // 1. Get Warehouse ID
@@ -194,10 +195,10 @@ export class PurchaseOrderService {
                 if (location?.warehouseId) {
                     warehouseId = location.warehouseId;
                 } else {
-                    throw new Error('Could not determine warehouse for receiving. Please ensure PO has associated stock moves.');
+                    throw new AppError('WAREHOUSE_NOT_DETERMINED');
                 }
             } else {
-                throw new Error('Could not determine warehouse for receiving');
+                throw new AppError('WAREHOUSE_NOT_DETERMINED');
             }
 
             // Get or create receiving location for this warehouse
@@ -228,7 +229,7 @@ export class PurchaseOrderService {
             // NEW: Create Linked Transfer Order
             // Get a real user to use as initiator (use first admin user)
             const adminUser = await tx.user.findFirst();
-            if (!adminUser) throw new Error('No users found in system');
+            if (!adminUser) throw new AppError('NO_USERS_IN_SYSTEM');
 
 
             const transferOrder = await this.stockMoveService.createInboundTransferHeader(tx, {
@@ -437,7 +438,7 @@ export class PurchaseOrderService {
         });
 
         if (!warehousePrimaryLoc) {
-            throw new Error(`No primary location found for warehouse ${warehouseId}. Cannot auto-create receiving location.`);
+            throw new AppError('PRIMARY_LOCATION_NOT_FOUND', { warehouseId });
         }
 
         const newReceivingLoc = await tx.location.create({
@@ -597,7 +598,7 @@ export class PurchaseOrderService {
             },
         });
 
-        if (!po) throw new Error('Purchase Order not found');
+        if (!po) throw new AppError('PO_NOT_FOUND', { purchaseOrderId });
 
         const matchResults: any[] = [];
         let overallMatch = true;

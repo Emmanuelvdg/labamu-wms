@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
 import { UtilisationService } from './utilisation.service';
 
@@ -61,7 +62,7 @@ export class StockMoveService {
         }
     ) {
         const warehouse = await tx.warehouse.findUnique({ where: { id: data.warehouseId } });
-        if (!warehouse) throw new Error('Warehouse not found');
+        if (!warehouse) throw new AppError('WAREHOUSE_NOT_FOUND', { warehouseId: data.warehouseId });
 
         const incomingSteps = warehouse.incomingSteps || '1_step';
 
@@ -69,12 +70,12 @@ export class StockMoveService {
         const inputLoc = await this.findLocation(warehouse.id, 'Input');
         const qualityLoc = await this.findLocation(warehouse.id, 'Quality Control');
 
-        if (!stockLoc) throw new Error(`Stock configuration missing for warehouse ${warehouse.name}`);
+        if (!stockLoc) throw new AppError('STOCK_CONFIG_MISSING', { warehouseName: warehouse.name });
         if ((incomingSteps === '2_steps' || incomingSteps === '3_steps') && !inputLoc) {
-            throw new Error(`Input location missing for multi-step receiving`);
+            throw new AppError('INPUT_LOCATION_MISSING');
         }
         if (incomingSteps === '3_steps' && !qualityLoc) {
-            throw new Error(`Quality Control location missing for 3-step receiving`);
+            throw new AppError('QC_LOCATION_MISSING');
         }
 
         const moves: any[] = [];
@@ -158,7 +159,7 @@ export class StockMoveService {
     async completeMove(moveId: string, quantity: number, destinationLocationId: string, userId: string) {
         // 1. Get Move
         const move = await this.prisma.stockMove.findUnique({ where: { id: moveId }, include: { nextMove: true, transferOrder: true } });
-        if (!move) throw new Error('Move not found');
+        if (!move) throw new AppError('STOCK_MOVE_NOT_FOUND', { moveId });
 
         // Capacity Check
         const { allowed, reason } = await this.utilisationService.canAccept(
