@@ -32,6 +32,7 @@ async function bootstrap() {
         app.enableCors({
             origin: corsOrigins,
             credentials: true,
+            allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'x-user-id'],
         });
         if (process.env.NODE_ENV !== 'production') {
             app.use((req: any, res: any, next: any) => {
