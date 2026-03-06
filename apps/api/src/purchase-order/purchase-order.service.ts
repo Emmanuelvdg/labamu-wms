@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
 import { InventoryService } from '../inventory/inventory.service';
@@ -575,6 +575,42 @@ export class PurchaseOrderService {
 
             return inspection;
         });
+    }
+
+    // ===== Barcode Scanning =====
+
+    async scanReceive(purchaseOrderId: string, barcode: string, locationId?: string) {
+        // Find product by barcode (SKU or ID)
+        const product = await this.prisma.product.findFirst({
+            where: { OR: [{ sku: barcode }, { id: barcode }] }
+        });
+        if (!product) throw new HttpException('Product not found for barcode: ' + barcode, 404);
+
+        // Verify product is in PO
+        const poItem = await this.prisma.purchaseOrderItem.findFirst({
+            where: { purchaseOrderId, productId: product.id }
+        });
+        if (!poItem) throw new HttpException('Product not in this PO: ' + product.name, 400);
+
+        // Provide a default destination location if none specified
+        let targetLocationId = locationId;
+        if (!targetLocationId) {
+            // Find any receiving dock or default location
+            const defaultLocation = await this.prisma.location.findFirst({
+                where: { OR: [{ type: 'RECEIVING' }, { type: 'DOCK' }] }
+            });
+            if (defaultLocation) {
+                targetLocationId = defaultLocation.id;
+            } else {
+                throw new HttpException('No location specified and no default receiving location found', 400);
+            }
+        }
+
+        // Call standard receive goods for 1 unit
+        return this.receiveGoods(purchaseOrderId, targetLocationId, [{
+            poItemId: poItem.id,
+            quantity: 1
+        }]);
     }
 
     async getInspections(purchaseOrderId: string) {

@@ -94,6 +94,11 @@ export class StrategyController {
         return this.pickingStrategyService.updateTask(id, data);
     }
 
+    @Post('picking/tasks/:id/scan-pick')
+    scanPick(@Param('id') id: string, @Body() data: { barcode: string }) {
+        return this.pickingStrategyService.scanPick(id, data.barcode);
+    }
+
     @Post('picking/sessions/:id/complete')
     completeSession(@Param('id') id: string) {
         return this.pickingStrategyService.completeSession(id);

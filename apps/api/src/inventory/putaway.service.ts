@@ -821,7 +821,7 @@ export class PutawayService {
                             },
                             receipt: true
                         },
-                        orderBy: { createdAt: 'asc' }
+                        orderBy: { destinationLocation: { name: 'asc' } }
                     }
                 }
             });

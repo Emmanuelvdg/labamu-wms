@@ -9,7 +9,7 @@ import { LoginDto } from './dto/login.dto';
 export class AuthController {
     constructor(private authService: AuthService, private prisma: PrismaService) { }
 
-    @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+    @Throttle({ default: { limit: 5, ttl: 60000 } })
     @Post('login')
     @HttpCode(HttpStatus.OK)
     async login(@Body() body: LoginDto) {

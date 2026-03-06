@@ -56,6 +56,20 @@ export class PutawayController {
     }
 
     /**
+     * Complete a putaway task
+     */
+    @Post('tasks/:taskId/complete')
+    async completeTask(
+        @Param('taskId') taskId: string,
+        @Body() data: { actualDestinationId: string }
+    ) {
+        return this.putawayService.updateTask(taskId, {
+            status: 'COMPLETED',
+            alternativeLocationId: data.actualDestinationId
+        });
+    }
+
+    /**
      * Get alternative locations for a task
      */
     @Get('tasks/:taskId/alternatives')

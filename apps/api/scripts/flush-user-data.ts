@@ -22,6 +22,14 @@ async function main() {
     await prisma.receiptItem.deleteMany({});
     await prisma.receipt.deleteMany({});
 
+    // NEW: Phase 9/13 transactional data
+    await prisma.invoiceItem.deleteMany({});
+    await prisma.invoice.deleteMany({});
+    await prisma.qaInspectionResult.deleteMany({});
+    await prisma.qaInspection.deleteMany({});
+    await prisma.documentAttachment.deleteMany({});
+    await prisma.lalamoveOrder.deleteMany({});
+
     // 2. Orders & Lines
     console.log('Deleting Orders...');
     // Delete items first
@@ -58,6 +66,7 @@ async function main() {
 
     await prisma.fulfillmentRule.deleteMany({});  // Delete Fulfillment Rules containing products
     await prisma.putawayRule.deleteMany({});      // Delete Putaway Rules containing products
+    await prisma.rotationRule.deleteMany({});
 
 
 

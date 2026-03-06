@@ -17,15 +17,47 @@ export class CustomerService {
         });
     }
 
-    async getCustomers(): Promise<Customer[]> {
-        return this.prisma.customer.findMany({
+    async getCustomers(): Promise<any[]> {
+        const customers = await this.prisma.customer.findMany({
             orderBy: { createdAt: 'desc' },
+            include: {
+                _count: {
+                    select: { orders: true }
+                },
+            }
         });
+
+        // Calculate lifetime value (LTV) per customer
+        return Promise.all(customers.map(async (c) => {
+            const agg = await this.prisma.order.aggregate({
+                where: { customerId: c.id, status: { notIn: ['CANCELLED'] } },
+                _sum: { totalAmount: true }
+            });
+            return {
+                ...c,
+                totalOrders: c._count.orders,
+                lifetimeValue: agg._sum.totalAmount || 0,
+            };
+        }));
     }
 
-    async getCustomer(id: string): Promise<Customer | null> {
-        return this.prisma.customer.findUnique({
+    async getCustomer(id: string): Promise<any | null> {
+        const customer = await this.prisma.customer.findUnique({
             where: { id },
+            include: {
+                orders: {
+                    orderBy: { createdAt: 'desc' },
+                    include: { items: { include: { product: true } } }
+                }
+            }
         });
+
+        if (customer) {
+            const ltv = customer.orders
+                .filter(o => o.status !== 'CANCELLED')
+                .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+            return { ...customer, totalOrders: customer.orders.length, lifetimeValue: ltv };
+        }
+        return null;
     }
 }

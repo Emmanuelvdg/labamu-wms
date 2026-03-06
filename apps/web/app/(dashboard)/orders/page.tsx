@@ -92,7 +92,8 @@ function OrdersPageContent() {
         { label: 'Confirmed', value: 'PENDING' }, // Pending = Confirmed in this context? Or RESERVED? Let's use PENDING as Confirmed/New
         { label: 'Reserved', value: 'RESERVED' },
         { label: 'Picking', value: 'PICKING' },
-        { label: 'Packed', value: 'PACKED' }, // If PACKED exists in enum? Schema says PICKING, SHIPPED. Maybe Picking -> Packed -> Shipped? Schema: PENDING, RESERVED, PICKING, SHIPPED, DELIVERED, CANCELLED. "PACKING" was in enum comment? "PICKING, PACKING" in previous thought? Schema line 370: PENDING, RESERVED, PICKING, SHIPPED, DELIVERED, CANCELLED. No PACKING. I'll omit PACKED tab or map to PICKING?
+        { label: 'Packing', value: 'PACKING' },
+        { label: 'Packed', value: 'PACKED' },
         { label: 'Shipped', value: 'SHIPPED' },
         { label: 'Done', value: 'DELIVERED' }, // Done = DELIVERED
         { label: 'Cancelled', value: 'CANCELLED' }
@@ -219,10 +220,12 @@ function OrdersPageContent() {
                                             ${order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                                                 order.status === 'RESERVED' ? 'bg-blue-100 text-blue-800' :
                                                     order.status === 'PICKING' ? 'bg-indigo-100 text-indigo-800' :
-                                                        order.status === 'SHIPPED' ? 'bg-purple-100 text-purple-800' :
-                                                            order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
-                                                                order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-                                                                    'bg-gray-100 text-gray-800'}`}>
+                                                        order.status === 'PACKING' ? 'bg-orange-100 text-orange-800' :
+                                                            order.status === 'PACKED' ? 'bg-teal-100 text-teal-800' :
+                                                                order.status === 'SHIPPED' ? 'bg-purple-100 text-purple-800' :
+                                                                    order.status === 'DELIVERED' ? 'bg-green-100 text-green-800' :
+                                                                        order.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                                                                            'bg-gray-100 text-gray-800'}`}>
                                             {order.status}
                                         </span>
                                     </td>

@@ -1,8 +1,8 @@
 # Labamu Class A WMS - Product Requirements Document (PRD)
 
-**Version:** 1.0
+**Version:** 2.0
 **Status:** Approved
-**Date:** 2026-02-05
+**Date:** 2026-03-06
 
 ## 1. Executive Summary
 
@@ -75,6 +75,41 @@ This section outlines the key differentiators of Labamu WMS, aligned with specif
 - **Valuation Report:** Current inventory value based on Average Cost or Standard Cost.
 - **Transaction History:** Immutable ledger of all moves for audit trails.
 
+### 4.7 Packing Station
+- **Packing Queue:** Visual queue of orders in `PACKING` status awaiting packing.
+- **Packing Sessions:** Workers create packing sessions, assign items to parcels, and track progress.
+- **Parcel Management:** Create multiple parcels per order. Record parcel weight and contents.
+- **Completion Flow:** Session marked `COMPLETED` when all order items are assigned to parcels.
+
+### 4.8 Shipping Documents
+- **Shipping Labels:** Automated PDF generation with barcode, order ID, destination address, and tracking info.
+- **Packing Slips:** Itemized PDF documents for each shipment listing contents and quantities.
+- **Daily Manifests:** Warehouse-level PDF summarizing all shipments for a given date.
+
+### 4.9 Replenishment Engine
+- **Reorder Point Monitoring:** Automated scanning of all products against configurable `reorderPoint` thresholds.
+- **Replenishment Alerts:** Dashboard showing products below threshold with severity ranking.
+- **Auto-PO Generation:** One-click creation of purchase orders directly from replenishment alerts.
+- **Alert Lifecycle:** Dismiss alerts that don't require action; auto-regenerated on next scan if still below threshold.
+
+### 4.10 Notifications & Alerts
+- **Notification Bell:** Real-time unread notification count badge in the header bar.
+- **Notification Types:** EXPIRY_WARNING, EXPIRED_STOCK, LOW_STOCK, SYSTEM alerts.
+- **Expiry Checker:** Scheduled service that scans batches for expiring or expired stock and creates notifications.
+- **Notification Center:** Full-page view with filtering, read/unread management, and bulk actions.
+
+### 4.11 Barcode Validation
+- **Universal Barcode Lookup:** Single endpoint that resolves barcodes to Product (by SKU), Location (by code), or Batch (by batch number).
+- **Context-Aware Validation:** Barcode scans validated against specific operations (RECEIVE_PO, PICK_TASK, PACK_ORDER, PUTAWAY).
+- **Scan-to-Receive:** Scan a product barcode against a PO to receive one unit automatically.
+- **Scan-to-Pick:** Scan a product barcode to validate and complete a picking task.
+
+### 4.12 Analytics & Classification
+- **ABC Auto-Classification:** Automated product classification (A/B/C) based on historical outbound velocity over configurable time periods.
+- **Pick Accuracy Metrics:** Warehouse-level KPIs tracking accuracy percentage, perfect picks, exceptions, and short picks.
+- **Zone-Scoped Cycle Counts:** Generate expected inventory counts scoped to specific zones or location patterns for targeted auditing.
+- **Multi-Carrier Rate Comparison:** Mock carrier integration providing rate comparison across USPS, FedEx, and UPS.
+
 ## 5. Non-Functional Requirements
 
 ### 5.1 Performance
@@ -101,3 +136,5 @@ This section outlines the key differentiators of Labamu WMS, aligned with specif
 - **Mobile App:** Native iOS/Android app for barcode scanning using device camera.
 - **Integration:** Pre-built connectors for Shopify, WooCommerce, and NetSuite.
 - **Advanced Labor Management:** Tracking worker productivity and picking rates.
+- **Predictive Analytics:** Demand forecasting and automated reorder suggestions using ML.
+- **Wave Picking Optimization:** Route optimization using spatial coordinates from the floor plan.

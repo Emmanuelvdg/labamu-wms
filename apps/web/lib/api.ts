@@ -93,6 +93,8 @@ export async function updateWarehouse(id: string, data: {
     latitude?: number;
     longitude?: number;
     phone?: string;
+    incomingSteps?: string;
+    outgoingSteps?: string;
 }) {
     return fetchWithRetry(`${API_URL}/warehouses/${id}`, {
         method: 'PATCH',
@@ -266,6 +268,10 @@ export async function fetchCustomers() {
     return fetchWithRetry(`${API_URL}/customers`);
 }
 
+export async function getCustomer(id: string) {
+    return fetchWithRetry(`${API_URL}/customers/${id}`);
+}
+
 export async function createCustomer(data: any) {
     return fetchWithRetry(`${API_URL}/customers`, {
         method: 'POST',
@@ -301,6 +307,14 @@ export async function cancelOrder(id: string) {
 export async function deleteOrder(id: string) {
     return fetchWithRetry(`${API_URL}/orders/${id}`, {
         method: 'DELETE',
+    });
+}
+
+export async function updateOrderStatus(id: string, status: string) {
+    return fetchWithRetry(`${API_URL}/orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
     });
 }
 
@@ -903,3 +917,101 @@ export const api = {
     }),
     delete: (url: string) => fetchWithRetry(`${API_URL}${url}`, { method: 'DELETE' }),
 };
+
+// ========== Packing ==========
+export async function fetchPackingQueue(warehouseId?: string) {
+    const params = warehouseId ? `?warehouseId=${warehouseId}` : '';
+    return fetchWithRetry(`${API_URL}/packing/queue${params}`);
+}
+
+export async function createPackingSession(orderId: string, workerId?: string) {
+    return fetchWithRetry(`${API_URL}/packing/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, workerId }),
+    });
+}
+
+export async function fetchPackingSession(sessionId: string) {
+    return fetchWithRetry(`${API_URL}/packing/sessions/${sessionId}`);
+}
+
+export async function fetchPackingSessionByOrder(orderId: string) {
+    return fetchWithRetry(`${API_URL}/packing/sessions/order/${orderId}`);
+}
+
+export async function scanPackingItem(sessionId: string, barcode: string) {
+    return fetchWithRetry(`${API_URL}/packing/sessions/${sessionId}/scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ barcode }),
+    });
+}
+
+export async function createPackingParcel(sessionId: string, data: {
+    weight?: number; length?: number; width?: number; height?: number;
+    trackingNumber?: string; items: { productId: string; quantity: number }[];
+}) {
+    return fetchWithRetry(`${API_URL}/packing/sessions/${sessionId}/parcels`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function removePackingParcel(parcelId: string) {
+    return fetchWithRetry(`${API_URL}/packing/parcels/${parcelId}`, { method: 'DELETE' });
+}
+
+export async function completePackingSession(sessionId: string) {
+    return fetchWithRetry(`${API_URL}/packing/sessions/${sessionId}/complete`, { method: 'POST' });
+}
+
+// ========== Replenishment ==========
+export async function fetchReplenishmentSummary(warehouseId?: string) {
+    const params = warehouseId ? `?warehouseId=${warehouseId}` : '';
+    return fetchWithRetry(`${API_URL}/replenishment/summary${params}`);
+}
+
+export async function fetchReplenishmentAlerts(filters?: { warehouseId?: string; status?: string; type?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.warehouseId) params.set('warehouseId', filters.warehouseId);
+    if (filters?.status) params.set('status', filters.status);
+    if (filters?.type) params.set('type', filters.type);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return fetchWithRetry(`${API_URL}/replenishment/alerts${qs}`);
+}
+
+export async function triggerStockCheck(warehouseId?: string) {
+    const params = warehouseId ? `?warehouseId=${warehouseId}` : '';
+    return fetchWithRetry(`${API_URL}/replenishment/check${params}`, { method: 'POST' });
+}
+
+export async function createAutoReplenishmentPO(alertId: string) {
+    return fetchWithRetry(`${API_URL}/replenishment/alerts/${alertId}/auto-po`, { method: 'POST' });
+}
+
+export async function dismissReplenishmentAlert(alertId: string) {
+    return fetchWithRetry(`${API_URL}/replenishment/alerts/${alertId}/dismiss`, { method: 'POST' });
+}
+
+// ========== Notifications ==========
+export async function fetchNotifications(filters?: { read?: boolean; limit?: number }) {
+    const params = new URLSearchParams();
+    if (filters?.read !== undefined) params.set('read', String(filters.read));
+    if (filters?.limit) params.set('limit', String(filters.limit));
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return fetchWithRetry(`${API_URL}/notifications${qs}`);
+}
+
+export async function fetchUnreadNotificationCount() {
+    return fetchWithRetry(`${API_URL}/notifications/unread-count`);
+}
+
+export async function markNotificationRead(id: string) {
+    return fetchWithRetry(`${API_URL}/notifications/${id}/read`, { method: 'PATCH' });
+}
+
+export async function markAllNotificationsRead() {
+    return fetchWithRetry(`${API_URL}/notifications/mark-all-read`, { method: 'POST' });
+}

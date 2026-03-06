@@ -474,7 +474,7 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
                                 <h3 className="text-lg font-medium">Receive Goods</h3>
                                 <p className="text-sm text-gray-500">Process incoming shipments for this order.</p>
                             </div>
-                            <Button onClick={() => router.push(`/purchase-orders/${po.id}/receive`)}>
+                            <Button onClick={() => router.push(`/inventory/purchases/${po.id}/receive`)}>
                                 Go to Receiving
                             </Button>
                         </div>
@@ -488,7 +488,7 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-semibold">Receipt History (GRNs)</h2>
                         {po.status !== 'RECEIVED' && (
-                            <Button onClick={() => router.push(`/purchase-orders/${po.id}/receive`)}>
+                            <Button onClick={() => router.push(`/inventory/purchases/${po.id}/receive`)}>
                                 + New Receipt
                             </Button>
                         )}

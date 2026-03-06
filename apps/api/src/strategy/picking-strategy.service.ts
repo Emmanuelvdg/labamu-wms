@@ -176,11 +176,7 @@ export class PickingStrategyService {
         // 3. Create Tasks
         const tasks = [];
         for (const order of orders) {
-            // Update Order Status
-            await this.prisma.order.update({
-                where: { id: order.id },
-                data: { status: 'PICKING' }
-            });
+            let orderHasTasks = false;
 
             for (const item of order.items) {
                 const pickingRule = 'FEFO'; // Force FEFO for now
@@ -209,14 +205,23 @@ export class PickingStrategyService {
                         }
                     });
                     tasks.push(task);
+                    orderHasTasks = true;
                 }
+            }
+
+            if (orderHasTasks) {
+                // Update Order Status ONLY if tasks were generated
+                await this.prisma.order.update({
+                    where: { id: order.id },
+                    data: { status: 'PICKING' }
+                });
+            } else {
+                console.warn(`Order ${order.id} skipped - no tasks could be generated (missing inventory)`);
             }
         }
 
-        return this.prisma.pickingSession.findUnique({
-            where: { id: session.id },
-            include: { tasks: true }
-        });
+        // Re-fetch with full relations so UI can render product/location/order
+        return this.getActiveSession(warehouseId);
     }
 
     // New Helper: Allocates stock from Batches based on Strategy
@@ -367,6 +372,9 @@ export class PickingStrategyService {
                             }
                         },
                         order: true
+                    },
+                    orderBy: {
+                        sourceLocation: { name: 'asc' }
                     }
                 }
             },
@@ -403,6 +411,31 @@ export class PickingStrategyService {
         return task;
     }
 
+    async scanPick(taskId: string, barcode: string) {
+        const task = await this.prisma.pickingTask.findUnique({
+            where: { id: taskId },
+            include: { product: true }
+        });
+
+        if (!task) throw new HttpException('Task not found', HttpStatus.NOT_FOUND);
+        if (task.status !== 'PENDING' && task.status !== 'IN_PROGRESS') {
+            throw new HttpException('Task is already completed or cancelled', HttpStatus.BAD_REQUEST);
+        }
+
+        // We assume BarcodeValidatorService was called externally first, or we validate the productId matches the barcode here
+        // For simplicity in this method, we just assume the barcode matches the product.
+        if (task.product.sku !== barcode && task.product.id !== barcode) {
+            throw new HttpException(`Barcode ${barcode} does not match task product`, HttpStatus.BAD_REQUEST);
+        }
+
+        // Just execute a full pick for the remaining quantity for now
+        // A more advanced version would increment a running count
+        return this.updateTask(taskId, {
+            pickedQuantity: task.quantity,
+            status: 'COMPLETED'
+        });
+    }
+
     async completeSession(sessionId: string) {
         const session = await this.prisma.pickingSession.findUnique({
             where: { id: sessionId },
@@ -436,6 +469,48 @@ export class PickingStrategyService {
                 where: { id: orderId },
                 data: { status: newStatus }
             });
+
+            // 3. Generate stock moves for picked items (Storage → next zone)
+            if (allPicked && session.warehouseId) {
+                try {
+                    const warehouse = await this.prisma.warehouse.findUnique({
+                        where: { id: session.warehouseId },
+                        select: { outgoingSteps: true }
+                    });
+
+                    const outgoingSteps = warehouse?.outgoingSteps || '1_step';
+
+                    // Determine the destination zone based on outgoing steps
+                    let destAreaType = 'SHIPPING'; // 1-step: straight to shipping
+                    if (outgoingSteps === '2_steps') {
+                        destAreaType = 'SHIPPING'; // 2-step: Storage → Shipping
+                    } else if (outgoingSteps === '3_steps') {
+                        destAreaType = 'PICKING'; // 3-step: Storage → Picking Zone (then Pack, then Ship)
+                    }
+
+                    const destArea = await this.prisma.warehouseFunctionalArea.findFirst({
+                        where: { warehouseId: session.warehouseId, areaType: destAreaType }
+                    });
+
+                    if (destArea?.linkedLocationId) {
+                        for (const task of orderTasks) {
+                            await this.prisma.stockMove.create({
+                                data: {
+                                    productId: task.productId,
+                                    quantity: task.pickedQuantity || task.quantity,
+                                    sourceLocationId: task.sourceLocationId,
+                                    destinationLocationId: destArea.linkedLocationId,
+                                    status: 'DONE',
+                                    origin: `ORDER-${orderId.substring(0, 8)}-PICK`,
+                                }
+                            });
+                        }
+                        console.log(`[Picking] Stock moves: Storage→${destAreaType} for order ${orderId.substring(0, 8)} (${outgoingSteps})`);
+                    }
+                } catch (error) {
+                    console.error(`[Picking] Failed to create stock moves for order ${orderId}:`, error);
+                }
+            }
         }
 
         return { success: true };

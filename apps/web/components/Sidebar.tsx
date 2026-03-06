@@ -30,6 +30,7 @@ type NavItem = {
 
 const navigation: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Mobile Hub', href: '/mobile', icon: Map, permission: { resource: 'SETTINGS', action: 'READ' } },
     { name: 'Report', href: '/reporting', icon: FileText, permission: { resource: 'REPORTS', action: 'READ' } },
     { name: 'Product', href: '/inventory', icon: Box, permission: { resource: 'INVENTORY', action: 'READ' } },
     { name: 'Lot Number', href: '/inventory/batches', icon: Layers, permission: { resource: 'INVENTORY', action: 'READ' } },
@@ -50,8 +51,10 @@ const navigation: NavItem[] = [
         href: '#outbound',
         icon: ShoppingCart,
         items: [
+            { name: 'Customers', href: '/customers', permission: { resource: 'CUSTOMERS', action: 'READ' } },
             { name: 'Orders', href: '/orders', permission: { resource: 'ORDERS', action: 'READ' } },
             { name: 'Picking', href: '/picking', permission: { resource: 'ORDERS', action: 'UPDATE' } },
+            { name: 'Packing', href: '/packing', permission: { resource: 'ORDERS', action: 'UPDATE' } },
             { name: 'Returns (RMA)', href: '/returns', permission: { resource: 'ORDERS', action: 'READ' } },
             { name: 'Shipments', href: '/shipments', permission: { resource: 'ORDERS', action: 'READ' } },
             { name: 'Invoices', href: '/invoices', permission: { resource: 'INVOICES', action: 'READ' } },
@@ -68,6 +71,7 @@ const navigation: NavItem[] = [
             { name: 'Transfers', href: '/transfers', permission: { resource: 'FULFILLMENT', action: 'READ' } },
             { name: 'Adjustments', href: '/inventory/adjustments', permission: { resource: 'INVENTORY', action: 'UPDATE' } },
             { name: 'Scrap', href: '/inventory/scrap', permission: { resource: 'INVENTORY', action: 'UPDATE' } },
+            { name: 'Replenishment', href: '/inventory/replenishment', permission: { resource: 'INVENTORY', action: 'READ' } },
         ]
     },
     {

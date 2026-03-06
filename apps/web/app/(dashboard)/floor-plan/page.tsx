@@ -379,7 +379,7 @@ function FloorPlanContent() {
 
     // Load attribute definitions on mount
     useEffect(() => {
-        fetch(`${API_URL}/inventory/attributes/definitions`)
+        fetch(`/api/inventory/attributes/definitions`)
             .then(r => r.ok ? r.json() : [])
             .then(data => setAttributeDefinitions(Array.isArray(data) ? data : []))
             .catch(() => { });
@@ -389,7 +389,7 @@ function FloorPlanContent() {
     useEffect(() => {
         if (showHeatmap && bins.length > 0 && selectedWarehouseId) {
             const ids = bins.map(b => b.id);
-            fetch(`${API_URL}/inventory/locations/utilisation-batch`, {
+            fetch(`/api/inventory/locations/utilisation-batch`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ locationIds: ids, metric: heatmapMetric })
@@ -428,7 +428,7 @@ function FloorPlanContent() {
     const handleExport = async () => {
         if (!selectedWarehouseId) return;
         try {
-            const res = await fetch(`${API_URL}/inventory/locations/export?warehouseId=${selectedWarehouseId}`);
+            const res = await fetch(`/api/inventory/locations/export?warehouseId=${selectedWarehouseId}`);
             if (res.ok) {
                 const csv = await res.text();
                 const blob = new Blob([csv], { type: 'text/csv' });

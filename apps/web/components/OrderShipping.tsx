@@ -278,8 +278,8 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                     </div>
                 )}
 
-                {/* Manual Shipping Flow for PACKING status */}
-                {order.status === 'PACKING' && (
+                {/* Manual Shipping Flow for PACKED status (after packing is confirmed) */}
+                {order.status === 'PACKED' && (
                     <div className="mt-6 pt-6 border-t border-gray-200">
                         <h4 className="font-semibold text-gray-900 mb-2">Process Shipment</h4>
 

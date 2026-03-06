@@ -8,451 +8,386 @@ datasource db {
 }
 
 model Product {
-  id             String    @id @default(uuid())
-  sku            String    @unique
-  name           String
-  category       String
-  classification String? // ABC Classification: A, B, C
-  type           String? // Raw, Finished, Semi-finished
-  unitOfMeasure  String? // Centimeter, Piece, etc.
-  isStockable    Boolean   @default(true)
-  status         String    @default("Active")
-  averageCost    Float     @default(0)
-  price          Float     @default(0)
-  description    String?
-  tracking       String    @default("none") // none, lot, serial
-  expiryDate     DateTime? // Keep for legacy/simple use, but Batches are preferred
-  // Dimensions & Weight
-  width          Float? // cm
-  height         Float? // cm
-  depth          Float? // cm
-  weight         Float? // kg
-  
-  // Advanced Warehouse Attributes
-  velocity       String?   @default("C") // A, B, C (Fast, Medium, Slow)
-  abcClass       String?   // A, B, C (Cost based)
-
-  // ===  PHASE 3: Enhanced Putaway - Storage Requirements - NOW DYNAMIC  ===
-  // Removed: storageRequirements String? - replaced by attributes relation (ProductAttribute)
-  temperatureMin      Float?  // °C - minimum storage temperature required (kept for direct temp ranges)
-  temperatureMax      Float?  // °C - maximum storage temperature required (kept for direct temp ranges)
-  
-  // === PHASE 2: Enhanced Putaway - Packaging Preferences ===
-  preferredPackaging  String? // PALLET, BOX, INDIVIDUAL
-  stackable           Boolean @default(true)
-  maxStackHeight      Int?    // Maximum number of units to stack
-
+  id                   String                       @id @default(uuid())
+  sku                  String                       @unique
+  name                 String
+  category             String
+  classification       String?
+  type                 String?
+  unitOfMeasure        String?
+  isStockable          Boolean                      @default(true)
+  status               String                       @default("Active")
+  averageCost          Float                        @default(0)
+  price                Float                        @default(0)
+  description          String?
+  tracking             String                       @default("none")
+  expiryDate           DateTime?
+  width                Float?
+  height               Float?
+  depth                Float?
+  weight               Float?
+  velocity             String?                      @default("C")
+  abcClass             String?
+  temperatureMin       Float?
+  temperatureMax       Float?
+  preferredPackaging   String?
+  stackable            Boolean                      @default(true)
+  maxStackHeight       Int?
   supplierId           String?
-  inventory            ProductInventory[] // Aggregate view
-  batches              InventoryBatch[] // Detailed view
-  orderItems           OrderItem[]
-  reservations         Reservation[]
-  transactions         StockTransaction[]
-  putawayRules         PutawayRule[]
+  safetyStock          Int?
+  reorderPoint         Int?
+  reorderQuantity      Int?
+  maxStock             Int?
+  requiredAttributeId  String?
   inventoryAdjustments InventoryAdjustment[]
-  scrapOrders          ScrapOrder[]
-  reorderingRules      ReorderingRule[]
-  routes               Route[]
-  purchaseOrderItems   PurchaseOrderItem[]
-  stockMoves           StockMove[]
-  packaging            ProductPackaging[]
+  batches              InventoryBatch[]
+  orderItems           OrderItem[]
   pickingTasks         PickingTask[]
+  requiredAttribute    LocationAttributeDefinition? @relation(fields: [requiredAttributeId], references: [id])
+  attributes           ProductAttribute[]
+  inventory            ProductInventory[]
+  packaging            ProductPackaging[]
+  purchaseOrderItems   PurchaseOrderItem[]
+  putawayRules         PutawayRule[]
   putawayTasks         PutawayTask[]
-  TransferOrderItem    TransferOrderItem[]
+  qaInspectionResults  QaInspectionResult[]
   receiptItems         ReceiptItem[]
-
-  // Storage
-  requiredAttributeId String?
-  requiredAttribute   LocationAttributeDefinition? @relation(fields: [requiredAttributeId], references: [id])
-  rotationRules       RotationRule[]
-  attributes          ProductAttribute[]
-  stocktakeTasks      StocktakeTask[]
-  qaInspectionResults QaInspectionResult[]
+  reorderingRules      ReorderingRule[]
+  reservations         Reservation[]
+  rotationRules        RotationRule[]
+  scrapOrders          ScrapOrder[]
+  stockMoves           StockMove[]
+  transactions         StockTransaction[]
+  stocktakeTasks       StocktakeTask[]
+  TransferOrderItem    TransferOrderItem[]
+  packageItems         PackingParcelItem[]
+  replenishmentAlerts  ReplenishmentAlert[]
+  routes               Route[]                      @relation("ProductToRoute")
 }
 
 model Route {
   id          String    @id @default(uuid())
   name        String
   description String?
-  rules       Rule[]
-  products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  rules       Rule[]
+  products    Product[] @relation("ProductToRoute")
 }
 
 model Rule {
   id                    String      @id @default(uuid())
   routeId               String
-  route                 Route       @relation(fields: [routeId], references: [id])
-  action                String // PULL, PUSH
+  action                String
   sourceLocationId      String?
-  sourceLocation        Location?   @relation("SourceLocation", fields: [sourceLocationId], references: [id])
   destinationLocationId String?
-  destinationLocation   Location?   @relation("DestLocation", fields: [destinationLocationId], references: [id])
   sequence              Int         @default(0)
+  destinationLocation   Location?   @relation("DestLocation", fields: [destinationLocationId], references: [id])
+  sourceLocation        Location?   @relation("SourceLocation", fields: [sourceLocationId], references: [id])
+  route                 Route       @relation(fields: [routeId], references: [id])
   stockMoves            StockMove[]
 }
 
 model Warehouse {
-  id             String    @id @default(uuid())
-  name           String
-  shortName      String? // Max 5 chars
-  status         String  @default("Enabled") // Enabled, Disabled
-
-  // Physical Dimensions (meters)
-  length         Float?  @default(0)
-  width          Float?  @default(0)
-  height         Float?  @default(0)
-  
-  // Capacity
-  maxWeight      Float?  @default(0) // Kg
-  
-  // Structured Address Fields
-  address        String? // Street address
-  city           String?
-  state          String? // State/Province
-  postalCode     String?
-  country        String?
-  phone          String? // Contact phone for delivery services
-  latitude       Float?
-  longitude      Float?
-  
-  companyId      String?
-  location       String @default("{}") // JSON: { lat: number, lng: number } - deprecated, use latitude/longitude
-  type           String
-  partnerId      String?
-  viewLocationId String?   @unique
-  viewLocation   Location? @relation("WarehouseView", fields: [viewLocationId], references: [id])
-
-  // Route Configuration
-  incomingSteps          String? // "1_step", "2_steps", "3_steps"
-  outgoingSteps          String? // "1_step", "2_steps", "3_steps"
-  dropshipSubcontractors Boolean @default(false)
-  resupplySubcontractors Boolean @default(false)
-  manufactureToResupply  Boolean @default(false)
-  manufactureSteps       String? // "1_step", "2_steps", "3_steps"
-  buyToResupply          Boolean @default(false)
-
-  // Floor Plan Configuration
-  floorPlanShape     String? @default("rectangle") // "rectangle", "u_shape", "l_shape", "custom"
-  floorPlanVertices  String? // JSON array of {x, y} points in meters
-  floorPlanWidth     Float?  @default(50.0) // Bounding box width in meters
-  floorPlanHeight    Float?  @default(30.0) // Bounding box height in meters
-  
-  // Grid Settings
-  gridEnabled        Boolean @default(true)
-  gridSize           Float   @default(1.0) // Grid square size in meters
-  snapToGrid         Boolean @default(true)
-
-  inventory          ProductInventory[]
-  batches            InventoryBatch[]
-  pickingStrategies  PickingStrategy[]
-  orders             Order[]
-  transferDestOrders Order[]            @relation("OrderDestination")
-  pickingSessions    PickingSession[]
-  putawaySessions    PutawaySession[]
-  putawayRules       PutawayRule[] // Phase 2
-
-  users            User[]
-  fulfillmentRules FulfillmentRule[]
-  sourceTransfers  TransferOrder[]   @relation("TransferSource")
-  destTransfers    TransferOrder[]   @relation("TransferDest")
-  rotationRules    RotationRule[]
-  functionalAreas  WarehouseFunctionalArea[]
-  lalamoveConfig   LalamoveConfig?
-  stocktakeSessions StocktakeSession[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  id                     String                    @id @default(uuid())
+  name                   String
+  shortName              String?
+  status                 String                    @default("Enabled")
+  length                 Float?                    @default(0)
+  width                  Float?                    @default(0)
+  height                 Float?                    @default(0)
+  maxWeight              Float?                    @default(0)
+  address                String?
+  city                   String?
+  state                  String?
+  postalCode             String?
+  country                String?
+  phone                  String?
+  latitude               Float?
+  longitude              Float?
+  companyId              String?
+  location               String                    @default("{}")
+  type                   String
+  partnerId              String?
+  viewLocationId         String?                   @unique
+  incomingSteps          String?
+  outgoingSteps          String?
+  dropshipSubcontractors Boolean                   @default(false)
+  resupplySubcontractors Boolean                   @default(false)
+  manufactureToResupply  Boolean                   @default(false)
+  manufactureSteps       String?
+  buyToResupply          Boolean                   @default(false)
+  floorPlanShape         String?                   @default("rectangle")
+  floorPlanVertices      String?
+  floorPlanWidth         Float?                    @default(50.0)
+  floorPlanHeight        Float?                    @default(30.0)
+  gridEnabled            Boolean                   @default(true)
+  gridSize               Float                     @default(1.0)
+  snapToGrid             Boolean                   @default(true)
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @default(now()) @updatedAt
+  fulfillmentRules       FulfillmentRule[]
+  batches                InventoryBatch[]
+  lalamoveConfig         LalamoveConfig?
+  transferDestOrders     Order[]                   @relation("OrderDestination")
+  orders                 Order[]
+  pickingSessions        PickingSession[]
+  pickingStrategies      PickingStrategy[]
+  inventory              ProductInventory[]
+  putawayRules           PutawayRule[]
+  putawaySessions        PutawaySession[]
+  rotationRules          RotationRule[]
+  stocktakeSessions      StocktakeSession[]
+  destTransfers          TransferOrder[]           @relation("TransferDest")
+  sourceTransfers        TransferOrder[]           @relation("TransferSource")
+  viewLocation           Location?                 @relation("WarehouseView", fields: [viewLocationId], references: [id])
+  functionalAreas        WarehouseFunctionalArea[]
+  users                  User[]                    @relation("UserToWarehouse")
+  replenishmentAlerts    ReplenishmentAlert[]
 }
 
 model WarehouseFunctionalArea {
-  id          String    @id @default(uuid())
-  warehouseId String
-  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
-  
-  // Area Definition
-  name        String    // e.g. "Main Receiving Dock"
-  areaType    String    // RECEIVING, STAGING, PUTAWAY_LANE, STORAGE, PICKING, PACKING, SHIPPING
-  
-  // Floor Plan Coordinates
-  x           Float     @default(0)
-  y           Float     @default(0)
-  width       Float     @default(100)
-  height      Float     @default(100)
-  rotation    Float     @default(0)
-  
-  // Visual Properties
-  color       String?   // Hex color for visualization
-  icon        String?   // Icon identifier
-  
-  // Configuration
-  attributes  String?   // JSON: { capacity, equipment, etc. }
-  active      Boolean   @default(true)
-  sequence    Int       @default(0) // Order in process flow
-  
-  // Linking
+  id               String    @id @default(uuid())
+  warehouseId      String
+  name             String
+  areaType         String
+  x                Float     @default(0)
+  y                Float     @default(0)
+  width            Float     @default(100)
+  height           Float     @default(100)
+  rotation         Float     @default(0)
+  color            String?
+  icon             String?
+  attributes       String?
+  active           Boolean   @default(true)
+  sequence         Int       @default(0)
   linkedLocationId String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   linkedLocation   Location? @relation(fields: [linkedLocationId], references: [id])
-  
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  warehouse        Warehouse @relation(fields: [warehouseId], references: [id])
 }
 
 model Location {
-  id                 String    @id @default(uuid())
-  name               String
-  type               String // VIEW, INTERNAL, VENDOR, CUSTOMER, INVENTORY_LOSS, PRODUCTION, TRANSIT
-  structuralType     String? // WAREHOUSE, ROOM, ROW, BAY, SHELF, POSITION
-  attributes         String? // JSON: { temperature: 'refrigerated', loadBearing: true, ... }
-  supportedPackaging String? // JSON: ["PALLET", "BOX"]
-  removalStrategy    String? // FIFO, LIFO, FEFO
-  inventoryFrequency Int       @default(0) // Days
-  nextInventoryDate  DateTime?
-
-  // Capacity (Updated Phase 8)
-  maxVolume Float? // m3 (Legacy, consider deprecating for computed)
-  maxWeight Float? // DEPRECATED: Use maxWeightKg instead. Kept for legacy compatibility.
-  
-  // Canonical Physical Dimensions (Phase 8)
-  innerLength Float?    @default(0) // mm
-  innerWidth  Float?    @default(0) // mm
-  innerHeight Float?    @default(0) // mm
-  maxWeightKg Float?    @default(0) // kg (Canonical source of truth)
-
-  // Naming & Addressing (Phase 8)
-  code        String?   // Short code, e.g. "RCV". Unique per parent.
-  fullAddress String?   @unique // Materialized path: "WH01.RCV.01"
-
-  // Floor Plan Coordinates (for Bays)
-  x        Float? @default(0)
-  y        Float? @default(0)
-  width    Float? @default(1)
-  height   Float? @default(1)
-  rotation Float? @default(0)
-
-  // Optimization
-  zonePriority   Int       @default(100) // Lower = Higher Priority (e.g. 1 = Golden Zone, 100 = Back of house)
-  putawaySequence Int      @default(0)   // Order to traverse within the zone
-
-  parentId      String?
-  parent        Location?  @relation("LocationHierarchy", fields: [parentId], references: [id])
-  children      Location[] @relation("LocationHierarchy")
-  warehouseId   String?
-  warehouseView Warehouse? @relation("WarehouseView")
-
-  // Relations
-  inventory          ProductInventory[]
-  batches            InventoryBatch[]
-  adjustments        InventoryAdjustment[]
-  scrapOrders        ScrapOrder[]
-  putawayRules       PutawayRule[]
-  sourcePutawayRules PutawayRule[]         @relation("PutawaySource")
-  putawayDestinationRules PutawayRule[]    @relation("PutawayDest") // Phase 2
-  reorderingRules    ReorderingRule[]
-  sourceRules        Rule[]                @relation("SourceLocation")
-  destRules          Rule[]                @relation("DestLocation")
-  packages           Package[]
-  receipts           Receipt[]
-  sourceMoves        StockMove[]           @relation("MoveSource")
-  destMoves          StockMove[]           @relation("MoveDest")
-  pickingTasks       PickingTask[]
-  putawaySourceTasks PutawayTask[]         @relation("PutawaySource")
-  putawayDestTasks   PutawayTask[]         @relation("PutawayDest")
-  functionalAreas    WarehouseFunctionalArea[]
-  
-  // Phase 3B: Dynamic attributes (replacing JSON)
-  dynamicAttributes  LocationAttribute[]
-  stocktakeTasks     StocktakeTask[]
+  id                      String                    @id @default(uuid())
+  name                    String
+  type                    String
+  structuralType          String?
+  attributes              String?
+  supportedPackaging      String?
+  removalStrategy         String?
+  inventoryFrequency      Int                       @default(0)
+  nextInventoryDate       DateTime?
+  maxVolume               Float?
+  maxWeight               Float?
+  x                       Float?                    @default(0)
+  y                       Float?                    @default(0)
+  width                   Float?                    @default(1)
+  height                  Float?                    @default(1)
+  rotation                Float?                    @default(0)
+  zonePriority            Int                       @default(100)
+  putawaySequence         Int                       @default(0)
+  parentId                String?
+  warehouseId             String?
+  code                    String?
+  fullAddress             String?                   @unique
+  innerHeight             Float?                    @default(0)
+  innerLength             Float?                    @default(0)
+  innerWidth              Float?                    @default(0)
+  maxWeightKg             Float?                    @default(0)
+  adjustments             InventoryAdjustment[]
+  batches                 InventoryBatch[]
+  parent                  Location?                 @relation("LocationHierarchy", fields: [parentId], references: [id])
+  children                Location[]                @relation("LocationHierarchy")
+  dynamicAttributes       LocationAttribute[]
+  packages                Package[]
+  pickingTasks            PickingTask[]
+  inventory               ProductInventory[]
+  putawayRules            PutawayRule[]
+  putawayDestinationRules PutawayRule[]             @relation("PutawayDest")
+  sourcePutawayRules      PutawayRule[]             @relation("PutawaySource")
+  putawayDestTasks        PutawayTask[]             @relation("PutawayDest")
+  putawaySourceTasks      PutawayTask[]             @relation("PutawaySource")
+  receipts                Receipt[]
+  reorderingRules         ReorderingRule[]
+  destRules               Rule[]                    @relation("DestLocation")
+  sourceRules             Rule[]                    @relation("SourceLocation")
+  scrapOrders             ScrapOrder[]
+  destMoves               StockMove[]               @relation("MoveDest")
+  sourceMoves             StockMove[]               @relation("MoveSource")
+  stocktakeTasks          StocktakeTask[]
+  warehouseView           Warehouse?                @relation("WarehouseView")
+  functionalAreas         WarehouseFunctionalArea[]
 }
 
 model ProductPackaging {
-  id       String @id @default(uuid())
-  name     String // e.g. "Box of 12", "Pallet"
-  unitType String @default("UNIT") // INDIVIDUAL, BOX, PALLET
-  quantity Int    @default(1)
-
-  // Dimensions & Weight
-  width  Float @default(0) // cm
-  height Float @default(0) // cm
-  length Float @default(0) // cm matches depth
-  weight Float @default(0) // kg
-
-  // Ti-Hi Logic (Palletization)
-  ti     Int   @default(0) // Tier (Cartons per layer)
-  hi     Int   @default(0) // High (Layers per pallet)
-
-  barcode String?
-
-  storageRequirements String? // JSON: ["refrigerated", "heavy_duty"]
-  maxStacking         Int     @default(1)
-
-  packages           Package[]
-  purchaseOrderItems PurchaseOrderItem[]
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  Product            Product?            @relation(fields: [productId], references: [id])
-  productId          String?
+  id                  String              @id @default(uuid())
+  name                String
+  unitType            String              @default("UNIT")
+  quantity            Int                 @default(1)
+  width               Float               @default(0)
+  height              Float               @default(0)
+  length              Float               @default(0)
+  weight              Float               @default(0)
+  ti                  Int                 @default(0)
+  hi                  Int                 @default(0)
+  barcode             String?
+  storageRequirements String?
+  maxStacking         Int                 @default(1)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  productId           String?
+  packages            Package[]
+  Product             Product?            @relation(fields: [productId], references: [id])
+  purchaseOrderItems  PurchaseOrderItem[]
 }
 
-// Aggregate Inventory (Legacy/Fast Lookup)
 model ProductInventory {
   id          String    @id @default(uuid())
   productId   String
-  product     Product   @relation(fields: [productId], references: [id])
   warehouseId String
-  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
   locationId  String?
-  location    Location? @relation(fields: [locationId], references: [id])
   quantity    Int
   reserved    Int       @default(0)
+  location    Location? @relation(fields: [locationId], references: [id])
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id])
 }
 
 model InventoryBatch {
   id              String                @id @default(uuid())
   batchNumber     String                @unique
   productId       String
-  product         Product               @relation(fields: [productId], references: [id])
   warehouseId     String
-  warehouse       Warehouse             @relation(fields: [warehouseId], references: [id])
   locationId      String?
-  location        Location?             @relation(fields: [locationId], references: [id])
   packageId       String?
-  package         Package?              @relation(fields: [packageId], references: [id])
   initialQuantity Int
   currentQuantity Int
-  reserved        Int       @default(0)
+  reserved        Int                   @default(0)
   costPerUnit     Float
   purchaseDate    DateTime
   expiryDate      DateTime?
-  status          String // Active, Expired, Depleted
+  status          String
   vendor          String?
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
   adjustments     InventoryAdjustment[]
+  package         Package?              @relation(fields: [packageId], references: [id])
+  location        Location?             @relation(fields: [locationId], references: [id])
+  warehouse       Warehouse             @relation(fields: [warehouseId], references: [id])
+  product         Product               @relation(fields: [productId], references: [id])
   stockMoves      StockMove[]
 }
 
 model Package {
   id          String            @id @default(uuid())
-  name        String            @unique // Barcode / LPN
-  type        String // Box, Pallet, etc. (Legacy/Simple)
-  
-  // Canonical Handling Unit Properties (Phase 8)
-  huType      String    @default("BOX") // PALLET, BOX, EACH
-  outerLength Float?    @default(0) // mm
-  outerWidth  Float?    @default(0) // mm
-  outerHeight Float?    @default(0) // mm
-  tareWeight  Float?    @default(0) // kg
-
+  name        String            @unique
+  type        String
+  huType      String            @default("BOX")
+  outerLength Float?            @default(0)
+  outerWidth  Float?            @default(0)
+  outerHeight Float?            @default(0)
+  tareWeight  Float?            @default(0)
   packagingId String?
-  packaging   ProductPackaging? @relation(fields: [packagingId], references: [id])
   locationId  String?
-  location    Location?         @relation(fields: [locationId], references: [id])
-  batches     InventoryBatch[]
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+  batches     InventoryBatch[]
+  location    Location?         @relation(fields: [locationId], references: [id])
+  packaging   ProductPackaging? @relation(fields: [packagingId], references: [id])
 }
 
 model StockTransaction {
   id          String   @id @default(uuid())
   productId   String
-  product     Product  @relation(fields: [productId], references: [id])
   batchId     String?
-  type        String // IN, OUT, ADJUSTMENT, RESERVATION
+  type        String
   quantity    Int
   date        DateTime @default(now())
   referenceId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  product     Product  @relation(fields: [productId], references: [id])
 }
 
 model Order {
-  id                String          @id @default(uuid())
-  customerId        String?
-  customer          Customer?       @relation(fields: [customerId], references: [id]) // Optional for migration safety
-  status            String // PENDING, RESERVED, PICKING, SHIPPED, DELIVERED, CANCELLED
-  fulfillmentStatus String          @default("UNALLOCATED") // UNALLOCATED, ALLOCATED, PARTIAL
-  priority          String // HIGH, NORMAL, LOW
-  shippingCarrier   String?
-  expectedDate      DateTime? // For scheduled reservations
-  items             OrderItem[]
-  reservations      Reservation[]
-  shipment          Shipment?
-  warehouseId       String? // Optional for now to support existing orders, but should be required
-  warehouse         Warehouse?      @relation(fields: [warehouseId], references: [id])
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  totalAmount       Float           @default(0)
-  pickingTasks      PickingTask[]
-  transferOrders    TransferOrder[]
-
-  // Unified Order Fields
-  type                   String     @default("SALES") // SALES, TRANSFER
+  id                     String          @id @default(uuid())
+  customerId             String?
+  status                 String
+  fulfillmentStatus      String          @default("UNALLOCATED")
+  priority               String
+  shippingCarrier        String?
+  expectedDate           DateTime?
+  warehouseId            String?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  totalAmount            Float           @default(0)
+  type                   String          @default("SALES")
   destinationWarehouseId String?
-  destinationWarehouse   Warehouse? @relation("OrderDestination", fields: [destinationWarehouseId], references: [id])
   parentOrderId          String?
-  parentOrder            Order?     @relation("OrderHierarchy", fields: [parentOrderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  childOrders            Order[]    @relation("OrderHierarchy")
-
-  // Shipping Logic
-  deliveryMethodId   String?
-  deliveryMethod     DeliveryMethod? @relation(fields: [deliveryMethodId], references: [id])
-  shippingCost       Float           @default(0)
-  shippingCostInCOGS Boolean         @default(false)
-  
-  // Lalamove Integration
-  lalamoveOrders LalamoveOrder[]
+  deliveryMethodId       String?
+  shippingCost           Float           @default(0)
+  shippingCostInCOGS     Boolean         @default(false)
+  lalamoveOrders         LalamoveOrder[]
+  deliveryMethod         DeliveryMethod? @relation(fields: [deliveryMethodId], references: [id])
+  parentOrder            Order?          @relation("OrderHierarchy", fields: [parentOrderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childOrders            Order[]         @relation("OrderHierarchy")
+  destinationWarehouse   Warehouse?      @relation("OrderDestination", fields: [destinationWarehouseId], references: [id])
+  warehouse              Warehouse?      @relation(fields: [warehouseId], references: [id])
+  customer               Customer?       @relation(fields: [customerId], references: [id])
+  items                  OrderItem[]
+  pickingTasks           PickingTask[]
+  reservations           Reservation[]
+  shipment               Shipment?
+  packingSession         PackingSession?
+  transferOrders         TransferOrder[]
 }
 
 model OrderItem {
-  id        String  @id @default(uuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int
-
-  // RMA Fields
-  returnReason String? // Defective, Wrong Item, etc.
-  condition    String? // Sellable, Damaged, etc.
+  id           String  @id @default(uuid())
+  orderId      String
+  productId    String
+  quantity     Int
+  condition    String?
+  returnReason String?
+  product      Product @relation(fields: [productId], references: [id])
+  order        Order   @relation(fields: [orderId], references: [id])
 }
 
 model Reservation {
   id                  String   @id @default(uuid())
   productId           String
-  product             Product  @relation(fields: [productId], references: [id])
   orderId             String
-  order               Order    @relation(fields: [orderId], references: [id])
   quantity            Int
-  reservationStrategy String // FIFO, FEFO, LOCATION
+  reservationStrategy String
   createdAt           DateTime @default(now())
+  order               Order    @relation(fields: [orderId], references: [id])
+  product             Product  @relation(fields: [productId], references: [id])
 }
 
 model PickingStrategy {
   id          String     @id @default(uuid())
-  name        String // Single, Cluster, Wave, Batch
-  rules       String // JSON
+  name        String
+  rules       String
   active      Boolean    @default(true)
   warehouseId String?
   warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
 
-  @@unique([warehouseId, name]) // Unique per warehouse
+  @@unique([warehouseId, name])
 }
 
 model PickingSession {
   id          String        @id @default(uuid())
   warehouseId String
-  warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
-  strategy    String // BATCH, WAVE, CLUSTER, SINGLE
-  status      String        @default("PLANNED") // PLANNED, ASSIGNED, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED
-  pickerId    String? // Link to User (optional)
-  picker      User?         @relation(fields: [pickerId], references: [id])
-  tasks       PickingTask[]
+  strategy    String
+  status      String        @default("PLANNED")
+  pickerId    String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  picker      User?         @relation(fields: [pickerId], references: [id])
+  warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
+  tasks       PickingTask[]
 }
-
 
 model Category {
   id          String   @id @default(uuid())
@@ -463,469 +398,383 @@ model Category {
 }
 
 model LocationAttributeDefinition {
-  id        String    @id @default(uuid())
-  name      String    @unique
-  type      String // SELECT, TEXT, NUMBER, BOOLEAN
-  options   String? // JSON array for SELECT options
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  Product   Product[]
-  
-  // Reverse relations for dynamic attributes
-  putawayRuleAttributes  PutawayRuleAttribute[] @relation("PutawayRuleAttributes")
-  productAttributes      ProductAttribute[]      @relation("ProductAttributes")
-  locationAttributes     LocationAttribute[]     @relation("LocationAttributes")
+  id                    String                 @id @default(uuid())
+  name                  String                 @unique
+  type                  String
+  options               String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  locationAttributes    LocationAttribute[]    @relation("LocationAttributes")
+  Product               Product[]
+  productAttributes     ProductAttribute[]     @relation("ProductAttributes")
+  putawayRuleAttributes PutawayRuleAttribute[] @relation("PutawayRuleAttributes")
 }
 
 model PickingTask {
   id               String         @id @default(uuid())
   sessionId        String
-  session          PickingSession @relation(fields: [sessionId], references: [id])
   orderId          String
-  order            Order          @relation(fields: [orderId], references: [id])
   productId        String
-  product          Product        @relation(fields: [productId], references: [id])
   sourceLocationId String
-  sourceLocation   Location       @relation(fields: [sourceLocationId], references: [id])
   quantity         Int
   pickedQuantity   Int            @default(0)
-  status           String         @default("PENDING") // PENDING, ASSIGNED, IN_PROGRESS, PICKED, BLOCKED, FAILED
+  status           String         @default("PENDING")
   exceptionReason  String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+  sourceLocation   Location       @relation(fields: [sourceLocationId], references: [id])
+  product          Product        @relation(fields: [productId], references: [id])
+  order            Order          @relation(fields: [orderId], references: [id])
+  session          PickingSession @relation(fields: [sessionId], references: [id])
 }
 
 model PutawaySession {
   id          String        @id @default(uuid())
   warehouseId String
-  warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
-  status      String        @default("PLANNED") // PLANNED, ASSIGNED, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED
-  workerId    String?       // Link to User (optional)
-  worker      User?         @relation(fields: [workerId], references: [id])
-  tasks       PutawayTask[]
+  status      String        @default("PLANNED")
+  workerId    String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  worker      User?         @relation(fields: [workerId], references: [id])
+  warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
+  tasks       PutawayTask[]
 }
 
 model PutawayTask {
-  id                    String          @id @default(uuid())
-  sessionId             String?
-  session               PutawaySession? @relation(fields: [sessionId], references: [id])
-  receiptId             String?
-  receipt               Receipt?        @relation(fields: [receiptId], references: [id])
-  productId             String
-  product               Product        @relation(fields: [productId], references: [id])
-  sourceLocationId      String         // Receiving/Staging location
-  sourceLocation        Location       @relation("PutawaySource", fields: [sourceLocationId], references: [id])
-  destinationLocationId String         // Recommended storage location
-  destinationLocation   Location       @relation("PutawayDest", fields: [destinationLocationId], references: [id])
-  quantity              Int
-  putawayQuantity       Int            @default(0)
-  status                String         @default("PENDING") // PENDING, ASSIGNED, IN_PROGRESS, COMPLETED, BLOCKED, FAILED
-  
-  // Exception tracking
-  exceptionType             String?  // LOCATION_FULL, DAMAGED, SHORT_RECEIPT, OVERAGE, WRONG_PRODUCT, OTHER
-  exceptionReason           String?  // Detailed description
-  originalQuantity          Int?     // Track original before adjustments
-  actualQuantity            Int?     // Actual quantity if different
-  alternativeLocationId     String?  // If redirected
-  requiresSupervisorReview  Boolean  @default(false)
-  resolvedBy                String?  // User ID who resolved
-  resolvedAt                DateTime?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                       String          @id @default(uuid())
+  sessionId                String?
+  receiptId                String?
+  productId                String
+  sourceLocationId         String
+  destinationLocationId    String
+  quantity                 Int
+  putawayQuantity          Int             @default(0)
+  status                   String          @default("PENDING")
+  exceptionType            String?
+  exceptionReason          String?
+  originalQuantity         Int?
+  actualQuantity           Int?
+  alternativeLocationId    String?
+  requiresSupervisorReview Boolean         @default(false)
+  resolvedBy               String?
+  resolvedAt               DateTime?
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+  destinationLocation      Location        @relation("PutawayDest", fields: [destinationLocationId], references: [id])
+  sourceLocation           Location        @relation("PutawaySource", fields: [sourceLocationId], references: [id])
+  product                  Product         @relation(fields: [productId], references: [id])
+  receipt                  Receipt?        @relation(fields: [receiptId], references: [id])
+  session                  PutawaySession? @relation(fields: [sessionId], references: [id])
 }
-
 
 model ReservationStrategy {
   id     String  @id @default(uuid())
-  name   String  @unique // FIFO, FEFO, Location
-  rules  String // JSON
+  name   String  @unique
+  rules  String
   active Boolean @default(true)
 }
 
 model Shipment {
   id         String @id @default(uuid())
   orderId    String @unique
-  order      Order  @relation(fields: [orderId], references: [id])
   carrier    String
   trackingId String
   status     String
+  order      Order  @relation(fields: [orderId], references: [id])
 }
 
 model ComplianceReport {
   id        String   @id @default(uuid())
-  type      String // VAT, SAF-T
+  type      String
   period    String
-  data      String // JSON
+  data      String
   createdAt DateTime @default(now())
 }
 
 model SalesChannel {
   id     String @id @default(uuid())
-  name   String @unique // Tokopedia, Shopee
+  name   String @unique
   apiKey String
 }
 
 model LogisticsPartner {
   id        String @id @default(uuid())
-  name      String @unique // JNE, SiCepat
-  apiConfig String // JSON
+  name      String @unique
+  apiConfig String
 }
 
 model InventoryAdjustment {
   id              String          @id @default(uuid())
   locationId      String
-  location        Location        @relation(fields: [locationId], references: [id])
   productId       String
-  product         Product         @relation(fields: [productId], references: [id])
   batchId         String?
-  batch           InventoryBatch? @relation(fields: [batchId], references: [id])
   countedQuantity Int             @default(0)
   currentQuantity Int             @default(0)
-  quantity        Int // Positive = Found, Negative = Lost
+  quantity        Int
   reason          String
-  status          String // DRAFT, APPLIED
+  status          String
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+  batch           InventoryBatch? @relation(fields: [batchId], references: [id])
+  product         Product         @relation(fields: [productId], references: [id])
+  location        Location        @relation(fields: [locationId], references: [id])
 }
 
 model ScrapOrder {
   id          String   @id @default(uuid())
   locationId  String
-  location    Location @relation(fields: [locationId], references: [id])
   productId   String
-  product     Product  @relation(fields: [productId], references: [id])
   quantity    Int
   maxQuantity Int
   active      Boolean  @default(true)
+  product     Product  @relation(fields: [productId], references: [id])
+  location    Location @relation(fields: [locationId], references: [id])
 }
 
 model ReorderingRule {
   id          String   @id @default(uuid())
   productId   String
-  product     Product  @relation(fields: [productId], references: [id])
   locationId  String
-  location    Location @relation(fields: [locationId], references: [id])
   minQuantity Int
   maxQuantity Int
   active      Boolean  @default(true)
+  location    Location @relation(fields: [locationId], references: [id])
+  product     Product  @relation(fields: [productId], references: [id])
 }
 
 model PutawayRule {
-  id               String    @id @default(uuid())
-  name             String    // Human-readable rule name
-  description      String?
-  
-  // =========================
-  // MATCHING CRITERIA (What products/scenarios this rule applies to)
-  // =========================
-  
-  // Product Filters
-  productId        String?
-  product          Product?  @relation(fields: [productId], references: [id])
-  categoryId       String?   // Optional: Apply to entire category
-  
-  // === PHASE 2: Velocity & Classification Matching ===
-  velocityClass    String?   // A, B, C (fast/medium/slow moving)
-  abcClass         String?   // A, B, C (cost-based classification)
-  
-  
-  // === PHASE 3: Storage Requirements - NOW DYNAMIC via PutawayRuleAttribute ===
-  // Removed: requiredAttributes String? - replaced by requiredAttributes relation
-  // Removed: temperatureMin/Max - can be implemented via LocationAttribute if needed
-  
-  
-  // === PHASE 2: Packaging Size Filtering ===
-  minPackagingSize String?   // INDIVIDUAL, BOX, PALLET
-  maxPackagingSize String?
-  
-  // === PHASE 2: Weight Filtering ===
-  minWeight        Float?    // kg - rule applies if total weight >= this
-  maxWeight        Float?    // kg - rule applies if total weight <= this
-  
-  // Source Location Filter
-  sourceLocationId String?   // Only apply if coming from this location
-  sourceLocation   Location? @relation("PutawaySource", fields: [sourceLocationId], references: [id])
-  
-  // =========================
-  // DESTINATION STRATEGY (How to select target location)
-  // =========================
-  
-  // === PHASE 2: Selection Strategy ===
-  strategy         String    // FIXED, ZONE_PRIORITY, CLOSEST, LEAST_OCCUPIED, BALANCED
-  
-  // For FIXED strategy
-  destinationLocationId String?
-  destinationLocation   Location? @relation("PutawayDest", fields: [destinationLocationId], references: [id])
-  
-  // For ZONE_PRIORITY strategy
-  preferredZonePriorityMin Int?  // e.g., 1 (golden zone)
-  preferredZonePriorityMax Int?  // e.g., 20
-  
-  // Warehouse Scoping
-  warehouseId      String?   // Rule applies only to this warehouse (null = all warehouses)
-  warehouse        Warehouse? @relation(fields: [warehouseId], references: [id])
-  
-  // Legacy field (keeping for backwards compatibility)
-  locationId       String?   // Old field - use destinationLocationId instead
-  location         Location?  @relation(fields: [locationId], references: [id])
-  
-  // Rule Metadata
-  priority         Int       @default(0)  // Higher = checked first
-  active           Boolean   @default(true)
-  
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  
-  // Relations
-  requiredAttributes PutawayRuleAttribute[]
+  id                       String                 @id @default(uuid())
+  name                     String
+  description              String?
+  productId                String?
+  categoryId               String?
+  velocityClass            String?
+  abcClass                 String?
+  minPackagingSize         String?
+  maxPackagingSize         String?
+  minWeight                Float?
+  maxWeight                Float?
+  sourceLocationId         String?
+  strategy                 String
+  destinationLocationId    String?
+  preferredZonePriorityMin Int?
+  preferredZonePriorityMax Int?
+  warehouseId              String?
+  locationId               String?
+  priority                 Int                    @default(0)
+  active                   Boolean                @default(true)
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  location                 Location?              @relation(fields: [locationId], references: [id])
+  warehouse                Warehouse?             @relation(fields: [warehouseId], references: [id])
+  destinationLocation      Location?              @relation("PutawayDest", fields: [destinationLocationId], references: [id])
+  sourceLocation           Location?              @relation("PutawaySource", fields: [sourceLocationId], references: [id])
+  product                  Product?               @relation(fields: [productId], references: [id])
+  requiredAttributes       PutawayRuleAttribute[]
 }
 
 model PutawayRuleAttribute {
-  id                      String                      @id @default(uuid())
-  putawayRuleId          String
-  putawayRule            PutawayRule                 @relation(fields: [putawayRuleId], references: [id], onDelete: Cascade)
-  
-  attributeDefinitionId  String
-  attributeDefinition    LocationAttributeDefinition @relation("PutawayRuleAttributes", fields: [attributeDefinitionId], references: [id])
-  
-  requiredValue          String?  // For boolean: "true", for select: specific option
-  
-  createdAt              DateTime @default(now())
-  
+  id                    String                      @id @default(uuid())
+  putawayRuleId         String
+  attributeDefinitionId String
+  requiredValue         String?
+  createdAt             DateTime                    @default(now())
+  attributeDefinition   LocationAttributeDefinition @relation("PutawayRuleAttributes", fields: [attributeDefinitionId], references: [id])
+  putawayRule           PutawayRule                 @relation(fields: [putawayRuleId], references: [id], onDelete: Cascade)
+
   @@unique([putawayRuleId, attributeDefinitionId])
 }
 
 model ProductAttribute {
-  id                      String                      @id @default(uuid())
-  productId              String
-  product                Product                     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
-  attributeDefinitionId  String
-  attributeDefinition    LocationAttributeDefinition @relation("ProductAttributes", fields: [attributeDefinitionId], references: [id])
-  
-  value                  String?  // Attribute value (for select types, or "true" for boolean)
-  
-  createdAt              DateTime @default(now())
-  
+  id                    String                      @id @default(uuid())
+  productId             String
+  attributeDefinitionId String
+  value                 String?
+  createdAt             DateTime                    @default(now())
+  attributeDefinition   LocationAttributeDefinition @relation("ProductAttributes", fields: [attributeDefinitionId], references: [id])
+  product               Product                     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
   @@unique([productId, attributeDefinitionId])
 }
 
 model LocationAttribute {
-  id                      String                      @id @default(uuid())
-  locationId             String
-  location               Location                    @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  
-  definitionId           String
-  definition             LocationAttributeDefinition @relation("LocationAttributes", fields: [definitionId], references: [id])
-  
-  value                  String?  // For future extensibility (temperature values, etc.)
-  
-  createdAt              DateTime @default(now())
-  
+  id           String                      @id @default(uuid())
+  locationId   String
+  definitionId String
+  value        String?
+  createdAt    DateTime                    @default(now())
+  definition   LocationAttributeDefinition @relation("LocationAttributes", fields: [definitionId], references: [id])
+  location     Location                    @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
   @@unique([locationId, definitionId])
 }
-
-// --- Inbound / Purchase Order Models ---
 
 model Supplier {
   id             String          @id @default(uuid())
   name           String          @unique
-  contactInfo    String? // JSON or text
+  contactInfo    String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
-  purchaseOrders PurchaseOrder[]
   invoices       Invoice[]
+  purchaseOrders PurchaseOrder[]
 }
 
 model PurchaseOrder {
-  id              String    @id @default(uuid())
-  poNumber        String    @unique @default(cuid()) // Temporary default to avoid migration issues
+  id              String               @id @default(uuid())
+  poNumber        String               @unique @default(cuid())
   supplierId      String
-  supplier        Supplier  @relation(fields: [supplierId], references: [id])
-  status          String    @default("DRAFT") // DRAFT, ORDERED, RECEIVING, RECEIVED, CANCELLED
-  approvalStatus  String    @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
+  status          String               @default("DRAFT")
+  approvalStatus  String               @default("DRAFT")
   approvedBy      String?
   approvedAt      DateTime?
   rejectionReason String?
-
-  // ASN (Advance Shipping Notice)
-  asnNumber       String?   // Supplier's ASN reference
-  asnExpectedDate DateTime? // Expected arrival from ASN
-
-  // 3-Way Match (PO vs GRN vs Invoice)
-  threeWayMatch   String    @default("PENDING") // PENDING, MATCHED, DISCREPANCY
-
-  orderDate    DateTime  @default(now())
-  expectedDate DateTime?
-
-  // Header Info
-  buyerName    String?
-  buyerAddress String?
-  buyerContact String?
-
-  shipToAddress String?
-  billToAddress String?
-
-  // Financials
-  taxAmount    Float @default(0)
-  shippingCost Float @default(0)
-  totalAmount  Float @default(0)
-
-  // Footer Info
-  paymentTerms  String?
-  deliveryTerms String?
-  notes         String?
-
-  items       PurchaseOrderItem[]
-  receipts    Receipt[]
-  invoices    Invoice[]
-  transfers   TransferOrder[]
-  documents   DocumentAttachment[]
-  inspections QaInspection[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  asnNumber       String?
+  asnExpectedDate DateTime?
+  threeWayMatch   String               @default("PENDING")
+  orderDate       DateTime             @default(now())
+  expectedDate    DateTime?
+  buyerName       String?
+  buyerAddress    String?
+  buyerContact    String?
+  shipToAddress   String?
+  billToAddress   String?
+  taxAmount       Float                @default(0)
+  shippingCost    Float                @default(0)
+  totalAmount     Float                @default(0)
+  paymentTerms    String?
+  deliveryTerms   String?
+  notes           String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  documents       DocumentAttachment[]
+  invoices        Invoice[]
+  supplier        Supplier             @relation(fields: [supplierId], references: [id])
+  items           PurchaseOrderItem[]
+  inspections     QaInspection[]
+  receipts        Receipt[]
+  transfers       TransferOrder[]
 }
 
 model PurchaseOrderItem {
   id              String            @id @default(uuid())
   purchaseOrderId String
-  purchaseOrder   PurchaseOrder     @relation(fields: [purchaseOrderId], references: [id])
   productId       String
-  product         Product           @relation(fields: [productId], references: [id])
   quantity        Int
   unitCost        Float             @default(0)
   packagingId     String?
   packaging       ProductPackaging? @relation(fields: [packagingId], references: [id])
+  product         Product           @relation(fields: [productId], references: [id])
+  purchaseOrder   PurchaseOrder     @relation(fields: [purchaseOrderId], references: [id])
   receiptItems    ReceiptItem[]
 }
 
 model Receipt {
   id                    String        @id @default(uuid())
-  grnNumber             String?       @unique // Goods Receipt Note number, populated on creation
   purchaseOrderId       String
-  purchaseOrder         PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
-  status                String        @default("DONE") // DONE, CANCELLED
+  status                String        @default("DONE")
   receivedAt            DateTime      @default(now())
   destinationLocationId String
+  invoiceId             String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  grnNumber             String?       @unique
+  notes                 String?
+  putawayTasks          PutawayTask[]
   destinationLocation   Location      @relation(fields: [destinationLocationId], references: [id])
-  notes                 String?       // Receiving notes
-
-  items        ReceiptItem[]
-  putawayTasks PutawayTask[]
-
-  // Link to Invoice (optional, for 3-way match)
-  invoiceId String?
-  // invoice      Invoice? ...
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  purchaseOrder         PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  items                 ReceiptItem[]
 }
 
 model ReceiptItem {
-  id        String  @id @default(uuid())
+  id        String            @id @default(uuid())
   receiptId String
-  receipt   Receipt @relation(fields: [receiptId], references: [id])
   productId String
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int // Quantity received in this specific receipt
-
-  // Link to PO Item for tracking
-  poItemId String
-  poItem   PurchaseOrderItem @relation(fields: [poItemId], references: [id])
+  quantity  Int
+  poItemId  String
+  poItem    PurchaseOrderItem @relation(fields: [poItemId], references: [id])
+  product   Product           @relation(fields: [productId], references: [id])
+  receipt   Receipt           @relation(fields: [receiptId], references: [id])
 }
 
 model Invoice {
   id              String         @id @default(uuid())
-  invoiceNumber   String // Vendor's invoice #
+  invoiceNumber   String
   vendorId        String
-  vendor          Supplier       @relation(fields: [vendorId], references: [id])
   purchaseOrderId String?
+  status          String         @default("DRAFT")
+  totalAmount     Float
+  issueDate       DateTime
+  dueDate         DateTime
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
   purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
-
-  status      String   @default("DRAFT") // DRAFT, POSTED, PAID, CANCELLED
-  totalAmount Float
-  issueDate   DateTime
-  dueDate     DateTime
-
-  items     InvoiceItem[]
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  vendor          Supplier       @relation(fields: [vendorId], references: [id])
+  items           InvoiceItem[]
 }
 
 model InvoiceItem {
-  id          String  @id @default(uuid())
-  invoiceId   String
-  invoice     Invoice @relation(fields: [invoiceId], references: [id])
-  productId   String?
-  description String
-  quantity    Int
-  unitPrice   Float
-  totalPrice  Float
-
-  // 3-Way Match Links
+  id            String  @id @default(uuid())
+  invoiceId     String
+  productId     String?
+  description   String
+  quantity      Int
+  unitPrice     Float
+  totalPrice    Float
   poItemId      String?
   receiptItemId String?
+  invoice       Invoice @relation(fields: [invoiceId], references: [id])
 }
 
-// --- QA Inspection Models ---
-
 model QaInspection {
-  id              String              @id @default(uuid())
+  id              String               @id @default(uuid())
   purchaseOrderId String
-  purchaseOrder   PurchaseOrder       @relation(fields: [purchaseOrderId], references: [id])
-  status          String              @default("PENDING") // PENDING, PASSED, FAILED, PARTIAL
+  status          String               @default("PENDING")
   inspectorId     String?
   notes           String?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  purchaseOrder   PurchaseOrder        @relation(fields: [purchaseOrderId], references: [id])
   results         QaInspectionResult[]
 }
 
 model QaInspectionResult {
   id              String       @id @default(uuid())
   inspectionId    String
-  inspection      QaInspection @relation(fields: [inspectionId], references: [id])
   productId       String
-  product         Product      @relation(fields: [productId], references: [id])
-  receivedQty     Int          // Total quantity received
-  acceptedQty     Int          // Quantity that passed QA
-  rejectedQty     Int          // Quantity rejected (breakage, defects, etc.)
-  rejectionReason String?      // Breakage, Wrong Item, Expired, Damaged, etc.
+  receivedQty     Int
+  acceptedQty     Int
+  rejectedQty     Int
+  rejectionReason String?
   createdAt       DateTime     @default(now())
+  product         Product      @relation(fields: [productId], references: [id])
+  inspection      QaInspection @relation(fields: [inspectionId], references: [id])
 }
-
-// --- Document Attachment Model ---
 
 model DocumentAttachment {
   id              String        @id @default(uuid())
   purchaseOrderId String
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
-  documentType    String        // INVOICE, DELIVERY_NOTE, QA_CERT, PHOTO, OTHER
+  documentType    String
   fileName        String
-  filePath        String        // Local file path relative to uploads dir
-  mimeType        String?       // e.g. application/pdf, image/jpeg
-  fileSize        Int?          // bytes
-  uploadedBy      String?       // User ID
+  filePath        String
+  mimeType        String?
+  fileSize        Int?
+  uploadedBy      String?
   uploadedAt      DateTime      @default(now())
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
 }
 
 model User {
-  id       String  @id @default(uuid())
-  email    String  @unique
-  password String? // Hashed password
-  name     String
-
-  roles      Role[]
-  warehouses Warehouse[]
-
-  initiatedTransfers TransferOrder[]  @relation("TransferInitiator")
-  approvedTransfers  TransferOrder[]  @relation("TransferApprover")
+  id                 String           @id @default(uuid())
+  email              String           @unique
+  password           String?
+  name               String
+  apiKeys            ApiKey[]
   pickingSessions    PickingSession[]
   putawaySessions    PutawaySession[]
-  apiKeys            ApiKey[]
+  approvedTransfers  TransferOrder[]  @relation("TransferApprover")
+  initiatedTransfers TransferOrder[]  @relation("TransferInitiator")
+  roles              Role[]           @relation("RoleToUser")
+  warehouses         Warehouse[]      @relation("UserToWarehouse")
 }
 
 model ApiKey {
@@ -933,182 +782,147 @@ model ApiKey {
   name        String
   description String?
   keyHash     String    @unique
-  scopes      String    // JSON array of permission strings, e.g. ["INVENTORY:READ", "ORDERS:CREATE"]
-  
+  scopes      String
   userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
   lastUsedAt  DateTime?
   expiresAt   DateTime?
   isActive    Boolean   @default(true)
-  
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Customer {
-  id        String   @id @default(uuid())
-  name      String
-  
-  // Structured Address Fields
-  address   String? // Street address
-  city      String?
-  state     String? // State/Province
-  postalCode String?
-  country   String?
-  latitude  Float?
-  longitude Float?
-  phone     String? // Contact phone for delivery services
-  
-  orders    Order[]
+  id            String         @id @default(uuid())
+  name          String
+  address       String?
+  latitude      Float?
+  longitude     Float?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  city          String?
+  country       String?
+  phone         String?
+  postalCode    String?
+  state         String?
+  orders        Order[]
   rotationRules RotationRule[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model FulfillmentRule {
-  id          String     @id @default(uuid())
-  name        String
-  priority    Int        @default(0)
-  strategy    String // PRIMARY, HIGHEST_STOCK, CLOSEST
-  warehouseId String?
-  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
-
-  // Logic Config
-  actionIfUnavailable String  @default("NEXT_RULE") // NEXT_RULE, TRIGGER_TRANSFER, BACKORDER
-  transferSourceRule  String? // JSON: { "strategy": "CLOSEST" } or { "warehouseId": "abc" }
-
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String     @id @default(uuid())
+  name                String
+  priority            Int        @default(0)
+  strategy            String
+  warehouseId         String?
+  actionIfUnavailable String     @default("NEXT_RULE")
+  transferSourceRule  String?
+  active              Boolean    @default(true)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  warehouse           Warehouse? @relation(fields: [warehouseId], references: [id])
 }
 
 model TransferOrder {
-  id                     String    @id @default(uuid())
+  id                     String              @id @default(uuid())
   sourceWarehouseId      String
-  sourceWarehouse        Warehouse @relation("TransferSource", fields: [sourceWarehouseId], references: [id])
   destinationWarehouseId String
-  destinationWarehouse   Warehouse @relation("TransferDest", fields: [destinationWarehouseId], references: [id])
-
-  status String @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, PROCESSING, DONE, CANCELLED
-
-  initiatorId String
-  initiator   User   @relation("TransferInitiator", fields: [initiatorId], references: [id])
-
-  approverId String?
-  approver   User?   @relation("TransferApprover", fields: [approverId], references: [id])
-
-  items TransferOrderItem[]
-
-  // Multi-Step Layout
-  type           String    @default("INTERNAL") // INBOUND_FLOW, OUTBOUND_FLOW, INTERNAL
-  totalSteps     Int       @default(1)
-  currentStep    Int       @default(1)
-  activeMoveId   String?   // Pointer to current active move
-
-  moves          StockMove[]
-
-  relatedOrderId String?
-  relatedOrder   Order?  @relation(fields: [relatedOrderId], references: [id])
-  
-  // Link to PO
-  purchaseOrderId String?
-  purchaseOrder   PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status                 String              @default("DRAFT")
+  initiatorId            String
+  approverId             String?
+  type                   String              @default("INTERNAL")
+  totalSteps             Int                 @default(1)
+  currentStep            Int                 @default(1)
+  activeMoveId           String?
+  relatedOrderId         String?
+  purchaseOrderId        String?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  moves                  StockMove[]
+  purchaseOrder          PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id])
+  relatedOrder           Order?              @relation(fields: [relatedOrderId], references: [id])
+  approver               User?               @relation("TransferApprover", fields: [approverId], references: [id])
+  initiator              User                @relation("TransferInitiator", fields: [initiatorId], references: [id])
+  destinationWarehouse   Warehouse           @relation("TransferDest", fields: [destinationWarehouseId], references: [id])
+  sourceWarehouse        Warehouse           @relation("TransferSource", fields: [sourceWarehouseId], references: [id])
+  items                  TransferOrderItem[]
 }
 
 model TransferOrderItem {
   id               String        @id @default(uuid())
   transferOrderId  String
-  transferOrder    TransferOrder @relation(fields: [transferOrderId], references: [id])
   productId        String
-  product          Product       @relation(fields: [productId], references: [id])
   quantity         Int
   receivedQuantity Int           @default(0)
+  product          Product       @relation(fields: [productId], references: [id])
+  transferOrder    TransferOrder @relation(fields: [transferOrderId], references: [id])
 }
-
-// --- Existing Models Updates ---
 
 model StockMove {
   id                    String          @id @default(uuid())
   productId             String
-  product               Product         @relation(fields: [productId], references: [id])
   quantity              Int
-  status                String          @default("DRAFT") // DRAFT, WAITING, READY, IN_PROGRESS, DONE, CANCELLED, FAILED
+  status                String          @default("DRAFT")
   sourceLocationId      String?
-  sourceLocation        Location?       @relation("MoveSource", fields: [sourceLocationId], references: [id])
   destinationLocationId String?
-  destinationLocation   Location?       @relation("MoveDest", fields: [destinationLocationId], references: [id])
   ruleId                String?
-  rule                  Rule?           @relation(fields: [ruleId], references: [id])
-  origin                String? // e.g. PO001, MO001
+  origin                String?
   batchId               String?
-  batch                 InventoryBatch? @relation(fields: [batchId], references: [id])
-  
-  // Chaining & Multi-Step
-  sequence        Int      @default(0)
-  transferOrderId String?
-  transferOrder   TransferOrder? @relation(fields: [transferOrderId], references: [id])
-  
-  nextMoveId      String?  @unique
-  nextMove        StockMove? @relation("ChainedMoves", fields: [nextMoveId], references: [id])
-  previousMove    StockMove? @relation("ChainedMoves")
-
-  // Exception Tracking
-  inputQuantity   Int?     // Expected
-  outputQuantity  Int?     // Actual
-  exceptionReason String?
-
+  sequence              Int             @default(0)
+  transferOrderId       String?
+  nextMoveId            String?         @unique
+  inputQuantity         Int?
+  outputQuantity        Int?
+  exceptionReason       String?
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
+  nextMove              StockMove?      @relation("ChainedMoves", fields: [nextMoveId], references: [id])
+  previousMove          StockMove?      @relation("ChainedMoves")
+  transferOrder         TransferOrder?  @relation(fields: [transferOrderId], references: [id])
+  batch                 InventoryBatch? @relation(fields: [batchId], references: [id])
+  rule                  Rule?           @relation(fields: [ruleId], references: [id])
+  destinationLocation   Location?       @relation("MoveDest", fields: [destinationLocationId], references: [id])
+  sourceLocation        Location?       @relation("MoveSource", fields: [sourceLocationId], references: [id])
+  product               Product         @relation(fields: [productId], references: [id])
 }
 
 model Role {
   id          String       @id @default(uuid())
-  name        String       @unique // e.g., "Warehouse Manager", "Picker"
+  name        String       @unique
   description String?
-  isSystem    Boolean      @default(false) // System roles cannot be deleted
-  permissions Permission[]
-  users       User[]
+  isSystem    Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  permissions Permission[]
+  users       User[]       @relation("RoleToUser")
 }
 
 model DeliveryMethod {
-  id         String  @id @default(uuid())
+  id         String         @id @default(uuid())
   name       String
-  active     Boolean @default(true)
-  provider   String // FIXED_PRICE, BASED_ON_RULES, LALAMOVE
-  fixedPrice Float   @default(0)
-
-  // Link to external carrier (optional integration)
-  carrier String? // FedEx, UPS, Lalamove, etc.
-
-  rules  ShippingRule[]
-  orders Order[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  active     Boolean        @default(true)
+  provider   String
+  fixedPrice Float          @default(0)
+  carrier    String?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  orders     Order[]
+  rules      ShippingRule[]
 }
 
 model LalamoveConfig {
-  id            String    @id @default(uuid())
-  warehouseId   String    @unique
-  warehouse     Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
-  
-  market        String   // TH, SG, HK, PH, MY, ID, TW, VN, BR, MX, JP
-  apiKey        String   // Encrypted
-  apiSecret     String   // Encrypted
-  environment   String   @default("SANDBOX") // SANDBOX, PRODUCTION
-  webhookUrl    String?
-  
-  defaultServiceType String? // MOTORCYCLE, SEDAN, VAN, LORRY
-  
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 String    @id @default(uuid())
+  warehouseId        String    @unique
+  market             String
+  apiKey             String
+  apiSecret          String
+  environment        String    @default("SANDBOX")
+  webhookUrl         String?
+  defaultServiceType String?
+  active             Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  warehouse          Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
 
   @@index([warehouseId])
 }
@@ -1116,50 +930,33 @@ model LalamoveConfig {
 model LalamoveOrder {
   id              String    @id @default(uuid())
   orderId         String
-  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
-  // Lalamove identifiers
   quotationId     String?
   lalamoveOrderId String?   @unique
   shareLink       String?
-  
-  // Order details
-  serviceType     String    // MOTORCYCLE, SEDAN, VAN, LORRY
+  serviceType     String
   market          String
-  status          String    // ASSIGNING_DRIVER, ON_GOING, PICKED_UP, COMPLETED, CANCELLED, REJECTED, EXPIRED
-  
-  // Pricing
+  status          String
   quotedPrice     Float?
   finalPrice      Float?
   currency        String?
-  priceBreakdown  String?   // JSON
-  
-  // Driver info
+  priceBreakdown  String?
   driverId        String?
   driverName      String?
   driverPhone     String?
   driverPlate     String?
-  
-  // Tracking
-  distance        Float?    // in meters
-  distanceUnit    String?   // m, km
-  
-  // Stops (JSON array)
-  stops           String    // JSON: [{address, coordinates, name, phone, status, POD}]
-  
-  // Metadata
-  specialRequests String?   // JSON array
-  remarks         String?   // JSON array
-  metadata        String?   // JSON key-value pairs
-  
-  // Proof of delivery
-  podStatus       String?   // PENDING, DELIVERED, FAILED
+  distance        Float?
+  distanceUnit    String?
+  stops           String
+  specialRequests String?
+  remarks         String?
+  metadata        String?
+  podStatus       String?
   podImageUrl     String?
   deliveredAt     DateTime?
-  
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
   @@index([orderId])
   @@index([lalamoveOrderId])
 }
@@ -1167,95 +964,137 @@ model LalamoveOrder {
 model ShippingRule {
   id               String         @id @default(uuid())
   deliveryMethodId String
+  minWeight        Float?
+  maxWeight        Float?
+  minVolume        Float?
+  maxVolume        Float?
+  minPrice         Float?
+  maxPrice         Float?
+  price            Float
+  sequence         Int            @default(0)
   deliveryMethod   DeliveryMethod @relation(fields: [deliveryMethodId], references: [id])
-
-  // Conditions (Null means no limit)
-  minWeight Float?
-  maxWeight Float?
-  minVolume Float?
-  maxVolume Float?
-  minPrice  Float?
-  maxPrice  Float?
-
-  // Cost
-  price Float
-
-  sequence Int @default(0) // Evaluation order
 }
 
 model Permission {
   id        String   @id @default(uuid())
   roleId    String
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  resource  String // e.g., "INVENTORY", "ORDERS", "PURCHASE_ORDERS"
-  action    String // CREATE, READ, UPDATE, DELETE, APPROVE
+  resource  String
+  action    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, resource, action])
 }
 
 model RotationRule {
-  id               String     @id @default(uuid())
-  priority         Int        @default(0) // Higher number = higher priority
-  
-  // Scope Scenarios (Nullable)
-  customerId       String?
-  customer         Customer?  @relation(fields: [customerId], references: [id])
-  orderTypeId      String?    // e.g. "B2B", "ECOM"
-  productId        String?    // SKU level
-  product          Product?   @relation(fields: [productId], references: [id])
-  categoryId       String?    // Product Category (String match)
-  warehouseId      String?    // Default level
-  warehouse        Warehouse? @relation(fields: [warehouseId], references: [id])
-  
-  // Policy Config
-  policy           String     // FIFO, FEFO, LIFO
-  minShelfLifeDays Int?       // FEFO constraint
-  missingExpiryAction String? // FALLBACK_FIFO, BLOCK, ALLOW
-  
-  active           Boolean    @default(true)
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  id                  String     @id @default(uuid())
+  priority            Int        @default(0)
+  customerId          String?
+  orderTypeId         String?
+  productId           String?
+  categoryId          String?
+  warehouseId         String?
+  policy              String
+  minShelfLifeDays    Int?
+  missingExpiryAction String?
+  active              Boolean    @default(true)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  warehouse           Warehouse? @relation(fields: [warehouseId], references: [id])
+  product             Product?   @relation(fields: [productId], references: [id])
+  customer            Customer?  @relation(fields: [customerId], references: [id])
 }
 
-// --- Stocktaking Models ---
-
 model StocktakeSession {
-  id          String    @id @default(uuid())
+  id          String          @id @default(uuid())
   warehouseId String
-  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
-  status      String    @default("PLANNED") // PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
-  type        String    // FULL, CYCLE_COUNT, SPOT_CHECK
-  
+  status      String          @default("PLANNED")
+  type        String
   description String?
-  
+  createdBy   String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  warehouse   Warehouse       @relation(fields: [warehouseId], references: [id])
   tasks       StocktakeTask[]
-  
-  createdBy   String?   // User ID
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
 }
 
 model StocktakeTask {
-  id               String           @id @default(uuid())
-  sessionId        String
-  session          StocktakeSession @relation(fields: [sessionId], references: [id])
-  
-  locationId       String
-  location         Location         @relation(fields: [locationId], references: [id])
-  
-  productId        String?          // Nullable if blind counting location without pre-specified product
-  product          Product?         @relation(fields: [productId], references: [id])
+  id              String           @id @default(uuid())
+  sessionId       String
+  locationId      String
+  productId       String?
+  systemQuantity  Int
+  countedQuantity Int?
+  status          String           @default("PENDING")
+  countedBy       String?
+  countedAt       DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  product         Product?         @relation(fields: [productId], references: [id])
+  location        Location         @relation(fields: [locationId], references: [id])
+  session         StocktakeSession @relation(fields: [sessionId], references: [id])
+}
 
-  systemQuantity   Int              // Expected quantity at start
-  countedQuantity  Int?             // Null = Not yet counted
-  
-  status           String           @default("PENDING") // PENDING, COUNTED, VERIFIED
-  
-  countedBy        String?          // User ID
-  countedAt        DateTime?
-  
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+model PackingSession {
+  id          String    @id @default(uuid())
+  orderId     String    @unique
+  status      String    @default("IN_PROGRESS")
+  workerId    String?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  order       Order     @relation(fields: [orderId], references: [id])
+  parcels     PackingParcel[]
+}
+
+model PackingParcel {
+  id               String         @id @default(uuid())
+  packingSessionId String
+  weight           Float?
+  length           Float?
+  width            Float?
+  height           Float?
+  trackingNumber   String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  packingSession   PackingSession @relation(fields: [packingSessionId], references: [id])
+  items            PackingParcelItem[]
+}
+
+model PackingParcelItem {
+  id        String        @id @default(uuid())
+  parcelId  String
+  productId String
+  quantity  Int
+  parcel    PackingParcel @relation(fields: [parcelId], references: [id])
+  product   Product       @relation(fields: [productId], references: [id])
+}
+
+model ReplenishmentAlert {
+  id           String   @id @default(uuid())
+  productId    String
+  warehouseId  String?
+  type         String   @default("LOW_STOCK")
+  currentQty   Int
+  threshold    Int
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  product      Product  @relation(fields: [productId], references: [id])
+  warehouse    Warehouse? @relation(fields: [warehouseId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  type      String
+  title     String
+  body      String
+  link      String?
+  metadata  String?
+  read      Boolean  @default(false)
+  userId    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

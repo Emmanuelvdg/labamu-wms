@@ -137,4 +137,10 @@ export class PurchaseOrderController {
     verifyThreeWayMatch(@Param('id') id: string) {
         return this.purchaseOrderService.verifyThreeWayMatch(id);
     }
+
+    @Post(':id/scan-receive')
+    @RequirePermission('PURCHASE_ORDERS', 'UPDATE')
+    scanReceive(@Param('id') id: string, @Body() data: { barcode: string; locationId?: string }) {
+        return this.purchaseOrderService.scanReceive(id, data.barcode, data.locationId);
+    }
 }

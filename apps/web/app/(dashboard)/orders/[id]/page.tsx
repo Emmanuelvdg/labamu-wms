@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { fetchOrder, checkAvailability, updateCustomer, cancelOrder, deleteOrder } from '@/lib/api';
+import { fetchOrder, checkAvailability, updateCustomer, cancelOrder, deleteOrder, updateOrderStatus } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
     AlertDialog,
@@ -16,7 +16,7 @@ import {
 import { DeleteConfirmationModal } from '@/components/DeleteConfirmationModal';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Package, Truck, AlertCircle, Ban, Trash2 } from 'lucide-react';
+import { ArrowLeft, Package, Truck, AlertCircle, Ban, Trash2, CheckCircle2, PackageCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -83,6 +83,16 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
         }
     };
 
+    const handleAdvanceStatus = async (newStatus: string) => {
+        try {
+            await updateOrderStatus(id, newStatus);
+            toast.success(`Order status updated to ${newStatus}`);
+            loadOrder();
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to update order status');
+        }
+    };
+
     if (loading) return <div className="p-8">Loading...</div>;
     if (!order) return <div className="p-8">Order not found</div>;
 
@@ -118,9 +128,12 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                     order.status === 'RESERVED' ? 'bg-blue-100 text-blue-800' :
                                         order.status === 'PICKING' ? 'bg-purple-100 text-purple-800' :
                                             order.status === 'PACKING' ? 'bg-indigo-100 text-indigo-800' :
-                                                order.status === 'SHIPPED' ? 'bg-green-100 text-green-800' :
-                                                    order.status === 'EXCEPTION' ? 'bg-red-100 text-red-800' :
-                                                        'bg-gray-100 text-gray-800'}`}>
+                                                order.status === 'PACKED' ? 'bg-teal-100 text-teal-800' :
+                                                    order.status === 'SHIPPED' ? 'bg-green-100 text-green-800' :
+                                                        order.status === 'DELIVERED' ? 'bg-emerald-100 text-emerald-800' :
+                                                            order.status === 'EXCEPTION' ? 'bg-red-100 text-red-800' :
+                                                                order.status === 'CANCELLED' ? 'bg-gray-100 text-gray-800' :
+                                                                    'bg-gray-100 text-gray-800'}`}>
                                 {order.status}
                             </span>
                         </h1>
@@ -134,29 +147,102 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                     </div>
                 </div>
 
-                {order.status === 'PENDING' && (
-                    <div className="mt-4 flex justify-end gap-2">
+                {/* Visual Fulfillment Stepper */}
+                {!['PENDING', 'CANCELLED'].includes(order.status) && (
+                    <div className="mt-6 mb-2">
+                        <div className="flex items-center justify-between max-w-2xl mx-auto">
+                            {[
+                                { key: 'RESERVED', label: 'Reserved', icon: '📋' },
+                                { key: 'PICKING', label: 'Picking', icon: '🛒' },
+                                { key: 'PACKING', label: 'Packing', icon: '📦' },
+                                { key: 'PACKED', label: 'Packed', icon: '✅' },
+                                { key: 'SHIPPED', label: 'Shipped', icon: '🚚' },
+                                { key: 'DELIVERED', label: 'Delivered', icon: '🏠' },
+                            ].map((step, idx, arr) => {
+                                const statusOrder = ['RESERVED', 'PICKING', 'PACKING', 'PACKED', 'SHIPPED', 'DELIVERED'];
+                                const currentIdx = statusOrder.indexOf(order.status);
+                                const stepIdx = statusOrder.indexOf(step.key);
+                                const isCompleted = stepIdx < currentIdx;
+                                const isCurrent = step.key === order.status;
+
+                                return (
+                                    <div key={step.key} className="flex items-center flex-1">
+                                        <div className="flex flex-col items-center">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg border-2 transition-all
+                                                ${isCompleted ? 'bg-green-100 border-green-500 text-green-700' :
+                                                    isCurrent ? 'bg-blue-100 border-blue-500 text-blue-700 ring-2 ring-blue-200' :
+                                                        'bg-gray-100 border-gray-300 text-gray-400'}`}>
+                                                {isCompleted ? '✓' : step.icon}
+                                            </div>
+                                            <span className={`text-xs mt-1 font-medium
+                                                ${isCompleted ? 'text-green-700' :
+                                                    isCurrent ? 'text-blue-700' :
+                                                        'text-gray-400'}`}>
+                                                {step.label}
+                                            </span>
+                                        </div>
+                                        {idx < arr.length - 1 && (
+                                            <div className={`flex-1 h-0.5 mx-2 mt-[-16px]
+                                                ${stepIdx < currentIdx ? 'bg-green-400' : 'bg-gray-200'}`} />
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* Status-Specific Action Buttons */}
+                <div className="mt-4 flex justify-end gap-2">
+                    {/* PENDING: Check Availability */}
+                    {order.status === 'PENDING' && (
+                        <>
+                            <Button variant="outline" onClick={() => setShowCancelDialog(true)} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                                <Ban className="w-4 h-4 mr-2" />
+                                Cancel Order
+                            </Button>
+                            <Button onClick={handleCheckAvailability}>
+                                Check Availability
+                            </Button>
+                        </>
+                    )}
+
+                    {/* RESERVED / PICKING / EXCEPTION: Cancel only */}
+                    {['RESERVED', 'EXCEPTION', 'PICKING'].includes(order.status) && (
                         <Button variant="outline" onClick={() => setShowCancelDialog(true)} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
                             <Ban className="w-4 h-4 mr-2" />
                             Cancel Order
                         </Button>
-                        <Button onClick={handleCheckAvailability}>
-                            Check Availability
+                    )}
+
+                    {/* PACKING: Confirm Packing Complete */}
+                    {order.status === 'PACKING' && (
+                        <>
+                            <Button variant="outline" onClick={() => setShowCancelDialog(true)} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                                <Ban className="w-4 h-4 mr-2" />
+                                Cancel Order
+                            </Button>
+                            <Button onClick={() => handleAdvanceStatus('PACKED')} className="bg-teal-600 hover:bg-teal-700">
+                                <PackageCheck className="w-4 h-4 mr-2" />
+                                Confirm Packing Complete
+                            </Button>
+                        </>
+                    )}
+
+                    {/* PACKED: Shipping form is shown via OrderShipping component */}
+
+                    {/* SHIPPED: Mark as Delivered */}
+                    {order.status === 'SHIPPED' && (
+                        <Button onClick={() => handleAdvanceStatus('DELIVERED')} className="bg-green-600 hover:bg-green-700">
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Mark as Delivered
                         </Button>
-                    </div>
-                )}
-                {/* Allow Cancel for Reserved/Exception too */}
-                {['RESERVED', 'EXCEPTION', 'PICKING'].includes(order.status) && (
-                    <div className="mt-4 flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setShowCancelDialog(true)} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
-                            <Ban className="w-4 h-4 mr-2" />
-                            Cancel Order
-                        </Button>
-                    </div>
-                )}
-                {/* Allow Delete for Cancelled or Draft/Pending-Clean */}
+                    )}
+                </div>
+
+                {/* Delete Button - shown separately for Cancelled/Draft orders */}
                 {(order.status === 'CANCELLED' || (order.status === 'PENDING' && (!order.reservations || order.reservations.length === 0))) && (
-                    <div className="mt-4 flex justify-end gap-2">
+                    <div className="mt-4 flex justify-end">
                         <Button variant="outline" onClick={() => setShowDeleteDialog(true)} className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
                             <Trash2 className="w-4 h-4 mr-2" />
                             Delete Order

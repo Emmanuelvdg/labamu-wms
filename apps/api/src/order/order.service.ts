@@ -229,9 +229,10 @@ export class OrderService {
             });
 
             // 2. Update Order Status
-            await tx.order.update({
+            const order = await tx.order.update({
                 where: { id: data.orderId },
                 data: { status: 'SHIPPED' },
+                include: { items: true }
             });
 
             // 3. Deduct Inventory (Commit Reservations)
@@ -240,16 +241,6 @@ export class OrderService {
             });
 
             for (const res of reservations) {
-                // Find the specific inventory record (simplified logic: just find one with stock)
-                // In a real app, we'd track exactly which inventory ID was reserved.
-                // Here we just decrement from the product's aggregate or find a batch.
-
-                // For now, let's update the ProductInventory to reduce quantity and reserved count
-                // We need to find the inventory entries that were reserved.
-                // Since our reservation model doesn't link to specific ProductInventory ID (it links to Product),
-                // we have to do a best-effort deduction or assume we can find it.
-
-                // Let's find any inventory for this product and deduct.
                 const inventory = await tx.productInventory.findFirst({
                     where: { productId: res.productId, reserved: { gte: res.quantity } },
                 });
@@ -264,7 +255,7 @@ export class OrderService {
                     });
                 }
 
-                // Also log transaction
+                // Log transaction
                 await tx.stockTransaction.create({
                     data: {
                         productId: res.productId,
@@ -274,6 +265,54 @@ export class OrderService {
                         date: new Date(),
                     },
                 });
+            }
+
+            // 4. Generate stock move to Shipping Dock
+            if (order.warehouseId) {
+                try {
+                    const warehouse = await tx.warehouse.findUnique({
+                        where: { id: order.warehouseId },
+                        select: { outgoingSteps: true }
+                    });
+
+                    const outgoingSteps = warehouse?.outgoingSteps || '1_step';
+
+                    // Determine source zone based on outgoing steps
+                    let sourceAreaType = 'STORAGE';
+                    if (outgoingSteps === '2_steps') {
+                        sourceAreaType = 'PICKING'; // 2-step: Picking → Shipping
+                    } else if (outgoingSteps === '3_steps') {
+                        sourceAreaType = 'PACKING'; // 3-step: Packing → Shipping
+                    }
+
+                    const shippingArea = await tx.warehouseFunctionalArea.findFirst({
+                        where: { warehouseId: order.warehouseId, areaType: 'SHIPPING' }
+                    });
+                    const sourceArea = outgoingSteps === '1_step' ? null : await tx.warehouseFunctionalArea.findFirst({
+                        where: { warehouseId: order.warehouseId, areaType: sourceAreaType }
+                    });
+
+                    const destLocationId = shippingArea?.linkedLocationId;
+                    const sourceLocationId = sourceArea?.linkedLocationId;
+
+                    if (destLocationId) {
+                        for (const item of order.items) {
+                            await tx.stockMove.create({
+                                data: {
+                                    productId: item.productId,
+                                    quantity: item.quantity,
+                                    sourceLocationId: sourceLocationId || undefined,
+                                    destinationLocationId: destLocationId,
+                                    status: 'DONE',
+                                    origin: `ORDER-${data.orderId.substring(0, 8)}-SHIP`,
+                                }
+                            });
+                        }
+                        console.log(`[Shipment] Stock moves: ${sourceAreaType}→SHIPPING for order ${data.orderId.substring(0, 8)} (${outgoingSteps})`);
+                    }
+                } catch (error) {
+                    console.error(`[Shipment] Failed to create stock moves:`, error);
+                }
             }
 
             return shipment;
@@ -388,12 +427,67 @@ export class OrderService {
     }
 
     async updateOrder(id: string, data: any): Promise<Order> {
+        const updateData: any = {};
+
+        // Allow updating delivery method
+        if (data.deliveryMethodId) {
+            updateData.deliveryMethodId = data.deliveryMethodId;
+        }
+
+        // Allow updating status (for fulfillment workflow transitions)
+        if (data.status) {
+            updateData.status = data.status;
+
+            // Generate stock moves on status transitions
+            try {
+                const order = await this.prisma.order.findUnique({
+                    where: { id },
+                    include: { items: { include: { product: true } } }
+                });
+
+                if (order?.warehouseId) {
+                    const warehouse = await this.prisma.warehouse.findUnique({
+                        where: { id: order.warehouseId },
+                        select: { outgoingSteps: true, id: true }
+                    });
+
+                    const outgoingSteps = warehouse?.outgoingSteps || '1_step';
+
+                    // PACKED transition: move stock from Picking Zone → Packing Zone (3-step only)
+                    if (data.status === 'PACKED' && outgoingSteps === '3_steps') {
+                        const pickingArea = await this.prisma.warehouseFunctionalArea.findFirst({
+                            where: { warehouseId: order.warehouseId, areaType: 'PICKING' }
+                        });
+                        const packingArea = await this.prisma.warehouseFunctionalArea.findFirst({
+                            where: { warehouseId: order.warehouseId, areaType: 'PACKING' }
+                        });
+
+                        if (pickingArea?.linkedLocationId && packingArea?.linkedLocationId) {
+                            for (const item of order.items) {
+                                await this.prisma.stockMove.create({
+                                    data: {
+                                        productId: item.productId,
+                                        quantity: item.quantity,
+                                        sourceLocationId: pickingArea.linkedLocationId,
+                                        destinationLocationId: packingArea.linkedLocationId,
+                                        status: 'DONE',
+                                        origin: `ORDER-${id.substring(0, 8)}-PACK`,
+                                    }
+                                });
+                            }
+                            console.log(`[Order] Stock moves: Picking→Packing for order ${id.substring(0, 8)}`);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`[Order] Failed to create stock moves for status ${data.status}:`, error);
+                // Don't block the status transition if stock move creation fails
+            }
+        }
+
         return this.prisma.order.update({
             where: { id },
-            data: {
-                deliveryMethodId: data.deliveryMethodId,
-                // Add other fields as needed
-            },
+            data: updateData,
             include: {
                 items: { include: { product: true } },
                 deliveryMethod: true,

@@ -36,6 +36,8 @@ export default function WarehousesPage() {
         width: 0,
         height: 0,
         maxWeight: 0,
+        incomingSteps: '1_step',
+        outgoingSteps: '1_step',
     });
 
     useEffect(() => {
@@ -71,6 +73,8 @@ export default function WarehousesPage() {
             width: warehouse.width || 0,
             height: warehouse.height || 0,
             maxWeight: warehouse.maxWeight || 0,
+            incomingSteps: warehouse.incomingSteps || '1_step',
+            outgoingSteps: warehouse.outgoingSteps || '1_step',
         });
         setShowCreateModal(true);
     };
@@ -107,6 +111,8 @@ export default function WarehousesPage() {
                 width: 0,
                 height: 0,
                 maxWeight: 0,
+                incomingSteps: '1_step',
+                outgoingSteps: '1_step',
             });
         } catch (err) {
             console.error(err);
@@ -236,6 +242,8 @@ export default function WarehousesPage() {
                             width: 0,
                             height: 0,
                             maxWeight: 0,
+                            incomingSteps: '1_step',
+                            outgoingSteps: '1_step',
                         });
                         setShowCreateModal(true);
                     }}
@@ -425,6 +433,39 @@ export default function WarehousesPage() {
                                                 value={newWarehouse.maxWeight}
                                                 onChange={(e) => setNewWarehouse({ ...newWarehouse, maxWeight: parseFloat(e.target.value) })}
                                             />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Operations Configuration */}
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-semibold text-gray-900 border-b pb-1">Operations Configuration</h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Inbound Steps</label>
+                                            <select
+                                                className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                                value={newWarehouse.incomingSteps}
+                                                onChange={(e) => setNewWarehouse({ ...newWarehouse, incomingSteps: e.target.value })}
+                                            >
+                                                <option value="1_step">1 Step – Direct Receipt (Receive → Stock)</option>
+                                                <option value="2_steps">2 Steps – Input + Stock (Receive → Input → Stock)</option>
+                                                <option value="3_steps">3 Steps – Input + QC + Stock (Receive → Input → QC → Stock)</option>
+                                            </select>
+                                            <p className="text-xs text-gray-500 mt-1">How goods move from receiving to storage</p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Outbound Steps</label>
+                                            <select
+                                                className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                                value={newWarehouse.outgoingSteps}
+                                                onChange={(e) => setNewWarehouse({ ...newWarehouse, outgoingSteps: e.target.value })}
+                                            >
+                                                <option value="1_step">1 Step – Direct Ship (Stock → Ship)</option>
+                                                <option value="2_steps">2 Steps – Pick + Ship (Stock → Output → Ship)</option>
+                                                <option value="3_steps">3 Steps – Pick + Pack + Ship (Stock → Pick → Pack → Ship)</option>
+                                            </select>
+                                            <p className="text-xs text-gray-500 mt-1">How goods move from storage to shipping</p>
                                         </div>
                                     </div>
                                 </div>

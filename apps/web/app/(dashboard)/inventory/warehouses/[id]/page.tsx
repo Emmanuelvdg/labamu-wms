@@ -38,6 +38,8 @@ export default function WarehouseDetailsPage() {
     const [postalCode, setPostalCode] = useState('');
     const [country, setCountry] = useState('');
     const [phone, setPhone] = useState('');
+    const [incomingSteps, setIncomingSteps] = useState('1_step');
+    const [outgoingSteps, setOutgoingSteps] = useState('1_step');
 
     useEffect(() => {
         loadData();
@@ -58,6 +60,8 @@ export default function WarehouseDetailsPage() {
                 setPostalCode(wh.postalCode || '');
                 setCountry(wh.country || '');
                 setPhone(wh.phone || '');
+                setIncomingSteps(wh.incomingSteps || '1_step');
+                setOutgoingSteps(wh.outgoingSteps || '1_step');
             }
 
             // 2. Fetch Strategies
@@ -94,6 +98,8 @@ export default function WarehouseDetailsPage() {
                 postalCode,
                 country,
                 phone,
+                incomingSteps,
+                outgoingSteps,
             });
 
             toast.success('Warehouse information updated');
@@ -257,7 +263,63 @@ export default function WarehouseDetailsPage() {
                 </div>
             </div>
 
-            {/* Picking Strategy Section */}
+            {/* Operations Configuration Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-5xl mx-auto mb-6">
+                <div className="mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                        <Truck className="h-5 w-5" />
+                        Operations Configuration
+                    </h2>
+                    <p className="text-gray-500 text-sm mt-1">
+                        Configure the number of steps for inbound and outbound operations.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Inbound Steps (Receiving)
+                        </label>
+                        <select
+                            value={incomingSteps}
+                            onChange={(e) => setIncomingSteps(e.target.value)}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                        >
+                            <option value="1_step">1 Step – Direct Receipt (Receive → Stock)</option>
+                            <option value="2_steps">2 Steps – Input + Stock (Receive → Input → Stock)</option>
+                            <option value="3_steps">3 Steps – Input + QC + Stock (Receive → Input → QC → Stock)</option>
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">How goods are processed from receiving dock to storage</p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Outbound Steps (Shipping)
+                        </label>
+                        <select
+                            value={outgoingSteps}
+                            onChange={(e) => setOutgoingSteps(e.target.value)}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm border p-2"
+                        >
+                            <option value="1_step">1 Step – Direct Ship (Stock → Ship)</option>
+                            <option value="2_steps">2 Steps – Pick + Ship (Stock → Output → Ship)</option>
+                            <option value="3_steps">3 Steps – Pick + Pack + Ship (Stock → Pick → Pack → Ship)</option>
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">How goods are processed from storage to shipping dock</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-end">
+                    <Button
+                        onClick={handleSaveInfo}
+                        disabled={savingInfo}
+                        className="flex items-center gap-2"
+                    >
+                        <Save className="h-4 w-4" />
+                        {savingInfo ? 'Saving...' : 'Save Operations Config'}
+                    </Button>
+                </div>
+            </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-5xl mx-auto">
                 <div className="mb-6">

@@ -11,7 +11,13 @@ Comprehensive documentation for the Labamu Inventory Management System.
 6. [Transfer Operations](#transfer-operations)
 7. [Reporting & Admin](#reporting--admin)
 8. [Mobile Warehouse App](#mobile-warehouse-app)
-9. [End-to-End Examples](#end-to-end-examples)
+9. [Packing Station](#packing-station)
+10. [Shipping Documents](#shipping-documents)
+11. [Replenishment Engine](#replenishment-engine)
+12. [Notifications & Alerts](#notifications--alerts)
+13. [Barcode Validation](#barcode-validation)
+14. [Analytics & Classification](#analytics--classification)
+15. [End-to-End Examples](#end-to-end-examples)
 
 ---
 
@@ -564,6 +570,124 @@ The Mobile Dashboard provides quick access to core workflows:
 **Goal:** Instant information without navigating menus.
 - **Location Scan:** Shows location type and full address.
 - **Product Scan:** Shows "On Hand" and "Available" stock levels for that item.
+
+---
+
+## Packing Station
+
+### Overview
+**Purpose:** Streamline the packing process for outbound orders with a dedicated workspace and parcel management.
+
+**Process:**
+1. **Queue:** Navigate to the Packing page. Orders in `PACKING` status appear in the queue.
+2. **Start Session:** Select an order and click "Start Packing" to create a packing session.
+3. **Add Parcels:** Create one or more parcels per order. Enter parcel weight and assign items.
+4. **Complete:** Once all items are assigned to parcels, click "Complete Packing". The session status changes to `COMPLETED`.
+
+---
+
+## Shipping Documents
+
+### Overview
+**Purpose:** Generate professional shipping documents for outbound logistics.
+
+**Available Documents:**
+| Document | Endpoint | Contents |
+|----------|----------|----------|
+| **Shipping Label** | `GET /shipping/label/:orderId` | Barcode, order ID, destination address, tracking info |
+| **Packing Slip** | `GET /shipping/packing-slip/:orderId` | Itemized list with quantities and descriptions |
+| **Daily Manifest** | `GET /shipping/manifest/:warehouseId` | All shipments for the date with summary totals |
+
+---
+
+## Replenishment Engine
+
+### Overview
+**Purpose:** Proactively monitor stock levels and generate purchase orders before stockouts occur.
+
+**Workflow:**
+1. **Check Levels:** Run `POST /inventory/replenishment/check` to scan all products against their `reorderPoint`.
+2. **View Alerts:** Navigate to Replenishment Dashboard. Products below threshold are listed with severity ranking.
+3. **Auto-Create PO:** Click "Auto-Create PO" to generate a purchase order for the recommended quantity.
+4. **Dismiss:** Dismiss irrelevant alerts. They will regenerate on the next check if still below threshold.
+
+---
+
+## Notifications & Alerts
+
+### Overview
+**Purpose:** Keep all users informed of critical warehouse events through in-app notifications.
+
+**Notification Bell:**
+- Visible in the top navigation bar after login.
+- Red badge shows unread notification count.
+- Click to see the latest notifications in a dropdown.
+
+**Notification Types:**
+| Type | Description |
+|------|-------------|
+| `EXPIRY_WARNING` | Batch expiring within the configured threshold (default: 30 days) |
+| `EXPIRED_STOCK` | Batch with stock that has already expired |
+| `LOW_STOCK` | Product below reorder point |
+| `SYSTEM` | General system alerts |
+
+**Expiry Checking:**
+- Run `POST /notifications/check-expiry` to scan all inventory batches.
+- Batches expiring within 30 days generate `EXPIRY_WARNING` notifications.
+- Already expired batches with remaining stock generate `EXPIRED_STOCK` notifications.
+
+---
+
+## Barcode Validation
+
+### Overview
+**Purpose:** Universal barcode lookup and context-aware validation for mobile scanning workflows.
+
+**Universal Lookup:** `POST /barcode/lookup`
+- Resolves barcodes to **Product** (by SKU), **Location** (by code), or **Batch** (by batch number).
+- Returns entity type and full details.
+- Returns `400` with clear message if barcode is unrecognized.
+
+**Scan-to-Receive:** `POST /purchase-orders/:id/scan-receive`
+- Scan a product barcode to receive 1 unit against a PO.
+- Validates that the product is in the PO line items.
+- Automatically selects a default receiving location.
+
+**Scan-to-Pick:** `POST /strategy/picking/tasks/:id/scan-pick`
+- Validates scanned barcode matches the expected product for the task.
+- Marks the picking task as completed on successful scan.
+
+---
+
+## Analytics & Classification
+
+### ABC Auto-Classification
+**Purpose:** Automatically classify products into A/B/C tiers based on outbound velocity to optimize warehouse layout.
+
+**Usage:** `POST /inventory/abc-classification/:warehouseId/run` with `{ "periodDays": 90 }`
+- **A-Class:** Top 80% of outbound value (fast-moving) → store in Golden Zone.
+- **B-Class:** Next 15% of value (medium) → store in accessible areas.
+- **C-Class:** Bottom 5% of value (slow-moving) → store in back of house.
+
+### Pick Accuracy Metrics
+**Purpose:** Track warehouse picking quality over configurable time periods.
+
+**Usage:** `GET /reporting/pick-accuracy/:warehouseId?periodDays=30`
+
+**Returned Metrics:**
+- `accuracyPercentage` — Overall pick accuracy rate
+- `totalTasks` — Total picking tasks in the period
+- `perfectPicks` — Tasks completed without exceptions
+- `exceptions` — Tasks with exception reasons
+- `shortPicks` — Tasks where picked quantity was less than requested
+
+### Zone-Scoped Cycle Counts
+**Purpose:** Generate expected inventory counts for specific warehouse zones without counting everything.
+
+**Usage:** `GET /reporting/cycle-count/:warehouseId?zone=Zone+A`
+- Returns inventory records limited to locations matching the zone pattern.
+- Includes `expectedQuantity` per product/location combination.
+- Ideal for targeted auditing of high-value zones.
 
 ---
 

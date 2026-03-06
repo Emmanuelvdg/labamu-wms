@@ -48,7 +48,7 @@ async function bootstrap() {
         // Global Input Validation
         app.useGlobalPipes(new ValidationPipe({
             whitelist: true,       // Strip unknown properties
-            forbidNonWhitelisted: true,  // Reject unknown properties
+            forbidNonWhitelisted: false,  // Don't reject unknown properties
             transform: true,       // Auto-transform payloads to DTO instances
         }));
 

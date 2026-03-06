@@ -1,7 +1,7 @@
 # Labamu WMS - System Architecture
 
-**Version:** 2.0  
-**Last Updated:** February 27, 2026  
+**Version:** 3.0  
+**Last Updated:** March 6, 2026  
 **Status:** Production-Ready
 
 ---
@@ -171,6 +171,11 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 | **SupplierModule** | Supplier catalog, partner management | `SupplierService` |
 | **ReturnsModule** | Returns Management (RMA), receiving, restocking conditions | `ReturnsService`, `ReturnsController` |
 | **StocktakingModule** | Cycle counts, full stocktakes, reconciliation | `StocktakingService`, `StocktakingController` |
+| **NotificationModule** | In-app notifications, expiry alerts, notification bell | `NotificationService`, `ExpiryCheckerService` |
+| **PackingModule** | Packing queue, parcel management, packing sessions | `PackingService`, `PackingController` |
+| **ReplenishmentModule** | Reorder point monitoring, auto-PO generation, alerts | `ReplenishmentService`, `ReplenishmentController` |
+| **BarcodeModule** | Universal barcode lookup, context-aware validation | `BarcodeValidatorService` |
+| **AnalyticsServices** (in InventoryModule) | ABC classification, pick accuracy, zone cycle counts | `AbcClassificationService`, `PickAccuracyService`, `CycleCountService`, `ReportingController` |
 
 ### Frontend Structure
 
@@ -408,6 +413,52 @@ POST   /transfers                           Create transfer request
 POST   /transfers/:id/approve               Approve transfer
 POST   /transfers/:id/cancel                Cancel transfer
 PATCH  /transfers/:id                       Update transfer details
+```
+
+#### Notifications
+```
+GET    /notifications                       List notifications
+GET    /notifications/unread-count          Unread notification count
+POST   /notifications                       Create notification
+PATCH  /notifications/:id/read              Mark as read
+POST   /notifications/mark-all-read         Mark all as read
+POST   /notifications/check-expiry          Run expiry checker
+```
+
+#### Packing Station
+```
+GET    /packing/queue                       List orders ready for packing
+POST   /packing/sessions                    Start packing session
+GET    /packing/sessions/:id                Get session details
+POST   /packing/sessions/:id/parcels        Add parcel to session
+POST   /packing/sessions/:id/complete       Complete packing session
+```
+
+#### Replenishment
+```
+POST   /inventory/replenishment/check       Check stock against reorder points
+GET    /inventory/replenishment/alerts       List active replenishment alerts
+POST   /inventory/replenishment/auto-po     Auto-create PO from alerts
+PATCH  /inventory/replenishment/alerts/:id/dismiss  Dismiss alert
+```
+
+#### Barcode Validation
+```
+POST   /barcode/lookup                      Universal barcode lookup (Product/Location/Batch)
+POST   /barcode/validate                    Context-aware barcode validation
+```
+
+#### Analytics & Reporting
+```
+POST   /inventory/abc-classification/:warehouseId/run  Run ABC auto-classification
+GET    /reporting/pick-accuracy/:warehouseId  Get pick accuracy metrics
+GET    /reporting/cycle-count/:warehouseId    Zone-scoped inventory counts
+GET    /shipping/rates                        Multi-carrier rate comparison
+```
+
+#### Purchase Order Scanning
+```
+POST   /purchase-orders/:id/scan-receive     Scan-to-receive (barcode)
 ```
 
 ### API Request/Response Formats

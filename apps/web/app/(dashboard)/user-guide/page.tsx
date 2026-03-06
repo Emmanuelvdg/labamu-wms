@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Link from 'next/link';
-import { ArrowLeft, Book, Box, MapPin, Truck, ShoppingCart, LayoutGrid, FileText, Users, BarChart, Settings, ClipboardList, Trash2, Globe, Archive, Route } from 'lucide-react';
+import { ArrowLeft, Book, Box, MapPin, Truck, ShoppingCart, LayoutGrid, FileText, Users, BarChart, Settings, ClipboardList, Trash2, Globe, Archive, Route, Bell, Package, AlertTriangle, ScanLine, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function UserGuidePage() {
@@ -1615,6 +1615,160 @@ export default function UserGuidePage() {
                                     </div>
                                 </CardContent>
                             </Card>
+                        </div>
+                    </section>
+
+                    <Separator className="my-12" />
+
+                    {/* Packing, Shipping Docs, Replenishment, Notifications, Barcode, Analytics */}
+                    <section id="new-features" className="scroll-mt-24">
+                        <h2 className="text-3xl font-bold mb-8 text-foreground">✨ New Features</h2>
+                        <div className="space-y-12">
+
+                            {/* Packing Station */}
+                            <div id="packing-station" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Package className="h-5 w-5" /> Packing Station</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Streamline the packing process for outbound orders with a dedicated workspace and parcel management.</p>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>Workflow:</strong>
+                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                <li><strong>Queue:</strong> Navigate to the Packing page. Orders in <code>PACKING</code> status appear in the queue.</li>
+                                                <li><strong>Start Session:</strong> Select an order and click "Start Packing" to create a packing session.</li>
+                                                <li><strong>Add Parcels:</strong> Create one or more parcels per order. Enter parcel weight and assign items.</li>
+                                                <li><strong>Complete:</strong> Once all items assigned, click "Complete Packing". Session status changes to <code>COMPLETED</code>.</li>
+                                            </ol>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Shipping Documents */}
+                            <div id="shipping-documents" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><FileText className="h-5 w-5" /> Shipping Documents</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Generate professional shipping documents for outbound logistics.</p>
+                                        <div className="space-y-3">
+                                            <div className="bg-blue-50 p-3 rounded">
+                                                <strong className="text-blue-900 text-sm">📋 Shipping Label</strong>
+                                                <p className="text-xs text-muted-foreground mt-1">PDF with barcode, order ID, destination address, and tracking info. <code>GET /shipping/label/:orderId</code></p>
+                                            </div>
+                                            <div className="bg-green-50 p-3 rounded">
+                                                <strong className="text-green-900 text-sm">📦 Packing Slip</strong>
+                                                <p className="text-xs text-muted-foreground mt-1">Itemized PDF listing contents with quantities and descriptions. <code>GET /shipping/packing-slip/:orderId</code></p>
+                                            </div>
+                                            <div className="bg-purple-50 p-3 rounded">
+                                                <strong className="text-purple-900 text-sm">📄 Daily Manifest</strong>
+                                                <p className="text-xs text-muted-foreground mt-1">Warehouse-level PDF summarizing all shipments for the date. <code>GET /shipping/manifest/:warehouseId</code></p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Replenishment Engine */}
+                            <div id="replenishment" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><AlertTriangle className="h-5 w-5" /> Replenishment Engine</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Proactively monitor stock levels and generate purchase orders before stockouts occur.</p>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>Workflow:</strong>
+                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                <li><strong>Check Levels:</strong> Scan all products against their <code>reorderPoint</code>.</li>
+                                                <li><strong>View Alerts:</strong> Navigate to Replenishment Dashboard. Products below threshold are listed with severity ranking.</li>
+                                                <li><strong>Auto-Create PO:</strong> Click "Auto-Create PO" to generate a purchase order for the recommended quantity.</li>
+                                                <li><strong>Dismiss:</strong> Dismiss irrelevant alerts. They regenerate on next check if still below threshold.</li>
+                                            </ol>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Notifications & Alerts */}
+                            <div id="notifications" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Bell className="h-5 w-5" /> Notifications & Alerts</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Keep all users informed of critical warehouse events through in-app notifications.</p>
+                                        <div className="space-y-4">
+                                            <div className="bg-muted p-4 rounded-md text-sm">
+                                                <strong className="block mb-2">Notification Bell</strong>
+                                                <ul className="list-disc pl-5 text-muted-foreground space-y-1">
+                                                    <li>Visible in the top navigation bar after login</li>
+                                                    <li>Red badge shows unread notification count</li>
+                                                    <li>Click to see latest notifications in a dropdown</li>
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-medium mb-2 text-sm">Notification Types:</h4>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div className="bg-yellow-50 p-2 rounded text-xs"><strong className="text-yellow-900">EXPIRY_WARNING</strong><br /><span className="text-muted-foreground">Batch expiring within 30 days</span></div>
+                                                    <div className="bg-red-50 p-2 rounded text-xs"><strong className="text-red-900">EXPIRED_STOCK</strong><br /><span className="text-muted-foreground">Batch already expired with stock remaining</span></div>
+                                                    <div className="bg-orange-50 p-2 rounded text-xs"><strong className="text-orange-900">LOW_STOCK</strong><br /><span className="text-muted-foreground">Product below reorder point</span></div>
+                                                    <div className="bg-blue-50 p-2 rounded text-xs"><strong className="text-blue-900">SYSTEM</strong><br /><span className="text-muted-foreground">General system alerts</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Barcode Validation */}
+                            <div id="barcode-validation" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><ScanLine className="h-5 w-5" /> Barcode Validation</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Universal barcode lookup and context-aware validation for mobile scanning workflows.</p>
+                                        <div className="space-y-3">
+                                            <div className="bg-muted p-4 rounded-md text-sm">
+                                                <strong className="block mb-2">Universal Lookup</strong>
+                                                <p className="text-muted-foreground">POST <code>/barcode/lookup</code> — Resolves barcodes to <strong>Product</strong> (by SKU), <strong>Location</strong> (by code), or <strong>Batch</strong> (by batch number).</p>
+                                            </div>
+                                            <div className="bg-blue-50 p-3 rounded text-sm">
+                                                <strong className="text-blue-900">Scan-to-Receive</strong>
+                                                <p className="text-xs text-muted-foreground mt-1">POST <code>/purchase-orders/:id/scan-receive</code> — Scan product barcode to receive 1 unit against a PO.</p>
+                                            </div>
+                                            <div className="bg-green-50 p-3 rounded text-sm">
+                                                <strong className="text-green-900">Scan-to-Pick</strong>
+                                                <p className="text-xs text-muted-foreground mt-1">POST <code>/strategy/picking/tasks/:id/scan-pick</code> — Validates scanned barcode and completes the task.</p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Analytics & Classification */}
+                            <div id="analytics" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><TrendingUp className="h-5 w-5" /> Analytics & Classification</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Advanced analytics for warehouse optimization.</p>
+                                        <div className="space-y-4">
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">ABC Auto-Classification</h4>
+                                                <p className="text-sm text-muted-foreground mb-2">Automatically classify products into A/B/C tiers based on outbound velocity over configurable time periods.</p>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <div className="bg-green-50 p-2 rounded text-xs text-center"><strong className="text-green-900">A-Class</strong><br />Top 80% value<br />Golden Zone</div>
+                                                    <div className="bg-yellow-50 p-2 rounded text-xs text-center"><strong className="text-yellow-900">B-Class</strong><br />Next 15% value<br />Accessible areas</div>
+                                                    <div className="bg-red-50 p-2 rounded text-xs text-center"><strong className="text-red-900">C-Class</strong><br />Bottom 5% value<br />Back of house</div>
+                                                </div>
+                                            </div>
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">Pick Accuracy Metrics</h4>
+                                                <p className="text-sm text-muted-foreground">Track warehouse picking quality: <code>accuracyPercentage</code>, <code>totalTasks</code>, <code>perfectPicks</code>, <code>exceptions</code>, <code>shortPicks</code>.</p>
+                                            </div>
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">Zone-Scoped Cycle Counts</h4>
+                                                <p className="text-sm text-muted-foreground">Generate expected inventory counts for specific zones without counting everything. Ideal for targeted auditing of high-value zones.</p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
                         </div>
                     </section>
 

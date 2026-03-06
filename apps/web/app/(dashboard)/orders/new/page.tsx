@@ -40,7 +40,7 @@ export default function NewOrderPage() {
                     fetchProducts(),
                     fetchCustomers(),
                     fetchWarehouses(),
-                    fetchWithRetry(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/shipping/delivery-methods`)
+                    fetchWithRetry(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/shipping/methods`)
                 ]);
                 setProducts(prods || []);
                 setCustomers(custs || []);

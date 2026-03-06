@@ -124,6 +124,9 @@ export class WarehouseAreaService {
         country?: string;
         latitude?: number;
         longitude?: number;
+        phone?: string;
+        incomingSteps?: string;
+        outgoingSteps?: string;
     }) {
         return this.prisma.warehouse.update({
             where: { id },
@@ -135,6 +138,9 @@ export class WarehouseAreaService {
                 country: data.country,
                 latitude: data.latitude,
                 longitude: data.longitude,
+                phone: data.phone,
+                incomingSteps: data.incomingSteps,
+                outgoingSteps: data.outgoingSteps,
             },
         });
     }
