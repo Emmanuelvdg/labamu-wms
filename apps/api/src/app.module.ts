@@ -62,6 +62,7 @@ import { PrismaService } from './prisma.service';
         PrintingModule,
         PackingModule,
         NotificationModule,
+        CommonFeaturesModule,
     ],
     controllers: [DeliveryMethodsController],
     providers: [
