@@ -77,4 +77,16 @@ export class ShippingController {
         res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'inline; filename="manifest.pdf"' });
         res.send(buffer);
     }
+
+    @Get('manifest/:warehouseId')
+    async getManifestByWarehouse(
+        @Param('warehouseId') warehouseId: string,
+        @Query('date') date: string,
+        @Res() res: Response
+    ) {
+        const shipmentIds = await this.shippingService.getShipmentsForManifest(warehouseId, date);
+        const buffer = await this.shippingDocsService.generateManifest(shipmentIds);
+        res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': 'inline; filename="manifest.pdf"' });
+        res.send(buffer);
+    }
 }

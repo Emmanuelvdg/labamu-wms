@@ -104,4 +104,29 @@ export class ShippingService {
 
         return 0;
     }
+
+    async getShipmentsForManifest(warehouseId: string, dateStr?: string) {
+        let date = new Date();
+        if (dateStr) {
+            date = new Date(dateStr);
+        }
+        
+        const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+        const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+
+        const shipments = await this.prisma.shipment.findMany({
+            where: {
+                order: {
+                    warehouseId: warehouseId,
+                    createdAt: {
+                        gte: startOfDay,
+                        lte: endOfDay,
+                    }
+                }
+            },
+            select: { id: true }
+        });
+
+        return shipments.map(s => s.id);
+    }
 }
