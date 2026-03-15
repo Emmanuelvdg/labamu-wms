@@ -1029,7 +1029,7 @@ export class InventoryService {
             }
 
             // Phase 8: Auto-generate Code and FullAddress
-            const code = data.code || data.name.toUpperCase().replace(/[^A-Z0-9]/g, '-').substring(0, 10);
+            const code = data.code || data.name.toUpperCase().replace(/[^A-Z0-9]/g, '-').substring(0, 50);
 
             let inheritedWarehouseId = data.warehouseId;
             let fullAddress = code;
@@ -1773,13 +1773,20 @@ export class InventoryService {
         const matchingRules = await this.prisma.putawayRule.findMany({
             where: {
                 active: true,
-                warehouseId: { in: [data.warehouseId, null as any] },
                 OR: [
-                    { productId: data.productId },
-                    { categoryId: product?.category },
-                    { velocityClass: product?.velocity },
-                    { abcClass: product?.abcClass },
-                    { AND: [{ productId: null }, { categoryId: null }] },
+                    { warehouseId: data.warehouseId },
+                    { warehouseId: null as any },
+                ],
+                AND: [
+                    {
+                        OR: [
+                            { productId: data.productId },
+                            { categoryId: product?.category },
+                            { velocityClass: product?.velocity },
+                            { abcClass: product?.abcClass },
+                            { AND: [{ productId: null }, { categoryId: null }] },
+                        ],
+                    }
                 ],
             },
             orderBy: { priority: 'desc' },

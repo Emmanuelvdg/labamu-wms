@@ -138,3 +138,8 @@ This section outlines the key differentiators of Labamu WMS, aligned with specif
 - **Advanced Labor Management:** Tracking worker productivity and picking rates.
 - **Predictive Analytics:** Demand forecasting and automated reorder suggestions using ML.
 - **Wave Picking Optimization:** Route optimization using spatial coordinates from the floor plan.
+
+## 8. Dynamic Routing & Workflow Engine
+- **Visual Builder:** Drag-and-drop interface for creating custom inbound/outbound material flows.
+- **Dynamic Execution:** Transitions between tasks (e.g., QC Inspect to Putaway) are evaluated dynamically based on real-time conditions.
+- **Waveless Picking:** Replaces rigid picking waves with a continuous, priority-driven queue of pick tasks.

@@ -17,6 +17,7 @@ import {
     ShoppingCart,
     ClipboardList,
     BookOpen,
+    GitBranch,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -30,7 +31,7 @@ type NavItem = {
 
 const navigation: NavItem[] = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Mobile Hub', href: '/mobile', icon: Map, permission: { resource: 'SETTINGS', action: 'READ' } },
+    { name: 'Mobile Hub', href: '/mobile/dashboard', icon: Map, permission: { resource: 'SETTINGS', action: 'READ' } },
     { name: 'Report', href: '/reporting', icon: FileText, permission: { resource: 'REPORTS', action: 'READ' } },
     { name: 'Product', href: '/inventory', icon: Box, permission: { resource: 'INVENTORY', action: 'READ' } },
     { name: 'Lot Number', href: '/inventory/batches', icon: Layers, permission: { resource: 'INVENTORY', action: 'READ' } },
@@ -83,6 +84,16 @@ const navigation: NavItem[] = [
             { name: 'Warehouses', href: '/inventory/warehouses', permission: { resource: 'SETTINGS', action: 'READ' } },
             { name: 'Floor Plan', href: '/floor-plan', permission: { resource: 'SETTINGS', action: 'READ' } },
             { name: 'Routes', href: '/inventory/routes', permission: { resource: 'INVENTORY', action: 'READ' } },
+        ]
+    },
+    {
+        name: 'Workflows',
+        href: '#workflows',
+        icon: GitBranch,
+        items: [
+            { name: 'Templates', href: '/workflows', permission: { resource: 'SETTINGS', action: 'READ' } },
+            { name: 'Monitor', href: '/workflows/monitor', permission: { resource: 'SETTINGS', action: 'READ' } },
+            { name: 'Analytics', href: '/workflows/analytics', permission: { resource: 'REPORTS', action: 'READ' } },
         ]
     },
     { name: 'Settings', href: '/settings', icon: Settings, permission: { resource: 'SETTINGS', action: 'READ' } },

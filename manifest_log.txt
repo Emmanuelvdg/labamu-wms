@@ -1,0 +1,3 @@
+curl: (3) bad range specification in URL position 16:
+shipmentIds\: [\a2e453ee-1652-4193-b51d-9ff3cbc5c38b\]}
+               ^

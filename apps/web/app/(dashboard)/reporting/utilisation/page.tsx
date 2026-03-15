@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { fetchWarehouses, fetchLocations, fetchUtilisationHistory } from '@/lib/api';
 import { Loader2, RefreshCw, Warehouse, Box, Layers } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
+import { toast } from 'sonner';
 
 export default function UtilisationReportPage() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
@@ -46,8 +47,9 @@ export default function UtilisationReportPage() {
             if (res.length > 0 && !selectedWarehouseId) {
                 setSelectedWarehouseId(res[0].id);
             }
-        } catch (err) {
-            console.error(err);
+        } catch (err: any) {
+            console.error('Failed to load warehouses:', err);
+            toast.error(err.message || 'Failed to load warehouses');
         }
     }
 
@@ -55,8 +57,9 @@ export default function UtilisationReportPage() {
         try {
             const res = await fetchLocations(warehouseId);
             setLocations(res);
-        } catch (err) {
-            console.error(err);
+        } catch (err: any) {
+            console.error(`Failed to load locations for warehouse ${warehouseId}:`, err);
+            toast.error(err.message || 'Failed to load locations');
         }
     }
 
@@ -64,14 +67,16 @@ export default function UtilisationReportPage() {
         setLoading(true);
         try {
             const locId = selectedLocationId === 'all' ? undefined : selectedLocationId;
+            console.log('Loading report for:', { warehouseId: selectedWarehouseId, locationId: locId, period });
             const res = await fetchUtilisationHistory({
                 warehouseId: selectedWarehouseId,
                 locationId: locId,
                 period
             });
             setData(res);
-        } catch (err) {
-            console.error(err);
+        } catch (err: any) {
+            console.error('Failed to load utilisation report:', err);
+            toast.error(err.message || 'Failed to load utilisation report');
         } finally {
             setLoading(false);
         }

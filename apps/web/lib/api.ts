@@ -79,7 +79,7 @@ export async function createWarehouse(warehouse: any) {
 }
 
 export async function deleteWarehouse(id: string) {
-    return fetchWithRetry(`${API_URL}/warehouses/${id}`, {
+    return fetchWithRetry(`${API_URL}/inventory/warehouses/${id}`, {
         method: 'DELETE',
     });
 }
@@ -96,7 +96,7 @@ export async function updateWarehouse(id: string, data: {
     incomingSteps?: string;
     outgoingSteps?: string;
 }) {
-    return fetchWithRetry(`${API_URL}/warehouses/${id}`, {
+    return fetchWithRetry(`${API_URL}/inventory/warehouses/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -1014,4 +1014,82 @@ export async function markNotificationRead(id: string) {
 
 export async function markAllNotificationsRead() {
     return fetchWithRetry(`${API_URL}/notifications/mark-all-read`, { method: 'POST' });
+}
+
+// ========== Workflows ==========
+export async function fetchWorkflowTemplates() {
+    return fetchWithRetry(`${API_URL}/workflows`);
+}
+
+export async function createWorkflowTemplate(data: any) {
+    return fetchWithRetry(`${API_URL}/workflows`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function getWorkflowTemplate(id: string) {
+    return fetchWithRetry(`${API_URL}/workflows/${id}`);
+}
+
+export async function updateWorkflowTemplate(id: string, data: any) {
+    return fetchWithRetry(`${API_URL}/workflows/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteWorkflowTemplate(id: string) {
+    return fetchWithRetry(`${API_URL}/workflows/${id}`, { method: 'DELETE' });
+}
+
+export async function activateWorkflowTemplate(id: string) {
+    return fetchWithRetry(`${API_URL}/workflows/${id}/activate`, { method: 'POST' });
+}
+
+export async function validateWorkflowTemplate(id: string) {
+    return fetchWithRetry(`${API_URL}/workflows/${id}/validate`, { method: 'POST' });
+}
+
+export async function cloneWorkflowTemplate(id: string) {
+    return fetchWithRetry(`${API_URL}/workflows/${id}/clone`, { method: 'POST' });
+}
+
+export async function createWorkflowVersion(id: string) {
+    return fetchWithRetry(`${API_URL}/workflows/${id}/version`, { method: 'POST' });
+}
+
+export async function fetchWorkflowInstances(warehouseId?: string) {
+    const params = warehouseId ? `?warehouseId=${warehouseId}` : '';
+    return fetchWithRetry(`${API_URL}/workflow-instances${params}`);
+}
+
+export async function getWorkflowInstance(id: string) {
+    return fetchWithRetry(`${API_URL}/workflow-instances/${id}`);
+}
+
+export async function fetchWorkflowInstanceDetails(id: string) {
+    return fetchWithRetry(`${API_URL}/workflow-instances/${id}`);
+}
+
+export async function startWorkflow(templateId: string, data: { warehouseId: string; triggerRef?: string; triggerType?: string }) {
+    return fetchWithRetry(`${API_URL}/workflow-instances/${templateId}/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function pauseWorkflowInstance(id: string, userId: string) {
+    return fetchWithRetry(`${API_URL}/workflow-instances/${id}/pause`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+    });
+}
+
+export async function resumeWorkflowInstance(id: string) {
+    return fetchWithRetry(`${API_URL}/workflow-instances/${id}/resume`, { method: 'POST' });
 }

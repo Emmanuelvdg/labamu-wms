@@ -257,6 +257,15 @@ export class InventoryController {
         return this.inventoryService.moveLocation(id, data.newParentId);
     }
 
+    @Get('locations/:id/suggest-removal')
+    suggestRemoval(
+        @Param('id') id: string,
+        @Query('productId') productId: string,
+        @Query('quantity') quantity: string
+    ) {
+        return this.inventoryService.suggestRemoval(id, productId, parseInt(quantity));
+    }
+
 
     @Post('putaway-rules')
     @RequirePermission('PUTAWAY_RULES', 'CREATE')

@@ -1,0 +1,1 @@
+import { PrismaClient } from '@labamu/database'; const prisma = new PrismaClient(); async function main() { console.log(await prisma.user.findUnique({where: {email: 'admin@labamu.co.id'}})); } main().finally(() => prisma.$disconnect());

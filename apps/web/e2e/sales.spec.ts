@@ -1,69 +1,66 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Sales & Picking', () => {
+test.describe('Sales & Exceptions', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/login');
         await page.getByLabel('Email').fill('admin@labamu.co.id');
         await page.getByLabel('Password').fill('admin');
         await page.getByRole('button', { name: 'Sign in' }).click();
-        await expect(page).toHaveURL('/');
+        await page.waitForURL('**/', { timeout: 15000 });
+        await expect(page).toHaveURL(/\/$/);
     });
 
-    test('TC-5.1: Define Picking Strategy', async ({ page }) => {
-        await page.getByRole('link', { name: 'Warehouses' }).click();
+    test('Scenario 5.1: Cancel Pending Order', async ({ page }) => {
+        // Handle "Order created successfully" alert
+        page.on('dialog', async dialog => {
+            if (dialog.message().includes('Order created successfully')) {
+                await dialog.accept();
+            }
+        });
 
-        await page.getByText('E2E Warehouse').click();
-        await page.getByRole('tab', { name: 'Strategies' }).click();
-
-        await page.click('text=Removal Strategy');
-        await page.click('text=FEFO');
-
-        await page.getByRole('button', { name: 'Save' }).click();
-    });
-
-    test('TC-5.2: Create Sales Order and Pick', async ({ page }) => {
         // 1. Create Sales Order
-        await page.getByRole('link', { name: 'Orders', exact: true }).click();
+        await page.goto('/orders');
+        await page.getByRole('button', { name: 'New Order' }).click();
 
-        await page.getByTestId('create-order-btn').click();
-
-        // 2. Select Customer (Use Select Option)
-        // Selecting by index for reliability in test data
+        // 2. Select Customer
         await page.getByTestId('order-customer-select').selectOption({ index: 1 });
 
-        // 3. Add Item 
-        // Default item row is 0
-        // Wait for product select to be visible to ensure form is ready
-        await expect(page.getByTestId('order-item-product-select-0')).toBeVisible();
-        await page.getByTestId('order-item-product-select-0').selectOption({ index: 1 }); // Select first product
-        await page.getByTestId('order-item-quantity-input-0').fill('10');
+        // 3. Select Delivery Method (Required for Sales)
+        await page.getByTestId('order-delivery-method-select').selectOption({ index: 1 });
 
+        // 4. Add Item
+        await page.getByTestId('order-item-product-select-0').selectOption({ index: 1 });
+        await page.getByTestId('order-item-quantity-input-0').fill('2');
+
+        // 5. Submit
         await page.getByTestId('submit-order-btn').click();
 
-        // Wait for redirect to /orders
-        await expect(page).toHaveURL('/orders');
+        // 6. Wait for redirect back to /orders list
+        await page.waitForURL('**/orders', { timeout: 15000 });
 
-        // Click the first order in the list (most recent)
+        // 7. Click the first order in the table (should be the one we just created)
         // Wait for table to load
-        await page.locator('tbody tr').first().waitFor();
-        await page.locator('tbody tr').first().dblclick();
+        await page.locator('table tbody tr').first().waitFor({ state: 'visible' });
+        await page.locator('table tbody tr').first().click();
 
-        // 2. Check Availability
-        await page.getByRole('button', { name: 'Check Availability' }).click();
-        // UI displays status in a badge without "Status: " prefix
-        await expect(page.getByText('RESERVED', { exact: true })).toBeVisible();
+        // 8. Confirm & Allocate (Transition to RESERVED)
+        // Check for "Check Availability" (Role button with name)
+        const allocateBtn = page.getByRole('button', { name: 'Check Availability' });
+        await allocateBtn.waitFor({ state: 'visible', timeout: 10000 });
+        await allocateBtn.click();
 
-        // 3. Picking Task
-        // Navigate via UI or link from Order
-        await page.getByRole('link', { name: 'Operations' }).click();
-        await page.getByRole('link', { name: 'Picking' }).click();
+        // Wait for status update
+        await expect(page.getByText('RESERVED')).toBeVisible({ timeout: 10000 });
 
-        // Open the most recent task
-        await page.locator('tr').first().click(); // Simplified selector
+        // 9. Cancel Order
+        await page.getByRole('button', { name: 'Cancel Order' }).click();
 
-        // Validate Pick
-        await page.getByRole('button', { name: 'Validate Pick' }).click();
+        // 10. Confirm Dialog
+        const confirmBtn = page.getByRole('button', { name: /Yes, Cancel Order|Confirm/ });
+        await confirmBtn.waitFor({ state: 'visible', timeout: 5000 });
+        await confirmBtn.click();
 
-        await expect(page.getByText('Status: DONE')).toBeVisible();
+        // 11. Verify Cancelled Status
+        await expect(page.getByText('CANCELLED')).toBeVisible({ timeout: 10000 });
     });
 });

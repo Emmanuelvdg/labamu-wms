@@ -58,6 +58,7 @@ export default function UserGuidePage() {
                                             <a onClick={(e) => scrollToSection(e, 'partner-locations')} href="#partner-locations" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Partner Locations</a>
                                             <a onClick={(e) => scrollToSection(e, 'routes')} href="#routes" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Routes</a>
                                             <a onClick={(e) => scrollToSection(e, 'stocktaking')} href="#stocktaking" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Stocktaking</a>
+                                            <a onClick={(e) => scrollToSection(e, 'replenishment')} href="#replenishment" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Replenishment Engine</a>
                                         </div>
                                     </div>
 
@@ -78,8 +79,10 @@ export default function UserGuidePage() {
                                             <a onClick={(e) => scrollToSection(e, 'picking-strategies')} href="#picking-strategies" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Picking Strategies</a>
                                             <a onClick={(e) => scrollToSection(e, 'rotation-policies')} href="#rotation-policies" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Rotation Policies</a>
                                             <a onClick={(e) => scrollToSection(e, 'worker-interface')} href="#worker-interface" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Worker Interface</a>
+                                            <a onClick={(e) => scrollToSection(e, 'packing-station')} href="#packing-station" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Packing Station</a>
                                             <a onClick={(e) => scrollToSection(e, 'delivery-methods')} href="#delivery-methods" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Delivery Methods</a>
                                             <a onClick={(e) => scrollToSection(e, 'shipping-execution')} href="#shipping-execution" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Shipping Execution</a>
+                                            <a onClick={(e) => scrollToSection(e, 'shipping-documents')} href="#shipping-documents" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Shipping Documents</a>
                                             <a onClick={(e) => scrollToSection(e, 'invoices')} href="#invoices" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Invoices</a>
                                             <a onClick={(e) => scrollToSection(e, 'returns')} href="#returns" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Returns (RMA)</a>
                                         </div>
@@ -89,9 +92,20 @@ export default function UserGuidePage() {
                                         <h4 className="font-semibold text-foreground mb-1">Reporting & Admin</h4>
                                         <div className="flex flex-col space-y-1">
                                             <a onClick={(e) => scrollToSection(e, 'reports')} href="#reports" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Reports</a>
+                                            <a onClick={(e) => scrollToSection(e, 'analytics')} href="#analytics" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Analytics & Classification</a>
                                             <a onClick={(e) => scrollToSection(e, 'stock-moves')} href="#stock-moves" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Stock Moves</a>
                                             <a onClick={(e) => scrollToSection(e, 'inventory-ledger')} href="#inventory-ledger" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Inventory Ledger</a>
                                             <a onClick={(e) => scrollToSection(e, 'settings')} href="#settings" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Settings</a>
+                                            <a onClick={(e) => scrollToSection(e, 'notifications')} href="#notifications" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Notifications & Alerts</a>
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <h4 className="font-semibold text-foreground mb-1">Workflow Engine</h4>
+                                        <div className="flex flex-col space-y-1">
+                                            <a onClick={(e) => scrollToSection(e, 'workflow-builder')} href="#workflow-builder" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Visual Builder</a>
+                                            <a onClick={(e) => scrollToSection(e, 'step-handlers')} href="#step-handlers" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Step Handlers & Execution</a>
+                                            <a onClick={(e) => scrollToSection(e, 'workflow-monitoring')} href="#workflow-monitoring" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Monitoring & Telemetry</a>
                                         </div>
                                     </div>
 
@@ -781,6 +795,25 @@ export default function UserGuidePage() {
 
                             </div>
 
+                            {/* Replenishment Engine */}
+                            <div id="replenishment" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><AlertTriangle className="h-5 w-5" /> Replenishment Engine</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Proactively monitor stock levels and generate purchase orders before stockouts occur.</p>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>Workflow:</strong>
+                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                <li><strong>Check Levels:</strong> Scan all products against their <code>reorderPoint</code>.</li>
+                                                <li><strong>View Alerts:</strong> Navigate to Replenishment Dashboard. Products below threshold are listed with severity ranking.</li>
+                                                <li><strong>Auto-Create PO:</strong> Click "Auto-Create PO" to generate a purchase order for the recommended quantity.</li>
+                                                <li><strong>Dismiss:</strong> Dismiss irrelevant alerts. They regenerate on next check if still below threshold.</li>
+                                            </ol>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
                             {/* Returns Management (RMA) */}
                             <div id="returns" className="scroll-mt-24 gap-4">
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Box className="h-5 w-5" /> Returns Management (RMA)</h3>
@@ -1221,6 +1254,25 @@ export default function UserGuidePage() {
                             </div>
 
                             {/* Delivery Methods */}
+                            {/* Packing Station */}
+                            <div id="packing-station" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Package className="h-5 w-5" /> Packing Station</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Streamline the packing process for outbound orders with a dedicated workspace and parcel management.</p>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>Workflow:</strong>
+                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                <li><strong>Queue:</strong> Navigate to the Packing page. Orders in <code>PACKING</code> status appear in the queue.</li>
+                                                <li><strong>Start Session:</strong> Select an order and click "Start Packing" to create a packing session.</li>
+                                                <li><strong>Add Parcels:</strong> Create one or more parcels per order. Enter parcel weight and assign items.</li>
+                                                <li><strong>Complete:</strong> Once all items assigned, click "Complete Packing". Session status changes to <code>COMPLETED</code>.</li>
+                                            </ol>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
                             <div id="delivery-methods" className="scroll-mt-24 gap-4">
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Truck className="h-5 w-5" /> Delivery Methods</h3>
                                 <Card>
@@ -1338,6 +1390,30 @@ export default function UserGuidePage() {
                             </div>
 
                             {/* Invoices */}
+                            {/* Shipping Documents */}
+                            <div id="shipping-documents" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><FileText className="h-5 w-5" /> Shipping Documents</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Generate professional shipping documents for outbound logistics.</p>
+                                        <div className="space-y-3">
+                                            <div className="bg-blue-50 p-3 rounded">
+                                                <strong className="text-blue-900 text-sm">📋 Shipping Label</strong>
+                                                <p className="text-xs text-muted-foreground mt-1">PDF with barcode, order ID, destination address, and tracking info. <code>GET /shipping/label/:orderId</code></p>
+                                            </div>
+                                            <div className="bg-green-50 p-3 rounded">
+                                                <strong className="text-green-900 text-sm">📦 Packing Slip</strong>
+                                                <p className="text-xs text-muted-foreground mt-1">Itemized PDF listing contents with quantities and descriptions. <code>GET /shipping/packing-slip/:orderId</code></p>
+                                            </div>
+                                            <div className="bg-purple-50 p-3 rounded">
+                                                <strong className="text-purple-900 text-sm">📄 Daily Manifest</strong>
+                                                <p className="text-xs text-muted-foreground mt-1">Warehouse-level PDF summarizing all shipments for the date. <code>GET /shipping/manifest/:warehouseId</code></p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
                             <div id="invoices" className="scroll-mt-24 gap-4">
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><FileText className="h-5 w-5" /> Invoices</h3>
                                 <Card>
@@ -1380,6 +1456,35 @@ export default function UserGuidePage() {
                             </div>
 
                             <div id="stock-moves" className="scroll-mt-24 gap-4">
+                            {/* Analytics & Classification */}
+                            <div id="analytics" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><TrendingUp className="h-5 w-5" /> Analytics & Classification</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Advanced analytics for warehouse optimization.</p>
+                                        <div className="space-y-4">
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">ABC Auto-Classification</h4>
+                                                <p className="text-sm text-muted-foreground mb-2">Automatically classify products into A/B/C tiers based on outbound velocity over configurable time periods.</p>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <div className="bg-green-50 p-2 rounded text-xs text-center"><strong className="text-green-900">A-Class</strong><br />Top 80% value<br />Golden Zone</div>
+                                                    <div className="bg-yellow-50 p-2 rounded text-xs text-center"><strong className="text-yellow-900">B-Class</strong><br />Next 15% value<br />Accessible areas</div>
+                                                    <div className="bg-red-50 p-2 rounded text-xs text-center"><strong className="text-red-900">C-Class</strong><br />Bottom 5% value<br />Back of house</div>
+                                                </div>
+                                            </div>
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">Pick Accuracy Metrics</h4>
+                                                <p className="text-sm text-muted-foreground">Track warehouse picking quality: <code>accuracyPercentage</code>, <code>totalTasks</code>, <code>perfectPicks</code>, <code>exceptions</code>, <code>shortPicks</code>.</p>
+                                            </div>
+                                            <div className="border-t pt-4">
+                                                <h4 className="font-medium mb-2">Zone-Scoped Cycle Counts</h4>
+                                                <p className="text-sm text-muted-foreground">Generate expected inventory counts for specific zones without counting everything. Ideal for targeted auditing of high-value zones.</p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Archive className="h-5 w-5" /> Stock Moves</h3>
                                 <Card>
                                     <CardContent className="pt-6 space-y-4">
@@ -1519,6 +1624,35 @@ export default function UserGuidePage() {
                         </div>
                     </section>
 
+                            {/* Notifications & Alerts */}
+                            <div id="notifications" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Bell className="h-5 w-5" /> Notifications & Alerts</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Keep all users informed of critical warehouse events through in-app notifications.</p>
+                                        <div className="space-y-4">
+                                            <div className="bg-muted p-4 rounded-md text-sm">
+                                                <strong className="block mb-2">Notification Bell</strong>
+                                                <ul className="list-disc pl-5 text-muted-foreground space-y-1">
+                                                    <li>Visible in the top navigation bar after login</li>
+                                                    <li>Red badge shows unread notification count</li>
+                                                    <li>Click to see latest notifications in a dropdown</li>
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-medium mb-2 text-sm">Notification Types:</h4>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div className="bg-yellow-50 p-2 rounded text-xs"><strong className="text-yellow-900">EXPIRY_WARNING</strong><br /><span className="text-muted-foreground">Batch expiring within 30 days</span></div>
+                                                    <div className="bg-red-50 p-2 rounded text-xs"><strong className="text-red-900">EXPIRED_STOCK</strong><br /><span className="text-muted-foreground">Batch already expired with stock remaining</span></div>
+                                                    <div className="bg-orange-50 p-2 rounded text-xs"><strong className="text-orange-900">LOW_STOCK</strong><br /><span className="text-muted-foreground">Product below reorder point</span></div>
+                                                    <div className="bg-blue-50 p-2 rounded text-xs"><strong className="text-blue-900">SYSTEM</strong><br /><span className="text-muted-foreground">General system alerts</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
                     <Separator className="my-12" />
 
                     {/* Mobile Warehouse App */}
@@ -1615,107 +1749,6 @@ export default function UserGuidePage() {
                                     </div>
                                 </CardContent>
                             </Card>
-                        </div>
-                    </section>
-
-                    <Separator className="my-12" />
-
-                    {/* Packing, Shipping Docs, Replenishment, Notifications, Barcode, Analytics */}
-                    <section id="new-features" className="scroll-mt-24">
-                        <h2 className="text-3xl font-bold mb-8 text-foreground">✨ New Features</h2>
-                        <div className="space-y-12">
-
-                            {/* Packing Station */}
-                            <div id="packing-station" className="scroll-mt-24 gap-4">
-                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Package className="h-5 w-5" /> Packing Station</h3>
-                                <Card>
-                                    <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> Streamline the packing process for outbound orders with a dedicated workspace and parcel management.</p>
-                                        <div className="bg-muted p-4 rounded-md text-sm">
-                                            <strong>Workflow:</strong>
-                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
-                                                <li><strong>Queue:</strong> Navigate to the Packing page. Orders in <code>PACKING</code> status appear in the queue.</li>
-                                                <li><strong>Start Session:</strong> Select an order and click "Start Packing" to create a packing session.</li>
-                                                <li><strong>Add Parcels:</strong> Create one or more parcels per order. Enter parcel weight and assign items.</li>
-                                                <li><strong>Complete:</strong> Once all items assigned, click "Complete Packing". Session status changes to <code>COMPLETED</code>.</li>
-                                            </ol>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            {/* Shipping Documents */}
-                            <div id="shipping-documents" className="scroll-mt-24 gap-4">
-                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><FileText className="h-5 w-5" /> Shipping Documents</h3>
-                                <Card>
-                                    <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> Generate professional shipping documents for outbound logistics.</p>
-                                        <div className="space-y-3">
-                                            <div className="bg-blue-50 p-3 rounded">
-                                                <strong className="text-blue-900 text-sm">📋 Shipping Label</strong>
-                                                <p className="text-xs text-muted-foreground mt-1">PDF with barcode, order ID, destination address, and tracking info. <code>GET /shipping/label/:orderId</code></p>
-                                            </div>
-                                            <div className="bg-green-50 p-3 rounded">
-                                                <strong className="text-green-900 text-sm">📦 Packing Slip</strong>
-                                                <p className="text-xs text-muted-foreground mt-1">Itemized PDF listing contents with quantities and descriptions. <code>GET /shipping/packing-slip/:orderId</code></p>
-                                            </div>
-                                            <div className="bg-purple-50 p-3 rounded">
-                                                <strong className="text-purple-900 text-sm">📄 Daily Manifest</strong>
-                                                <p className="text-xs text-muted-foreground mt-1">Warehouse-level PDF summarizing all shipments for the date. <code>GET /shipping/manifest/:warehouseId</code></p>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            {/* Replenishment Engine */}
-                            <div id="replenishment" className="scroll-mt-24 gap-4">
-                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><AlertTriangle className="h-5 w-5" /> Replenishment Engine</h3>
-                                <Card>
-                                    <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> Proactively monitor stock levels and generate purchase orders before stockouts occur.</p>
-                                        <div className="bg-muted p-4 rounded-md text-sm">
-                                            <strong>Workflow:</strong>
-                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
-                                                <li><strong>Check Levels:</strong> Scan all products against their <code>reorderPoint</code>.</li>
-                                                <li><strong>View Alerts:</strong> Navigate to Replenishment Dashboard. Products below threshold are listed with severity ranking.</li>
-                                                <li><strong>Auto-Create PO:</strong> Click "Auto-Create PO" to generate a purchase order for the recommended quantity.</li>
-                                                <li><strong>Dismiss:</strong> Dismiss irrelevant alerts. They regenerate on next check if still below threshold.</li>
-                                            </ol>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            {/* Notifications & Alerts */}
-                            <div id="notifications" className="scroll-mt-24 gap-4">
-                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Bell className="h-5 w-5" /> Notifications & Alerts</h3>
-                                <Card>
-                                    <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> Keep all users informed of critical warehouse events through in-app notifications.</p>
-                                        <div className="space-y-4">
-                                            <div className="bg-muted p-4 rounded-md text-sm">
-                                                <strong className="block mb-2">Notification Bell</strong>
-                                                <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                                                    <li>Visible in the top navigation bar after login</li>
-                                                    <li>Red badge shows unread notification count</li>
-                                                    <li>Click to see latest notifications in a dropdown</li>
-                                                </ul>
-                                            </div>
-                                            <div>
-                                                <h4 className="font-medium mb-2 text-sm">Notification Types:</h4>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <div className="bg-yellow-50 p-2 rounded text-xs"><strong className="text-yellow-900">EXPIRY_WARNING</strong><br /><span className="text-muted-foreground">Batch expiring within 30 days</span></div>
-                                                    <div className="bg-red-50 p-2 rounded text-xs"><strong className="text-red-900">EXPIRED_STOCK</strong><br /><span className="text-muted-foreground">Batch already expired with stock remaining</span></div>
-                                                    <div className="bg-orange-50 p-2 rounded text-xs"><strong className="text-orange-900">LOW_STOCK</strong><br /><span className="text-muted-foreground">Product below reorder point</span></div>
-                                                    <div className="bg-blue-50 p-2 rounded text-xs"><strong className="text-blue-900">SYSTEM</strong><br /><span className="text-muted-foreground">General system alerts</span></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-
                             {/* Barcode Validation */}
                             <div id="barcode-validation" className="scroll-mt-24 gap-4">
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><ScanLine className="h-5 w-5" /> Barcode Validation</h3>
@@ -1740,39 +1773,71 @@ export default function UserGuidePage() {
                                 </Card>
                             </div>
 
-                            {/* Analytics & Classification */}
-                            <div id="analytics" className="scroll-mt-24 gap-4">
-                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><TrendingUp className="h-5 w-5" /> Analytics & Classification</h3>
+                        </div>
+                    </section>
+
+                    <Separator className="my-12" />
+
+                    {/* Packing, Shipping Docs, Replenishment, Notifications, Barcode, Analytics */}
+                    {/* 6. Workflow Engine */}
+                    <section>
+                        <h2 className="text-3xl font-bold mb-8 text-foreground">Workflow Engine</h2>
+                        <div className="space-y-12">
+                            {/* Visual Builder */}
+                            <div id="workflow-builder" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><LayoutGrid className="h-5 w-5" /> Visual Builder</h3>
                                 <Card>
                                     <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> Advanced analytics for warehouse optimization.</p>
-                                        <div className="space-y-4">
-                                            <div className="border-t pt-4">
-                                                <h4 className="font-medium mb-2">ABC Auto-Classification</h4>
-                                                <p className="text-sm text-muted-foreground mb-2">Automatically classify products into A/B/C tiers based on outbound velocity over configurable time periods.</p>
-                                                <div className="grid grid-cols-3 gap-2">
-                                                    <div className="bg-green-50 p-2 rounded text-xs text-center"><strong className="text-green-900">A-Class</strong><br />Top 80% value<br />Golden Zone</div>
-                                                    <div className="bg-yellow-50 p-2 rounded text-xs text-center"><strong className="text-yellow-900">B-Class</strong><br />Next 15% value<br />Accessible areas</div>
-                                                    <div className="bg-red-50 p-2 rounded text-xs text-center"><strong className="text-red-900">C-Class</strong><br />Bottom 5% value<br />Back of house</div>
-                                                </div>
-                                            </div>
-                                            <div className="border-t pt-4">
-                                                <h4 className="font-medium mb-2">Pick Accuracy Metrics</h4>
-                                                <p className="text-sm text-muted-foreground">Track warehouse picking quality: <code>accuracyPercentage</code>, <code>totalTasks</code>, <code>perfectPicks</code>, <code>exceptions</code>, <code>shortPicks</code>.</p>
-                                            </div>
-                                            <div className="border-t pt-4">
-                                                <h4 className="font-medium mb-2">Zone-Scoped Cycle Counts</h4>
-                                                <p className="text-sm text-muted-foreground">Generate expected inventory counts for specific zones without counting everything. Ideal for targeted auditing of high-value zones.</p>
-                                            </div>
+                                        <p><strong>Purpose:</strong> A drag-and-drop interface for designing complex, multi-step warehouse workflows visually.</p>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>Features:</strong>
+                                            <ul className="list-disc pl-5 mt-1 space-y-1">
+                                                <li><strong>Nodes & Edges:</strong> Add operation steps like Receive, QC, Putaway, and connect them with directional arrows.</li>
+                                                <li><strong>Conditional Logic:</strong> Use IF/ELSE condition nodes to branch workflows based on real-time data (e.g., failed QC, urgent orders).</li>
+                                                <li><strong>Validation:</strong> The builder validates graph integrity to prevent infinite loops, detached nodes, or invalid transitions.</li>
+                                            </ul>
                                         </div>
                                     </CardContent>
                                 </Card>
                             </div>
 
+                            {/* Step Handlers */}
+                            <div id="step-handlers" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Settings className="h-5 w-5" /> Step Handlers & Execution</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> The execution engine that processes active workflow instances step-by-step.</p>
+                                        <ul className="list-disc pl-5 text-muted-foreground space-y-1 text-sm">
+                                            <li><strong>Automated Transitions:</strong> As workers complete tasks (like "Putaway Confirmed"), the engine automatically triggers the next step in the flow.</li>
+                                            <li><strong>Dynamic Handlers:</strong> Specialized handlers for each step type (RECEIVE, QC_INSPECT, CROSS_DOCK, PUTAWAY) ensure context is passed seamlessly (e.g., passing receipt IDs to the QC step).</li>
+                                            <li><strong>Incident Management:</strong> Supervisors can pause failing workflows, remediate physical issues (like missing stock), and resume execution without losing state.</li>
+                                        </ul>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Monitoring */}
+                            <div id="workflow-monitoring" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><BarChart className="h-5 w-5" /> Monitoring & Telemetry</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Operational visibility into all active and completed workflows.</p>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>Capabilities:</strong>
+                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                <li><strong>Active Instances:</strong> View a real-time list of all currently running workflows across the warehouse.</li>
+                                                <li><strong>Bottleneck Identification:</strong> Telemetry data tracks execution time for each step, allowing managers to identify slow processes (e.g., QC taking too long).</li>
+                                                <li><strong>Execution History:</strong> Drill down into completed workflows to audit exactly who completed each task and when.</li>
+                                            </ol>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
                         </div>
                     </section>
 
                     <Separator className="my-12" />
+
 
                     {/* End-to-End Examples */}
                     <section id="examples" className="scroll-mt-24">

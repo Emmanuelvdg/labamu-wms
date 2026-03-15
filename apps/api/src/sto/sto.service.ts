@@ -8,6 +8,7 @@ export class StoService {
     constructor(private prisma: PrismaService) { }
 
     async createInboundSto(data: CreateStoDto) {
+        console.log('STO Data received:', data);
         // 1. Validate Destination Warehouse
         const destWarehouse = await this.prisma.warehouse.findUnique({
             where: { id: data.destinationWarehouseId }
@@ -54,13 +55,29 @@ export class StoService {
             sourceWarehouseId = externalWarehouse.id;
         }
 
+        // 3.5 Ensure Initiator exists
+        let initiatorId = 'SYSTEM';
+        const systemUser = await this.prisma.user.findUnique({ where: { id: 'SYSTEM' } });
+        if (!systemUser) {
+            const admin = await this.prisma.user.findFirst({
+                where: { roles: { some: { name: 'Admin' } } }
+            });
+            if (admin) {
+                initiatorId = admin.id;
+            } else {
+                // Fallback to any user
+                const anyUser = await this.prisma.user.findFirst();
+                if (anyUser) initiatorId = anyUser.id;
+            }
+        }
+
         // 4. Create Transfer Order
         const transfer = await this.prisma.transferOrder.create({
             data: {
                 sourceWarehouseId: sourceWarehouseId,
                 destinationWarehouseId: data.destinationWarehouseId,
                 status: 'PLANNED',
-                initiatorId: 'SYSTEM', // TODO: Use actual user or system account
+                initiatorId: initiatorId,
                 items: {
                     create: items.map(item => ({
                         productId: item.productId,
@@ -68,7 +85,6 @@ export class StoService {
                         receivedQuantity: 0
                     }))
                 },
-                // Store external reference if needed (maybe add a field later, or put in notes)
             },
             include: { items: true }
         });

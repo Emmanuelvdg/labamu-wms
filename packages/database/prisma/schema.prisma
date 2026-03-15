@@ -108,6 +108,8 @@ model Warehouse {
   companyId              String?
   location               String                    @default("{}")
   type                   String
+  workflowTemplates      WorkflowTemplate[]
+  workflowInstances      WorkflowInstance[]
   partnerId              String?
   viewLocationId         String?                   @unique
   incomingSteps          String?
@@ -311,33 +313,34 @@ model StockTransaction {
 }
 
 model Order {
-  id                     String          @id @default(uuid())
+  id                     String             @id @default(uuid())
   customerId             String?
   status                 String
-  fulfillmentStatus      String          @default("UNALLOCATED")
+  fulfillmentStatus      String             @default("UNALLOCATED")
   priority               String
   shippingCarrier        String?
   expectedDate           DateTime?
   warehouseId            String?
-  createdAt              DateTime        @default(now())
-  updatedAt              DateTime        @updatedAt
-  totalAmount            Float           @default(0)
-  type                   String          @default("SALES")
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  totalAmount            Float              @default(0)
+  type                   String             @default("SALES")
   destinationWarehouseId String?
   parentOrderId          String?
   deliveryMethodId       String?
-  shippingCost           Float           @default(0)
-  shippingCostInCOGS     Boolean         @default(false)
+  shippingCost           Float              @default(0)
+  shippingCostInCOGS     Boolean            @default(false)
   lalamoveOrders         LalamoveOrder[]
-  deliveryMethod         DeliveryMethod? @relation(fields: [deliveryMethodId], references: [id])
-  parentOrder            Order?          @relation("OrderHierarchy", fields: [parentOrderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  childOrders            Order[]         @relation("OrderHierarchy")
-  destinationWarehouse   Warehouse?      @relation("OrderDestination", fields: [destinationWarehouseId], references: [id])
-  warehouse              Warehouse?      @relation(fields: [warehouseId], references: [id])
-  customer               Customer?       @relation(fields: [customerId], references: [id])
+  deliveryMethod         DeliveryMethod?    @relation(fields: [deliveryMethodId], references: [id])
+  parentOrder            Order?             @relation("OrderHierarchy", fields: [parentOrderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  childOrders            Order[]            @relation("OrderHierarchy")
+  destinationWarehouse   Warehouse?         @relation("OrderDestination", fields: [destinationWarehouseId], references: [id])
+  warehouse              Warehouse?         @relation(fields: [warehouseId], references: [id])
+  customer               Customer?          @relation(fields: [customerId], references: [id])
   items                  OrderItem[]
   pickingTasks           PickingTask[]
   reservations           Reservation[]
+  workflowInstances      WorkflowInstance[]
   shipment               Shipment?
   packingSession         PackingSession?
   transferOrders         TransferOrder[]
@@ -764,17 +767,18 @@ model DocumentAttachment {
 }
 
 model User {
-  id                 String           @id @default(uuid())
-  email              String           @unique
+  id                 String                 @id @default(uuid())
+  email              String                 @unique
   password           String?
   name               String
   apiKeys            ApiKey[]
   pickingSessions    PickingSession[]
   putawaySessions    PutawaySession[]
-  approvedTransfers  TransferOrder[]  @relation("TransferApprover")
-  initiatedTransfers TransferOrder[]  @relation("TransferInitiator")
-  roles              Role[]           @relation("RoleToUser")
-  warehouses         Warehouse[]      @relation("UserToWarehouse")
+  approvedTransfers  TransferOrder[]        @relation("TransferApprover")
+  initiatedTransfers TransferOrder[]        @relation("TransferInitiator")
+  roles              Role[]                 @relation("RoleToUser")
+  warehouses         Warehouse[]            @relation("UserToWarehouse")
+  workflowTasks      WorkflowTaskInstance[]
 }
 
 model ApiKey {
@@ -1037,29 +1041,29 @@ model StocktakeTask {
 }
 
 model PackingSession {
-  id          String    @id @default(uuid())
-  orderId     String    @unique
-  status      String    @default("IN_PROGRESS")
+  id          String          @id @default(uuid())
+  orderId     String          @unique
+  status      String          @default("IN_PROGRESS")
   workerId    String?
-  startedAt   DateTime  @default(now())
+  startedAt   DateTime        @default(now())
   completedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  order       Order     @relation(fields: [orderId], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  order       Order           @relation(fields: [orderId], references: [id])
   parcels     PackingParcel[]
 }
 
 model PackingParcel {
-  id               String         @id @default(uuid())
+  id               String              @id @default(uuid())
   packingSessionId String
   weight           Float?
   length           Float?
   width            Float?
   height           Float?
   trackingNumber   String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  packingSession   PackingSession @relation(fields: [packingSessionId], references: [id])
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  packingSession   PackingSession      @relation(fields: [packingSessionId], references: [id])
   items            PackingParcelItem[]
 }
 
@@ -1073,17 +1077,17 @@ model PackingParcelItem {
 }
 
 model ReplenishmentAlert {
-  id           String   @id @default(uuid())
-  productId    String
-  warehouseId  String?
-  type         String   @default("LOW_STOCK")
-  currentQty   Int
-  threshold    Int
-  status       String   @default("ACTIVE")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  product      Product  @relation(fields: [productId], references: [id])
-  warehouse    Warehouse? @relation(fields: [warehouseId], references: [id])
+  id          String     @id @default(uuid())
+  productId   String
+  warehouseId String?
+  type        String     @default("LOW_STOCK")
+  currentQty  Int
+  threshold   Int
+  status      String     @default("ACTIVE")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  product     Product    @relation(fields: [productId], references: [id])
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
 }
 
 model Notification {
@@ -1097,4 +1101,111 @@ model Notification {
   userId    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// ─── WORKFLOW DEFINITIONS ───
+model WorkflowTemplate {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  version     Int      @default(1)
+  status      String   @default("DRAFT") // DRAFT | ACTIVE | ARCHIVED
+  triggerType String   @default("MANUAL") // MANUAL | INBOUND | OUTBOUND | REPLENISHMENT | RETURN
+  warehouseId String?
+  config      String   @default("{}") // Canvas layout, UI metadata, using String for SQLite JSON fallback if needed. Let's use String since SQLite JSON support in Prisma expects String if provider is sqlite
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?
+
+  warehouse   Warehouse?           @relation(fields: [warehouseId], references: [id])
+  steps       WorkflowStep[]
+  transitions WorkflowTransition[]
+  instances   WorkflowInstance[]
+
+  @@unique([name, version])
+}
+
+model WorkflowStep {
+  id         String  @id @default(uuid())
+  templateId String
+  type       String // RECEIVE | CROSS_DOCK | PUTAWAY | QC_INSPECT | CYCLE_COUNT
+  // | WAVE_PICK | BATCH_PICK | ZONE_PICK | WAVELESS_PICK
+  // | CONSOLIDATE | STAGE | PACK | SHIP | RETURN
+  // | REPLENISH | CONDITION | SLOTTING | CUSTOM
+  name       String
+  config     String  @default("{}") // Step-specific params
+  positionX  Float   @default(0) // Canvas position
+  positionY  Float   @default(0)
+  isStart    Boolean @default(false)
+  isEnd      Boolean @default(false)
+  order      Int     @default(0)
+
+  template        WorkflowTemplate       @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  fromTransitions WorkflowTransition[]   @relation("FromStep")
+  toTransitions   WorkflowTransition[]   @relation("ToStep")
+  taskInstances   WorkflowTaskInstance[]
+}
+
+model WorkflowTransition {
+  id         String  @id @default(uuid())
+  templateId String
+  fromStepId String
+  toStepId   String
+  condition  String? @default("{}") // JSON string
+  label      String? // "Yes" / "No" / "Pass" / "Fail"
+  order      Int     @default(0)
+
+  template WorkflowTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  fromStep WorkflowStep     @relation("FromStep", fields: [fromStepId], references: [id], onDelete: Cascade)
+  toStep   WorkflowStep     @relation("ToStep", fields: [toStepId], references: [id], onDelete: Cascade)
+}
+
+// ─── WORKFLOW EXECUTION ───
+model WorkflowInstance {
+  id            String    @id @default(uuid())
+  templateId    String
+  warehouseId   String
+  triggerRef    String? // orderId, poId, etc.
+  triggerType   String? // ORDER | PO | REPLENISHMENT | RETURN
+  status        String    @default("RUNNING") // RUNNING | PAUSED | COMPLETED | FAILED | CANCELLED
+  currentStepId String?
+  context       String    @default("{}") // Runtime data bag encoded as JSON string
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  pausedBy      String?
+
+  template  WorkflowTemplate       @relation(fields: [templateId], references: [id])
+  warehouse Warehouse              @relation(fields: [warehouseId], references: [id])
+  Order     Order?                 @relation(fields: [triggerRef], references: [id])
+  tasks     WorkflowTaskInstance[]
+  auditLogs WorkflowAuditLog[]
+}
+
+model WorkflowTaskInstance {
+  id           String    @id @default(uuid())
+  instanceId   String
+  stepId       String
+  assigneeId   String?
+  status       String    @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED | FAILED | SKIPPED
+  input        String?   @default("{}")
+  output       String?   @default("{}")
+  startedAt    DateTime?
+  completedAt  DateTime?
+  errorMessage String?
+
+  instance WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  step     WorkflowStep     @relation(fields: [stepId], references: [id])
+  assignee User?            @relation(fields: [assigneeId], references: [id])
+}
+
+model WorkflowAuditLog {
+  id         String   @id @default(uuid())
+  instanceId String
+  action     String // STEP_COMPLETED | STEP_FAILED | PAUSED | RESUMED | OVERRIDE | REASSIGNED
+  stepId     String?
+  userId     String?
+  details    String?  @default("{}")
+  timestamp  DateTime @default(now())
+
+  instance WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
 }

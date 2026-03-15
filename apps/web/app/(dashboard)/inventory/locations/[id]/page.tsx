@@ -116,6 +116,8 @@ export default function LocationDetailsPage() {
                 customAttributes: customAttributes,
                 zonePriority: data.zonePriority,
                 putawaySequence: data.putawaySequence,
+                maxWeight: data.maxWeight || '',
+                maxVolume: data.maxVolume || '',
             });
 
         } catch (error) {
@@ -258,7 +260,7 @@ export default function LocationDetailsPage() {
                         {utilizationReport ? (
                             <div className="space-y-2">
                                 <div className="flex justify-between items-end">
-                                    <span className="text-2xl font-bold">Weight: {utilizationReport.details.currentWeight.toFixed(1)} <span className="text-sm font-normal text-gray-500">/ {utilizationReport.details.maxWeight || '∞'} kg</span></span>
+                                    <span className="text-2xl font-bold">Weight: {utilizationReport.details.currentWeight.toFixed(1)} <span className="text-sm font-normal text-gray-500">/ {location.maxWeight || '∞'} kg</span></span>
                                     <span className="text-sm text-gray-500">({utilizationReport.weightUtilisation.toFixed(1)}%)</span>
                                 </div>
                                 <div className="w-full bg-gray-100 rounded-full h-2">
@@ -280,7 +282,7 @@ export default function LocationDetailsPage() {
                         {utilizationReport ? (
                             <div className="space-y-2">
                                 <div className="flex justify-between items-end">
-                                    <span className="text-2xl font-bold">Volume: {utilizationReport.details.currentVolume.toFixed(2)} <span className="text-sm font-normal text-gray-500">/ {utilizationReport.details.maxVolume || '∞'} m³</span></span>
+                                    <span className="text-2xl font-bold">Volume: {utilizationReport.details.currentVolume.toFixed(2)} <span className="text-sm font-normal text-gray-500">/ {location.maxVolume || '∞'} m³</span></span>
                                     <span className="text-sm text-gray-500">({utilizationReport.volumeUtilisation.toFixed(1)}%)</span>
                                 </div>
                                 <div className="w-full bg-gray-100 rounded-full h-2">
@@ -355,7 +357,7 @@ export default function LocationDetailsPage() {
                                 </div>
                                 <div>
                                     <div className="text-sm font-medium text-gray-500">Max Weight</div>
-                                    <div className="text-lg font-semibold">{utilizationReport?.details?.maxWeight || '∞'} kg</div>
+                                    <div className="text-lg font-semibold">{location.maxWeight || '∞'} kg</div>
                                 </div>
                                 <div>
                                     <div className="text-sm font-medium text-gray-500">Max Pallets</div>
@@ -502,6 +504,84 @@ export default function LocationDetailsPage() {
                                 onChange={(e) => setEditForm({ ...editForm, zonePriority: parseInt(e.target.value) })}
                                 className="col-span-3"
                             />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="maxWeight" className="text-right">Max Weight (kg)</Label>
+                            <Input
+                                id="maxWeight"
+                                type="number"
+                                step="0.1"
+                                value={editForm.maxWeight || ''}
+                                onChange={(e) => setEditForm({ ...editForm, maxWeight: e.target.value })}
+                                className="col-span-3"
+                                placeholder="e.g. 500"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="maxVolume" className="text-right">Max Volume (m³)</Label>
+                            <Input
+                                id="maxVolume"
+                                type="number"
+                                step="0.01"
+                                value={editForm.maxVolume || ''}
+                                onChange={(e) => setEditForm({ ...editForm, maxVolume: e.target.value })}
+                                className="col-span-3"
+                                placeholder="e.g. 1.5"
+                            />
+                        </div>
+
+                        <Separator className="my-2" />
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <Label className="font-semibold">Custom Attributes</Label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const custom = [...(editForm.customAttributes || [])];
+                                        custom.push({ key: '', value: '' });
+                                        setEditForm({ ...editForm, customAttributes: custom });
+                                    }}
+                                >
+                                    Add Attribute
+                                </Button>
+                            </div>
+                            {(editForm.customAttributes || []).map((attr: any, index: number) => (
+                                <div key={index} className="grid grid-cols-4 items-center gap-4">
+                                    <Input
+                                        placeholder="Key"
+                                        value={attr.key}
+                                        onChange={(e) => {
+                                            const custom = [...editForm.customAttributes];
+                                            custom[index].key = e.target.value;
+                                            setEditForm({ ...editForm, customAttributes: custom });
+                                        }}
+                                    />
+                                    <Input
+                                        placeholder="Value"
+                                        className="col-span-2"
+                                        value={attr.value}
+                                        onChange={(e) => {
+                                            const custom = [...editForm.customAttributes];
+                                            custom[index].value = e.target.value;
+                                            setEditForm({ ...editForm, customAttributes: custom });
+                                        }}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                            const custom = editForm.customAttributes.filter((_: any, i: number) => i !== index);
+                                            setEditForm({ ...editForm, customAttributes: custom });
+                                        }}
+                                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                        Remove
+                                    </Button>
+                                </div>
+                            ))}
                         </div>
                     </div>
                     <DialogFooter>

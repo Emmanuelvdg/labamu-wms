@@ -33,6 +33,7 @@ export class ErrorCatalogService {
     private loadCatalog(): void {
         try {
             const catalogPath = path.join(__dirname, 'error-catalog.json');
+            this.logger.log(`Checking error catalog at: ${catalogPath}`);
             const raw = fs.readFileSync(catalogPath, 'utf-8');
             this.catalog = JSON.parse(raw);
             this.logger.log(`Loaded ${Object.keys(this.catalog).length} error codes from catalog`);

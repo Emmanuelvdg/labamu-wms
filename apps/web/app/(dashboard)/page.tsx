@@ -14,6 +14,8 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface DashboardAnalytics {
   totalStockValue: number;
@@ -143,6 +145,7 @@ export default function Dashboard() {
           trend="Current Asset Value"
           color="blue"
           onDoubleClick={() => handleMetricDoubleClick('stock-value', 'Total Stock Value')}
+          href="/inventory"
         />
         <KpiCard
           title="Fulfillment Rate"
@@ -159,6 +162,7 @@ export default function Dashboard() {
           trend="Items Out of Stock"
           color="red"
           onDoubleClick={() => handleMetricDoubleClick('stockout', 'Stockout Rate')}
+          href="/inventory?filter=low-stock"
         />
         <KpiCard
           title="Pending Orders"
@@ -167,6 +171,7 @@ export default function Dashboard() {
           trend="To be processed"
           color="orange"
           onDoubleClick={() => handleMetricDoubleClick('pending', 'Pending Orders')}
+          href="/orders?status=PENDING"
         />
         <KpiCard
           title="Avg Cycle Time"
@@ -175,6 +180,7 @@ export default function Dashboard() {
           trend="Created to Shipped"
           color="purple"
           onDoubleClick={() => handleMetricDoubleClick('cycle-time', 'Avg Cycle Time')}
+          href="/reporting/cycle-time"
         />
         <KpiCard
           title="Warehouse Capacity"
@@ -183,6 +189,7 @@ export default function Dashboard() {
           trend="Volume Utilized"
           color="indigo"
           onDoubleClick={() => handleMetricDoubleClick('capacity', 'Warehouse Capacity')}
+          href="/reporting/utilisation"
         />
       </div>
 
@@ -315,7 +322,8 @@ export default function Dashboard() {
   );
 }
 
-function KpiCard({ title, value, icon, trend, color, onDoubleClick }: any) {
+function KpiCard({ title, value, icon, trend, color, onDoubleClick, href }: any) {
+  const router = useRouter();
   const colorClasses: Record<string, string> = {
     blue: 'bg-blue-50 text-blue-600',
     green: 'bg-green-50 text-green-600',
@@ -325,23 +333,34 @@ function KpiCard({ title, value, icon, trend, color, onDoubleClick }: any) {
     indigo: 'bg-indigo-50 text-indigo-600',
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    // If double click is handled, we should be careful. 
+    // But usually double click also triggers single click.
+    // We can use a small delay or just let single click navigate if href is provided.
+    if (href) {
+      router.push(href);
+    }
+  };
+
   return (
     <div
-      className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
+      className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer group"
+      onClick={handleClick}
       onDoubleClick={onDoubleClick}
-      title="Double-click for details"
+      title={href ? "Click to view details" : "Double-click for details"}
     >
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+          <p className="text-sm font-medium text-gray-500 mb-1 group-hover:text-blue-500 transition-colors">{title}</p>
           <h3 className="text-2xl font-bold text-gray-900">{value}</h3>
         </div>
         <div className={`p-3 rounded-lg ${colorClasses[color] || 'bg-gray-100'}`}>
           {icon}
         </div>
       </div>
-      <div className="mt-4 flex items-center text-sm">
+      <div className="mt-4 flex items-center text-sm justify-between">
         <span className="text-gray-400 font-medium">{trend}</span>
+        {href && <ArrowUpRight className="h-4 w-4 text-gray-300 group-hover:text-blue-400 transition-colors" />}
       </div>
     </div>
   );

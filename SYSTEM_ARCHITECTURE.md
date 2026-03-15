@@ -1609,4 +1609,13 @@ The repository includes comprehensive E2E test plans:
 
 ---
 
+### Dynamic Routing & Workflow Engine (Phase 3+)
+The new Workflow Engine replaces static multi-step flows with dynamic, customizable workflow templates.
+- **WorkflowTemplate:** Defines the logical graph of steps (e.g., Receive -> QC -> Putaway).
+- **WorkflowTask / Transition:** Steps dictate actions and transitions determine routing based on rules.
+- **Waveless Picking:** Continuous flow picking rather than strict batches.
+- **Dynamic Task Optimisation:** Re-evaluates picking sequences and workloads in real-time.
+
+---
+
 **Document End**

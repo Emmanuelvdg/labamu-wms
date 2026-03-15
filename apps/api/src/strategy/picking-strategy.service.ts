@@ -128,6 +128,53 @@ export class PickingStrategyService {
         };
     }
 
+    // --- Waveless Picking ---
+    // Continuous flow picking, releases orders immediately
+    async createWavelessSession(warehouseId: string) {
+        return this.createSession({ warehouseId, strategy: 'SINGLE', maxOrders: 5 });
+    }
+
+    async insertUrgentPick(sessionId: string, orderId: string) {
+        const session = await this.prisma.pickingSession.findUnique({ where: { id: sessionId } });
+        if (!session) throw new HttpException('Session not found', HttpStatus.NOT_FOUND);
+
+        const order = await this.prisma.order.findUnique({
+            where: { id: orderId },
+            include: { items: { include: { product: true } } }
+        });
+
+        if (!order || order.status !== 'RESERVED') {
+            throw new HttpException('Order not found or not reserved', HttpStatus.BAD_REQUEST);
+        }
+
+        let orderHasTasks = false;
+        for (const item of order.items) {
+            const allocations = await this.allocateStock(item.productId, item.quantity, session.warehouseId, 'FEFO');
+            for (const alloc of allocations) {
+                await this.prisma.pickingTask.create({
+                    data: {
+                        sessionId: session.id,
+                        orderId: order.id,
+                        productId: item.productId,
+                        sourceLocationId: alloc.locationId,
+                        quantity: alloc.quantity,
+                        status: 'PENDING'
+                    }
+                });
+                orderHasTasks = true;
+            }
+        }
+
+        if (orderHasTasks) {
+            await this.prisma.order.update({
+                where: { id: order.id },
+                data: { status: 'PICKING' }
+            });
+        }
+
+        return { success: true, message: 'Urgent pick inserted', addedTasks: orderHasTasks };
+    }
+
     // --- Picking Session Management ---
 
     async createSession(data: {

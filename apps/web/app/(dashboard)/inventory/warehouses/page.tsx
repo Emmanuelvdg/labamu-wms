@@ -5,6 +5,16 @@ import { fetchWarehouses, createWarehouse, fetchLocations, createLocation, moveL
 import { format } from 'date-fns';
 import { Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function WarehousesPage() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
@@ -12,6 +22,7 @@ export default function WarehousesPage() {
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [warehouseToDelete, setWarehouseToDelete] = useState<any>(null);
 
     // Location Management State
     const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
@@ -24,7 +35,9 @@ export default function WarehousesPage() {
         type: 'INTERNAL',
         parentId: '',
         removalStrategy: 'FIFO',
+        maxWeight: '',
     });
+    const [editingLocationId, setEditingLocationId] = useState<string | null>(null);
 
     // New Warehouse Form State
     const [newWarehouse, setNewWarehouse] = useState({
@@ -122,6 +135,8 @@ export default function WarehousesPage() {
 
     const openLocationModal = async (warehouse: any) => {
         setSelectedWarehouse(warehouse);
+        setEditingLocationId(null);
+        setNewLocation({ name: '', type: 'INTERNAL', parentId: '', removalStrategy: 'FIFO', maxWeight: '' });
         setShowLocationModal(true);
         await loadLocations(warehouse.id);
     };
@@ -139,16 +154,28 @@ export default function WarehousesPage() {
     const handleCreateLocation = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await createLocation({
+            const dataToSave = {
                 ...newLocation,
                 warehouseId: selectedWarehouse.id,
                 parentId: newLocation.parentId || undefined,
                 removalStrategy: newLocation.removalStrategy || undefined,
-            });
-            setNewLocation({ name: '', type: 'INTERNAL', parentId: '', removalStrategy: 'FIFO' });
+                maxWeight: newLocation.maxWeight ? Number(newLocation.maxWeight) : undefined,
+            };
+
+            if (editingLocationId) {
+                // We need to import updateLocation from api.ts
+                // await updateLocation(editingLocationId, dataToSave)
+                const { updateLocation } = await import('@/lib/api');
+                await updateLocation(editingLocationId, dataToSave);
+            } else {
+                await createLocation(dataToSave);
+            }
+
+            setNewLocation({ name: '', type: 'INTERNAL', parentId: '', removalStrategy: 'FIFO', maxWeight: '' });
+            setEditingLocationId(null);
             await loadLocations(selectedWarehouse.id);
         } catch (err) {
-            alert('Failed to create location');
+            alert('Failed to save location');
         }
     };
 
@@ -165,15 +192,23 @@ export default function WarehousesPage() {
         }
     };
 
-    const handleDeleteWarehouse = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this warehouse?')) return;
+    const handleDeleteWarehouse = (warehouse: any) => {
+        console.log(`Setting warehouse to delete: ${warehouse.id}`);
+        setWarehouseToDelete(warehouse);
+    };
+
+    const confirmDeleteWarehouse = async () => {
+        if (!warehouseToDelete) return;
+        const id = warehouseToDelete.id;
         try {
             await deleteWarehouse(id);
             toast.success('Warehouse deleted successfully');
             load();
-        } catch (err) {
-            console.error(err);
-            toast.error('Failed to delete warehouse');
+        } catch (err: any) {
+            console.error('Deletion error:', err);
+            toast.error(err.message || 'Failed to delete warehouse');
+        } finally {
+            setWarehouseToDelete(null);
         }
     };
 
@@ -201,6 +236,21 @@ export default function WarehousesPage() {
                             className="text-xs text-blue-600 hover:underline"
                         >
                             + Add Child
+                        </button>
+                        <button
+                            onClick={() => {
+                                setEditingLocationId(node.id);
+                                setNewLocation({
+                                    name: node.name,
+                                    type: node.type || 'INTERNAL',
+                                    parentId: node.parentId || '',
+                                    removalStrategy: node.removalStrategy || 'FIFO',
+                                    maxWeight: node.maxWeight || '',
+                                });
+                            }}
+                            className="text-xs text-orange-600 hover:underline"
+                        >
+                            Edit
                         </button>
                         <button
                             onClick={() => {
@@ -248,6 +298,7 @@ export default function WarehousesPage() {
                         setShowCreateModal(true);
                     }}
                     className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    data-testid="create-warehouse-btn"
                 >
                     + Add Warehouse
                 </button>
@@ -331,7 +382,7 @@ export default function WarehousesPage() {
                                                 <Edit2 size={16} />
                                             </button>
                                             <button
-                                                onClick={() => handleDeleteWarehouse(warehouse.id)}
+                                                onClick={() => handleDeleteWarehouse(warehouse)}
                                                 className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50"
                                                 title="Delete Warehouse"
                                             >
@@ -366,6 +417,17 @@ export default function WarehousesPage() {
                                                 className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
                                                 value={newWarehouse.name}
                                                 onChange={(e) => setNewWarehouse({ ...newWarehouse, name: e.target.value })}
+                                                data-testid="warehouse-name-input"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Short Name</label>
+                                            <input
+                                                type="text"
+                                                className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                                value={(newWarehouse as any).shortName || ''}
+                                                onChange={(e) => setNewWarehouse({ ...newWarehouse, shortName: e.target.value } as any)}
+                                                data-testid="warehouse-shortname-input"
                                             />
                                         </div>
                                         <div>
@@ -484,6 +546,7 @@ export default function WarehousesPage() {
                                                     ...newWarehouse,
                                                     location: { ...newWarehouse.location, address: e.target.value }
                                                 })}
+                                                data-testid="warehouse-address-input"
                                             />
                                         </div>
                                         <div>
@@ -548,6 +611,7 @@ export default function WarehousesPage() {
                                 <button
                                     type="submit"
                                     className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                                    data-testid="submit-warehouse-btn"
                                 >
                                     {editingId ? 'Update Warehouse' : 'Create Warehouse'}
                                 </button>
@@ -582,9 +646,23 @@ export default function WarehousesPage() {
                                 )}
                             </div>
 
-                            {/* Add Location Form */}
-                            <div className="border rounded-lg p-4">
-                                <h4 className="font-medium text-gray-700 mb-3">Add Location</h4>
+                            {/* Add/Edit Location Form */}
+                            <div className="border rounded-lg p-4 bg-white sticky top-4">
+                                <div className="flex justify-between items-center mb-3">
+                                    <h4 className="font-medium text-gray-700">{editingLocationId ? 'Edit Location' : 'Add Location'}</h4>
+                                    {editingLocationId && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setEditingLocationId(null);
+                                                setNewLocation({ name: '', type: 'INTERNAL', parentId: '', removalStrategy: 'FIFO', maxWeight: '' });
+                                            }}
+                                            className="text-xs text-blue-600 hover:underline"
+                                        >
+                                            Cancel Edit
+                                        </button>
+                                    )}
+                                </div>
                                 <form onSubmit={handleCreateLocation}>
                                     <div className="space-y-4">
                                         <div>
@@ -627,6 +705,18 @@ export default function WarehousesPage() {
                                             </select>
                                         </div>
                                         <div>
+                                            <label className="block text-sm font-medium text-gray-700">Max Weight Capacity (kg, Optional)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
+                                                value={newLocation.maxWeight}
+                                                onChange={(e) => setNewLocation({ ...newLocation, maxWeight: e.target.value })}
+                                                placeholder="e.g. 500"
+                                            />
+                                        </div>
+                                        <div>
                                             <label className="block text-sm font-medium text-gray-700">Parent ID (Optional)</label>
                                             <input
                                                 type="text"
@@ -641,7 +731,7 @@ export default function WarehousesPage() {
                                             type="submit"
                                             className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
                                         >
-                                            Create Location
+                                            {editingLocationId ? 'Update Location' : 'Create Location'}
                                         </button>
                                     </div>
                                 </form>
@@ -687,6 +777,25 @@ export default function WarehousesPage() {
                     </div>
                 </div>
             )}
+
+            <AlertDialog open={!!warehouseToDelete} onOpenChange={(open) => !open && setWarehouseToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the warehouse
+                            {warehouseToDelete && <span className="font-semibold"> "{warehouseToDelete.name}"</span>} and all associated data.
+                            Safety checks will prevent deletion if the warehouse contains active locations or stock.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteWarehouse} className="bg-red-600 hover:bg-red-700">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

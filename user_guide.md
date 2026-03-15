@@ -704,3 +704,16 @@ The Mobile Dashboard provides quick access to core workflows:
 2. **Action:** Create Transfer Order (Main -> Store).
 3. **Execute:** Pick & Ship from Main.
 4. **Receive:** Store receives items.
+
+---
+
+## Dynamic Workflows
+
+### Overview
+**Purpose:** Create and manage custom multi-step processes for your warehouse beyond standard 1-step, 2-step, or 3-step flows.
+
+**Features:**
+- **Workflow Templates:** Design custom sequences of operations (e.g., Receive → Inspect → Kit → Putaway).
+- **Visual Builder:** Use the drag-and-drop canvas to add steps and connect them with logic.
+- **Waveless Picking:** Operations run continuously without waiting for discrete "waves" to complete, automatically prioritizing urgent orders.
+- **Monitor & Analytics:** Track running workflow instances, identify bottlenecks, and measure completion times.

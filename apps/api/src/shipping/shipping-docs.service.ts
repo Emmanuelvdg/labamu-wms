@@ -39,10 +39,11 @@ export class ShippingDocsService {
         });
     }
 
-    private generatePdf(docDefinition: any): Promise<Buffer> {
+    private async generatePdf(docDefinition: any): Promise<Buffer> {
         const printer = new PdfPrinter(this.fonts);
+        const pdfDoc = await printer.createPdfKitDocument(docDefinition);
+
         return new Promise((resolve, reject) => {
-            const pdfDoc = printer.createPdfKitDocument(docDefinition);
             const chunks: any[] = [];
             pdfDoc.on('data', (chunk: any) => chunks.push(chunk));
             pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));

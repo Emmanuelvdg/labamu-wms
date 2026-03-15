@@ -104,11 +104,19 @@ async function main() {
     // We need to keep the Admin's user record, but what about their associated data? 
     // Assuming standard admin has no tied transactional data.
 
+    // Delete Workflows
+    await prisma.workflowAuditLog.deleteMany({});
+    await prisma.workflowTaskInstance.deleteMany({});
+    await prisma.workflowInstance.deleteMany({});
+    await prisma.workflowTransition.deleteMany({});
+    await prisma.workflowStep.deleteMany({});
+    await prisma.workflowTemplate.deleteMany({});
+
+    // Delete Locations first (due to foreign key from Warehouse/FloorPlan to Location)
+    await prisma.location.deleteMany({});
+
     // Delete Warehouses
     await prisma.warehouse.deleteMany({});
-
-    // Delete Locations (Except maybe system roots if any? No, we want fresh setup)
-    await prisma.location.deleteMany({});
 
     console.log('--- Flush Complete ---');
     console.log('Ready for E2E Test Run 2.0');

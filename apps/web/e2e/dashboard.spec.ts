@@ -6,7 +6,8 @@ test.describe('Dashboard', () => {
         await page.getByLabel('Email').fill('admin@labamu.co.id');
         await page.getByLabel('Password').fill('admin');
         await page.getByRole('button', { name: 'Sign in' }).click();
-        await expect(page).toHaveURL('/');
+        await page.waitForURL('**/', { timeout: 15000 });
+        await expect(page).toHaveURL(/\/$/);
     });
 
     test('TC-8.1: Analyze Dashboard Metrics', async ({ page }) => {

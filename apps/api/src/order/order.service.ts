@@ -194,6 +194,7 @@ export class OrderService {
 
     async getOrders(): Promise<Order[]> {
         return this.prisma.order.findMany({
+            orderBy: { createdAt: 'desc' },
             include: { items: true, reservations: true, shipment: true, destinationWarehouse: true },
         });
     }

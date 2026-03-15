@@ -28,6 +28,8 @@ import { PrintingModule } from './printing/printing.module';
 import { PackingModule } from './packing/packing.module';
 import { NotificationModule } from './notifications/notification.module';
 import { CommonFeaturesModule } from './common/common.module';
+import { WorkflowModule } from './workflow/workflow.module';
+import { BarcodeModule } from './barcode/barcode.module';
 
 import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
 import { PrismaService } from './prisma.service';
@@ -63,6 +65,8 @@ import { PrismaService } from './prisma.service';
         PackingModule,
         NotificationModule,
         CommonFeaturesModule,
+        WorkflowModule,
+        BarcodeModule,
     ],
     controllers: [DeliveryMethodsController],
     providers: [
