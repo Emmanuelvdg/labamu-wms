@@ -1567,7 +1567,7 @@ function FloorPlanContent() {
                                 <g
                                     key={area.id}
                                     transform={`translate(${area.x * pixelsPerMeter}, ${area.y * pixelsPerMeter}) rotate(${area.rotation || 0}, ${area.width * pixelsPerMeter / 2}, ${area.height * pixelsPerMeter / 2})`}
-                                    onClick={() => setSelectedElementId(area.id)}
+                                    onClick={(e) => { e.stopPropagation(); setSelectedElementId(area.id); }}
                                     className="cursor-move"
                                     onMouseDown={(e: any) => handleElementMouseDown(e, area, 'area')}
                                 >
