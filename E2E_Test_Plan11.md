@@ -841,8 +841,8 @@ This test plan extends Plan 8.0 by adding test cases for **Phases 15–20** cove
 | 16 | Shipping Documents | 3 | ✅ |
 | 17 | Replenishment Engine | 5 | ✅ |
 | 18 | Notifications & Alerts | 4 | ✅ |
-| 19 | Barcode & Mobile | 6 | ⬜ |
-| 20 | Analytics & Integrations | 5 | ⬜ |
+| 19 | Barcode & Mobile | 6 | 🟨 3/6 |
+| 20 | Analytics & Integrations | 5 | ✅ |
 | **21** | **Workflow Template** | **5** | ✅ |
 | **22** | **Visual Builder** | **5** | ✅ |
 | **23** | **Execution Basic** | **3** | ✅ |
@@ -850,4 +850,4 @@ This test plan extends Plan 8.0 by adding test cases for **Phases 15–20** cove
 | **25** | **Incident Mgmt** | **3** | ✅ |
 | **26** | **Monitoring Board** | **2** | ✅ |
 | **27** | **WF Analytics** | **2** | ✅ |
-| **Total** | | **113** | **🟨 44/113** |
+| **Total** | | **113** | **✅ 110/113** |
