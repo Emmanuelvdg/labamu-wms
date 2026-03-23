@@ -36,8 +36,8 @@ export default function NotificationBell() {
         try {
             const data = await fetchUnreadNotificationCount();
             setUnreadCount(data.count);
-        } catch (err) {
-            console.error('Failed to load notification count', err);
+        } catch {
+            // Silently ignore — transient network errors should not block the UI
         }
     }
 
@@ -45,8 +45,8 @@ export default function NotificationBell() {
         try {
             const data = await fetchNotifications({ limit: 10 });
             setNotifications(data);
-        } catch (err) {
-            console.error('Failed to load notifications', err);
+        } catch {
+            // Silently ignore
         }
     }
 

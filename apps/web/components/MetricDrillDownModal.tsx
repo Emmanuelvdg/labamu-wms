@@ -56,8 +56,10 @@ export default function MetricDrillDownModal({
         return map[type] || type;
     };
 
+    if (!isOpen) return null;
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
             <DialogContent className="max-w-6xl max-h-[85vh] overflow-hidden flex flex-col">
                 <DialogHeader>
                     <DialogTitle className="text-xl">{metricTitle} - Detailed Breakdown</DialogTitle>

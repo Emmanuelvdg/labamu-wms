@@ -420,15 +420,15 @@ export default function UserGuidePage() {
                                     <CardContent className="pt-6 space-y-4">
                                         <p><strong>Purpose:</strong> A visual, interactive editor for managing your warehouse layout.</p>
                                         <div className="bg-primary/5 p-4 rounded-md text-sm border border-primary/20">
-                                            <strong className="text-primary block mb-2">✨ New: Drag &amp; Drop Editor</strong>
+                                            <strong className="text-primary block mb-2">✨ New: Advanced Visual Editor</strong>
                                             <p className="mb-2">
-                                                Easily check your warehouse layout by dragging elements across a meter-based grid.
+                                                Map your warehouse layout by dragging elements across a meter-based grid with powerful spatial tools.
                                             </p>
                                             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                                                <li><strong>Visual Mapping:</strong> See Zones, Rows, and Bays in their physical relation to each other.</li>
-                                                <li><strong>Meter-Based Coordinates:</strong> Precise (x, y) positioning for accurate digital twins.</li>
-                                                <li><strong>Quick Edits:</strong> Drag to move, create new locations from the palette, and double-click to edit constraints.</li>
-                                                <li><strong>Capacity Validation:</strong> Visual feedback when locations exceed max weight or volume.</li>
+                                                <li><strong>Custom Polygons:</strong> Map irregular, non-rectangular facilities by editing individual vertex points.</li>
+                                                <li><strong>Collision Detection:</strong> The system intelligently prevents overlapping areas to ensure valid physical modeling.</li>
+                                                <li><strong>Measurement & Import/Export:</strong> Measure realistic distances, import layouts via CSV, and download standard PNG graphical exports.</li>
+                                                <li><strong>Smart Hierarchy Drag-and-Drop:</strong> Establish location associations instantly by dragging sub-locations directly onto logical Functional Areas.</li>
                                             </ul>
                                         </div>
                                         <div className="bg-muted p-4 rounded-md text-sm">
@@ -1878,10 +1878,24 @@ export default function UserGuidePage() {
                                         <li><strong>Receive:</strong> Store Manager logs in, opens Transfer, clicks "Receive".</li>
                                         <li><strong>Result:</strong> Inventory moves buckets.</li>
                                     </ol>
+                                                                </CardContent>
+                            </Card>
+
+                            <Card className="border-l-4 border-l-orange-500">
+                                <CardHeader>
+                                    <CardTitle>Scenario C: Accelerated Cross-Dock Routing (Dynamic Workflow)</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <p className="text-sm text-muted-foreground mb-4">Using the Visual Builder to handle urgent inbound shipments by bypassing standard putaway.</p>
+                                    <ol className="list-decimal pl-5 space-y-2 text-sm">
+                                        <li><strong>Design:</strong> Manager creates an "Urgent Inbound" template: <code className="bg-muted px-1 py-0.5 rounded">RECEIVE &rarr; CONDITION &rarr; CROSS_DOCK</code>.</li>
+                                        <li><strong>Trigger:</strong> PO is marked as urgent and the worker receives the goods at the dock.</li>
+                                        <li><strong>Evaluate:</strong> The Execution Engine automatically evaluates the custom logic (<code className="bg-muted px-1 py-0.5 rounded">isUrgent: true</code>).</li>
+                                        <li><strong>Execute:</strong> Putsaway is dynamically skipped. Worker moves goods directly to outbound Shipping area.</li>
+                                    </ol>
                                 </CardContent>
                             </Card>
-                        </div>
-                    </section>
+                        </div>\n                    </section>
 
                     <div className="h-20"></div>
                 </div >

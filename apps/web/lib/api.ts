@@ -1,6 +1,11 @@
 import Cookies from 'js-cookie';
 
-export const API_URL = 'http://127.0.0.1:3001';
+// Use the Next.js rewrite proxy so all requests go through the same origin
+// (avoids cross-origin / CORS issues between localhost and 127.0.0.1)
+export const API_URL = '/api';
+
+// Keep the direct backend URL for any server-side usage
+export const INTERNAL_API_URL = 'http://127.0.0.1:3001';
 
 export async function fetchWithRetry(url: string, options?: RequestInit) {
     try {

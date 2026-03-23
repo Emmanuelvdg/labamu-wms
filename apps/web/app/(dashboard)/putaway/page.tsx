@@ -18,7 +18,7 @@ import {
     updatePutawayTask,
     completePutawaySession
 } from '@/lib/putaway-api';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import ExceptionModal from './exception-modal';
 
 export default function PutawayPage() {
@@ -135,6 +135,16 @@ export default function PutawayPage() {
         }
     };
 
+    const handleCompleteSession = async () => {
+        try {
+            await completePutawaySession(activeSession.id);
+            setActiveSession(null);
+        } catch (error) {
+            console.error('Failed to complete session:', error);
+            alert('Failed to complete session');
+        }
+    };
+
     const getLocationBreadcrumb = (location: any): string => {
         const parts = [];
         let current = location;
@@ -224,17 +234,18 @@ export default function PutawayPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Select Warehouse
                         </label>
-                        <select
-                            value={selectedWarehouseId}
-                            onChange={(e) => setSelectedWarehouseId(e.target.value)}
-                            className="w-full max-w-md border border-gray-300 rounded-md px-3 py-2"
-                        >
-                            {warehouses.map((wh) => (
-                                <option key={wh.id} value={wh.id}>
-                                    {wh.name}
-                                </option>
-                            ))}
-                        </select>
+                        <Select value={selectedWarehouseId} onValueChange={setSelectedWarehouseId}>
+                            <SelectTrigger className="w-full max-w-md">
+                                <SelectValue placeholder="Select a warehouse" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {warehouses.map((wh) => (
+                                    <SelectItem key={wh.id} value={wh.id}>
+                                        {wh.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <button
@@ -259,9 +270,18 @@ export default function PutawayPage() {
                                     </p>
                                 </div>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(activeSession.status)}`}>
-                                {activeSession.status}
-                            </span>
+                            <div className="flex gap-4 items-center">
+                                <button
+                                    onClick={handleCompleteSession}
+                                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
+                                >
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    Complete Session
+                                </button>
+                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(activeSession.status)}`}>
+                                    {activeSession.status}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
