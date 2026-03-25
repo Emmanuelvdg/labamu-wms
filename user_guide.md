@@ -131,6 +131,11 @@ This structured address information is critical for automated delivery quotation
 - **Meter-Based Coordinate System:** All positions and dimensions are in real-world meters, providing accurate spatial representation.
 - **Snap-to-Grid:** Elements automatically snap to a configurable grid for clean, aligned layouts.
 - **Zoom & Pan:** Mouse wheel to zoom, click-and-drag on empty space to pan the canvas.
+- **Distance Measurement Tool:** Measure real-world distances directly on the canvas between any two points.
+- **Custom Polygon Shapes:** Select 'Polygon' shape mode to map complex, non-rectangular warehouse facilities. 
+- **Collision Detection:** Automatic boundary prevention logic blocks saving overlapping zones and functional areas.
+- **Import/Export Utilities:** Bulk import floor plans from CSV, export raw coordinates, or download a graphical high-fidelity PNG render of the layout.
+- **Smart Hierarchy Linkage:** Drag & Drop bins or zones directly onto functional areas to assign real-world physical locations to logical areas.
 - **Multi-Warehouse Support:** Use the warehouse selector dropdown to switch between facilities.
 
 ### Element Palette
@@ -704,6 +709,13 @@ The Mobile Dashboard provides quick access to core workflows:
 2. **Action:** Create Transfer Order (Main -> Store).
 3. **Execute:** Pick & Ship from Main.
 4. **Receive:** Store receives items.
+
+### Scenario C: Accelerated Cross-Dock Routing (Dynamic Workflow)
+**Purpose:** Using the Visual Builder to handle urgent inbound shipments by bypassing standard putaway and sending goods straight to shipping.
+1. **Design:** A manager uses the Workflow Builder to create an "Urgent Inbound" template: `RECEIVE` → `CONDITION (isUrgent?)` → `CROSS_DOCK` / `PUTAWAY`. 
+2. **Trigger:** A PO is marked as urgent and the worker receives the goods at the dock.
+3. **Evaluate:** The Execution Engine automatically evaluates the custom logic (`isUrgent: true`).
+4. **Execute:** The engine dynamically skips the normal Putaway step and immediately generates a `CROSS_DOCK` task, directing the worker to move the inventory directly to the outbound Shipping area to fulfill pending orders.
 
 ---
 

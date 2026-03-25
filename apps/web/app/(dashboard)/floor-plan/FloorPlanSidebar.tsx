@@ -79,27 +79,45 @@ export function FloorPlanSidebar({ element, elementType, onUpdate, onDelete, onR
                         />
                     </div>
 
-                    {elementType === 'area' && (
-                        <div className="space-y-2">
-                            <Label>Type</Label>
-                            <Select
-                                value={formData.areaType}
-                                onValueChange={(v) => handleChange('areaType', v)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="RECEIVING">Receiving</SelectItem>
-                                    <SelectItem value="STAGING">Staging</SelectItem>
-                                    <SelectItem value="STORAGE">Storage</SelectItem>
-                                    <SelectItem value="PICKING">Picking</SelectItem>
-                                    <SelectItem value="PACKING">Packing</SelectItem>
-                                    <SelectItem value="SHIPPING">Shipping</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Type</Label>
+                                <Select
+                                    value={formData.areaType}
+                                    onValueChange={(v) => handleChange('areaType', v)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="RECEIVING">Receiving</SelectItem>
+                                        <SelectItem value="STAGING">Staging</SelectItem>
+                                        <SelectItem value="STORAGE">Storage</SelectItem>
+                                        <SelectItem value="PICKING">Picking</SelectItem>
+                                        <SelectItem value="PACKING">Packing</SelectItem>
+                                        <SelectItem value="SHIPPING">Shipping</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <Label>Shape</Label>
+                                <Select
+                                    value={formData.shapeType || 'rectangle'}
+                                    onValueChange={(v) => handleChange('shapeType', v)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="rectangle">Rectangle</SelectItem>
+                                        <SelectItem value="polygon">Custom Polygon</SelectItem>
+                                        <SelectItem value="l_shape">L-Shape</SelectItem>
+                                        <SelectItem value="u_shape">U-Shape</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
-                    )}
 
                     {(elementType === 'zone' || elementType === 'bin') && (
                         <div className="space-y-4">

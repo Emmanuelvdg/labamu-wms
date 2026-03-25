@@ -116,27 +116,30 @@ The Warehouse Floor Plan feature is an interactive visual layout designer that h
 4. Position according to physical layout
 5. Add custom areas if needed (drag from palette)
 
-## Advanced Features (Coming Soon)
+## Advanced Features
 
 ### Distance Measurements
-- View center-to-center distances between areas
+- View real-world measurements between areas
 - Optimize travel paths
 - Identify bottlenecks
 
 ### Collision Detection
 - Visual warnings when areas overlap
 - Red outlines for boundary violations
-- Prevent layout errors
+- Prevent layout errors and invalid saving
 
 ### Shape Editor
-- Draw custom warehouse boundaries
-- Edit vertices by dragging
+- Draw custom warehouse boundaries and areas using the Polygon mode
+- Edit vertices by dragging individual points
 - Support complex polygon shapes
 
-### Export
+### Import / Export
 - Save floor plan as PNG image
-- Export as PDF for documentation
-- Print-friendly layouts
+- Export raw floor plan payload as CSV
+- Import new layout data via CSV
+
+### Hierarchy Assignment via Drag & Drop
+- Drag structural items (Shelves, Bins) onto functional areas to assign real locations to visual areas
 
 ## Technical Details
 

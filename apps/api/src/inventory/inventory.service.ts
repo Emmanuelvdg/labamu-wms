@@ -1,4 +1,4 @@
-﻿import * as fs from 'fs';
+import * as fs from 'fs';
 import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
@@ -988,12 +988,20 @@ export class InventoryService {
         return roots;
     }
 
-    async getLocations(warehouseId?: string) {
-        const where = warehouseId ? { warehouseId } : {};
-        return this.prisma.location.findMany({
-            where,
-            include: { warehouseView: true },
-        });
+    async getLocations(warehouseId?: string, structuralType?: string) {
+        try {
+            const where: any = {};
+            if (warehouseId) where.warehouseId = warehouseId;
+            if (structuralType) where.structuralType = structuralType;
+            
+            return await this.prisma.location.findMany({
+                where,
+                include: { warehouseView: true },
+            });
+        } catch (error: any) {
+            console.error('[InventoryService] Error in getLocations:', error.message, error.stack);
+            throw error;
+        }
     }
 
     async createLocation(data: {

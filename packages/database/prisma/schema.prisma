@@ -149,25 +149,28 @@ model Warehouse {
 }
 
 model WarehouseFunctionalArea {
-  id               String    @id @default(uuid())
+  id               String     @id @default(uuid())
   warehouseId      String
   name             String
   areaType         String
-  x                Float     @default(0)
-  y                Float     @default(0)
-  width            Float     @default(100)
-  height           Float     @default(100)
-  rotation         Float     @default(0)
+  shapeType        String?    @default("rectangle")
+  vertices         String?
+  x                Float      @default(0)
+  y                Float      @default(0)
+  width            Float      @default(100)
+  height           Float      @default(100)
+  rotation         Float      @default(0)
   color            String?
   icon             String?
   attributes       String?
-  active           Boolean   @default(true)
-  sequence         Int       @default(0)
+  active           Boolean    @default(true)
+  sequence         Int        @default(0)
   linkedLocationId String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  linkedLocation   Location? @relation(fields: [linkedLocationId], references: [id])
-  warehouse        Warehouse @relation(fields: [warehouseId], references: [id])
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  linkedLocation   Location?  @relation(fields: [linkedLocationId], references: [id])
+  warehouse        Warehouse  @relation(fields: [warehouseId], references: [id])
+  locations        Location[] @relation("AreaLocations")
 }
 
 model Location {
@@ -191,6 +194,7 @@ model Location {
   putawaySequence         Int                       @default(0)
   parentId                String?
   warehouseId             String?
+  functionalAreaId        String?
   code                    String?
   fullAddress             String?                   @unique
   innerHeight             Float?                    @default(0)
@@ -220,6 +224,7 @@ model Location {
   stocktakeTasks          StocktakeTask[]
   warehouseView           Warehouse?                @relation("WarehouseView")
   functionalAreas         WarehouseFunctionalArea[]
+  functionalArea          WarehouseFunctionalArea?  @relation("AreaLocations", fields: [functionalAreaId], references: [id])
 }
 
 model ProductPackaging {

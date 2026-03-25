@@ -210,8 +210,11 @@ export class InventoryController {
     }
 
     @Get('locations')
-    getLocations(@Query('warehouseId') warehouseId?: string) {
-        return this.inventoryService.getLocations(warehouseId);
+    getLocations(
+        @Query('warehouseId') warehouseId?: string,
+        @Query('structuralType') structuralType?: string
+    ) {
+        return this.inventoryService.getLocations(warehouseId, structuralType);
     }
 
     @Get('locations/export')

@@ -46,7 +46,7 @@ export async function POST(request: Request) {
             id: user.id,
             name: user.name,
             email: user.email,
-            permissions: user.roles?.flatMap((r: any) => r.permissions?.map((p: any) => p.name)) || []
+            permissions: user.roles?.flatMap((r: any) => r.permissions?.map((p: any) => `${p.resource}:${p.action}`)) || []
         }), {
             path: '/',
             httpOnly: false, // Allow client JS to read for permission checks
@@ -55,8 +55,12 @@ export async function POST(request: Request) {
         });
 
         return response;
-    } catch (error) {
+    } catch (error: any) {
         console.error('Login error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ 
+            error: 'Internal server error',
+            details: error.message,
+            stack: error.stack
+        }, { status: 500 });
     }
 }

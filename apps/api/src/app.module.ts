@@ -30,6 +30,7 @@ import { NotificationModule } from './notifications/notification.module';
 import { CommonFeaturesModule } from './common/common.module';
 import { WorkflowModule } from './workflow/workflow.module';
 import { BarcodeModule } from './barcode/barcode.module';
+import { RoutingModule } from './routing/routing.module';
 
 import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
 import { PrismaService } from './prisma.service';
@@ -67,6 +68,7 @@ import { PrismaService } from './prisma.service';
         CommonFeaturesModule,
         WorkflowModule,
         BarcodeModule,
+        RoutingModule,
     ],
     controllers: [DeliveryMethodsController],
     providers: [

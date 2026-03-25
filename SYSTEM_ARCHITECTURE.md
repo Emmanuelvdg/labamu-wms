@@ -339,12 +339,15 @@ GET    /purchase-orders/:id/inspections     List QA inspections
 POST   /purchase-orders/:id/match           Run 3-way match verification
 ```
 
-#### Floor Plan
+#### Floor Plan & Routing
 ```
 GET    /warehouses/:id/floor-plan           Get floor plan objects
 PATCH  /warehouses/:id/floor-plan           Update object positions
 GET    /warehouses/:id/areas                List functional areas
 POST   /warehouses/:id/areas                Create floor plan object
+GET    /floorplan/:warehouseId/export       Export floor plan to CSV
+POST   /floorplan/:warehouseId/import       Import floor plan from CSV
+GET    /routing/:warehouseId/distance       Get distance between two points
 ```
 
 #### Sales Orders
@@ -636,6 +639,8 @@ WarehouseFunctionalArea {
   linkedLocation: Location?  // The actual INTERNAL location for this functional area
   
   // Floor Plan Visualization
+  shapeType: string         // 'rectangle' | 'polygon'
+  vertices: string?         // JSON array of {x, y} coordinates
   x: float                  // Position coordinates
   y: float
   width: float

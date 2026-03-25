@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { API_URL } from '@/lib/api';
+import { INTERNAL_API_URL } from '@/lib/api';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
-    const warehouseId = searchParams.get('warehouseId');
+    const queryString = searchParams.toString();
 
     // Forward the x-user-id header from the client request
     const userId = request.headers.get('x-user-id') || '';
 
-    const url = warehouseId
-        ? `${API_URL}/inventory/locations?warehouseId=${warehouseId}`
-        : `${API_URL}/inventory/locations`;
+    const url = `${INTERNAL_API_URL}/inventory/locations${queryString ? `?${queryString}` : ''}`;
 
     try {
         const res = await fetch(url, {
@@ -41,7 +39,7 @@ export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
 
-        const response = await fetch(`${API_URL}/inventory/locations`, {
+        const response = await fetch(`${INTERNAL_API_URL}/inventory/locations`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

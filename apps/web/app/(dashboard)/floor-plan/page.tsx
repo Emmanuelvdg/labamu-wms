@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { API_URL } from '@/lib/api';
-import { ArrowLeft, Save, ZoomIn, ZoomOut, RotateCw, Trash2, Layers, Eye, EyeOff, Upload, Download } from 'lucide-react';
+import { ArrowLeft, Save, ZoomIn, ZoomOut, RotateCw, Trash2, Layers, Eye, EyeOff, Upload, Download, Ruler, Undo2, Redo2, Image as ImageIcon } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { ImportLocationsModal } from './ImportLocationsModal';
 import Link from 'next/link';
@@ -18,6 +18,7 @@ import { snapToGrid } from './lib/geometryUtils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { FloorPlanSidebar } from './FloorPlanSidebar';
+import { useFloorPlanHistory } from './useFloorPlanHistory';
 
 // LAYER 1: Functional Areas
 interface FunctionalArea {
@@ -31,6 +32,8 @@ interface FunctionalArea {
     rotation: number;
     color?: string;
     sequence: number;
+    shapeType?: string;
+    vertices?: Array<{ x: number, y: number }>;
 }
 
 // LAYER 2: Storage Zones (Rooms, Aisles)
@@ -155,10 +158,23 @@ function FloorPlanContent() {
     const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>(initialWarehouseId || '');
     const [warehouse, setWarehouse] = useState<Warehouse | null>(null);
 
-    // Layer data
-    const [functionalAreas, setFunctionalAreas] = useState<FunctionalArea[]>([]);
-    const [zones, setZones] = useState<StorageZone[]>([]);
-    const [bins, setBins] = useState<StorageBin[]>([]);
+    const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+
+    // Replace individual states with history hook
+    const history = useFloorPlanHistory({ functionalAreas: [] as any[], zones: [] as any[], bins: [] as any[] });
+    const { functionalAreas, zones, bins } = history.current;
+
+    // Compatibility wrappers for existing state setter logic
+    const setFunctionalAreas = (areas: any[] | ((prev: any[]) => any[])) => {
+        history.set(prev => ({ ...prev, functionalAreas: typeof areas === 'function' ? areas(prev.functionalAreas) : areas }));
+    };
+    const setZones = (zns: any[] | ((prev: any[]) => any[])) => {
+        history.set(prev => ({ ...prev, zones: typeof zns === 'function' ? zns(prev.zones) : zns }));
+    };
+    const setBins = (bns: any[] | ((prev: any[]) => any[])) => {
+        history.set(prev => ({ ...prev, bins: typeof bns === 'function' ? bns(prev.bins) : bns }));
+    };
+
     const [suggestedAreas, setSuggestedAreas] = useState<SuggestedArea[]>([]);
 
     // Layer visibility
@@ -169,7 +185,6 @@ function FloorPlanContent() {
     });
 
     // View state
-    const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
     const [zoom, setZoom] = useState(1);
     const [resizing, setResizing] = useState<{
         elementId: string;
@@ -182,11 +197,13 @@ function FloorPlanContent() {
 
     const [dragState, setDragState] = useState<{
         elementId: string;
-        elementType: 'area' | 'zone' | 'bin';
+        elementType: 'area' | 'zone' | 'bin' | 'vertex';
         initialX: number;
         initialY: number;
         offsetX: number;
         offsetY: number;
+        vertexIndex?: number;
+        originalElement?: any;
     } | null>(null);
 
     const svgRef = useRef<SVGSVGElement>(null);
@@ -199,6 +216,7 @@ function FloorPlanContent() {
         y: number;
         width: number;
         height: number;
+        functionalAreaId?: string;
     } | null>(null);
     const [newElementName, setNewElementName] = useState('');
     const [selectedExistingLocationId, setSelectedExistingLocationId] = useState<string>('new');
@@ -217,6 +235,51 @@ function FloorPlanContent() {
 
     // Import modal state
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+    // Distance Measurement Tool
+    const [isMeasuring, setIsMeasuring] = useState(false);
+    const [measurePoints, setMeasurePoints] = useState<{startX: number, startY: number, endX: number, endY: number} | null>(null);
+
+    // Collision Detection Helper (Axis-Aligned Bounding Box)
+    const detectCollision = (newElement: {x: number, y: number, width: number, height: number, id?: string}, allElements: any[]) => {
+        const elName = (newElement as any).name || newElement.id;
+        console.log('detectCollision called for:', elName, {x: newElement.x, y: newElement.y});
+        for (const el of allElements) {
+            if (el.id === newElement.id) continue;
+            // Basic AABB check ignoring rotation for now
+            const isOverlap = (
+                newElement.x < (el.x || 0) + (el.width || 0) &&
+                newElement.x + newElement.width > (el.x || 0) &&
+                newElement.y < (el.y || 0) + (el.height || 0) &&
+                newElement.y + newElement.height > (el.y || 0)
+            );
+            
+            if (isOverlap) {
+                console.log('Collision DETECTED with:', el.name || el.id);
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                if (e.shiftKey) {
+                    history.redo();
+                } else {
+                    history.undo();
+                }
+                e.preventDefault();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                history.redo();
+                e.preventDefault();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [history]);
 
     // Load warehouses on mount
     useEffect(() => {
@@ -288,22 +351,24 @@ function FloorPlanContent() {
             if (warehouseRes.ok) {
                 const warehouseData = await warehouseRes.json();
                 setWarehouse(warehouseData);
+                // Use viewLocationId as the rootLocationId if it exists
+                if (warehouseData.viewLocationId) {
+                    setRootLocationId(warehouseData.viewLocationId);
+                }
             } else {
                 console.warn('Failed to load warehouse config:', warehouseRes.status);
             }
         } catch (e) { console.error('Warehouse config fetch error:', e); }
 
         // LAYER 1: Load functional areas
+        let initialAreas: any[] = [], initialZones: any[] = [], initialBins: any[] = [];
         try {
             const areasRes = await fetch(`/api/warehouses/${warehouseId}/areas`);
             if (areasRes.ok) {
                 const areasData = await areasRes.json();
-                setFunctionalAreas(Array.isArray(areasData) ? areasData : []);
-            } else {
-                console.warn('Failed to load areas:', areasRes.status);
-                setFunctionalAreas([]);
+                initialAreas = Array.isArray(areasData) ? areasData : [];
             }
-        } catch (e) { console.error('Areas fetch error:', e); setFunctionalAreas([]); }
+        } catch (e) { console.error('Areas fetch error:', e); }
 
         // Load suggested areas
         try {
@@ -311,8 +376,6 @@ function FloorPlanContent() {
             if (suggestedRes.ok) {
                 const suggestedData = await suggestedRes.json();
                 setSuggestedAreas(Array.isArray(suggestedData) ? suggestedData : []);
-            } else {
-                setSuggestedAreas([]);
             }
         } catch (e) { console.error('Suggested areas fetch error:', e); setSuggestedAreas([]); }
 
@@ -321,12 +384,11 @@ function FloorPlanContent() {
             const zonesRes = await fetch(`/api/warehouses/${warehouseId}/zones`);
             if (zonesRes.ok) {
                 const zonesData = await zonesRes.json();
-                setZones(Array.isArray(zonesData) ? zonesData : []);
-            } else {
-                console.warn('Failed to load zones:', zonesRes.status);
-                setZones([]);
+                initialZones = Array.isArray(zonesData) ? zonesData : [];
             }
-        } catch (e) { console.error('Zones fetch error:', e); setZones([]); }
+        } catch (e) { console.error('Zones fetch error:', e); }
+
+        history.reset({ functionalAreas: initialAreas, zones: initialZones, bins: initialBins });
 
         // LAYER 3: Bins loaded on-demand when layer enabled
         if (layerConfig.bins) {
@@ -496,8 +558,11 @@ function FloorPlanContent() {
             const svgRect = svgRef.current.getBoundingClientRect();
             const pixelsPerMeter = calculatePixelsPerMeter();
 
-            let newX = (e.clientX - svgRect.left) / pixelsPerMeter / zoom - dragState.offsetX;
-            let newY = (e.clientY - svgRect.top) / pixelsPerMeter / zoom - dragState.offsetY;
+            let mouseX = (e.clientX - svgRect.left) / pixelsPerMeter / zoom;
+            let mouseY = (e.clientY - svgRect.top) / pixelsPerMeter / zoom;
+
+            let newX = mouseX - dragState.offsetX;
+            let newY = mouseY - dragState.offsetY;
 
             // Snap to grid
             if (warehouse.snapToGrid !== false) {
@@ -511,7 +576,25 @@ function FloorPlanContent() {
             newY = Math.max(0, newY);
 
             // Update local state based on element type
-            if (dragState.elementType === 'area') {
+            if (dragState.elementType === 'vertex' && dragState.vertexIndex !== undefined) {
+                setFunctionalAreas(prev => prev.map(el => {
+                    if (el.id === dragState.elementId && el.vertices) {
+                        const area = functionalAreas.find(a => a.id === el.id);
+                        if (!area) return el;
+                        let relX = mouseX - area.x;
+                        let relY = mouseY - area.y;
+                        if (warehouse.snapToGrid !== false) {
+                            const gridSize = warehouse.gridSize || 1;
+                            relX = Math.round(relX / gridSize) * gridSize;
+                            relY = Math.round(relY / gridSize) * gridSize;
+                        }
+                        const newVertices = [...el.vertices];
+                        newVertices[dragState.vertexIndex!] = { x: relX, y: relY };
+                        return { ...el, vertices: newVertices };
+                    }
+                    return el;
+                }));
+            } else if (dragState.elementType === 'area') {
                 setFunctionalAreas(prev => prev.map(el =>
                     el.id === dragState.elementId ? { ...el, x: newX, y: newY } : el
                 ));
@@ -528,6 +611,7 @@ function FloorPlanContent() {
 
         const handleGlobalMouseUp = async () => {
             const { elementId, elementType } = dragState;
+            console.log('handleGlobalMouseUp called for:', elementId, elementType);
             let finalElement: any;
 
             if (elementType === 'area') finalElement = functionalAreas.find(el => el.id === elementId);
@@ -535,6 +619,29 @@ function FloorPlanContent() {
             else if (elementType === 'bin') finalElement = bins.find(el => el.id === elementId);
 
             if (finalElement) {
+                // Collision Detection Check Before Save
+                const targetList = elementType === 'area' ? functionalAreas : elementType === 'zone' ? zones : bins;
+                const hasCollision = detectCollision(finalElement, targetList);
+                console.log('Collision check result:', hasCollision);
+                
+                if (hasCollision) {
+                    console.log('TRIGGERING COLLISION TOAST AND REVERT');
+                    toast.error('Cannot place here: Collision overlapping detected!');
+                    // Revert position
+                    if (elementType === 'area') {
+                        console.log('Reverting area to:', dragState.initialX, dragState.initialY);
+                        setFunctionalAreas(prev => prev.map(a => a.id === elementId ? {...a, x: dragState.initialX, y: dragState.initialY} : a));
+                    } else if (elementType === 'zone') {
+                        setZones(prev => prev.map(z => z.id === elementId ? {...z, x: dragState.initialX, y: dragState.initialY} : z));
+                    } else if (elementType === 'bin') {
+                        setBins(prev => prev.map(b => b.id === elementId ? {...b, x: dragState.initialX, y: dragState.initialY} : b));
+                    } else if (elementType === 'vertex') {
+                        setFunctionalAreas(prev => prev.map(a => a.id === elementId ? {...a, vertices: dragState.originalElement.vertices} : a));
+                    }
+                    setDragState(null);
+                    return;
+                }
+
                 try {
                     if (elementType === 'zone' || elementType === 'bin') {
                         await fetch(`/api/locations/${elementId}`, {
@@ -547,11 +654,20 @@ function FloorPlanContent() {
                         });
                         console.log('Location updated:', elementId);
                         toast.success('Position updated');
-                    } else if (elementType === 'area') {
-                        // For areas, maybe different API? Or skip for now updates
-                        // We will add it later if needed. For now just visual move.
-                        // Actually, let's try updating it if it's a location?
-                        // FunctionalArea might be WarehouseFunctionalArea.
+                    } else if (elementType === 'area' || elementType === 'vertex') {
+                        const area = functionalAreas.find(el => el.id === elementId);
+                        if (area) {
+                            await fetch(`/api/warehouses/${selectedWarehouseId}/areas/${elementId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ 
+                                    x: area.x, y: area.y, 
+                                    width: area.width, height: area.height, 
+                                    rotation: area.rotation, shapeType: area.shapeType, vertices: area.vertices 
+                                })
+                            });
+                            toast.success(elementType === 'vertex' ? 'Shape updated' : 'Area Position updated');
+                        }
                     }
                 } catch (err) {
                     console.error('Failed to save position', err);
@@ -589,7 +705,26 @@ function FloorPlanContent() {
             initialX: element.x,
             initialY: element.y,
             offsetX: clickX - element.x,
-            offsetY: clickY - element.y
+            offsetY: clickY - element.y,
+            originalElement: element
+        });
+    };
+
+    const handleVertexMouseDown = (e: React.MouseEvent, element: any, index: number) => {
+        e.stopPropagation();
+        if (e.button !== 0) return;
+
+        setSelectedElementId(element.id);
+        const original = { ...element };
+        setDragState({
+            elementId: element.id,
+            elementType: 'vertex',
+            initialX: element.x,
+            initialY: element.y,
+            offsetX: 0,
+            offsetY: 0,
+            vertexIndex: index,
+            originalElement: original,
         });
     };
 
@@ -604,6 +739,36 @@ function FloorPlanContent() {
             const pixelsPerMeter = calculatePixelsPerMeter();
             e.dataTransfer.setData('offsetX', ((e.clientX - rect.left) / pixelsPerMeter).toString());
             e.dataTransfer.setData('offsetY', ((e.clientY - rect.top) / pixelsPerMeter).toString());
+        }
+    };
+
+    const handleSvgMouseDown = (e: React.MouseEvent) => {
+        if (!isMeasuring || !svgRef.current || !warehouse) {
+            setSelectedElementId(null);
+            return;
+        }
+        const svgRect = svgRef.current.getBoundingClientRect();
+        const pixelsPerMeter = calculatePixelsPerMeter();
+        const startX = (e.clientX - svgRect.left) / pixelsPerMeter / zoom;
+        const startY = (e.clientY - svgRect.top) / pixelsPerMeter / zoom;
+        
+        setMeasurePoints({ startX, startY, endX: startX, endY: startY });
+    };
+
+    const handleSvgMouseMove = (e: React.MouseEvent) => {
+        if (!isMeasuring || !measurePoints || !svgRef.current || !warehouse) return;
+        
+        const svgRect = svgRef.current.getBoundingClientRect();
+        const pixelsPerMeter = calculatePixelsPerMeter();
+        const endX = (e.clientX - svgRect.left) / pixelsPerMeter / zoom;
+        const endY = (e.clientY - svgRect.top) / pixelsPerMeter / zoom;
+        
+        setMeasurePoints(prev => prev ? { ...prev, endX, endY } : null);
+    };
+
+    const handleSvgMouseUp = () => {
+        if (isMeasuring && measurePoints) {
+            // Keep the line visible after release until they click again or cancel
         }
     };
 
@@ -654,7 +819,7 @@ function FloorPlanContent() {
                 // Determine potential parent based on drop location
                 let detectedParentId = '';
                 if (elementData.type === 'ROOM') {
-                    detectedParentId = rootLocationId;
+                    detectedParentId = rootLocationId || '';
                 } else {
                     // Find zones that contain this point
                     const candidates = zones.filter(z =>
@@ -665,13 +830,23 @@ function FloorPlanContent() {
                     if (candidates.length > 0) detectedParentId = candidates[0].id;
                 }
 
+                // Find functional areas that contain this point
+                let detectedAreaId = '';
+                const areaCandidates = functionalAreas.filter(a =>
+                    snappedX >= (a.x || 0) && snappedX <= (a.x || 0) + (a.width || 0) &&
+                    snappedY >= (a.y || 0) && snappedY <= (a.y || 0) + (a.height || 0)
+                ).sort((a, b) => ((a.width || 0) * (a.height || 0)) - ((b.width || 0) * (b.height || 0)));
+
+                if (areaCandidates.length > 0) detectedAreaId = areaCandidates[0].id;
+
                 // Open modal to name and confirm creation
                 setPendingCreate({
                     type: elementData.type,
                     x: snappedX,
                     y: snappedY,
                     width: elementData.width,
-                    height: elementData.height
+                    height: elementData.height,
+                    functionalAreaId: detectedAreaId || undefined
                 });
 
                 // Pre-fill name based on type
@@ -700,6 +875,67 @@ function FloorPlanContent() {
         }
     };
 
+    const handleGraphicalExport = () => {
+        if (!svgRef.current || !warehouse) return;
+        
+        try {
+            const svgElement = svgRef.current;
+            const serializer = new XMLSerializer();
+            
+            // Clone the SVG so we don't mess up viewbox on active canvas
+            const clone = svgElement.cloneNode(true) as SVGSVGElement;
+            // Clean up UI controls (grids and handlers) that shouldn't be exported
+            const controls = clone.querySelectorAll('.selection-controls, .measuring-overlay, .grid-lines');
+            controls.forEach(c => c.remove());
+            
+            // Set explicit width/height for the canvas dimensions
+            const pixelsPerMeter = calculatePixelsPerMeter();
+            const width = (warehouse.floorPlanWidth || 50) * pixelsPerMeter;
+            const height = (warehouse.floorPlanHeight || 30) * pixelsPerMeter;
+            clone.setAttribute('width', width.toString());
+            clone.setAttribute('height', height.toString());
+            // Reset zoom transform
+            clone.style.transform = 'none';
+            
+            let source = serializer.serializeToString(clone);
+            
+            if (!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+                source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+            }
+            if (!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)) {
+                source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+            }
+
+            source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+            const url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(source);
+            
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    const pngUrl = canvas.toDataURL("image/png");
+                    const downloadLink = document.createElement("a");
+                    downloadLink.href = pngUrl;
+                    downloadLink.download = `${warehouse.name || 'floor-plan'}-layout.png`;
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                    toast.success("Floor plan exported as PNG");
+                }
+            };
+            img.src = url;
+        } catch (error) {
+            console.error("Export failed", error);
+            toast.error("Failed to export graphical floor plan");
+        }
+    };
+
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
     };
@@ -721,7 +957,8 @@ function FloorPlanContent() {
                         y: pendingCreate.y,
                         width: pendingCreate.width,
                         height: pendingCreate.height,
-                        parentId: selectedLocationId || undefined
+                        parentId: selectedLocationId || undefined,
+                        functionalAreaId: pendingCreate.functionalAreaId
                     })
                 });
 
@@ -744,6 +981,9 @@ function FloorPlanContent() {
                 toast.success(`${pendingCreate.type} placed successfully`);
             } else {
                 // Create entirely new location
+                const resolvedParentId = (pendingCreate.type === 'ROOM' && (!selectedLocationId || selectedLocationId === 'root')) ? rootLocationId : selectedLocationId;
+                const parentId = resolvedParentId && resolvedParentId !== '' ? resolvedParentId : undefined;
+                
                 const res = await fetch('/api/inventory/locations', {
                     method: 'POST',
                     headers: {
@@ -753,18 +993,24 @@ function FloorPlanContent() {
                     body: JSON.stringify({
                         name: newElementName,
                         structuralType: pendingCreate.type,
-                        parentId: selectedLocationId || undefined,
+                        parentId: parentId,
                         warehouseId: selectedWarehouseId,
                         x: pendingCreate.x,
                         y: pendingCreate.y,
                         width: pendingCreate.width,
-                        height: pendingCreate.height
+                        height: pendingCreate.height,
+                        functionalAreaId: pendingCreate.functionalAreaId
                     })
                 });
 
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
-                    throw new Error(err.details || err.message || 'Failed to create location');
+                    const detailMessage = err.message || err.details;
+                    // If backend failed with PARENT_LOCATION_NOT_FOUND, give more context
+                    if (detailMessage === 'PARENT_LOCATION_NOT_FOUND' || (err.error && err.error.includes('PARENT_LOCATION_NOT_FOUND'))) {
+                         throw new Error('Parent location not found. Please ensure the warehouse has a root location defined.');
+                    }
+                    throw new Error(detailMessage || 'Failed to create location');
                 }
 
                 const newLocation = await res.json();
@@ -899,6 +1145,27 @@ function FloorPlanContent() {
         if (!resizing) return;
 
         try {
+            const { elementId, elementType, originalElement } = resizing;
+            let finalElement: any;
+
+            if (elementType === 'area') finalElement = functionalAreas.find(a => a.id === elementId);
+            else if (elementType === 'zone') finalElement = zones.find(z => z.id === elementId);
+            else if (elementType === 'bin') finalElement = bins.find(b => b.id === elementId);
+
+            if (finalElement) {
+                // Collision check
+                const targetList = elementType === 'area' ? functionalAreas : elementType === 'zone' ? zones : bins;
+                if (detectCollision(finalElement, targetList)) {
+                    toast.error('Cannot resize here: Collision overlapping detected!');
+                    // Revert resize
+                    if (elementType === 'area') setFunctionalAreas(prev => prev.map(a => a.id === elementId ? {...a, ...originalElement} : a));
+                    if (elementType === 'zone') setZones(prev => prev.map(z => z.id === elementId ? {...z, ...originalElement} : z));
+                    if (elementType === 'bin') setBins(prev => prev.map(b => b.id === elementId ? {...b, ...originalElement} : b));
+                    setResizing(null);
+                    return;
+                }
+            }
+
             if (resizing.elementType === 'area') {
                 const area = functionalAreas.find(a => a.id === resizing.elementId);
                 if (area) {
@@ -939,6 +1206,19 @@ function FloorPlanContent() {
 
     const handleUpdateElement = async (id: string, updates: any) => {
         if (!warehouse) return;
+
+        // Initialize polygon vertices if switching shapeType to polygon
+        if (updates.shapeType === 'polygon' && !updates.vertices) {
+            const el = functionalAreas.find(a => a.id === id);
+            if (el && !el.vertices) {
+                updates.vertices = [
+                    { x: 0, y: 0 },
+                    { x: el.width, y: 0 },
+                    { x: el.width, y: el.height },
+                    { x: 0, y: el.height }
+                ];
+            }
+        }
 
         // Determine type based on ID presence in arrays
         const isArea = functionalAreas.find(a => a.id === id);
@@ -1084,6 +1364,66 @@ function FloorPlanContent() {
         if (selectedElementId !== element.id) return null;
 
         const pixelsPerMeter = calculatePixelsPerMeter();
+
+        // Polygon handles and controls
+        if (element.shapeType === 'polygon' && element.vertices) {
+            return (
+                <g className="selection-controls">
+                    <polygon
+                        points={element.vertices.map((v: any) => `${v.x * pixelsPerMeter},${v.y * pixelsPerMeter}`).join(' ')}
+                        fill="none"
+                        stroke="#2563eb"
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
+                    />
+                    {element.vertices.map((v: any, i: number) => (
+                        <circle
+                            key={i}
+                            cx={v.x * pixelsPerMeter}
+                            cy={v.y * pixelsPerMeter}
+                            r={6}
+                            fill="white"
+                            stroke="#ec4899"
+                            strokeWidth={2}
+                            style={{ cursor: 'move' }}
+                            onMouseDown={(e) => handleVertexMouseDown(e, element, i)}
+                        >
+                            <title>Drag Vertex</title>
+                        </circle>
+                    ))}
+                    {/* Add Vertex Button at Center */}
+                    <foreignObject
+                        x={(element.width * pixelsPerMeter) / 2 - 45}
+                        y={-40}
+                        width={90}
+                        height={30}
+                        style={{ overflow: 'visible' }}
+                    >
+                        <div className="flex gap-1 justify-center bg-white shadow-sm border rounded p-1">
+                            <button
+                                className="p-1 px-2 hover:bg-slate-100 rounded text-xs whitespace-nowrap"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const newV = [...element.vertices];
+                                    newV.push({ x: element.width, y: element.height / 2 });
+                                    handleUpdateElement(element.id, { vertices: newV });
+                                }}
+                            >
+                                + Vertex
+                            </button>
+                            <button
+                                className="p-1 hover:bg-orange-100 rounded text-orange-600"
+                                onClick={(e) => { e.stopPropagation(); handleDelete(element.id, 'areas'); }}
+                            >
+                                <Trash2 className="h-3 w-3" />
+                            </button>
+                        </div>
+                    </foreignObject>
+                </g>
+            );
+        }
+
+        // Rectangular Handles
         const handles = [
             { pos: 'nw', cursor: 'nw-resize', x: 0, y: 0 },
             { pos: 'n', cursor: 'n-resize', x: element.width / 2, y: 0 },
@@ -1462,8 +1802,36 @@ function FloorPlanContent() {
                     <Button variant="outline" size="sm" className="h-8" onClick={() => setIsImportModalOpen(true)} disabled={!selectedWarehouseId}>
                         <Upload className="h-3 w-3 mr-1" /> Import
                     </Button>
-                    <Button variant="outline" size="sm" className="h-8" onClick={handleExport} disabled={!selectedWarehouseId}>
-                        <Download className="h-3 w-3 mr-1" /> Export
+                    <Button variant="outline" size="sm" className="h-8" onClick={handleExport} title="Export Locations CSV" disabled={!selectedWarehouseId}>
+                        <Download className="h-3 w-3 mr-1" /> CSV
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8" onClick={handleGraphicalExport} title="Export Canvas PNG" disabled={!selectedWarehouseId}>
+                        <ImageIcon className="h-3 w-3 mr-1" /> PNG
+                    </Button>
+
+                    <div className="h-6 w-px bg-border" />
+                    
+                    {/* Measurement Tool */}
+                    <Button 
+                        variant={isMeasuring ? "default" : "outline"} 
+                        size="sm" 
+                        className={`h-8 ${isMeasuring ? 'bg-indigo-600 text-white hover:bg-indigo-700' : ''}`}
+                        onClick={() => {
+                            setIsMeasuring(!isMeasuring);
+                            if (isMeasuring) setMeasurePoints(null);
+                        }}
+                    >
+                        <Ruler className="h-4 w-4 mr-1" /> Measure
+                    </Button>
+
+                    <div className="h-6 w-px bg-border" />
+
+                    {/* Undo/Redo */}
+                    <Button variant="outline" size="icon" onClick={() => history.undo()} disabled={!history.canUndo}>
+                        <Undo2 className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={() => history.redo()} disabled={!history.canRedo}>
+                        <Redo2 className="h-4 w-4" />
                     </Button>
 
                     <div className="h-6 w-px bg-border" />
@@ -1540,11 +1908,15 @@ function FloorPlanContent() {
                             viewBox={`0 0 ${width * pixelsPerMeter} ${height * pixelsPerMeter}`}
                             style={{
                                 transform: `scale(${zoom})`,
-                                transformOrigin: 'top left'
+                                transformOrigin: 'top left',
+                                cursor: isMeasuring ? 'crosshair' : 'default'
                             }}
                             onDrop={handleDrop}
                             onDragOver={handleDragOver}
-                            onClick={() => setSelectedElementId(null)}
+                            onMouseDown={handleSvgMouseDown}
+                            onMouseMove={handleSvgMouseMove}
+                            onMouseUp={handleSvgMouseUp}
+                            onMouseLeave={handleSvgMouseUp}
                         >
                             {/* Grid */}
                             {renderGrid()}
@@ -1571,14 +1943,23 @@ function FloorPlanContent() {
                                     className="cursor-move"
                                     onMouseDown={(e: any) => handleElementMouseDown(e, area, 'area')}
                                 >
-                                    <rect
-                                        width={area.width * pixelsPerMeter}
-                                        height={area.height * pixelsPerMeter}
-                                        fill={area.color || '#3b82f6'}
-                                        stroke={selectedElementId === area.id ? '#2563eb' : 'none'}
-                                        strokeWidth={selectedElementId === area.id ? 4 : 0}
-                                        rx={4}
-                                    />
+                                    {area.shapeType === 'polygon' && area.vertices ? (
+                                        <polygon
+                                            points={area.vertices.map((v: any) => `${v.x * pixelsPerMeter},${v.y * pixelsPerMeter}`).join(' ')}
+                                            fill={area.color || '#3b82f6'}
+                                            stroke={selectedElementId === area.id ? '#2563eb' : 'none'}
+                                            strokeWidth={selectedElementId === area.id ? 4 : 0}
+                                        />
+                                    ) : (
+                                        <rect
+                                            width={area.width * pixelsPerMeter}
+                                            height={area.height * pixelsPerMeter}
+                                            fill={area.color || '#3b82f6'}
+                                            stroke={selectedElementId === area.id ? '#2563eb' : 'none'}
+                                            strokeWidth={selectedElementId === area.id ? 4 : 0}
+                                            rx={4}
+                                        />
+                                    )}
                                     <text
                                         x={area.width * pixelsPerMeter / 2}
                                         y={area.height * pixelsPerMeter / 2}
@@ -1682,6 +2063,44 @@ function FloorPlanContent() {
                                 >
                                     Drag elements from the palette to get started
                                 </text>
+                            )}
+
+                            {/* Measuring Overlay */}
+                            {isMeasuring && measurePoints && (
+                                <g className="measuring-overlay" style={{ pointerEvents: 'none' }}>
+                                    <line 
+                                        x1={measurePoints.startX * pixelsPerMeter} 
+                                        y1={measurePoints.startY * pixelsPerMeter} 
+                                        x2={measurePoints.endX * pixelsPerMeter} 
+                                        y2={measurePoints.endY * pixelsPerMeter} 
+                                        stroke="#4f46e5" 
+                                        strokeWidth={2} 
+                                        strokeDasharray="4 4" 
+                                    />
+                                    <circle cx={measurePoints.startX * pixelsPerMeter} cy={measurePoints.startY * pixelsPerMeter} r={4} fill="#4f46e5" />
+                                    <circle cx={measurePoints.endX * pixelsPerMeter} cy={measurePoints.endY * pixelsPerMeter} r={4} fill="#4f46e5" />
+                                    
+                                    {/* Distance Label */}
+                                    <rect 
+                                        x={((measurePoints.startX + measurePoints.endX) / 2) * pixelsPerMeter - 25}
+                                        y={((measurePoints.startY + measurePoints.endY) / 2) * pixelsPerMeter - 25}
+                                        width={50}
+                                        height={20}
+                                        fill="#4f46e5"
+                                        rx={4}
+                                    />
+                                    <text 
+                                        x={((measurePoints.startX + measurePoints.endX) / 2) * pixelsPerMeter}
+                                        y={((measurePoints.startY + measurePoints.endY) / 2) * pixelsPerMeter - 15}
+                                        textAnchor="middle"
+                                        dominantBaseline="middle"
+                                        fill="white"
+                                        fontSize={12}
+                                        fontWeight="bold"
+                                    >
+                                        {Math.sqrt(Math.pow(measurePoints.endX - measurePoints.startX, 2) + Math.pow(measurePoints.endY - measurePoints.startY, 2)).toFixed(2)}m
+                                    </text>
+                                </g>
                             )}
                         </svg>
                     </div>
