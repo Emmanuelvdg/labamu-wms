@@ -41,7 +41,7 @@ export class WorkflowTemplateService {
 
     async update(id: string, data: any) {
         return this.prisma.$transaction(async (tx) => {
-            // 1. Update template
+            // 1. Update template properties
             const template = await tx.workflowTemplate.update({
                 where: { id },
                 data: {
@@ -52,32 +52,75 @@ export class WorkflowTemplateService {
                 }
             });
 
-            // 2. Full replace of steps and transitions if provided
+            // 2. Differential sync of steps and transitions if provided
             if (data.steps && data.transitions) {
-                // Delete all existing steps/transitions
-                await tx.workflowTransition.deleteMany({ where: { templateId: id } });
-                await tx.workflowStep.deleteMany({ where: { templateId: id } });
+                // Get existing steps to identify what to delete/update
+                const existingSteps = await tx.workflowStep.findMany({
+                    where: { templateId: id }
+                });
+                const existingStepIds = existingSteps.map(s => s.id);
 
-                // Map frontend IDs to generated UUIDs
-                const stepIdMap = new Map<string, string>(); // frontendId -> backendId
+                // Identify steps from input
+                // Note: Frontend might send new steps with IDs like 'new-123'
+                const incomingStepsWithIds = data.steps.filter(s => s.id && !s.id.startsWith('new-'));
+                const incomingStepIds = incomingStepsWithIds.map(s => s.id);
 
-                // Create new steps
-                for (const step of data.steps) {
-                    const newStep = await tx.workflowStep.create({
-                        data: {
-                            templateId: id,
-                            type: step.type,
-                            name: step.name,
-                            config: JSON.stringify(step.config || {}),
-                            positionX: step.positionX || 0,
-                            positionY: step.positionY || 0,
-                            isStart: step.isStart || false,
-                            isEnd: step.isEnd || false,
-                            order: step.order || 0
+                // A. Delete steps that are truly gone
+                const stepIdsToDelete = existingStepIds.filter(sid => !incomingStepIds.includes(sid));
+                if (stepIdsToDelete.length > 0) {
+                    await tx.workflowStep.deleteMany({
+                        where: {
+                            id: { in: stepIdsToDelete },
+                            // Safety: only delete if they belong to this template
+                            templateId: id
                         }
                     });
-                    stepIdMap.set(step.id || step.tempId, newStep.id);
                 }
+
+                // B. Map for frontend IDs to new/actual UUIDs (for transitions)
+                const stepIdMap = new Map<string, string>(); // inputId -> databaseId
+
+                // C. Update existing and create new steps
+                for (const step of data.steps) {
+                    const isExisting = step.id && !step.id.startsWith('new-') && existingStepIds.includes(step.id);
+                    
+                    if (isExisting) {
+                        // Update existing step
+                        const updatedStep = await tx.workflowStep.update({
+                            where: { id: step.id },
+                            data: {
+                                type: step.type,
+                                name: step.name,
+                                config: JSON.stringify(step.config || {}),
+                                positionX: step.positionX || 0,
+                                positionY: step.positionY || 0,
+                                isStart: step.isStart || false,
+                                isEnd: step.isEnd || false,
+                                order: step.order || 0
+                            }
+                        });
+                        stepIdMap.set(step.id, updatedStep.id);
+                    } else {
+                        // Create new step
+                        const newStep = await tx.workflowStep.create({
+                            data: {
+                                templateId: id,
+                                type: step.type,
+                                name: step.name,
+                                config: JSON.stringify(step.config || {}),
+                                positionX: step.positionX || 0,
+                                positionY: step.positionY || 0,
+                                isStart: step.isStart || false,
+                                isEnd: step.isEnd || false,
+                                order: step.order || 0
+                            }
+                        });
+                        stepIdMap.set(step.id || step.tempId, newStep.id);
+                    }
+                }
+
+                // D. Full replace of transitions (safe because they don't have task-level FK dependencies)
+                await tx.workflowTransition.deleteMany({ where: { templateId: id } });
 
                 // Create new transitions using mapped IDs
                 for (const trans of data.transitions) {
