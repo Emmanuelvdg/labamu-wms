@@ -1,0 +1,281 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]: Labamu
+      - navigation [ref=e6]:
+        - link "Dashboard" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - text: Dashboard
+        - link "Mobile Hub" [ref=e13] [cursor=pointer]:
+          - /url: /mobile/dashboard
+          - img [ref=e14]
+          - text: Mobile Hub
+        - link "Report" [ref=e16] [cursor=pointer]:
+          - /url: /reporting
+          - img [ref=e17]
+          - text: Report
+        - link "Product" [ref=e20] [cursor=pointer]:
+          - /url: /inventory
+          - img [ref=e21]
+          - text: Product
+        - link "Lot Number" [ref=e24] [cursor=pointer]:
+          - /url: /inventory/batches
+          - img [ref=e25]
+          - text: Lot Number
+        - link "Package" [ref=e29] [cursor=pointer]:
+          - /url: /inventory/packages
+          - img [ref=e30]
+          - text: Package
+        - generic [ref=e34]:
+          - button "Inbound" [ref=e35]:
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - text: Inbound
+            - img [ref=e42]
+          - generic [ref=e44]:
+            - link "Suppliers" [ref=e45] [cursor=pointer]:
+              - /url: /inventory/suppliers
+            - link "Purchase Orders" [ref=e46] [cursor=pointer]:
+              - /url: /inventory/purchases
+            - link "Putaway" [ref=e47] [cursor=pointer]:
+              - /url: /putaway
+            - link "Putaway Rules" [ref=e48] [cursor=pointer]:
+              - /url: /inventory/putaway-rules
+        - generic [ref=e49]:
+          - button "Outbound" [ref=e50]:
+            - generic [ref=e51]:
+              - img [ref=e52]
+              - text: Outbound
+            - img [ref=e56]
+          - generic [ref=e58]:
+            - link "Customers" [ref=e59] [cursor=pointer]:
+              - /url: /customers
+            - link "Orders" [ref=e60] [cursor=pointer]:
+              - /url: /orders
+            - link "Picking" [ref=e61] [cursor=pointer]:
+              - /url: /picking
+            - link "Packing" [ref=e62] [cursor=pointer]:
+              - /url: /packing
+            - link "Returns (RMA)" [ref=e63] [cursor=pointer]:
+              - /url: /returns
+            - link "Shipments" [ref=e64] [cursor=pointer]:
+              - /url: /shipments
+            - link "Invoices" [ref=e65] [cursor=pointer]:
+              - /url: /invoices
+        - generic [ref=e66]:
+          - button "Inventory" [ref=e67]:
+            - generic [ref=e68]:
+              - img [ref=e69]
+              - text: Inventory
+            - img [ref=e72]
+          - generic [ref=e74]:
+            - link "Inventory List" [ref=e75] [cursor=pointer]:
+              - /url: /inventory
+            - link "Stocktaking" [ref=e76] [cursor=pointer]:
+              - /url: /stocktaking
+            - link "Moves" [ref=e77] [cursor=pointer]:
+              - /url: /inventory/moves
+            - link "Transfers" [ref=e78] [cursor=pointer]:
+              - /url: /transfers
+            - link "Adjustments" [ref=e79] [cursor=pointer]:
+              - /url: /inventory/adjustments
+            - link "Scrap" [ref=e80] [cursor=pointer]:
+              - /url: /inventory/scrap
+            - link "Replenishment" [ref=e81] [cursor=pointer]:
+              - /url: /inventory/replenishment
+        - generic [ref=e82]:
+          - button "Warehouse" [ref=e83]:
+            - generic [ref=e84]:
+              - img [ref=e85]
+              - text: Warehouse
+            - img [ref=e87]
+          - generic [ref=e89]:
+            - link "Locations" [ref=e90] [cursor=pointer]:
+              - /url: /inventory/locations
+            - link "Warehouses" [ref=e91] [cursor=pointer]:
+              - /url: /inventory/warehouses
+            - link "Floor Plan" [ref=e92] [cursor=pointer]:
+              - /url: /floor-plan
+            - link "Routes" [ref=e93] [cursor=pointer]:
+              - /url: /inventory/routes
+        - button "Workflows" [ref=e95]:
+          - generic [ref=e96]:
+            - img [ref=e97]
+            - text: Workflows
+          - img [ref=e101]
+        - link "Settings" [ref=e103] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e104]
+          - text: Settings
+        - link "User Guide" [ref=e107] [cursor=pointer]:
+          - /url: /user-guide
+          - img [ref=e108]
+          - text: User Guide
+      - link "Sign Out" [ref=e111] [cursor=pointer]:
+        - /url: /login
+    - generic [ref=e112]:
+      - banner [ref=e113]:
+        - button "Notifications" [ref=e115]:
+          - img [ref=e116]
+      - main [ref=e119]:
+        - generic [ref=e120]:
+          - generic [ref=e121]:
+            - generic [ref=e122]:
+              - heading "Inventory" [level=1] [ref=e123]
+              - paragraph [ref=e124]: Manage your inventory items and stock levels
+            - generic [ref=e125]:
+              - button "+ New Item" [ref=e126]
+              - button "Upload" [ref=e127]
+              - link "Settings" [ref=e128] [cursor=pointer]:
+                - /url: /settings
+                - button "Settings" [ref=e129]
+          - generic [ref=e130]:
+            - textbox "Search inventory by Name or SKU" [ref=e131]
+            - combobox [ref=e132]:
+              - option "All Categories" [selected]
+              - option "Electronics"
+            - combobox [ref=e133]:
+              - option "All Classifications" [selected]
+              - option "Class A"
+              - option "Class B"
+              - option "Class C"
+            - combobox [ref=e134]:
+              - option "All Warehouses" [selected]
+              - option "Distribution Center 1"
+              - option "Central DC"
+              - option "Central DC 1773016911198"
+              - option "Central DC 1773016973696"
+              - option "Central DC 1773017021436"
+              - option "Central DC 1773017102687"
+              - option "Central DC 1773018562004"
+              - option "Central DC 1773018839675"
+              - 'option "External: MRP"'
+            - button "Reset" [ref=e135]
+          - table [ref=e137]:
+            - rowgroup [ref=e138]:
+              - row "Product Category Classification On Hand Inc. Out. Free Status Actions" [ref=e139]:
+                - columnheader "Product" [ref=e140]
+                - columnheader "Category" [ref=e141]
+                - columnheader "Classification" [ref=e142]
+                - columnheader "On Hand" [ref=e143]
+                - columnheader "Inc." [ref=e144]
+                - columnheader "Out." [ref=e145]
+                - columnheader "Free" [ref=e146]
+                - columnheader "Status" [ref=e147]
+                - columnheader "Actions" [ref=e148]
+            - rowgroup [ref=e149]:
+              - row "LA Pro Laptop X LAP-X Electronics Class A 40 Piece - -6 32 Active View" [ref=e150]:
+                - cell "LA Pro Laptop X LAP-X" [ref=e151]:
+                  - generic [ref=e152]:
+                    - generic [ref=e154]: LA
+                    - generic [ref=e155]:
+                      - generic [ref=e156]: Pro Laptop X
+                      - generic [ref=e157]: LAP-X
+                - cell "Electronics" [ref=e158]
+                - cell "Class A" [ref=e159]:
+                  - generic [ref=e160]: Class A
+                - cell "40 Piece" [ref=e161]:
+                  - generic [ref=e162]: "40"
+                  - generic [ref=e163]: Piece
+                - cell "-" [ref=e164]
+                - cell "-6" [ref=e165]
+                - cell "32" [ref=e166]
+                - cell "Active" [ref=e167]:
+                  - generic [ref=e168]: Active
+                - cell "View" [ref=e169]:
+                  - link "View" [ref=e170] [cursor=pointer]:
+                    - /url: /inventory/4fdcb5b4-9544-42a1-b95d-9d1e9933489e
+          - generic [ref=e172]:
+            - heading "Add New Inventory Item" [level=3] [ref=e173]
+            - generic [ref=e174]:
+              - generic [ref=e175]:
+                - generic [ref=e176]:
+                  - generic [ref=e177]: SKU
+                  - textbox [ref=e178]: PRO-LAP-X
+                - generic [ref=e179]:
+                  - generic [ref=e180]:
+                    - generic [ref=e181]: Name
+                    - textbox [active] [ref=e182]: Pro Laptop X
+                  - generic [ref=e183]:
+                    - generic [ref=e184]: Category
+                    - combobox [ref=e185]:
+                      - option "Select Category" [selected]
+                      - option "Electronics"
+                  - generic [ref=e186]:
+                    - generic [ref=e187]: Unit of Measure
+                    - textbox [ref=e188]: Piece
+                - generic [ref=e189]:
+                  - generic [ref=e190]:
+                    - generic [ref=e191]: Cost (IDR)
+                    - spinbutton [ref=e192]
+                    - paragraph [ref=e193]: Average cost per unit
+                  - generic [ref=e194]:
+                    - generic [ref=e195]: Price (IDR)
+                    - spinbutton [ref=e196]
+                    - paragraph [ref=e197]: Selling price per unit
+                - generic [ref=e198]:
+                  - generic [ref=e199]:
+                    - generic [ref=e200]: Type
+                    - combobox [ref=e201]:
+                      - option "Raw" [selected]
+                      - option "Semi-finished"
+                      - option "Finished"
+                  - generic [ref=e202]:
+                    - generic [ref=e203]: Velocity (ABC)
+                    - combobox [ref=e204]:
+                      - option "A (Fast)" [selected]
+                      - option "B (Medium)"
+                      - option "C (Slow)"
+                - generic [ref=e205]:
+                  - generic [ref=e206]: Tracking
+                  - combobox [ref=e207]:
+                    - option "No Tracking" [selected]
+                    - option "By Lots"
+                    - option "By Unique Serial Number"
+                - generic [ref=e208]:
+                  - generic [ref=e209]: Storage Requirements
+                  - generic [ref=e210]:
+                    - generic [ref=e211]:
+                      - checkbox "Climate Controlled" [ref=e212]
+                      - generic [ref=e213]: Climate Controlled
+                    - generic [ref=e214]:
+                      - checkbox "Load Baring" [ref=e215]
+                      - generic [ref=e216]: Load Baring
+                - generic [ref=e217]:
+                  - heading "Packaging & Dimensions" [level=4] [ref=e218]
+                  - generic [ref=e219]:
+                    - generic [ref=e220]: Base Unit Dimensions
+                    - generic [ref=e221]:
+                      - text: Width (cm)
+                      - spinbutton [ref=e222]
+                    - generic [ref=e223]:
+                      - text: Height (cm)
+                      - spinbutton [ref=e224]
+                    - generic [ref=e225]:
+                      - text: Depth (cm)
+                      - spinbutton [ref=e226]
+                    - generic [ref=e227]:
+                      - text: Weight (kg)
+                      - spinbutton [ref=e228]
+                  - generic [ref=e229]:
+                    - generic [ref=e232] [cursor=pointer]:
+                      - checkbox "Individual Unit" [ref=e233]
+                      - generic [ref=e234]: Individual Unit
+                    - generic [ref=e237] [cursor=pointer]:
+                      - checkbox "Box / Case" [ref=e238]
+                      - generic [ref=e239]: Box / Case
+                    - generic [ref=e242] [cursor=pointer]:
+                      - checkbox "Pallet" [ref=e243]
+                      - generic [ref=e244]: Pallet
+              - generic [ref=e245]:
+                - button "Cancel" [ref=e246]
+                - button "Create Item" [ref=e247]
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e253] [cursor=pointer]:
+    - img [ref=e254]
+  - alert [ref=e257]
+```
