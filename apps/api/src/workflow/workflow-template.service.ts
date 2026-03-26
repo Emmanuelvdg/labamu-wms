@@ -65,16 +65,18 @@ export class WorkflowTemplateService {
                 const incomingStepsWithIds = data.steps.filter(s => s.id && !s.id.startsWith('new-'));
                 const incomingStepIds = incomingStepsWithIds.map(s => s.id);
 
-                // A. Delete steps that are truly gone
+                // A. Delete steps that are truly gone, but only if they have no execution history
                 const stepIdsToDelete = existingStepIds.filter(sid => !incomingStepIds.includes(sid));
-                if (stepIdsToDelete.length > 0) {
-                    await tx.workflowStep.deleteMany({
-                        where: {
-                            id: { in: stepIdsToDelete },
-                            // Safety: only delete if they belong to this template
-                            templateId: id
-                        }
-                    });
+                for (const sid of stepIdsToDelete) {
+                    const taskCount = await tx.workflowTaskInstance.count({ where: { stepId: sid } });
+                    if (taskCount > 0) {
+                        const step = existingSteps.find(s => s.id === sid);
+                        throw new BadRequestException(
+                            `Cannot delete step "${step?.name || sid}" because it has historical execution data. ` +
+                            `Please keep the step or archive this workflow version and create a new one.`
+                        );
+                    }
+                    await tx.workflowStep.delete({ where: { id: sid } });
                 }
 
                 // B. Map for frontend IDs to new/actual UUIDs (for transitions)
