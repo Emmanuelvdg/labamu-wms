@@ -32,7 +32,21 @@ export class ErrorCatalogService {
 
     private loadCatalog(): void {
         try {
-            const catalogPath = path.join(__dirname, 'error-catalog.json');
+            let catalogPath = path.join(__dirname, 'error-catalog.json');
+            
+            if (!fs.existsSync(catalogPath)) {
+                // Fallback for nest-cli asset copying behavior where assets go to dist/common instead of dist/src/common
+                const altPath = path.join(__dirname, '..', '..', '..', 'common', 'errors', 'error-catalog.json');
+                // Another fallback if running from root using process.cwd()
+                const cwdPath = path.join(process.cwd(), 'src', 'common', 'errors', 'error-catalog.json');
+                
+                if (fs.existsSync(altPath)) {
+                    catalogPath = altPath;
+                } else if (fs.existsSync(cwdPath)) {
+                    catalogPath = cwdPath;
+                }
+            }
+
             this.logger.log(`Checking error catalog at: ${catalogPath}`);
             const raw = fs.readFileSync(catalogPath, 'utf-8');
             this.catalog = JSON.parse(raw);

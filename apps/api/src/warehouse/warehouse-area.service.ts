@@ -15,6 +15,8 @@ export interface CreateAreaDto {
     linkedLocationId?: string;
     attributes?: any;
     sequence?: number;
+    shapeType?: string;
+    vertices?: any[];
 }
 
 export interface UpdateAreaDto {
@@ -29,6 +31,8 @@ export interface UpdateAreaDto {
     attributes?: any;
     active?: boolean;
     sequence?: number;
+    shapeType?: string;
+    vertices?: any[];
 }
 
 export interface UpdateFloorPlanDto {
@@ -51,7 +55,7 @@ export class WarehouseAreaService {
     constructor(private prisma: PrismaService) { }
 
     async getAreasForWarehouse(warehouseId: string) {
-        return this.prisma.warehouseFunctionalArea.findMany({
+        const areas = await this.prisma.warehouseFunctionalArea.findMany({
             where: { warehouseId },
             orderBy: [{ sequence: 'asc' }, { createdAt: 'asc' }],
             include: {
@@ -59,6 +63,22 @@ export class WarehouseAreaService {
                     select: { id: true, name: true, structuralType: true }
                 }
             }
+        });
+
+        return areas.map(area => {
+            let parsedAttributes = undefined;
+            let parsedVertices = undefined;
+            if (area.attributes) {
+                try { parsedAttributes = JSON.parse(area.attributes); } catch(e) {}
+            }
+            if (area.vertices) {
+                try { parsedVertices = JSON.parse(area.vertices); } catch(e) {}
+            }
+            return {
+                ...area,
+                attributes: parsedAttributes !== undefined ? parsedAttributes : area.attributes,
+                vertices: parsedVertices !== undefined ? parsedVertices : area.vertices,
+            };
         });
     }
 
@@ -96,17 +116,31 @@ export class WarehouseAreaService {
                 linkedLocationId: data.linkedLocationId,
                 attributes: data.attributes ? JSON.stringify(data.attributes) : null,
                 sequence: data.sequence ?? 0,
+                shapeType: data.shapeType ?? 'rectangle',
+                vertices: data.vertices ? JSON.stringify(data.vertices) : null,
             }
         });
     }
 
     async updateArea(areaId: string, data: UpdateAreaDto) {
+        const updateData: any = {};
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.x !== undefined) updateData.x = data.x;
+        if (data.y !== undefined) updateData.y = data.y;
+        if (data.width !== undefined) updateData.width = data.width;
+        if (data.height !== undefined) updateData.height = data.height;
+        if (data.rotation !== undefined) updateData.rotation = data.rotation;
+        if (data.color !== undefined) updateData.color = data.color;
+        if (data.linkedLocationId !== undefined) updateData.linkedLocationId = data.linkedLocationId;
+        if (data.active !== undefined) updateData.active = data.active;
+        if (data.sequence !== undefined) updateData.sequence = data.sequence;
+        if (data.shapeType !== undefined) updateData.shapeType = data.shapeType;
+        if (data.attributes !== undefined) updateData.attributes = data.attributes ? JSON.stringify(data.attributes) : null;
+        if (data.vertices !== undefined) updateData.vertices = data.vertices ? JSON.stringify(data.vertices) : null;
+
         return this.prisma.warehouseFunctionalArea.update({
             where: { id: areaId },
-            data: {
-                ...data,
-                attributes: data.attributes ? JSON.stringify(data.attributes) : undefined,
-            }
+            data: updateData
         });
     }
 
