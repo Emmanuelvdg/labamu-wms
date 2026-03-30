@@ -40,7 +40,7 @@ export default function NewOrderPage() {
                     fetchProducts(),
                     fetchCustomers(),
                     fetchWarehouses(),
-                    fetchWithRetry(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/shipping/methods`)
+                    fetchWithRetry('/api/shipping/delivery-methods') // Need to fetch delivery methods, matching E2E test plan (shipping/delivery-methods)
                 ]);
                 setProducts(prods || []);
                 setCustomers(custs || []);
@@ -491,8 +491,8 @@ export default function NewOrderPage() {
                         </div>
 
                         <div className="flex justify-end gap-2 mt-6">
-                            <Button variant="ghost" onClick={() => setShowCustomerModal(false)}>Cancel</Button>
-                            <Button onClick={handleCreateCustomer} disabled={creatingCustomer || !newCustomerName.trim()}>
+                            <Button type="button" variant="ghost" onClick={() => setShowCustomerModal(false)}>Cancel</Button>
+                            <Button type="button" onClick={handleCreateCustomer} disabled={creatingCustomer || newCustomerName.trim().length === 0}>
                                 {creatingCustomer ? 'Creating...' : 'Create'}
                             </Button>
                         </div>
