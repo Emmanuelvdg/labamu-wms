@@ -40,7 +40,7 @@ export default function NewOrderPage() {
                     fetchProducts(),
                     fetchCustomers(),
                     fetchWarehouses(),
-                    fetchWithRetry('/api/shipping/delivery-methods') // Need to fetch delivery methods, matching E2E test plan (shipping/delivery-methods)
+                    fetchWithRetry('/api/configuration/delivery-methods') // Need to fetch delivery methods
                 ]);
                 setProducts(prods || []);
                 setCustomers(custs || []);
