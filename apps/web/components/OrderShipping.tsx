@@ -182,7 +182,6 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                         value={selectedMethodId}
                         onChange={(e) => handleMethodChange(e.target.value)}
                         disabled={
-                            order.status === 'SHIPPED' ||
                             order.status === 'DELIVERED' ||
                             order.status === 'CANCELLED' ||
                             // Disable if Lalamove delivery is already booked
@@ -218,7 +217,7 @@ export default function OrderShipping({ order, onUpdate }: { order: any, onUpdat
                             </div>
                             <div className="flex gap-2">
                                 {/* Show Applied button only if not Lalamove OR if Lalamove but not booked */}
-                                {(order.status !== 'SHIPPED' && order.status !== 'DELIVERED' && order.status !== 'CANCELLED') &&
+                                {(order.status !== 'DELIVERED' && order.status !== 'CANCELLED') &&
                                     !order.lalamoveOrders?.some((lo: any) => lo.status !== 'CANCELLED') && (
                                         <button
                                             onClick={applyShipping}
