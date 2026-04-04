@@ -75,6 +75,14 @@ export async function createProduct(product: any) {
     });
 }
 
+export async function updateProduct(id: string, data: any) {
+    return fetchWithRetry(`${API_URL}/inventory/products/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
 export async function createWarehouse(warehouse: any) {
     return fetchWithRetry(`${API_URL}/inventory/warehouses`, {
         method: 'POST',
@@ -293,6 +301,12 @@ export async function updateCustomer(id: string, data: any) {
     });
 }
 
+export async function deleteCustomer(id: string) {
+    return fetchWithRetry(`${API_URL}/customers/${id}`, {
+        method: 'DELETE',
+    });
+}
+
 // --- Orders & Shipping ---
 
 export async function createOrder(order: any) {
@@ -499,6 +513,10 @@ export async function getActivePickingSession(warehouseId: string) {
     return fetchWithRetry(`${API_URL}/strategy/picking/sessions/active?warehouseId=${warehouseId}`);
 }
 
+export async function pollWavelessTasks(sessionId: string) {
+    return fetchWithRetry(`${API_URL}/strategy/picking/sessions/${sessionId}/waveless-poll`);
+}
+
 export async function updatePickingTask(taskId: string, data: { pickedQuantity: number; status: string; exceptionReason?: string }) {
     return fetchWithRetry(`${API_URL}/strategy/picking/tasks/${taskId}`, {
         method: 'PATCH',
@@ -695,6 +713,7 @@ export const fetchProductPriceHistory = async (productId: string) => {
 export async function fetchProducts() {
     return fetchWithRetry(`${API_URL}/inventory/products`);
 }
+
 
 // --- Fulfillment & IWT ---
 

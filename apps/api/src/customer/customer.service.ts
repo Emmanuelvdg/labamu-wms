@@ -60,4 +60,27 @@ export class CustomerService {
         }
         return null;
     }
+
+    async updateCustomer(id: string, data: any): Promise<Customer> {
+        return this.prisma.customer.update({
+            where: { id },
+            data: {
+                name: data.name,
+                address: data.address,
+                phone: data.phone,
+                city: data.city,
+                country: data.country,
+                state: data.state,
+                postalCode: data.postalCode,
+                latitude: data.latitude,
+                longitude: data.longitude,
+            },
+        });
+    }
+
+    async deleteCustomer(id: string): Promise<Customer> {
+        return this.prisma.customer.delete({
+            where: { id },
+        });
+    }
 }

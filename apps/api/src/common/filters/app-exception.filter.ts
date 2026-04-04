@@ -8,6 +8,8 @@ import {
 import { Response } from 'express';
 import { AppError } from '../errors/app-error';
 import { ErrorCatalogService } from '../errors/error-catalog.service';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 /**
  * Global exception filter that handles:
@@ -21,6 +23,17 @@ export class AppExceptionFilter implements ExceptionFilter {
     private readonly logger = new Logger(AppExceptionFilter.name);
 
     constructor(private readonly catalog: ErrorCatalogService) { }
+
+    private logToFile(message: string, stack?: string) {
+        try {
+            const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\backend_errors.log';
+            const timestamp = new Date().toISOString();
+            const logEntry = `[${timestamp}] ${message}\n${stack || 'No stack'}\n- - -\n`;
+            fs.appendFileSync(logPath, logEntry);
+        } catch (e) {
+            // Can't log the logger's failure
+        }
+    }
 
     catch(exception: unknown, host: ArgumentsHost): void {
         const ctx = host.switchToHttp();
@@ -77,6 +90,7 @@ export class AppExceptionFilter implements ExceptionFilter {
                 `[UNHANDLED] ${exception.message}`,
                 exception.stack,
             );
+            this.logToFile(`[UNHANDLED] ${exception.message}`, exception.stack);
             response.status(500).json({
                 statusCode: 500,
                 code: 'INTERNAL_ERROR',
@@ -91,6 +105,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 
         // 4. Unknown — completely unexpected
         this.logger.error('[UNKNOWN] Non-Error exception caught', exception);
+        this.logToFile('[UNKNOWN] Non-Error exception caught', JSON.stringify(exception));
         response.status(500).json({
             statusCode: 500,
             code: 'UNKNOWN_ERROR',

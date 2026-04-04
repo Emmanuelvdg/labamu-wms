@@ -2,13 +2,16 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { RotationRuleResolverService } from '../inventory/rotation-rule-resolver.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { PICKING_SESSION_COMPLETED, PickingSessionCompletedEvent } from './events/picking.events';
 
 @Injectable()
 export class PickingStrategyService {
     constructor(
         private prisma: PrismaService,
         private inventoryService: InventoryService,
-        private ruleResolver: RotationRuleResolverService
+        private ruleResolver: RotationRuleResolverService,
+        private eventEmitter: EventEmitter2
     ) { }
 
     // --- Batch Picking ---
@@ -131,7 +134,90 @@ export class PickingStrategyService {
     // --- Waveless Picking ---
     // Continuous flow picking, releases orders immediately
     async createWavelessSession(warehouseId: string) {
-        return this.createSession({ warehouseId, strategy: 'SINGLE', maxOrders: 5 });
+        const session = await this.prisma.pickingSession.create({
+            data: {
+                warehouseId,
+                strategy: 'WAVELESS',
+                status: 'IN_PROGRESS',
+            }
+        });
+        
+        // Immediately assign any currently pending reserved orders
+        await this.assignContinuousTasks(session.id);
+        
+        return session;
+    }
+
+    async assignContinuousTasks(sessionId: string) {
+        const session = await this.prisma.pickingSession.findUnique({ where: { id: sessionId } });
+        if (!session) return;
+
+        // Find RESERVED orders that haven't been picked yet
+        const orders = await this.prisma.order.findMany({
+            where: {
+                OR: [
+                    { warehouseId: session.warehouseId },
+                    { warehouseId: null }
+                ],
+                status: 'RESERVED',
+            },
+            take: 10,
+            include: { items: true },
+            orderBy: { createdAt: 'asc' }
+        });
+
+        for (const order of orders) {
+            let tasksCreated = false;
+            for (const item of order.items) {
+                const allocations = await this.allocateStock(item.productId, item.quantity, session.warehouseId, 'FEFO');
+                for (const alloc of allocations) {
+                    await this.prisma.pickingTask.create({
+                        data: {
+                            sessionId: session.id,
+                            orderId: order.id,
+                            productId: item.productId,
+                            sourceLocationId: alloc.locationId,
+                            quantity: alloc.quantity,
+                            status: 'PENDING'
+                        }
+                    });
+                    tasksCreated = true;
+                }
+            }
+            if (tasksCreated) {
+                await this.prisma.order.update({
+                    where: { id: order.id },
+                    data: { status: 'PICKING' }
+                });
+            }
+        }
+    }
+
+    async pollWavelessTasks(sessionId: string) {
+        const session = await this.prisma.pickingSession.findUnique({ where: { id: sessionId } });
+        if (!session) throw new HttpException('Session not found', HttpStatus.NOT_FOUND);
+
+        // Assign more tasks if the queue is low
+        await this.assignContinuousTasks(sessionId);
+
+        // Fetch pending tasks from this session
+        // By ordering by createdAt desc, any freshly inserted 'urgent' picks will naturally appear at the absolute top of the queue
+        const pendingTasks = await this.prisma.pickingTask.findMany({
+            where: {
+                sessionId,
+                status: 'PENDING'
+            },
+            include: {
+                product: true,
+                sourceLocation: true,
+                order: true
+            },
+            orderBy: {
+                createdAt: 'desc' 
+            }
+        });
+
+        return pendingTasks;
     }
 
     async insertUrgentPick(sessionId: string, orderId: string) {
@@ -179,7 +265,7 @@ export class PickingStrategyService {
 
     async createSession(data: {
         warehouseId: string;
-        strategy?: 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE';
+        strategy?: 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE' | 'WAVELESS';
         criteria?: string;
         maxOrders?: number;
     }) {
@@ -517,45 +603,21 @@ export class PickingStrategyService {
                 data: { status: newStatus }
             });
 
-            // 3. Generate stock moves for picked items (Storage → next zone)
+            // 3. Coordinate next steps via Rules/Workflows for picked items
             if (allPicked && session.warehouseId) {
                 try {
-                    const warehouse = await this.prisma.warehouse.findUnique({
-                        where: { id: session.warehouseId },
-                        select: { outgoingSteps: true }
-                    });
-
-                    const outgoingSteps = warehouse?.outgoingSteps || '1_step';
-
-                    // Determine the destination zone based on outgoing steps
-                    let destAreaType = 'SHIPPING'; // 1-step: straight to shipping
-                    if (outgoingSteps === '2_steps') {
-                        destAreaType = 'SHIPPING'; // 2-step: Storage → Shipping
-                    } else if (outgoingSteps === '3_steps') {
-                        destAreaType = 'PICKING'; // 3-step: Storage → Picking Zone (then Pack, then Ship)
-                    }
-
-                    const destArea = await this.prisma.warehouseFunctionalArea.findFirst({
-                        where: { warehouseId: session.warehouseId, areaType: destAreaType }
-                    });
-
-                    if (destArea?.linkedLocationId) {
-                        for (const task of orderTasks) {
-                            await this.prisma.stockMove.create({
-                                data: {
-                                    productId: task.productId,
-                                    quantity: task.pickedQuantity || task.quantity,
-                                    sourceLocationId: task.sourceLocationId,
-                                    destinationLocationId: destArea.linkedLocationId,
-                                    status: 'DONE',
-                                    origin: `ORDER-${orderId.substring(0, 8)}-PICK`,
-                                }
-                            });
-                        }
-                        console.log(`[Picking] Stock moves: Storage→${destAreaType} for order ${orderId.substring(0, 8)} (${outgoingSteps})`);
-                    }
+                    this.eventEmitter.emit(
+                        PICKING_SESSION_COMPLETED,
+                        new PickingSessionCompletedEvent(
+                            sessionId,
+                            session.warehouseId,
+                            [orderId],
+                            orderTasks
+                        )
+                    );
+                    console.log(`[Picking] Emitted completion event for order ${orderId}`);
                 } catch (error) {
-                    console.error(`[Picking] Failed to create stock moves for order ${orderId}:`, error);
+                    console.error(`[Picking] Failed to emit completion event for order ${orderId}:`, error);
                 }
             }
         }

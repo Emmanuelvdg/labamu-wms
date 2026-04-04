@@ -13,6 +13,7 @@ import { ShipHandler } from './handlers/ship-handler';
 import { ConsolidateHandler } from './handlers/consolidate-handler';
 import { ReturnHandler } from './handlers/return-handler';
 import { ReplenishHandler } from './handlers/replenish-handler';
+import { ContextEnrichmentService } from './context-enrichment.service';
 
 @Injectable()
 export class WorkflowEngineService {
@@ -33,6 +34,7 @@ export class WorkflowEngineService {
         private consolidateHandler: ConsolidateHandler,
         private returnHandler: ReturnHandler,
         private replenishHandler: ReplenishHandler,
+        private contextEnrichment: ContextEnrichmentService,
     ) {
         this.registerHandler('CONDITION', this.conditionHandler);
         this.registerHandler('RECEIVE', this.receiveHandler);
@@ -208,6 +210,13 @@ export class WorkflowEngineService {
 
         let contextData = {};
         try { contextData = JSON.parse(task.instance.context); } catch (e) { }
+
+        // Enrich context dynamically before executing
+        contextData = await this.contextEnrichment.enrichContext(
+            task.instance.triggerType || undefined, 
+            task.instance.triggerRef || undefined, 
+            contextData
+        );
 
         let result: StepResult;
         try {

@@ -6,6 +6,7 @@ import { WorkflowEngineService } from './workflow-engine.service';
 import { WorkflowExecutionController } from './workflow-execution.controller';
 import { TaskOptimisationService } from './task-optimisation.service';
 import { PrismaService } from '../prisma.service';
+import { ContextEnrichmentService } from './context-enrichment.service';
 import { ConditionHandler } from './handlers/condition-handler';
 import { ReceiveHandler } from './handlers/receive-handler';
 import { PickHandler } from './handlers/pick-handler';
@@ -30,6 +31,7 @@ import { InventoryModule } from '../inventory/inventory.module';
         WorkflowEngineService,
         TaskOptimisationService,
         PrismaService,
+        ContextEnrichmentService,
         ConditionHandler,
         ReceiveHandler,
         PickHandler,

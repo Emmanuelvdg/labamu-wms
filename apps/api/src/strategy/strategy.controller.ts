@@ -80,8 +80,16 @@ export class StrategyController {
     // --- Picking Session Management ---
 
     @Post('picking/sessions')
-    createSession(@Body() data: { warehouseId: string; strategy: 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE'; criteria?: string; maxOrders?: number }) {
+    createSession(@Body() data: { warehouseId: string; strategy: 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE' | 'WAVELESS'; criteria?: string; maxOrders?: number }) {
+        if (data.strategy === 'WAVELESS') {
+            return this.pickingStrategyService.createWavelessSession(data.warehouseId);
+        }
         return this.pickingStrategyService.createSession(data);
+    }
+
+    @Get('picking/sessions/:id/waveless-poll')
+    pollWavelessTasks(@Param('id') id: string) {
+        return this.pickingStrategyService.pollWavelessTasks(id);
     }
 
     @Get('picking/sessions/active')

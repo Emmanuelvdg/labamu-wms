@@ -26,6 +26,16 @@ export class WorkflowValidationService {
             errors.push('Workflow cannot have more than one START step.');
         }
 
+        // 1.5. Route Constraints
+        if (template.triggerType === 'ROUTE') {
+            const allowedRouteSteps = ['RECEIVE', 'QC_INSPECT', 'STAGE', 'PUTAWAY', 'PICK'];
+            const invalidSteps = steps.filter(s => !allowedRouteSteps.includes(s.type));
+            if (invalidSteps.length > 0) {
+                const invalidNames = invalidSteps.map(s => s.name).join(', ');
+                errors.push(`Route templates can only contain physical movement steps (RECEIVE, QC_INSPECT, STAGE, PUTAWAY, PICK). Found invalid steps: ${invalidNames}`);
+            }
+        }
+
         // 2. At least one end node
         const endSteps = steps.filter(s => s.isEnd);
         if (endSteps.length === 0) {

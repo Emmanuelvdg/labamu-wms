@@ -32,12 +32,10 @@ export class PickHandler implements IStepHandler {
 
         try {
             if (strategy === 'WAVELESS') {
-                // Waveless continuous flow implementation
-                // Will be added to PickingStrategyService in Phase 4
-                // Just return WAITING for now
+                const session = await this.pickingService.createWavelessSession(warehouseId);
                 return {
                     status: 'WAITING',
-                    output: { message: 'Waveless picking active, monitoring streams' }
+                    output: { sessionId: session.id, message: 'Waveless continuous queue active' }
                 };
             }
 

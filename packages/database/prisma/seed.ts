@@ -48,6 +48,103 @@ async function main() {
         }
     });
 
+    // Seed Default Outbound Route Templates
+    const defaultTemplates = [
+        {
+            name: 'Default 1-Step Shipping',
+            triggerType: 'OUTBOUND',
+            status: 'ACTIVE',
+            steps: [
+                { type: 'WAVELESS_PICK', name: 'Pick', isStart: true, order: 1, positionX: 100, positionY: 100 },
+                { type: 'SHIP', name: 'Ship', isEnd: true, order: 2, positionX: 300, positionY: 100 }
+            ],
+            transitions: [
+                { fromStepName: 'Pick', toStepName: 'Ship', order: 1 }
+            ]
+        },
+        {
+            name: 'Default 3-Step QC Outbound',
+            triggerType: 'OUTBOUND',
+            status: 'ACTIVE',
+            steps: [
+                { type: 'BATCH_PICK', name: 'Pick', isStart: true, order: 1, positionX: 100, positionY: 100 },
+                { type: 'QC_INSPECT', name: 'QC', order: 2, positionX: 300, positionY: 100 },
+                { type: 'PACK', name: 'Pack', order: 3, positionX: 500, positionY: 100 },
+                { type: 'SHIP', name: 'Ship', isEnd: true, order: 4, positionX: 700, positionY: 100 }
+            ],
+            transitions: [
+                { fromStepName: 'Pick', toStepName: 'QC', order: 1 },
+                { fromStepName: 'QC', toStepName: 'Pack', order: 2, condition: '{"field":"context.isHighValueOrder","op":"eq","value":true}' },
+                { fromStepName: 'QC', toStepName: 'Ship', order: 3 }, // Default fallback if condition fails
+                { fromStepName: 'Pack', toStepName: 'Ship', order: 4 }
+            ]
+        },
+        {
+            name: 'Default 1-Step Receipt',
+            triggerType: 'ROUTE',
+            status: 'ACTIVE',
+            steps: [
+                { type: 'PUTAWAY', name: 'Putaway', isStart: true, isEnd: true, order: 1, positionX: 100, positionY: 100 }
+            ],
+            transitions: []
+        },
+        {
+            name: 'Default 3-Step QC Inbound',
+            triggerType: 'ROUTE',
+            status: 'ACTIVE',
+            steps: [
+                { type: 'PUTAWAY', name: 'Input', isStart: true, order: 1, positionX: 100, positionY: 100 },
+                { type: 'QC_INSPECT', name: 'QC', order: 2, positionX: 300, positionY: 100 },
+                { type: 'PUTAWAY', name: 'Stock', isEnd: true, order: 3, positionX: 500, positionY: 100 }
+            ],
+            transitions: [
+                { fromStepName: 'Input', toStepName: 'QC', order: 1 },
+                { fromStepName: 'QC', toStepName: 'Stock', order: 2 }
+            ]
+        }
+    ];
+
+    for (const tpl of defaultTemplates) {
+        const existing = await prisma.workflowTemplate.findFirst({ where: { name: tpl.name } });
+        if (!existing) {
+            const template = await prisma.workflowTemplate.create({
+                data: {
+                    name: tpl.name,
+                    triggerType: tpl.triggerType,
+                    status: tpl.status,
+                }
+            });
+
+            const stepRecords: any = {};
+            for (const step of tpl.steps) {
+                stepRecords[step.name] = await prisma.workflowStep.create({
+                    data: {
+                        templateId: template.id,
+                        type: step.type,
+                        name: step.name,
+                        isStart: step.isStart || false,
+                        isEnd: step.isEnd || false,
+                        order: step.order,
+                        positionX: step.positionX,
+                        positionY: step.positionY
+                    }
+                });
+            }
+
+            for (const trans of tpl.transitions) {
+                await prisma.workflowTransition.create({
+                    data: {
+                        templateId: template.id,
+                        fromStepId: stepRecords[trans.fromStepName].id,
+                        toStepId: stepRecords[trans.toStepName].id,
+                        order: trans.order,
+                        condition: trans.condition || '{}'
+                    }
+                });
+            }
+        }
+    }
+
     // Seed Permissions for Admin
     const permissions = [
         { resource: 'ALL', action: 'MANAGE', description: 'Full Access' },

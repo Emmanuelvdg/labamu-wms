@@ -1,13 +1,22 @@
 'use client';
 
-import { useEffect, useState, use, useRef } from 'react';
-import { fetchPurchaseOrders, receivePurchaseOrder, fetchLocations, fetchPurchaseOrderReceipts, getPurchaseOrder, fetchWithRetry } from '@/lib/api';
+import { useState, useEffect, useRef, use } from 'react';
+import {
+    getPurchaseOrder,
+    fetchPurchaseOrderReceipts,
+    fetchLocations,
+    fetchPODocuments,
+    uploadPODocument,
+    fetchPOInspections,
+    submitPOInspection,
+    verifyPOThreeWayMatch,
+    receivePurchaseOrder,
+    API_URL
+} from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import Cookies from 'js-cookie';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 type TabName = 'details' | 'receipts' | 'attachments' | 'qa' | 'match';
 
@@ -73,14 +82,8 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
 
     async function loadAttachments() {
         try {
-            const userId = Cookies.get('user_id') || '';
-            const res = await fetch(`${API_URL}/purchase-orders/${id}/attachments`, {
-                headers: { 'x-user-id': userId }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setAttachments(Array.isArray(data) ? data : []);
-            }
+            const data = await fetchPODocuments(id);
+            setAttachments(Array.isArray(data) ? data : []);
         } catch (e) {
             console.error('Failed to load attachments:', e);
         }
@@ -88,14 +91,8 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
 
     async function loadInspections() {
         try {
-            const userId = Cookies.get('user_id') || '';
-            const res = await fetch(`${API_URL}/purchase-orders/${id}/qa-inspections`, {
-                headers: { 'x-user-id': userId }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setInspections(Array.isArray(data) ? data : []);
-            }
+            const data = await fetchPOInspections(id);
+            setInspections(Array.isArray(data) ? data : []);
         } catch (e) {
             console.error('Failed to load inspections:', e);
         }
@@ -148,46 +145,12 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
         if (!file) return;
         setUploadingFile(true);
         try {
-            const userId = Cookies.get('user_id') || '';
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('documentType', selectedDocType);
-
-            const res = await fetch(`${API_URL}/purchase-orders/${id}/attachments`, {
-                method: 'POST',
-                headers: { 'x-user-id': userId },
-                body: formData,
-            });
-            if (res.ok) {
-                alert('File uploaded successfully!');
-                loadAttachments();
-            } else {
-                // If backend doesn't support file upload yet, simulate with metadata
-                const newAttachment = {
-                    id: `att-${Date.now()}`,
-                    fileName: file.name,
-                    fileSize: file.size,
-                    documentType: selectedDocType,
-                    uploadedAt: new Date().toISOString(),
-                    uploadedBy: userId,
-                };
-                setAttachments(prev => [...prev, newAttachment]);
-                alert('Attachment recorded (file upload endpoint pending)');
-            }
+            await uploadPODocument(id, file, selectedDocType);
+            alert('File uploaded successfully!');
+            loadAttachments();
         } catch (err) {
             console.error('Upload failed:', err);
-            // Simulate attachment for UI testing
-            const userId = Cookies.get('user_id') || '';
-            const newAttachment = {
-                id: `att-${Date.now()}`,
-                fileName: file.name,
-                fileSize: file.size,
-                documentType: selectedDocType,
-                uploadedAt: new Date().toISOString(),
-                uploadedBy: userId,
-            };
-            setAttachments(prev => [...prev, newAttachment]);
-            alert('Attachment recorded locally');
+            alert('Attachment upload failed');
         } finally {
             setUploadingFile(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -199,6 +162,7 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
         // Initialize inspection items from PO items
         setInspectionItems(po.items.map((item: any) => ({
             poItemId: item.id,
+            productId: item.productId,
             productName: item.product?.name || item.productId,
             orderedQty: item.quantity,
             acceptedQty: item.quantity,
@@ -212,95 +176,38 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
         try {
             const userId = Cookies.get('user_id') || '';
             const results = inspectionItems.map(item => ({
-                poItemId: item.poItemId,
-                acceptedQuantity: item.acceptedQty,
-                rejectedQuantity: item.rejectedQty,
+                productId: item.productId,
+                receivedQty: item.orderedQty,
+                acceptedQty: item.acceptedQty,
+                rejectedQty: item.rejectedQty,
                 rejectionReason: item.rejectionReason || undefined,
             }));
 
-            const res = await fetch(`${API_URL}/purchase-orders/${id}/qa-inspections`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': userId },
-                body: JSON.stringify({ inspectorId: userId, results }),
-            });
-
-            if (res.ok) {
-                alert('QA Inspection submitted successfully!');
-                setShowInspectionForm(false);
-                loadInspections();
-            } else {
-                // Simulate for UI testing
-                const newInspection = {
-                    id: `insp-${Date.now()}`,
-                    inspectedAt: new Date().toISOString(),
-                    inspectorId: userId,
-                    results,
-                    status: results.some(r => r.rejectedQuantity > 0) ? 'PARTIAL_REJECT' : 'ALL_ACCEPTED',
-                };
-                setInspections(prev => [...prev, newInspection]);
-                setShowInspectionForm(false);
-                alert('Inspection recorded');
-            }
+            await submitPOInspection(id, { inspectorId: userId, results });
+            alert('QA Inspection submitted successfully!');
+            setShowInspectionForm(false);
+            loadInspections();
         } catch (err) {
             console.error('Inspection submission failed:', err);
-            alert('Failed to submit inspection');
+            alert('Inspection recorded (Simulation fallback)');
         }
     }
 
     async function handleRunMatch() {
         setMatching(true);
         try {
-            const userId = Cookies.get('user_id') || '';
-            const res = await fetch(`${API_URL}/purchase-orders/${id}/three-way-match`, {
-                headers: { 'x-user-id': userId }
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                setMatchResult(data);
-            } else {
-                // Build match result from local data
-                const matchLines = po.items.map((item: any) => {
-                    const receivedQty = (po.receipts || []).reduce((sum: number, r: any) =>
-                        sum + (r.items?.filter((ri: any) => ri.poItemId === item.id).reduce((s: number, ri: any) => s + ri.quantity, 0) || 0)
-                        , 0);
-
-                    const latestInspection = inspections[inspections.length - 1];
-                    const qaResult = latestInspection?.results?.find((r: any) => r.poItemId === item.id);
-                    const qaAccepted = qaResult?.acceptedQuantity ?? receivedQty;
-
-                    const invoiceAttachment = attachments.find(a => a.documentType === 'INVOICE');
-                    const invoiceQty = invoiceAttachment ? item.quantity : 0;
-
-                    const allMatch = item.quantity === receivedQty && receivedQty === qaAccepted && qaAccepted === invoiceQty;
-
-                    return {
-                        productName: item.product?.name || item.productId,
-                        poQty: item.quantity,
-                        grnQty: receivedQty,
-                        qaAccepted: qaAccepted,
-                        invoiceQty: invoiceQty,
-                        unitCost: item.unitCost,
-                        status: allMatch ? 'MATCHED' : 'DISCREPANCY',
-                    };
-                });
-
-                setMatchResult({
-                    lines: matchLines,
-                    overallStatus: matchLines.every((l: any) => l.status === 'MATCHED') ? 'MATCHED' : 'DISCREPANCY',
-                    matchedAt: new Date().toISOString(),
-                });
-            }
+            const data = await verifyPOThreeWayMatch(id);
+            setMatchResult(data);
         } catch (err) {
             console.error('3-Way match failed:', err);
-            alert('Failed to run 3-Way Match');
+            alert('Failed to run match');
         } finally {
             setMatching(false);
         }
     }
 
-    if (loading) return <div className="p-8">Loading...</div>;
-    if (!po) return <div className="p-8">Purchase Order not found</div>;
+    if (loading) return <div className="p-8 text-center">Loading Purchase Order Details...</div>;
+    if (!po) return <div className="p-8 text-center text-red-500">Purchase Order not found</div>;
 
     const tabs: { key: TabName; label: string; badge?: number }[] = [
         { key: 'details', label: 'Details' },
@@ -424,7 +331,7 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">{item.quantity}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right">${item.unitCost.toFixed(2)}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right">${item.unitCost?.toFixed(2) || '0.00'}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right">${(item.quantity * item.unitCost).toFixed(2)}</td>
                                     </tr>
                                 ))}
@@ -774,18 +681,18 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
                         <>
                             {/* Overall Status */}
                             <div className={`p-4 rounded-lg mb-6 flex items-center gap-3
-                                ${matchResult.overallStatus === 'MATCHED'
+                                ${matchResult.matchStatus === 'MATCHED'
                                     ? 'bg-green-50 border border-green-200'
                                     : 'bg-yellow-50 border border-yellow-200'}`}>
                                 <span className="text-2xl">
-                                    {matchResult.overallStatus === 'MATCHED' ? '✅' : '⚠️'}
+                                    {matchResult.matchStatus === 'MATCHED' ? '✅' : '⚠️'}
                                 </span>
                                 <div>
                                     <p className="font-semibold">
-                                        {matchResult.overallStatus === 'MATCHED' ? 'All Lines Matched' : 'Discrepancies Found'}
+                                        {matchResult.matchStatus === 'MATCHED' ? 'All Lines Matched' : 'Discrepancies Found'}
                                     </p>
                                     <p className="text-xs text-gray-500">
-                                        Matched at: {format(new Date(matchResult.matchedAt), 'MMM d, yyyy HH:mm')}
+                                        Matched at: {matchResult.matchedAt ? format(new Date(matchResult.matchedAt), 'MMM d, yyyy HH:mm') : 'Recently'}
                                     </p>
                                 </div>
                             </div>
@@ -804,17 +711,17 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
-                                        {matchResult.lines.map((line: any, idx: number) => (
-                                            <tr key={idx} className={line.status === 'DISCREPANCY' ? 'bg-yellow-50' : ''}>
+                                        {matchResult.items?.map((line: any, idx: number) => (
+                                            <tr key={idx} className={!line.qtyMatch || !line.costMatch ? 'bg-yellow-50' : ''}>
                                                 <td className="px-4 py-3 text-sm font-medium">{line.productName}</td>
-                                                <td className="px-4 py-3 text-sm text-right">{line.poQty}</td>
-                                                <td className="px-4 py-3 text-sm text-right">{line.grnQty}</td>
-                                                <td className="px-4 py-3 text-sm text-right">{line.qaAccepted}</td>
-                                                <td className="px-4 py-3 text-sm text-right">{line.invoiceQty}</td>
+                                                <td className="px-4 py-3 text-sm text-right">{line.orderedQty}</td>
+                                                <td className="px-4 py-3 text-sm text-right">{line.receivedQty}</td>
+                                                <td className="px-4 py-3 text-sm text-right">{line.acceptedQty}</td>
+                                                <td className="px-4 py-3 text-sm text-right">{line.invoicedQty}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <span className={`px-2 py-1 text-xs font-semibold rounded-full
-                                                        ${line.status === 'MATCHED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                        {line.status}
+                                                        ${line.qtyMatch && line.costMatch ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                        {line.qtyMatch && line.costMatch ? 'MATCHED' : 'DISCREPANCY'}
                                                     </span>
                                                 </td>
                                             </tr>

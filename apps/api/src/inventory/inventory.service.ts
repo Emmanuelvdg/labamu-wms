@@ -366,7 +366,13 @@ export class InventoryService {
     }
 
     async getProduct(id: string): Promise<Product | null> {
-        return this.prisma.product.findUnique({ where: { id } });
+        return this.prisma.product.findUnique({
+            where: { id },
+            include: {
+                attributes: true,
+                packaging: true,
+            },
+        });
     }
 
     async findProductStockLocations(productId: string): Promise<{ warehouseId: string, quantity: number, available: number }[]> {
@@ -993,7 +999,7 @@ export class InventoryService {
             const where: any = {};
             if (warehouseId) where.warehouseId = warehouseId;
             if (structuralType) where.structuralType = structuralType;
-            
+
             return await this.prisma.location.findMany({
                 where,
                 include: { warehouseView: true },

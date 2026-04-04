@@ -1,14 +1,19 @@
 import { cookies } from 'next/headers';
 
-export async function GET(request: Request) {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
+
+async function getUserId() {
     const cookieStore = await cookies();
     const allCookies = cookieStore.getAll();
-    const cookieHeader = allCookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
-
-    // Extract user_id from cookies for x-user-id header
     const userIdCookie = allCookies.find((c: any) => c.name === 'user_id');
-    const userId = userIdCookie?.value || '';
+    return {
+        userId: userIdCookie?.value || '',
+        cookieHeader: allCookies.map((c: any) => `${c.name}=${c.value}`).join('; '),
+    };
+}
+
+export async function GET(request: Request) {
+    const { userId, cookieHeader } = await getUserId();
 
     // Get query params from request URL
     const { searchParams } = new URL(request.url);
@@ -33,4 +38,45 @@ export async function GET(request: Request) {
 
     const data = await response.json();
     return Response.json(data);
+}
+
+export async function POST(request: Request) {
+    const { userId } = await getUserId();
+
+    try {
+        const body = await request.json();
+
+        const response = await fetch(`${API_URL}/inventory/products`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-user-id': userId,
+            },
+            body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            let errorMessage = errorText;
+            try {
+                const errorJson = JSON.parse(errorText);
+                errorMessage = errorJson.message || errorJson.error || errorText;
+            } catch (e) {
+                // Use raw text if not JSON
+            }
+            return Response.json(
+                { error: 'Failed to create product', message: errorMessage },
+                { status: response.status }
+            );
+        }
+
+        const data = await response.json();
+        return Response.json(data);
+    } catch (error) {
+        console.error('Error creating product:', error);
+        return Response.json(
+            { error: 'Internal server error' },
+            { status: 500 }
+        );
+    }
 }

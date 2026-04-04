@@ -47,12 +47,17 @@ export default function NewPurchaseOrderPage() {
     }
 
     async function handleProductChange(index: number, productId: string) {
+        // Look up the product to auto-fill unit cost from its averageCost
+        const selectedProduct = products.find(p => p.id === productId);
+        const autoCost = selectedProduct?.averageCost ?? 0;
+
         // Combine both updates into a single atomic operation
         const newItems = [...items];
         newItems[index] = {
             ...newItems[index],
             productId,
-            packagingId: undefined  // Reset packaging when product changes
+            unitCost: autoCost,       // Auto-fill from product cost (user can override)
+            packagingId: undefined     // Reset packaging when product changes
         };
         setItems(newItems);
 

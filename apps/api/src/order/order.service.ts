@@ -157,27 +157,31 @@ export class OrderService {
             const strategyName = activeStrategy?.name === 'FEFO' ? 'FEFO' : 'FIFO';
 
             try {
-                // New Logic: Use PickingStrategyService for Allocation Plan (Rotation Policies)
+                // Verify allocation is possible strictly using rotation policies first
                 for (const item of data.items) {
                     const allocations = await this.pickingStrategyService.allocateStock(
                         item.productId,
                         item.quantity,
                         data.warehouseId || order.warehouseId!, // Ensure we have warehouse
                         undefined, // Default strategy (use rules)
-                        false // commit: false (Do not reserve in helper, we do it below)
+                        false // commit: false (Do not reserve batches in helper, only check feasibility)
                     );
 
-                    if (allocations.length > 0) {
-                        await this.inventoryService.reserveBatches(allocations);
-                    } else {
-                        // Fallback? Or throw? For now just log.
-                        this.log(`No allocation found for product ${item.productId}`);
-                        // If strict, we might want to throw here or let it be PENDING
+                    if (allocations.length === 0) {
+                        throw new Error(`Insufficient stock for product ${item.productId} based on rotation rules`);
                     }
                 }
 
+                // Logical reservation (creates Reservation objects + ProductInventory.reserved)
+                await this.inventoryService.reserveStock({
+                    orderId: order.id,
+                    items: data.items,
+                    strategy: strategyName,
+                    warehouseId: data.warehouseId || order.warehouseId!
+                });
+
                 // 4. Update Order Status
-                return this.prisma.order.update({
+                return await this.prisma.order.update({
                     where: { id: order.id },
                     data: { status: 'RESERVED' },
                     include: { items: true },

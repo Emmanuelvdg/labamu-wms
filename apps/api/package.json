@@ -14,6 +14,7 @@
         "@labamu/database": "file:../../packages/database",
         "@nestjs/common": "^10.0.0",
         "@nestjs/core": "^10.0.0",
+        "@nestjs/event-emitter": "^3.0.1",
         "@nestjs/platform-express": "^10.0.0",
         "@nestjs/throttler": "^6.5.0",
         "@prisma/client": "^5.22.0",

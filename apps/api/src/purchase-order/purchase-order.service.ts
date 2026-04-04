@@ -5,6 +5,8 @@ import { InventoryService } from '../inventory/inventory.service';
 import { RuleService } from '../rule/rule.service';
 import { StockMoveService } from '../inventory/stock-move.service';
 import { PutawayService } from '../inventory/putaway.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ReceiptCompletedEvent } from '../inventory/events/inbound.events';
 
 @Injectable()
 export class PurchaseOrderService {
@@ -14,6 +16,7 @@ export class PurchaseOrderService {
         private ruleService: RuleService,
         private stockMoveService: StockMoveService,
         private putawayService: PutawayService,
+        private eventEmitter: EventEmitter2,
     ) { }
 
     async createPurchaseOrder(data: {
@@ -144,7 +147,8 @@ export class PurchaseOrderService {
     async receiveGoods(purchaseOrderId: string, destinationLocationId: string, itemsToReceive?: { poItemId: string; quantity: number }[]) {
         console.log(`[PurchaseOrderService] Receiving goods for PO: ${purchaseOrderId} to ${destinationLocationId}`);
 
-        return this.prisma.$transaction(async (tx) => {
+        let capturedWarehouseId: string;
+        const result = await this.prisma.$transaction(async (tx) => {
             const po = await tx.purchaseOrder.findUnique({
                 where: { id: purchaseOrderId },
                 include: { items: { include: { packaging: true, receiptItems: true } } },
@@ -179,8 +183,6 @@ export class PurchaseOrderService {
             }
 
             // 1. Get Warehouse ID
-            // Get warehouse from existing stock moves for this PO (created during PO creation)
-            // We don't use destinationLocationId anymore - it's just for backwards compatibility
             const existingMove = await tx.stockMove.findFirst({
                 where: { origin: purchaseOrderId },
                 include: { destinationLocation: true }
@@ -190,7 +192,6 @@ export class PurchaseOrderService {
             if (existingMove?.destinationLocation?.warehouseId) {
                 warehouseId = existingMove.destinationLocation.warehouseId;
             } else if (destinationLocationId) {
-                // Fallback: try to get warehouse from destinationLocationId if it's valid
                 const location = await tx.location.findUnique({ where: { id: destinationLocationId } });
                 if (location?.warehouseId) {
                     warehouseId = location.warehouseId;
@@ -200,6 +201,7 @@ export class PurchaseOrderService {
             } else {
                 throw new AppError('WAREHOUSE_NOT_DETERMINED');
             }
+            capturedWarehouseId = warehouseId;
 
             // Get or create receiving location for this warehouse
             const receivingLocationId = await this.getReceivingLocation(warehouseId, tx);
@@ -222,15 +224,9 @@ export class PurchaseOrderService {
                 include: { items: true }
             });
 
-
             // 3. Process Inventory (Batches)
-            // Inventory is now created at receivingLocationId (defined above)
-
-            // NEW: Create Linked Transfer Order
-            // Get a real user to use as initiator (use first admin user)
             const adminUser = await tx.user.findFirst();
             if (!adminUser) throw new AppError('NO_USERS_IN_SYSTEM');
-
 
             const transferOrder = await this.stockMoveService.createInboundTransferHeader(tx, {
                 purchaseOrderId: po.id,
@@ -243,13 +239,11 @@ export class PurchaseOrderService {
                 const poItem = item.poItem;
                 const quantityToReceive = item.quantity;
 
-                // Handle Packaging (if applicable)
                 let unitQuantity = quantityToReceive;
                 let isPackaged = false;
                 let totalBaseUnits = quantityToReceive;
 
                 if (poItem.packaging) {
-                    // PO Item quantity is in Packages
                     totalBaseUnits = quantityToReceive * poItem.packaging.quantity;
                     unitQuantity = poItem.packaging.quantity;
                     isPackaged = true;
@@ -257,7 +251,6 @@ export class PurchaseOrderService {
 
                 if (isPackaged) {
                     for (let i = 0; i < quantityToReceive; i++) {
-                        // Create Package LPN
                         const pkg = await tx.package.create({
                             data: {
                                 name: `${poItem.packaging?.type.toUpperCase()}-${Date.now()}-${i}`,
@@ -267,7 +260,6 @@ export class PurchaseOrderService {
                             }
                         });
 
-                        // Create Batch
                         const batchNumber = `BATCH-${Date.now()}-${poItem.productId.substring(0, 4)}-${i}`;
                         await tx.inventoryBatch.create({
                             data: {
@@ -285,7 +277,6 @@ export class PurchaseOrderService {
                         });
                     }
                 } else {
-                    // Standard Item
                     const batchNumber = `BATCH-${Date.now()}-${poItem.productId.substring(0, 4)}`;
                     await tx.inventoryBatch.create({
                         data: {
@@ -302,14 +293,12 @@ export class PurchaseOrderService {
                     });
                 }
 
-                // NEW: Trace Process (For this Item)
                 await this.stockMoveService.generateInboundMoves(tx, transferOrder.id, {
                     productId: poItem.productId,
                     quantity: totalBaseUnits,
                     warehouseId: warehouseId
                 });
 
-                // Update Aggregate Inventory
                 const existingInventory = await tx.productInventory.findFirst({
                     where: { productId: poItem.productId, warehouseId: warehouseId, locationId: receivingLocationId },
                 });
@@ -330,7 +319,6 @@ export class PurchaseOrderService {
                     });
                 }
 
-                // Log Transaction
                 await tx.stockTransaction.create({
                     data: {
                         productId: poItem.productId,
@@ -342,21 +330,11 @@ export class PurchaseOrderService {
                 });
             }
 
-            // 4. Auto-Generate Putaway Tasks
-            // Always generate putaway tasks after receiving - they will determine optimal storage locations
-            console.log(`[PurchaseOrderService] Auto-generating putaway tasks for receipt ${receipt.id}`);
-            await this.putawayService.createTasksForReceipt(tx, {
-                receiptId: receipt.id,
-                warehouseId: warehouseId
-            });
-
             // 5. Update PO Status
-            // Check if fully received
             let allReceived = true;
             let anyReceived = false;
 
             for (const poItem of po.items) {
-                // Include the just-received items
                 const justReceived = itemsToProcess.find(i => i.poItem.id === poItem.id)?.quantity || 0;
                 const previouslyReceived = poItem.receiptItems.reduce((sum, ri) => sum + ri.quantity, 0);
                 const totalReceived = previouslyReceived + justReceived;
@@ -376,7 +354,32 @@ export class PurchaseOrderService {
 
             return receipt;
         });
+
+        // 6. Emit Receipt Completed Event (After transaction commits)
+        const receiptWithItems = await this.prisma.receipt.findUnique({
+            where: { id: result.id },
+            include: { items: true }
+        });
+
+        if (receiptWithItems && capturedWarehouseId) {
+            this.eventEmitter.emit(
+                'receipt.completed',
+                new ReceiptCompletedEvent(
+                    receiptWithItems.id,
+                    capturedWarehouseId,
+                    purchaseOrderId,
+                    receiptWithItems.items.map(item => ({
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        locationId: receiptWithItems.destinationLocationId
+                    }))
+                )
+            );
+        }
+
+        return result;
     }
+
     async submitForApproval(id: string) {
         return this.prisma.purchaseOrder.update({
             where: { id },
@@ -406,12 +409,7 @@ export class PurchaseOrderService {
         });
     }
 
-    /**
-     * Get or create a receiving location for a warehouse
-     * Searches for existing receiving/dock/intake locations, or creates one if none exist
-     */
     private async getReceivingLocation(warehouseId: string, tx: any): Promise<string> {
-        // Try to find existing receiving location
         const receivingLoc = await tx.location.findFirst({
             where: {
                 warehouseId,
@@ -425,13 +423,7 @@ export class PurchaseOrderService {
             }
         });
 
-        if (receivingLoc) {
-            console.log(`[PurchaseOrderService] Found existing receiving location: ${receivingLoc.name} (${receivingLoc.id})`);
-            return receivingLoc.id;
-        }
-
-        // Create a receiving location if none exists
-        console.log(`[PurchaseOrderService] No receiving location found, creating one for warehouse ${warehouseId}`);
+        if (receivingLoc) return receivingLoc.id;
 
         const warehousePrimaryLoc = await tx.location.findFirst({
             where: { warehouseId, parentId: null }
@@ -450,11 +442,8 @@ export class PurchaseOrderService {
             }
         });
 
-        console.log(`[PurchaseOrderService] Created new receiving location: ${newReceivingLoc.name} (${newReceivingLoc.id})`);
         return newReceivingLoc.id;
     }
-
-    // ===== Document Attachments =====
 
     async attachDocument(purchaseOrderId: string, data: {
         documentType: string;
@@ -484,22 +473,18 @@ export class PurchaseOrderService {
         });
     }
 
-    // ===== QA Inspection =====
-
     async submitInspection(purchaseOrderId: string, data: {
         inspectorId?: string;
         notes?: string;
         results: { productId: string; receivedQty: number; acceptedQty: number; rejectedQty: number; rejectionReason?: string }[];
     }) {
         return this.prisma.$transaction(async (tx) => {
-            // Determine overall status
             const totalRejected = data.results.reduce((sum, r) => sum + r.rejectedQty, 0);
             const totalAccepted = data.results.reduce((sum, r) => sum + r.acceptedQty, 0);
             let status = 'PASSED';
             if (totalAccepted === 0 && totalRejected > 0) status = 'FAILED';
             else if (totalRejected > 0) status = 'PARTIAL';
 
-            // 1. Create the Inspection record
             const inspection = await tx.qaInspection.create({
                 data: {
                     purchaseOrderId,
@@ -519,8 +504,6 @@ export class PurchaseOrderService {
                 include: { results: true },
             });
 
-            // 2. Create Inventory Adjustments for rejected goods
-            // Find the PO's warehouse and receiving location
             const po = await tx.purchaseOrder.findUnique({
                 where: { id: purchaseOrderId },
                 include: { receipts: { include: { items: true } } },
@@ -531,7 +514,6 @@ export class PurchaseOrderService {
 
                 for (const result of data.results) {
                     if (result.rejectedQty > 0) {
-                        // Create an inventory adjustment to remove rejected quantity
                         const existingInventory = await tx.productInventory.findFirst({
                             where: {
                                 productId: result.productId,
@@ -546,7 +528,6 @@ export class PurchaseOrderService {
                             });
                         }
 
-                        // Create adjustment record
                         await tx.inventoryAdjustment.create({
                             data: {
                                 locationId: lastReceipt.destinationLocationId,
@@ -559,7 +540,6 @@ export class PurchaseOrderService {
                             },
                         });
 
-                        // Log stock transaction
                         await tx.stockTransaction.create({
                             data: {
                                 productId: result.productId,
@@ -577,25 +557,19 @@ export class PurchaseOrderService {
         });
     }
 
-    // ===== Barcode Scanning =====
-
     async scanReceive(purchaseOrderId: string, barcode: string, locationId?: string) {
-        // Find product by barcode (SKU or ID)
         const product = await this.prisma.product.findFirst({
             where: { OR: [{ sku: barcode }, { id: barcode }] }
         });
         if (!product) throw new HttpException('Product not found for barcode: ' + barcode, 404);
 
-        // Verify product is in PO
         const poItem = await this.prisma.purchaseOrderItem.findFirst({
             where: { purchaseOrderId, productId: product.id }
         });
         if (!poItem) throw new HttpException('Product not in this PO: ' + product.name, 400);
 
-        // Provide a default destination location if none specified
         let targetLocationId = locationId;
         if (!targetLocationId) {
-            // Find any receiving dock or default location
             const defaultLocation = await this.prisma.location.findFirst({
                 where: { OR: [{ type: 'RECEIVING' }, { type: 'DOCK' }] }
             });
@@ -606,7 +580,6 @@ export class PurchaseOrderService {
             }
         }
 
-        // Call standard receive goods for 1 unit
         return this.receiveGoods(purchaseOrderId, targetLocationId, [{
             poItemId: poItem.id,
             quantity: 1
@@ -620,8 +593,6 @@ export class PurchaseOrderService {
             orderBy: { createdAt: 'desc' },
         });
     }
-
-    // ===== 3-Way Match =====
 
     async verifyThreeWayMatch(purchaseOrderId: string) {
         const po = await this.prisma.purchaseOrder.findUnique({
@@ -640,30 +611,23 @@ export class PurchaseOrderService {
         let overallMatch = true;
 
         for (const poItem of po.items) {
-            // PO ordered quantity
             const orderedQty = poItem.quantity;
-
-            // GRN received quantity (sum of all receipt items for this product)
             const receivedQty = po.receipts.reduce((sum, r) =>
                 sum + r.items.filter(ri => ri.productId === poItem.productId)
                     .reduce((s, ri) => s + ri.quantity, 0), 0);
 
-            // QA accepted quantity (if inspections exist)
             const acceptedQty = po.inspections.reduce((sum, insp) =>
                 sum + insp.results.filter(r => r.productId === poItem.productId)
                     .reduce((s, r) => s + r.acceptedQty, 0), 0);
 
-            // Invoice quantity (sum across all invoices for this product)
             const invoicedQty = po.invoices.reduce((sum, inv) =>
                 sum + inv.items.filter(ii => ii.productId === poItem.productId)
                     .reduce((s, ii) => s + ii.quantity, 0), 0);
 
-            // Invoice total for this product
             const invoiceTotal = po.invoices.reduce((sum, inv) =>
                 sum + inv.items.filter(ii => ii.productId === poItem.productId)
                     .reduce((s, ii) => s + ii.totalPrice, 0), 0);
 
-            // Expected cost (PO)
             const expectedCost = orderedQty * poItem.unitCost;
 
             const qtyMatch = orderedQty === receivedQty && (invoicedQty === 0 || invoicedQty === orderedQty);
@@ -687,7 +651,6 @@ export class PurchaseOrderService {
 
         const matchStatus = overallMatch ? 'MATCHED' : 'DISCREPANCY';
 
-        // Update PO status
         await this.prisma.purchaseOrder.update({
             where: { id: purchaseOrderId },
             data: { threeWayMatch: matchStatus },

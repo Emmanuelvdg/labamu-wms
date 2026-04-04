@@ -22,6 +22,11 @@ export default function PickingPage() {
     const [exceptionModal, setExceptionModal] = useState<{ isOpen: boolean; task: any | null }>({ isOpen: false, task: null });
     const [exceptionReason, setExceptionReason] = useState('');
     const [exceptionQuantity, setExceptionQuantity] = useState('0');
+    
+    // Strategy UI Settings
+    const [strategy, setStrategy] = useState<'SINGLE' | 'BATCH' | 'CLUSTER' | 'WAVE' | 'WAVELESS'>('SINGLE');
+    const [criteria, setCriteria] = useState<string>('Destination');
+    const [maxOrders, setMaxOrders] = useState<number>(10);
 
     useEffect(() => {
         loadWarehouses();
@@ -67,9 +72,11 @@ export default function PickingPage() {
         setLoading(true);
         try {
             const { createPickingSession } = await import('@/lib/api');
-            // Strategy is now auto-resolved by backend
             const session = await createPickingSession({
-                warehouseId: selectedWarehouseId
+                warehouseId: selectedWarehouseId,
+                strategy,
+                criteria: strategy === 'WAVELESS' ? undefined : criteria,
+                maxOrders: strategy === 'WAVELESS' ? undefined : maxOrders
             });
             setActiveSession(session);
         } catch (error) {
@@ -193,10 +200,53 @@ export default function PickingPage() {
                     <div className="bg-blue-50 p-6 rounded-full mb-6">
                         <ClipboardList className="h-12 w-12 text-blue-600" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Ready to Start Picking?</h2>
-                    <p className="text-gray-500 max-w-md mb-8">
-                        The system will automatically assign tasks based on the warehouse's configured strategy (Default: Single Order).
-                    </p>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Configure Picking Session</h2>
+                    
+                    <div className="w-full max-w-sm text-left mb-8">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Strategy</label>
+                        <select 
+                            value={strategy}
+                            onChange={(e: any) => setStrategy(e.target.value)}
+                            className="w-full border border-gray-300 rounded-md py-2 px-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        >
+                            <option value="SINGLE">Single Order</option>
+                            <option value="BATCH">Batch Picking</option>
+                            <option value="CLUSTER">Cluster Picking</option>
+                            <option value="WAVE">Wave Picking</option>
+                            <option value="WAVELESS">Waveless (Continuous Flow)</option>
+                        </select>
+                        {(strategy === 'BATCH' || strategy === 'CLUSTER') && (
+                            <div className="mt-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Grouping Criteria</label>
+                                <select 
+                                    value={criteria}
+                                    onChange={(e) => setCriteria(e.target.value)}
+                                    className="w-full border border-gray-300 rounded-md py-2 px-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                >
+                                    <option value="Destination">Destination</option>
+                                    <option value="Product Type">Product Type</option>
+                                    <option value="Shipping Cut-off">Shipping Cut-off</option>
+                                </select>
+                            </div>
+                        )}
+                        {(strategy === 'WAVE' || strategy === 'SINGLE' || strategy === 'BATCH' || strategy === 'CLUSTER') && (
+                            <div className="mt-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Max Orders Limit</label>
+                                <input 
+                                    type="number" 
+                                    min="1" max="100"
+                                    value={maxOrders}
+                                    onChange={(e) => setMaxOrders(parseInt(e.target.value) || 1)}
+                                    className="w-full border border-gray-300 rounded-md py-2 px-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                />
+                            </div>
+                        )}
+                        {strategy === 'WAVELESS' && (
+                            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-md text-sm">
+                                <b>Waveless Mode:</b> Tasks will be continuously assigned from a live queue as orders are reserved. Grouping controls are disabled.
+                            </div>
+                        )}
+                    </div>
 
                     <button
                         onClick={() => startSession()}

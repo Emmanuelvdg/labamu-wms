@@ -345,7 +345,6 @@ model Order {
   items                  OrderItem[]
   pickingTasks           PickingTask[]
   reservations           Reservation[]
-  workflowInstances      WorkflowInstance[]
   shipment               Shipment?
   packingSession         PackingSession?
   transferOrders         TransferOrder[]
@@ -1181,7 +1180,6 @@ model WorkflowInstance {
 
   template  WorkflowTemplate       @relation(fields: [templateId], references: [id])
   warehouse Warehouse              @relation(fields: [warehouseId], references: [id])
-  Order     Order?                 @relation(fields: [triggerRef], references: [id])
   tasks     WorkflowTaskInstance[]
   auditLogs WorkflowAuditLog[]
 }
