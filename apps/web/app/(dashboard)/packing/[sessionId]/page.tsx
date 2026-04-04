@@ -70,27 +70,32 @@ export default function PackingWorkspacePage() {
             setScanResult(result);
             toast.success(`✅ ${result.product.name} verified (${result.remaining} remaining)`);
 
-            // Auto-add to parcel items if parcel form is open
-            if (showParcelForm) {
-                const existingIdx = parcelItems.findIndex(pi => pi.productId === result.product.id);
-                if (existingIdx >= 0) {
-                    const updated = [...parcelItems];
-                    if (updated[existingIdx].quantity < result.remaining) {
+            // Auto-add to parcel items
+            const existingIdx = parcelItems.findIndex(pi => pi.productId === result.product.id);
+            if (existingIdx >= 0) {
+                const updated = [...parcelItems];
+                if (updated[existingIdx].quantity < result.remaining + updated[existingIdx].quantity) {
+                    // result.remaining is relative to what's already in the database
+                    // we need to check if we can add more
+                    if (updated[existingIdx].quantity < result.remaining + updated[existingIdx].quantity) {
                         updated[existingIdx].quantity += 1;
                         setParcelItems(updated);
                     }
-                } else {
-                    setParcelItems([
-                        ...parcelItems,
-                        {
-                            productId: result.product.id,
-                            productName: result.product.name,
-                            sku: result.product.sku,
-                            quantity: 1,
-                            maxQty: result.remaining,
-                        },
-                    ]);
                 }
+            } else {
+                setParcelItems([
+                    ...parcelItems,
+                    {
+                        productId: result.product.id,
+                        productName: result.product.name,
+                        sku: result.product.sku,
+                        quantity: 1,
+                        maxQty: result.remaining,
+                    },
+                ]);
+            }
+            if (!showParcelForm) {
+                setShowParcelForm(true);
             }
         } catch (err: any) {
             setScanError(err.message || 'Scan failed');
@@ -177,8 +182,19 @@ export default function PackingWorkspacePage() {
     if (loading) return <div className="p-8">Loading packing session...</div>;
     if (!session) return <div className="p-8">Session not found</div>;
 
+    const stagedItemsMap = parcelItems.reduce((acc, item) => {
+        acc[item.productId] = (acc[item.productId] || 0) + item.quantity;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const totalPackedCommitted = session?.progress?.reduce((s: number, p: any) => s + p.packedQty, 0) || 0;
+    const totalStaged = parcelItems.reduce((s, p) => s + p.quantity, 0);
+    const totalPacked = totalPackedCommitted + totalStaged;
+    const totalOrdered = session?.progress?.reduce((s: number, p: any) => s + p.orderedQty, 0) || 0;
+    const totalRemaining = totalOrdered - totalPacked;
+
     const isCompleted = session.status === 'COMPLETED';
-    const allPacked = session.allItemsPacked;
+    const allPacked = totalRemaining === 0;
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -203,8 +219,8 @@ export default function PackingWorkspacePage() {
                     <div className="flex items-center gap-2">
                         <span
                             className={`px-3 py-1 rounded-full text-sm font-medium ${isCompleted
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-blue-100 text-blue-800'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-blue-100 text-blue-800'
                                 }`}
                         >
                             {isCompleted ? 'COMPLETED' : 'IN PROGRESS'}
@@ -266,8 +282,8 @@ export default function PackingWorkspacePage() {
                                 <div
                                     key={item.productId}
                                     className={`flex items-center justify-between p-4 rounded-lg border ${item.remaining === 0
-                                            ? 'bg-green-50 border-green-200'
-                                            : 'bg-gray-50 border-gray-200'
+                                        ? 'bg-green-50 border-green-200'
+                                        : 'bg-gray-50 border-gray-200'
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -283,10 +299,12 @@ export default function PackingWorkspacePage() {
                                     </div>
                                     <div className="text-right">
                                         <div className="text-sm font-medium">
-                                            {item.packedQty} / {item.orderedQty}
+                                            {item.packedQty + (stagedItemsMap[item.productId] || 0)} / {item.orderedQty}
                                         </div>
                                         <div className="text-xs text-gray-500">
-                                            {item.remaining > 0 ? `${item.remaining} remaining` : 'Complete'}
+                                            {item.remaining - (stagedItemsMap[item.productId] || 0) > 0
+                                                ? `${item.remaining - (stagedItemsMap[item.productId] || 0)} remaining`
+                                                : 'Staged for parcel'}
                                         </div>
                                     </div>
                                 </div>
@@ -476,19 +494,24 @@ export default function PackingWorkspacePage() {
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Total items</span>
                                 <span className="font-medium">
-                                    {session.progress.reduce((s: number, p: any) => s + p.orderedQty, 0)} units
+                                    {totalOrdered} units
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Packed</span>
                                 <span className="font-medium text-green-600">
-                                    {session.progress.reduce((s: number, p: any) => s + p.packedQty, 0)} units
+                                    {totalPacked} units
+                                    {totalStaged > 0 && (
+                                        <span className="ml-1 text-xs text-blue-600 font-normal">
+                                            (+{totalStaged} staged)
+                                        </span>
+                                    )}
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Remaining</span>
                                 <span className={`font-medium ${allPacked ? 'text-green-600' : 'text-orange-600'}`}>
-                                    {session.progress.reduce((s: number, p: any) => s + p.remaining, 0)} units
+                                    {totalRemaining} units
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">
@@ -502,10 +525,7 @@ export default function PackingWorkspacePage() {
                                     <div
                                         className="bg-green-500 h-2 rounded-full transition-all"
                                         style={{
-                                            width: `${(session.progress.reduce((s: number, p: any) => s + p.packedQty, 0) /
-                                                    Math.max(session.progress.reduce((s: number, p: any) => s + p.orderedQty, 0), 1)) *
-                                                100
-                                                }%`,
+                                            width: `${(totalPacked / Math.max(totalOrdered, 1)) * 100}%`,
                                         }}
                                     />
                                 </div>
