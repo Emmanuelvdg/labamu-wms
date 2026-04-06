@@ -223,6 +223,16 @@ export class OrderService {
 
     async createShipment(data: { orderId: string; carrier: string; trackingId: string }) {
         return this.prisma.$transaction(async (tx) => {
+            // Guard: Ensure the order exists and has at least one line item
+            const orderCheck = await tx.order.findUnique({
+                where: { id: data.orderId },
+                include: { items: true }
+            });
+            if (!orderCheck) throw new AppError('ORDER_NOT_FOUND', { orderId: data.orderId });
+            if (orderCheck.items.length === 0) {
+                throw new BadRequestException('Cannot ship an order with no line items. Please add products to this order first.');
+            }
+
             // 1. Create Shipment
             const shipment = await tx.shipment.create({
                 data: {

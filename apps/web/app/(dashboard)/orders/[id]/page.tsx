@@ -405,6 +405,17 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                 </tr>
                             );
                         })}
+                        {order.items.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="px-6 py-10 text-center">
+                                    <div className="flex flex-col items-center gap-2 text-amber-600">
+                                        <AlertCircle className="h-8 w-8" />
+                                        <p className="font-semibold text-base">No line items recorded</p>
+                                        <p className="text-sm text-gray-500">This order has no associated products. It may have been created incorrectly or during a system issue.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>

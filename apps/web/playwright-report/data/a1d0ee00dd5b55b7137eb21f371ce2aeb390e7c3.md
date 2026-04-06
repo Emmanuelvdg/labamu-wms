@@ -1,0 +1,69 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - generic: Labamu
+      - navigation:
+        - link:
+          - /url: /
+          - img
+          - text: Dashboard
+        - link:
+          - /url: /user-guide
+          - img
+          - text: User Guide
+      - generic:
+        - link:
+          - /url: /login
+          - text: Sign Out
+    - generic:
+      - banner:
+        - generic:
+          - button:
+            - img
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - heading [level=1]: Routes (Workflows)
+              - paragraph: Manage physical movement paths inside the warehouse using the visual workflow engine.
+            - button [expanded]:
+              - img
+              - text: New Route
+          - generic:
+            - generic:
+              - img
+            - heading [level=3]: No custom routes found
+            - paragraph: Create your first spatial route to automate movement tasks.
+  - region "Notifications alt+T"
+  - generic [ref=e5] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e6]:
+      - img [ref=e7]
+    - generic [ref=e10]:
+      - button "Open issues overlay" [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]: "2"
+          - generic [ref=e14]: "3"
+        - generic [ref=e15]:
+          - text: Issue
+          - generic [ref=e16]: s
+      - button "Collapse issues badge" [ref=e17]:
+        - img [ref=e18]
+  - alert
+  - dialog "Create New Route Strategy" [ref=e21]:
+    - heading "Create New Route Strategy" [level=2] [ref=e23]
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - text: Route Name
+        - textbox "Route Name" [ref=e26]: Route 1774937985930
+      - generic [ref=e27]:
+        - text: Description
+        - textbox "Description" [ref=e28]: Custom flow 1774937985930
+      - button "Create & Edit Canvas" [active] [ref=e30]
+    - button "Close" [ref=e31]:
+      - img [ref=e32]
+      - generic [ref=e35]: Close
+```

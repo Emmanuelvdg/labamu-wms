@@ -1,0 +1,169 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]: Labamu
+      - navigation [ref=e6]:
+        - link "Dashboard" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - text: Dashboard
+        - link "Mobile Hub" [ref=e13] [cursor=pointer]:
+          - /url: /mobile/dashboard
+          - img [ref=e14]
+          - text: Mobile Hub
+        - link "Report" [ref=e16] [cursor=pointer]:
+          - /url: /reporting
+          - img [ref=e17]
+          - text: Report
+        - link "Product" [ref=e20] [cursor=pointer]:
+          - /url: /inventory
+          - img [ref=e21]
+          - text: Product
+        - link "Lot Number" [ref=e24] [cursor=pointer]:
+          - /url: /inventory/batches
+          - img [ref=e25]
+          - text: Lot Number
+        - link "Package" [ref=e29] [cursor=pointer]:
+          - /url: /inventory/packages
+          - img [ref=e30]
+          - text: Package
+        - generic [ref=e34]:
+          - button "Inbound" [ref=e35]:
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - text: Inbound
+            - img [ref=e42]
+          - generic [ref=e44]:
+            - link "Suppliers" [ref=e45] [cursor=pointer]:
+              - /url: /inventory/suppliers
+            - link "Purchase Orders" [ref=e46] [cursor=pointer]:
+              - /url: /inventory/purchases
+            - link "Putaway" [ref=e47] [cursor=pointer]:
+              - /url: /putaway
+            - link "Putaway Rules" [ref=e48] [cursor=pointer]:
+              - /url: /inventory/putaway-rules
+        - generic [ref=e49]:
+          - button "Outbound" [ref=e50]:
+            - generic [ref=e51]:
+              - img [ref=e52]
+              - text: Outbound
+            - img [ref=e56]
+          - generic [ref=e58]:
+            - link "Customers" [ref=e59] [cursor=pointer]:
+              - /url: /customers
+            - link "Orders" [ref=e60] [cursor=pointer]:
+              - /url: /orders
+            - link "Picking" [ref=e61] [cursor=pointer]:
+              - /url: /picking
+            - link "Packing" [ref=e62] [cursor=pointer]:
+              - /url: /packing
+            - link "Returns (RMA)" [ref=e63] [cursor=pointer]:
+              - /url: /returns
+            - link "Shipments" [ref=e64] [cursor=pointer]:
+              - /url: /shipments
+            - link "Invoices" [ref=e65] [cursor=pointer]:
+              - /url: /invoices
+        - generic [ref=e66]:
+          - button "Inventory" [ref=e67]:
+            - generic [ref=e68]:
+              - img [ref=e69]
+              - text: Inventory
+            - img [ref=e72]
+          - generic [ref=e74]:
+            - link "Inventory List" [ref=e75] [cursor=pointer]:
+              - /url: /inventory
+            - link "Stocktaking" [ref=e76] [cursor=pointer]:
+              - /url: /stocktaking
+            - link "Moves" [ref=e77] [cursor=pointer]:
+              - /url: /inventory/moves
+            - link "Transfers" [ref=e78] [cursor=pointer]:
+              - /url: /transfers
+            - link "Adjustments" [ref=e79] [cursor=pointer]:
+              - /url: /inventory/adjustments
+            - link "Scrap" [ref=e80] [cursor=pointer]:
+              - /url: /inventory/scrap
+            - link "Replenishment" [ref=e81] [cursor=pointer]:
+              - /url: /inventory/replenishment
+        - generic [ref=e82]:
+          - button "Warehouse" [ref=e83]:
+            - generic [ref=e84]:
+              - img [ref=e85]
+              - text: Warehouse
+            - img [ref=e87]
+          - generic [ref=e89]:
+            - link "Locations" [ref=e90] [cursor=pointer]:
+              - /url: /inventory/locations
+            - link "Warehouses" [ref=e91] [cursor=pointer]:
+              - /url: /inventory/warehouses
+            - link "Floor Plan" [ref=e92] [cursor=pointer]:
+              - /url: /floor-plan
+            - link "Routes" [ref=e93] [cursor=pointer]:
+              - /url: /inventory/routes
+        - button "Workflows" [ref=e95]:
+          - generic [ref=e96]:
+            - img [ref=e97]
+            - text: Workflows
+          - img [ref=e101]
+        - link "Settings" [ref=e103] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e104]
+          - text: Settings
+        - link "User Guide" [ref=e107] [cursor=pointer]:
+          - /url: /user-guide
+          - img [ref=e108]
+          - text: User Guide
+      - link "Sign Out" [ref=e111] [cursor=pointer]:
+        - /url: /login
+    - generic [ref=e112]:
+      - banner [ref=e113]:
+        - button "Notifications" [ref=e115]:
+          - img [ref=e116]
+      - main [ref=e119]:
+        - generic [ref=e120]:
+          - generic [ref=e121]:
+            - generic [ref=e122]:
+              - heading "Roles & Permissions" [level=1] [ref=e123]:
+                - img [ref=e124]
+                - text: Roles & Permissions
+              - paragraph [ref=e126]: Manage user roles and access control.
+            - button "Create Role" [active] [ref=e127]:
+              - img [ref=e128]
+              - text: Create Role
+          - generic [ref=e129]:
+            - generic [ref=e130]:
+              - generic [ref=e131]:
+                - heading "Admin" [level=3] [ref=e132]
+                - generic [ref=e133]:
+                  - button [ref=e134]:
+                    - img [ref=e135]
+                  - button [ref=e138]:
+                    - img [ref=e139]
+              - generic [ref=e142]:
+                - paragraph [ref=e143]: Administrator with full access
+                - generic [ref=e144]: 15 permissions configured
+                - generic [ref=e145]: 1 users assigned
+            - generic [ref=e146]:
+              - generic [ref=e147]:
+                - heading "Test Reader" [level=3] [ref=e148]
+                - generic [ref=e149]:
+                  - button [ref=e150]:
+                    - img [ref=e151]
+                  - button [ref=e154]:
+                    - img [ref=e155]
+              - generic [ref=e158]:
+                - paragraph [ref=e159]: No description
+                - generic [ref=e160]: 1 permissions configured
+                - generic [ref=e161]: 1 users assigned
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e167] [cursor=pointer]:
+    - generic [ref=e170]:
+      - text: Compiling
+      - generic [ref=e171]:
+        - generic [ref=e172]: .
+        - generic [ref=e173]: .
+        - generic [ref=e174]: .
+  - alert [ref=e175]
+```

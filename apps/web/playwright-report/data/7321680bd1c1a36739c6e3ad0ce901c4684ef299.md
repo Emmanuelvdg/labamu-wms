@@ -1,0 +1,489 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]: Labamu
+      - navigation [ref=e6]:
+        - link "Dashboard" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - text: Dashboard
+        - link "Mobile Hub" [ref=e13] [cursor=pointer]:
+          - /url: /mobile/dashboard
+          - img [ref=e14]
+          - text: Mobile Hub
+        - link "Report" [ref=e16] [cursor=pointer]:
+          - /url: /reporting
+          - img [ref=e17]
+          - text: Report
+        - link "Product" [ref=e20] [cursor=pointer]:
+          - /url: /inventory
+          - img [ref=e21]
+          - text: Product
+        - link "Lot Number" [ref=e24] [cursor=pointer]:
+          - /url: /inventory/batches
+          - img [ref=e25]
+          - text: Lot Number
+        - link "Package" [ref=e29] [cursor=pointer]:
+          - /url: /inventory/packages
+          - img [ref=e30]
+          - text: Package
+        - generic [ref=e34]:
+          - button "Inbound" [ref=e35]:
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - text: Inbound
+            - img [ref=e42]
+          - generic [ref=e44]:
+            - link "Suppliers" [ref=e45] [cursor=pointer]:
+              - /url: /inventory/suppliers
+            - link "Purchase Orders" [ref=e46] [cursor=pointer]:
+              - /url: /inventory/purchases
+            - link "Putaway" [ref=e47] [cursor=pointer]:
+              - /url: /putaway
+            - link "Putaway Rules" [ref=e48] [cursor=pointer]:
+              - /url: /inventory/putaway-rules
+        - generic [ref=e49]:
+          - button "Outbound" [ref=e50]:
+            - generic [ref=e51]:
+              - img [ref=e52]
+              - text: Outbound
+            - img [ref=e56]
+          - generic [ref=e58]:
+            - link "Customers" [ref=e59] [cursor=pointer]:
+              - /url: /customers
+            - link "Orders" [ref=e60] [cursor=pointer]:
+              - /url: /orders
+            - link "Picking" [ref=e61] [cursor=pointer]:
+              - /url: /picking
+            - link "Packing" [ref=e62] [cursor=pointer]:
+              - /url: /packing
+            - link "Returns (RMA)" [ref=e63] [cursor=pointer]:
+              - /url: /returns
+            - link "Shipments" [ref=e64] [cursor=pointer]:
+              - /url: /shipments
+            - link "Invoices" [ref=e65] [cursor=pointer]:
+              - /url: /invoices
+        - generic [ref=e66]:
+          - button "Inventory" [ref=e67]:
+            - generic [ref=e68]:
+              - img [ref=e69]
+              - text: Inventory
+            - img [ref=e72]
+          - generic [ref=e74]:
+            - link "Inventory List" [ref=e75] [cursor=pointer]:
+              - /url: /inventory
+            - link "Stocktaking" [ref=e76] [cursor=pointer]:
+              - /url: /stocktaking
+            - link "Moves" [ref=e77] [cursor=pointer]:
+              - /url: /inventory/moves
+            - link "Transfers" [ref=e78] [cursor=pointer]:
+              - /url: /transfers
+            - link "Adjustments" [ref=e79] [cursor=pointer]:
+              - /url: /inventory/adjustments
+            - link "Scrap" [ref=e80] [cursor=pointer]:
+              - /url: /inventory/scrap
+            - link "Replenishment" [ref=e81] [cursor=pointer]:
+              - /url: /inventory/replenishment
+        - generic [ref=e82]:
+          - button "Warehouse" [ref=e83]:
+            - generic [ref=e84]:
+              - img [ref=e85]
+              - text: Warehouse
+            - img [ref=e87]
+          - generic [ref=e89]:
+            - link "Locations" [ref=e90] [cursor=pointer]:
+              - /url: /inventory/locations
+            - link "Warehouses" [ref=e91] [cursor=pointer]:
+              - /url: /inventory/warehouses
+            - link "Floor Plan" [ref=e92] [cursor=pointer]:
+              - /url: /floor-plan
+            - link "Routes" [ref=e93] [cursor=pointer]:
+              - /url: /inventory/routes
+        - button "Workflows" [ref=e95]:
+          - generic [ref=e96]:
+            - img [ref=e97]
+            - text: Workflows
+          - img [ref=e101]
+        - link "Settings" [ref=e103] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e104]
+          - text: Settings
+        - link "User Guide" [ref=e107] [cursor=pointer]:
+          - /url: /user-guide
+          - img [ref=e108]
+          - text: User Guide
+      - link "Sign Out" [ref=e111] [cursor=pointer]:
+        - /url: /login
+    - generic [ref=e112]:
+      - banner [ref=e113]:
+        - button "Notifications" [ref=e115]:
+          - img [ref=e116]
+      - main [ref=e119]:
+        - generic [ref=e120]:
+          - generic [ref=e121]:
+            - generic [ref=e122]:
+              - heading "Warehouses" [level=1] [ref=e123]
+              - paragraph [ref=e124]: Manage your storage locations and fulfillment centers
+            - button "+ Add Warehouse" [ref=e125]
+          - table [ref=e127]:
+            - rowgroup [ref=e128]:
+              - row "Warehouse ID Warehouse Name Status Dimension (L x W x H) Load-Bearing Capacity (Kg) Created At Updated At Actions" [ref=e129]:
+                - columnheader "Warehouse ID" [ref=e130]
+                - columnheader "Warehouse Name" [ref=e131]
+                - columnheader "Status" [ref=e132]
+                - columnheader "Dimension (L x W x H)" [ref=e133]
+                - columnheader "Load-Bearing Capacity (Kg)" [ref=e134]
+                - columnheader "Created At" [ref=e135]
+                - columnheader "Updated At" [ref=e136]
+                - columnheader "Actions" [ref=e137]:
+                  - generic [ref=e138]: Actions
+            - rowgroup [ref=e139]:
+              - row "FF37B5D9 Distribution Center 1 Enabled - - 07-03-2026 14:10 07-03-2026 14:11" [ref=e140]:
+                - cell "FF37B5D9" [ref=e141]
+                - cell "Distribution Center 1" [ref=e142]
+                - cell "Enabled" [ref=e143]:
+                  - generic [ref=e144]: Enabled
+                - cell "-" [ref=e145]
+                - cell "-" [ref=e146]
+                - cell "07-03-2026 14:10" [ref=e147]
+                - cell "07-03-2026 14:11" [ref=e148]
+                - cell [ref=e149]:
+                  - generic [ref=e150]:
+                    - button "Edit Warehouse" [ref=e151]:
+                      - img [ref=e152]
+                    - button "Delete Warehouse" [ref=e154]:
+                      - img [ref=e155]
+              - row "CDC Central DC Enabled - - 09-03-2026 08:37 30-03-2026 11:43" [ref=e158]:
+                - cell "CDC" [ref=e159]
+                - cell "Central DC" [ref=e160]
+                - cell "Enabled" [ref=e161]:
+                  - generic [ref=e162]: Enabled
+                - cell "-" [ref=e163]
+                - cell "-" [ref=e164]
+                - cell "09-03-2026 08:37" [ref=e165]
+                - cell "30-03-2026 11:43" [ref=e166]
+                - cell [ref=e167]:
+                  - generic [ref=e168]:
+                    - button "Edit Warehouse" [ref=e169]:
+                      - img [ref=e170]
+                    - button "Delete Warehouse" [ref=e172]:
+                      - img [ref=e173]
+              - row "CDC1198 Central DC 1773016911198 Enabled - - 09-03-2026 08:41 09-03-2026 08:41" [ref=e176]:
+                - cell "CDC1198" [ref=e177]
+                - cell "Central DC 1773016911198" [ref=e178]
+                - cell "Enabled" [ref=e179]:
+                  - generic [ref=e180]: Enabled
+                - cell "-" [ref=e181]
+                - cell "-" [ref=e182]
+                - cell "09-03-2026 08:41" [ref=e183]
+                - cell "09-03-2026 08:41" [ref=e184]
+                - cell [ref=e185]:
+                  - generic [ref=e186]:
+                    - button "Edit Warehouse" [ref=e187]:
+                      - img [ref=e188]
+                    - button "Delete Warehouse" [ref=e190]:
+                      - img [ref=e191]
+              - row "CDC3696 Central DC 1773016973696 Enabled - - 09-03-2026 08:42 09-03-2026 08:42" [ref=e194]:
+                - cell "CDC3696" [ref=e195]
+                - cell "Central DC 1773016973696" [ref=e196]
+                - cell "Enabled" [ref=e197]:
+                  - generic [ref=e198]: Enabled
+                - cell "-" [ref=e199]
+                - cell "-" [ref=e200]
+                - cell "09-03-2026 08:42" [ref=e201]
+                - cell "09-03-2026 08:42" [ref=e202]
+                - cell [ref=e203]:
+                  - generic [ref=e204]:
+                    - button "Edit Warehouse" [ref=e205]:
+                      - img [ref=e206]
+                    - button "Delete Warehouse" [ref=e208]:
+                      - img [ref=e209]
+              - row "CDC1436 Central DC 1773017021436 Enabled - - 09-03-2026 08:43 09-03-2026 08:43" [ref=e212]:
+                - cell "CDC1436" [ref=e213]
+                - cell "Central DC 1773017021436" [ref=e214]
+                - cell "Enabled" [ref=e215]:
+                  - generic [ref=e216]: Enabled
+                - cell "-" [ref=e217]
+                - cell "-" [ref=e218]
+                - cell "09-03-2026 08:43" [ref=e219]
+                - cell "09-03-2026 08:43" [ref=e220]
+                - cell [ref=e221]:
+                  - generic [ref=e222]:
+                    - button "Edit Warehouse" [ref=e223]:
+                      - img [ref=e224]
+                    - button "Delete Warehouse" [ref=e226]:
+                      - img [ref=e227]
+              - row "CDC2687 Central DC 1773017102687 Enabled - - 09-03-2026 08:45 09-03-2026 08:45" [ref=e230]:
+                - cell "CDC2687" [ref=e231]
+                - cell "Central DC 1773017102687" [ref=e232]
+                - cell "Enabled" [ref=e233]:
+                  - generic [ref=e234]: Enabled
+                - cell "-" [ref=e235]
+                - cell "-" [ref=e236]
+                - cell "09-03-2026 08:45" [ref=e237]
+                - cell "09-03-2026 08:45" [ref=e238]
+                - cell [ref=e239]:
+                  - generic [ref=e240]:
+                    - button "Edit Warehouse" [ref=e241]:
+                      - img [ref=e242]
+                    - button "Delete Warehouse" [ref=e244]:
+                      - img [ref=e245]
+              - row "CDC2004 Central DC 1773018562004 Enabled - - 09-03-2026 09:09 09-03-2026 09:09" [ref=e248]:
+                - cell "CDC2004" [ref=e249]
+                - cell "Central DC 1773018562004" [ref=e250]
+                - cell "Enabled" [ref=e251]:
+                  - generic [ref=e252]: Enabled
+                - cell "-" [ref=e253]
+                - cell "-" [ref=e254]
+                - cell "09-03-2026 09:09" [ref=e255]
+                - cell "09-03-2026 09:09" [ref=e256]
+                - cell [ref=e257]:
+                  - generic [ref=e258]:
+                    - button "Edit Warehouse" [ref=e259]:
+                      - img [ref=e260]
+                    - button "Delete Warehouse" [ref=e262]:
+                      - img [ref=e263]
+              - row "CDC9675 Central DC 1773018839675 Enabled - - 09-03-2026 09:14 09-03-2026 09:14" [ref=e266]:
+                - cell "CDC9675" [ref=e267]
+                - cell "Central DC 1773018839675" [ref=e268]
+                - cell "Enabled" [ref=e269]:
+                  - generic [ref=e270]: Enabled
+                - cell "-" [ref=e271]
+                - cell "-" [ref=e272]
+                - cell "09-03-2026 09:14" [ref=e273]
+                - cell "09-03-2026 09:14" [ref=e274]
+                - cell [ref=e275]:
+                  - generic [ref=e276]:
+                    - button "Edit Warehouse" [ref=e277]:
+                      - img [ref=e278]
+                    - button "Delete Warehouse" [ref=e280]:
+                      - img [ref=e281]
+              - 'row "FFB5CC39 External: MRP Enabled - - 09-03-2026 12:58 09-03-2026 12:58" [ref=e284]':
+                - cell "FFB5CC39" [ref=e285]
+                - 'cell "External: MRP" [ref=e286]'
+                - cell "Enabled" [ref=e287]:
+                  - generic [ref=e288]: Enabled
+                - cell "-" [ref=e289]
+                - cell "-" [ref=e290]
+                - cell "09-03-2026 12:58" [ref=e291]
+                - cell "09-03-2026 12:58" [ref=e292]
+                - cell [ref=e293]:
+                  - generic [ref=e294]:
+                    - button "Edit Warehouse" [ref=e295]:
+                      - img [ref=e296]
+                    - button "Delete Warehouse" [ref=e298]:
+                      - img [ref=e299]
+              - row "WF5032 Workflow WH 1774583005032 Enabled - - 27-03-2026 11:43 27-03-2026 11:43" [ref=e302]:
+                - cell "WF5032" [ref=e303]
+                - cell "Workflow WH 1774583005032" [ref=e304]
+                - cell "Enabled" [ref=e305]:
+                  - generic [ref=e306]: Enabled
+                - cell "-" [ref=e307]
+                - cell "-" [ref=e308]
+                - cell "27-03-2026 11:43" [ref=e309]
+                - cell "27-03-2026 11:43" [ref=e310]
+                - cell [ref=e311]:
+                  - generic [ref=e312]:
+                    - button "Edit Warehouse" [ref=e313]:
+                      - img [ref=e314]
+                    - button "Delete Warehouse" [ref=e316]:
+                      - img [ref=e317]
+              - row "WF2031 Workflow WH 1774584212031 Enabled - - 27-03-2026 12:03 27-03-2026 12:03" [ref=e320]:
+                - cell "WF2031" [ref=e321]
+                - cell "Workflow WH 1774584212031" [ref=e322]
+                - cell "Enabled" [ref=e323]:
+                  - generic [ref=e324]: Enabled
+                - cell "-" [ref=e325]
+                - cell "-" [ref=e326]
+                - cell "27-03-2026 12:03" [ref=e327]
+                - cell "27-03-2026 12:03" [ref=e328]
+                - cell [ref=e329]:
+                  - generic [ref=e330]:
+                    - button "Edit Warehouse" [ref=e331]:
+                      - img [ref=e332]
+                    - button "Delete Warehouse" [ref=e334]:
+                      - img [ref=e335]
+              - row "WF1378 Workflow WH 1774595211378 Enabled - - 27-03-2026 15:06 27-03-2026 15:06" [ref=e338]:
+                - cell "WF1378" [ref=e339]
+                - cell "Workflow WH 1774595211378" [ref=e340]
+                - cell "Enabled" [ref=e341]:
+                  - generic [ref=e342]: Enabled
+                - cell "-" [ref=e343]
+                - cell "-" [ref=e344]
+                - cell "27-03-2026 15:06" [ref=e345]
+                - cell "27-03-2026 15:06" [ref=e346]
+                - cell [ref=e347]:
+                  - generic [ref=e348]:
+                    - button "Edit Warehouse" [ref=e349]:
+                      - img [ref=e350]
+                    - button "Delete Warehouse" [ref=e352]:
+                      - img [ref=e353]
+              - row "WF6207 Workflow WH 1774658906207 Enabled - - 28-03-2026 08:48 28-03-2026 08:48" [ref=e356]:
+                - cell "WF6207" [ref=e357]
+                - cell "Workflow WH 1774658906207" [ref=e358]
+                - cell "Enabled" [ref=e359]:
+                  - generic [ref=e360]: Enabled
+                - cell "-" [ref=e361]
+                - cell "-" [ref=e362]
+                - cell "28-03-2026 08:48" [ref=e363]
+                - cell "28-03-2026 08:48" [ref=e364]
+                - cell [ref=e365]:
+                  - generic [ref=e366]:
+                    - button "Edit Warehouse" [ref=e367]:
+                      - img [ref=e368]
+                    - button "Delete Warehouse" [ref=e370]:
+                      - img [ref=e371]
+              - row "WF0027 Workflow WH 1774658990027 Enabled - - 28-03-2026 08:49 28-03-2026 08:49" [ref=e374]:
+                - cell "WF0027" [ref=e375]
+                - cell "Workflow WH 1774658990027" [ref=e376]
+                - cell "Enabled" [ref=e377]:
+                  - generic [ref=e378]: Enabled
+                - cell "-" [ref=e379]
+                - cell "-" [ref=e380]
+                - cell "28-03-2026 08:49" [ref=e381]
+                - cell "28-03-2026 08:49" [ref=e382]
+                - cell [ref=e383]:
+                  - generic [ref=e384]:
+                    - button "Edit Warehouse" [ref=e385]:
+                      - img [ref=e386]
+                    - button "Delete Warehouse" [ref=e388]:
+                      - img [ref=e389]
+              - row "WF4532 Workflow WH 1774664304532 Enabled - - 28-03-2026 10:18 28-03-2026 10:18" [ref=e392]:
+                - cell "WF4532" [ref=e393]
+                - cell "Workflow WH 1774664304532" [ref=e394]
+                - cell "Enabled" [ref=e395]:
+                  - generic [ref=e396]: Enabled
+                - cell "-" [ref=e397]
+                - cell "-" [ref=e398]
+                - cell "28-03-2026 10:18" [ref=e399]
+                - cell "28-03-2026 10:18" [ref=e400]
+                - cell [ref=e401]:
+                  - generic [ref=e402]:
+                    - button "Edit Warehouse" [ref=e403]:
+                      - img [ref=e404]
+                    - button "Delete Warehouse" [ref=e406]:
+                      - img [ref=e407]
+              - row "TPWH Test Putaway WH Enabled - - 31-03-2026 10:50 31-03-2026 10:50" [ref=e410]:
+                - cell "TPWH" [ref=e411]
+                - cell "Test Putaway WH" [ref=e412]
+                - cell "Enabled" [ref=e413]:
+                  - generic [ref=e414]: Enabled
+                - cell "-" [ref=e415]
+                - cell "-" [ref=e416]
+                - cell "31-03-2026 10:50" [ref=e417]
+                - cell "31-03-2026 10:50" [ref=e418]
+                - cell [ref=e419]:
+                  - generic [ref=e420]:
+                    - button "Edit Warehouse" [ref=e421]:
+                      - img [ref=e422]
+                    - button "Delete Warehouse" [ref=e424]:
+                      - img [ref=e425]
+              - row "RWH1774937977040_954 RotationWH_1774937977040_0.647326893825489 Enabled - - 31-03-2026 14:19 31-03-2026 14:19" [ref=e428]:
+                - cell "RWH1774937977040_954" [ref=e429]
+                - cell "RotationWH_1774937977040_0.647326893825489" [ref=e430]
+                - cell "Enabled" [ref=e431]:
+                  - generic [ref=e432]: Enabled
+                - cell "-" [ref=e433]
+                - cell "-" [ref=e434]
+                - cell "31-03-2026 14:19" [ref=e435]
+                - cell "31-03-2026 14:19" [ref=e436]
+                - cell [ref=e437]:
+                  - generic [ref=e438]:
+                    - button "Edit Warehouse" [ref=e439]:
+                      - img [ref=e440]
+                    - button "Delete Warehouse" [ref=e442]:
+                      - img [ref=e443]
+          - generic [ref=e447]:
+            - heading "Add New Warehouse" [level=3] [ref=e448]
+            - generic [ref=e449]:
+              - generic [ref=e450]:
+                - generic [ref=e451]:
+                  - heading "General Information" [level=4] [ref=e452]
+                  - generic [ref=e453]:
+                    - generic [ref=e454]:
+                      - generic [ref=e455]: Name
+                      - textbox [ref=e456]: Central DC 1774938000781
+                    - generic [ref=e457]:
+                      - generic [ref=e458]: Short Name
+                      - textbox [ref=e459]: CDC0781
+                    - generic [ref=e460]:
+                      - generic [ref=e461]: Type
+                      - combobox [ref=e462]:
+                        - option "Distribution Center" [selected]
+                        - option "Retail Store"
+                        - option "Drop Shipping Point"
+                    - generic [ref=e463]:
+                      - generic [ref=e464]: Status
+                      - combobox [ref=e465]:
+                        - option "Enabled" [selected]
+                        - option "Disabled"
+                - generic [ref=e466]:
+                  - heading "Dimensions & Capacity" [level=4] [ref=e467]
+                  - generic [ref=e468]:
+                    - generic [ref=e469]:
+                      - generic [ref=e470]: Length (m)
+                      - spinbutton [ref=e471]: "0"
+                    - generic [ref=e472]:
+                      - generic [ref=e473]: Width (m)
+                      - spinbutton [ref=e474]: "0"
+                    - generic [ref=e475]:
+                      - generic [ref=e476]: Height (m)
+                      - spinbutton [ref=e477]: "0"
+                    - generic [ref=e478]:
+                      - generic [ref=e479]: Max Weight Capacity (kg)
+                      - spinbutton [ref=e480]: "0"
+                - generic [ref=e481]:
+                  - heading "Operations Configuration" [level=4] [ref=e482]
+                  - generic [ref=e483]:
+                    - generic [ref=e484]:
+                      - generic [ref=e485]: Inbound Steps
+                      - combobox [ref=e486]:
+                        - option "1 Step – Direct Receipt (Receive → Stock)" [selected]
+                        - option "2 Steps – Input + Stock (Receive → Input → Stock)"
+                        - option "3 Steps – Input + QC + Stock (Receive → Input → QC → Stock)"
+                      - paragraph [ref=e487]: How goods move from receiving to storage
+                    - generic [ref=e488]:
+                      - generic [ref=e489]: Outbound Steps
+                      - combobox [ref=e490]:
+                        - option "1 Step – Direct Ship (Stock → Ship)" [selected]
+                        - option "2 Steps – Pick + Ship (Stock → Output → Ship)"
+                        - option "3 Steps – Pick + Pack + Ship (Stock → Pick → Pack → Ship)"
+                      - paragraph [ref=e491]: How goods move from storage to shipping
+                - generic [ref=e492]:
+                  - heading "Location Details" [level=4] [ref=e493]
+                  - generic [ref=e494]:
+                    - generic [ref=e495]:
+                      - generic [ref=e496]: Address
+                      - textbox [ref=e497]: 123 Main St
+                    - generic [ref=e498]:
+                      - generic [ref=e499]: City
+                      - textbox [ref=e500]
+                    - generic [ref=e501]:
+                      - generic [ref=e502]: State
+                      - textbox [ref=e503]
+                    - generic [ref=e504]:
+                      - generic [ref=e505]: Postal Code
+                      - textbox [ref=e506]
+                    - generic [ref=e507]:
+                      - generic [ref=e508]: Country
+                      - textbox [ref=e509]
+              - generic [ref=e510]:
+                - button "Cancel" [ref=e511]
+                - button "Create Warehouse" [active] [ref=e512]
+  - region "Notifications alt+T"
+  - generic [ref=e517] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e518]:
+      - img [ref=e519]
+    - generic [ref=e522]:
+      - button "Open issues overlay" [ref=e523]:
+        - generic [ref=e524]:
+          - generic [ref=e525]: "0"
+          - generic [ref=e526]: "1"
+        - generic [ref=e527]: Issue
+      - button "Collapse issues badge" [ref=e528]:
+        - img [ref=e529]
+  - alert [ref=e531]
+```
