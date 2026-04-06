@@ -141,11 +141,12 @@ export class PickingStrategyService {
                 status: 'IN_PROGRESS',
             }
         });
-        
+
         // Immediately assign any currently pending reserved orders
         await this.assignContinuousTasks(session.id);
-        
-        return session;
+
+        // Return full session with tasks
+        return this.getActiveSession(warehouseId);
     }
 
     async assignContinuousTasks(sessionId: string) {
@@ -213,7 +214,7 @@ export class PickingStrategyService {
                 order: true
             },
             orderBy: {
-                createdAt: 'desc' 
+                createdAt: 'desc'
             }
         });
 
@@ -588,7 +589,7 @@ export class PickingStrategyService {
 
         for (const orderId of orderIds) {
             const orderTasks = session.tasks.filter(t => t.orderId === orderId);
-            const allPicked = orderTasks.every(t => t.status === 'PICKED');
+            const allPicked = orderTasks.every(t => t.status === 'PICKED' || t.status === 'COMPLETED');
             const hasExceptions = orderTasks.some(t => t.status === 'FAILED' || t.status === 'PARTIALLY_PICKED');
 
             let newStatus = 'PICKING';

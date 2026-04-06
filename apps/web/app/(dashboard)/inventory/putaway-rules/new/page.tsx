@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Save, TestTube } from 'lucide-react';
-import { fetchAttributeDefinitions } from '@/lib/api';
+import { fetchAttributeDefinitions, fetchCategories } from '@/lib/api';
 
 const STRATEGIES = [
     { value: 'FIXED', label: 'Fixed Location', icon: '📍', description: 'Always send to a specific location' },
@@ -49,6 +49,7 @@ function NewPutawayRuleForm() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [products, setProducts] = useState<any[]>([]);
     const [locations, setLocations] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
     const [attributes, setAttributes] = useState<any[]>([]); // Phase 4: Dynamic attributes
     const [loading, setLoading] = useState(false);
     const [dataLoaded, setDataLoaded] = useState(false);
@@ -76,9 +77,12 @@ function NewPutawayRuleForm() {
             const whData = await whResponse.json();
             const prodData = await prodResponse.json();
             const locData = await locResponse.json();
+            const catData = await fetchCategories();
+
             setWarehouses(Array.isArray(whData) ? whData : []);
             setProducts(Array.isArray(prodData) ? prodData : []);
             setLocations(Array.isArray(locData) ? locData : []);
+            setCategories(Array.isArray(catData) ? catData : []);
             setDataLoaded(true);
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -272,13 +276,16 @@ function NewPutawayRuleForm() {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Product Category</label>
-                                <input
-                                    type="text"
+                                <select
                                     value={formData.categoryId}
                                     onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., ELECTRONICS"
-                                />
+                                >
+                                    <option value="">Any Category</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 

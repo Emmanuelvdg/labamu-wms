@@ -22,7 +22,7 @@ export default function PickingPage() {
     const [exceptionModal, setExceptionModal] = useState<{ isOpen: boolean; task: any | null }>({ isOpen: false, task: null });
     const [exceptionReason, setExceptionReason] = useState('');
     const [exceptionQuantity, setExceptionQuantity] = useState('0');
-    
+
     // Strategy UI Settings
     const [strategy, setStrategy] = useState<'SINGLE' | 'BATCH' | 'CLUSTER' | 'WAVE' | 'WAVELESS'>('SINGLE');
     const [criteria, setCriteria] = useState<string>('Destination');
@@ -140,7 +140,7 @@ export default function PickingPage() {
         if (!activeSession) return;
 
         // Check if all tasks are handled
-        const pendingTasks = activeSession.tasks.filter((t: any) => t.status === 'PENDING');
+        const pendingTasks = (activeSession.tasks || []).filter((t: any) => t.status === 'PENDING');
         if (pendingTasks.length > 0) {
             alert(`Please complete all ${pendingTasks.length} pending tasks first.`);
             return;
@@ -201,10 +201,10 @@ export default function PickingPage() {
                         <ClipboardList className="h-12 w-12 text-blue-600" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Configure Picking Session</h2>
-                    
+
                     <div className="w-full max-w-sm text-left mb-8">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Strategy</label>
-                        <select 
+                        <select
                             value={strategy}
                             onChange={(e: any) => setStrategy(e.target.value)}
                             className="w-full border border-gray-300 rounded-md py-2 px-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -218,7 +218,7 @@ export default function PickingPage() {
                         {(strategy === 'BATCH' || strategy === 'CLUSTER') && (
                             <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Grouping Criteria</label>
-                                <select 
+                                <select
                                     value={criteria}
                                     onChange={(e) => setCriteria(e.target.value)}
                                     className="w-full border border-gray-300 rounded-md py-2 px-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -232,8 +232,8 @@ export default function PickingPage() {
                         {(strategy === 'WAVE' || strategy === 'SINGLE' || strategy === 'BATCH' || strategy === 'CLUSTER') && (
                             <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Max Orders Limit</label>
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     min="1" max="100"
                                     value={maxOrders}
                                     onChange={(e) => setMaxOrders(parseInt(e.target.value) || 1)}
@@ -298,11 +298,12 @@ export default function PickingPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {activeSession.tasks.map((task: any) => (
+                                    {activeSession.tasks?.map((task: any) => (
                                         <tr key={task.id} className={
                                             task.status === 'PICKED' ? 'bg-green-50' :
                                                 task.status === 'FAILED' ? 'bg-red-50' :
-                                                    task.status === 'IN_PROGRESS' ? 'bg-blue-50' : ''
+                                                    (task.status === 'IN_PROGRESS' || task.status === 'COMPLETED') ? 'bg-blue-50' :
+                                                        task.status === 'PICKED' ? 'bg-green-50' : ''
                                         }>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{task.product.name}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500">
@@ -333,7 +334,7 @@ export default function PickingPage() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                    ${task.status === 'PICKED' ? 'bg-green-100 text-green-800' :
+                                                    ${(task.status === 'PICKED' || task.status === 'COMPLETED') ? 'bg-green-100 text-green-800' :
                                                         task.status === 'FAILED' ? 'bg-red-100 text-red-800' :
                                                             task.status === 'PARTIALLY_PICKED' ? 'bg-yellow-100 text-yellow-800' :
                                                                 task.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
