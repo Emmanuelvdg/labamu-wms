@@ -39,6 +39,8 @@ export class AppExceptionFilter implements ExceptionFilter {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
 
+        this.logToFile('ALL EXCEPTION CATCHER:', String(exception instanceof Error ? exception.stack : exception));
+
         // 1. AppError — resolve from catalog
         if (exception instanceof AppError) {
             const resolved = this.catalog.resolve(exception.code, exception.context);

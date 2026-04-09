@@ -88,6 +88,39 @@ export class WorkflowValidationService {
             }
         }
 
+        // 4. Parallel group validation
+        // All steps in the same parallelGroup must share identical outbound transitions
+        // (they must all point to the same join step).
+        const groupedSteps = new Map<string, typeof steps>();
+        for (const step of steps) {
+            if (step.parallelGroup) {
+                if (!groupedSteps.has(step.parallelGroup)) {
+                    groupedSteps.set(step.parallelGroup, []);
+                }
+                groupedSteps.get(step.parallelGroup)!.push(step);
+            }
+        }
+
+        for (const [groupName, groupSteps] of groupedSteps.entries()) {
+            if (groupSteps.length < 2) {
+                errors.push(`Parallel group "${groupName}" must contain at least 2 steps.`);
+                continue;
+            }
+
+            // Collect the outbound toStepId sets for each step in the group
+            const toStepIdSets = groupSteps.map(s =>
+                transitions.filter(t => t.fromStepId === s.id).map(t => t.toStepId).sort().join(',')
+            );
+
+            const allSame = toStepIdSets.every(s => s === toStepIdSets[0]);
+            if (!allSame) {
+                errors.push(
+                    `All steps in parallel group "${groupName}" must transition to the same join step(s). ` +
+                    `Mismatched outbound transitions detected.`
+                );
+            }
+        }
+
         return {
             valid: errors.length === 0,
             errors

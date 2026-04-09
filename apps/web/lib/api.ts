@@ -31,7 +31,7 @@ export async function fetchWithRetry(url: string, options?: RequestInit) {
         const text = await res.text();
         return text ? JSON.parse(text) : null;
     } catch (error) {
-        console.error(`Failed to fetch ${url}:`, error);
+        // Not logging to console.error here because many expected UI validations (4xx) are thrown here
         throw error;
     }
 }

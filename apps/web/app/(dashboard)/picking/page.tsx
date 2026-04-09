@@ -58,8 +58,10 @@ export default function PickingPage() {
             } else {
                 setActiveSession(null);
             }
-        } catch (error) {
-            console.error('Failed to check active session', error);
+        } catch (error: any) {
+            if (!error?.message?.includes('No active session found')) {
+                console.error('Failed to check active session', error);
+            }
         }
     }
 

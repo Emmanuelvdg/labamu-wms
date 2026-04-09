@@ -65,8 +65,10 @@ export default function PutawayPage() {
         try {
             const session = await getActivePutawaySession(selectedWarehouseId);
             setActiveSession(session);
-        } catch (error) {
-            console.error('Failed to check active session', error);
+        } catch (error: any) {
+            if (!error?.message?.includes('No active session found')) {
+                console.error('Failed to check active session', error);
+            }
             setActiveSession(null);
         }
     }

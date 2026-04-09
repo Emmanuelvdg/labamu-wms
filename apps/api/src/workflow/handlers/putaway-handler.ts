@@ -44,23 +44,35 @@ export class PutawayHandler implements IStepHandler {
             };
         }
 
-        // Create putaway session/task using existing putaway service logic
         try {
             const warehouseId = task.instance.warehouseId;
 
-            // Auto-suggest destination based on putaway rules
-            // In a real scenario we'd query rules, but we'll return a generic suggestion for now
-            const targetLocationId = 'suggested-location';
+            if (!productId || !quantity || !warehouseId) {
+                return {
+                    status: 'FAILED',
+                    errorMessage: 'Missing required context: productId, quantity, or warehouseId'
+                };
+            }
 
-            if (!targetLocationId) {
+            const packagingType = context['packagingType'] ?? config.packagingType ?? undefined;
+
+            const suggestedLocation = await this.putawayService.findBestLocation(
+                productId,
+                quantity,
+                warehouseId,
+                sourceLocationId ?? undefined,
+                packagingType
+            );
+
+            if (!suggestedLocation) {
                 return { status: 'FAILED', errorMessage: 'No valid putaway location found matching rules' };
             }
 
-            // We let the frontend handle the rest. The logic would normally bind to a new PutawayTask in DB.
             return {
                 status: 'WAITING',
                 output: {
-                    suggestedLocationId: targetLocationId,
+                    suggestedLocationId: suggestedLocation.id,
+                    suggestedLocationName: suggestedLocation.name,
                     message: 'Waiting for putaway confirmation'
                 }
             };

@@ -31,6 +31,7 @@ export default function WorkflowBuilderPage() {
     const [selectedStep, setSelectedStep] = useState<string | null>(null);
     const canvasRef = useRef<HTMLDivElement>(null);
     const [draggingStep, setDraggingStep] = useState<string | null>(null);
+    const [editingConfigParams, setEditingConfigParams] = useState<{ id: string, text: string } | null>(null);
 
     useEffect(() => {
         if (!params.id) return;
@@ -302,14 +303,38 @@ export default function WorkflowBuilderPage() {
                                 }
                             }
 
+                            // Midpoint for label
+                            const midX = x1 + dx * 0.5;
+                            const midY = y1 + dy * 0.5;
+
+                            const isTrue = t.label === 'True';
+                            const isFalse = t.label === 'False';
+                            const color = isTrue ? '#22c55e' : isFalse ? '#ef4444' : '#9ca3af';
+
                             return (
-                                <line
-                                    key={`line-${i}`}
-                                    x1={x1} y1={y1} x2={targetX} y2={targetY}
-                                    stroke="#9ca3af"
-                                    strokeWidth="2"
-                                    markerEnd="url(#arrowhead)"
-                                />
+                                <g key={`line-group-${i}`}>
+                                    <line
+                                        x1={x1} y1={y1} x2={targetX} y2={targetY}
+                                        stroke={color}
+                                        strokeWidth="2"
+                                        markerEnd="url(#arrowhead)"
+                                    />
+                                    {t.label && (
+                                        <g transform={`translate(${midX}, ${midY})`}>
+                                            <rect x="-22" y="-10" width="44" height="20" fill="white" rx="4" className="stroke-gray-200" strokeWidth="1" />
+                                            <text
+                                                x="0" y="0"
+                                                dominantBaseline="middle"
+                                                textAnchor="middle"
+                                                fill={color}
+                                                fontSize="10"
+                                                fontWeight="bold"
+                                            >
+                                                {t.label}
+                                            </text>
+                                        </g>
+                                    )}
+                                </g>
                             );
                         })}
                     </svg>
@@ -399,9 +424,28 @@ export default function WorkflowBuilderPage() {
                                         {transitions.filter(t => t.fromStepId === activeNode.id).map(t => {
                                             const toNode = steps.find(s => s.id === t.toStepId);
                                             return (
-                                                <li key={t.id || t.toStepId} className="flex justify-between items-center text-xs bg-gray-50 p-1 border rounded">
-                                                    <span>To: {toNode?.name || 'Unknown'}</span>
-                                                    <Button variant="ghost" size="sm" onClick={() => setTransitions(transitions.filter(x => x !== t))} className="h-6 w-6 p-0 text-red-500">X</Button>
+                                                <li key={t.id || t.toStepId} className="flex flex-col gap-1 text-xs bg-gray-50 p-2 border rounded">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="font-medium">To: {toNode?.name || 'Unknown'}</span>
+                                                        <Button variant="ghost" size="sm" onClick={() => setTransitions(transitions.filter(x => x !== t))} className="h-6 w-6 p-0 text-red-500 hover:bg-red-100">X</Button>
+                                                    </div>
+                                                    {activeNode.type === 'CONDITION' && (
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className="text-gray-500 w-12">Flag:</span>
+                                                            <select
+                                                                className="flex-1 text-xs p-1 border border-gray-300 rounded"
+                                                                value={t.label || ''}
+                                                                onChange={(e) => {
+                                                                    const updated = transitions.map(tr => tr === t ? { ...tr, label: e.target.value } : tr);
+                                                                    setTransitions(updated);
+                                                                }}
+                                                            >
+                                                                <option value="" disabled>Select outcome...</option>
+                                                                <option value="True">True</option>
+                                                                <option value="False">False</option>
+                                                            </select>
+                                                        </div>
+                                                    )}
                                                 </li>
                                             );
                                         })}
@@ -469,10 +513,59 @@ export default function WorkflowBuilderPage() {
                                     {activeNode.type === 'CONDITION' && (
                                         <div className="space-y-3">
                                             <p className="text-xs text-gray-500 mb-2">Conditions define logical splits in the workflow graph.</p>
-                                            <div className="p-3 bg-gray-50 border rounded-md text-xs font-mono text-gray-700 whitespace-pre-wrap break-all">
-                                                {JSON.stringify(activeNode.config, null, 2)}
+                                            <div className="text-xs text-gray-500 mb-2">
+                                                <strong>Example structure:</strong>
+                                                <pre className="bg-gray-100 p-2 mt-1 rounded border text-[10px] text-gray-700">
+                                                    {`{
+  "field": "product.category",
+  "operator": "==",
+  "value": "Electronics"
+}`}
+                                                </pre>
                                             </div>
-                                            <Button variant="outline" size="sm" className="w-full text-xs">Edit JSON</Button>
+                                            {editingConfigParams?.id === activeNode.id ? (
+                                                <div>
+                                                    <textarea
+                                                        className="w-full h-40 font-mono text-xs p-2 border border-blue-400 rounded focus:ring-blue-500 focus:border-blue-500"
+                                                        value={editingConfigParams!.text}
+                                                        onChange={(e) => setEditingConfigParams({ id: activeNode.id, text: e.target.value })}
+                                                    />
+                                                    <div className="flex gap-2 mt-2">
+                                                        <Button
+                                                            size="sm"
+                                                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                                                            onClick={() => {
+                                                                try {
+                                                                    const parsed = JSON.parse(editingConfigParams!.text);
+                                                                    setSteps(steps.map(s => s.id === activeNode.id ? { ...s, config: parsed } : s));
+                                                                    setEditingConfigParams(null);
+                                                                } catch (err) {
+                                                                    alert("Invalid JSON format. Please correct it.");
+                                                                }
+                                                            }}
+                                                        >
+                                                            Save JSON
+                                                        </Button>
+                                                        <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditingConfigParams(null)}>
+                                                            Cancel
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="p-3 bg-gray-50 border rounded-md text-xs font-mono text-gray-700 whitespace-pre-wrap break-all">
+                                                        {Object.keys(activeNode.config || {}).length > 0 ? JSON.stringify(activeNode.config, null, 2) : '{}'}
+                                                    </div>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="w-full text-xs"
+                                                        onClick={() => setEditingConfigParams({ id: activeNode.id, text: JSON.stringify(activeNode.config || {}, null, 2) })}
+                                                    >
+                                                        Edit JSON Configuration
+                                                    </Button>
+                                                </>
+                                            )}
                                         </div>
                                     )}
 

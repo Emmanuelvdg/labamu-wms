@@ -5,6 +5,9 @@ import { WorkflowTemplateController } from './workflow-template.controller';
 import { WorkflowEngineService } from './workflow-engine.service';
 import { WorkflowExecutionController } from './workflow-execution.controller';
 import { TaskOptimisationService } from './task-optimisation.service';
+import { WorkflowSlaCheckerService } from './workflow-sla-checker.service';
+import { WorkflowSlaSchedulerService } from './workflow-sla-scheduler.service';
+import { WorkflowRetrySchedulerService } from './workflow-retry-scheduler.service';
 import { PrismaService } from '../prisma.service';
 import { ContextEnrichmentService } from './context-enrichment.service';
 import { ConditionHandler } from './handlers/condition-handler';
@@ -21,15 +24,19 @@ import { ReturnHandler } from './handlers/return-handler';
 import { ReplenishHandler } from './handlers/replenish-handler';
 import { StrategyModule } from '../strategy/strategy.module';
 import { InventoryModule } from '../inventory/inventory.module';
+import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
-    imports: [StrategyModule, InventoryModule],
+    imports: [StrategyModule, InventoryModule, NotificationModule],
     controllers: [WorkflowTemplateController, WorkflowExecutionController],
     providers: [
         WorkflowTemplateService,
         WorkflowValidationService,
         WorkflowEngineService,
         TaskOptimisationService,
+        WorkflowSlaCheckerService,
+        WorkflowSlaSchedulerService,
+        WorkflowRetrySchedulerService,
         PrismaService,
         ContextEnrichmentService,
         ConditionHandler,
@@ -45,6 +52,6 @@ import { InventoryModule } from '../inventory/inventory.module';
         ReturnHandler,
         ReplenishHandler
     ],
-    exports: [WorkflowTemplateService, WorkflowEngineService, TaskOptimisationService]
+    exports: [WorkflowTemplateService, WorkflowEngineService, TaskOptimisationService, ConditionHandler]
 })
 export class WorkflowModule { }

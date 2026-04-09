@@ -48,7 +48,7 @@ export class WorkflowTemplateService {
                     name: data.name,
                     description: data.description,
                     triggerType: data.triggerType,
-                    config: data.config ? JSON.stringify(data.config) : undefined
+                    config: data.config ? (typeof data.config === 'string' ? data.config : JSON.stringify(data.config)) : undefined
                 }
             });
 
@@ -85,7 +85,7 @@ export class WorkflowTemplateService {
                 // C. Update existing and create new steps
                 for (const step of data.steps) {
                     const isExisting = step.id && !step.id.startsWith('new-') && existingStepIds.includes(step.id);
-                    
+
                     if (isExisting) {
                         // Update existing step
                         const updatedStep = await tx.workflowStep.update({
@@ -93,7 +93,7 @@ export class WorkflowTemplateService {
                             data: {
                                 type: step.type,
                                 name: step.name,
-                                config: JSON.stringify(step.config || {}),
+                                config: typeof step.config === 'string' ? step.config : JSON.stringify(step.config || {}),
                                 positionX: step.positionX || 0,
                                 positionY: step.positionY || 0,
                                 isStart: step.isStart || false,
@@ -109,7 +109,7 @@ export class WorkflowTemplateService {
                                 templateId: id,
                                 type: step.type,
                                 name: step.name,
-                                config: JSON.stringify(step.config || {}),
+                                config: typeof step.config === 'string' ? step.config : JSON.stringify(step.config || {}),
                                 positionX: step.positionX || 0,
                                 positionY: step.positionY || 0,
                                 isStart: step.isStart || false,
@@ -134,7 +134,7 @@ export class WorkflowTemplateService {
                                 templateId: id,
                                 fromStepId: fromId,
                                 toStepId: toId,
-                                condition: trans.condition ? JSON.stringify(trans.condition) : '{}',
+                                condition: trans.condition ? (typeof trans.condition === 'string' ? trans.condition : JSON.stringify(trans.condition)) : '{}',
                                 label: trans.label,
                                 order: trans.order || 0
                             }

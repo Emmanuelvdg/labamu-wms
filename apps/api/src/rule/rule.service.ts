@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { WorkflowEngineService } from '../workflow/workflow-engine.service';
+import { ConditionHandler } from '../workflow/handlers/condition-handler';
 
 @Injectable()
 export class RuleService {
@@ -10,10 +11,61 @@ export class RuleService {
     constructor(
         private prisma: PrismaService,
         private inventoryService: InventoryService,
-        private workflowEngine: WorkflowEngineService
+        private workflowEngine: WorkflowEngineService,
+        private conditionHandler: ConditionHandler,
     ) { }
 
-    async applyPushRules(productId: string, locationId: string, quantity: number, contextData: any = {}) {
+    private async checkCrossDockOpportunity(
+        productId: string,
+        quantity: number,
+        warehouseId: string,
+    ): Promise<{ shouldCrossDock: boolean; stagingLocationId?: string; orderId?: string }> {
+        // Find open outbound orders that need this product, have not been allocated,
+        // and require no more units than what we have inbound (viable for full cross-dock)
+        const urgentOrderItems = await this.prisma.orderItem.findMany({
+            where: {
+                productId,
+                quantity: { lte: quantity },
+                order: {
+                    warehouseId,
+                    status: { in: ['CONFIRMED', 'PROCESSING'] },
+                    fulfillmentStatus: 'UNALLOCATED',
+                },
+            },
+            include: { order: true },
+            orderBy: { order: { createdAt: 'asc' } }, // FIFO
+        });
+
+        if (urgentOrderItems.length === 0) return { shouldCrossDock: false };
+
+        // Find a cross-dock or staging location in this warehouse
+        const stagingLocation = await this.prisma.location.findFirst({
+            where: {
+                warehouseId,
+                OR: [
+                    { type: 'CROSS_DOCK' },
+                    { name: { contains: 'STAGING' } },
+                    { name: { contains: 'Staging' } },
+                ],
+            },
+        });
+
+        if (!stagingLocation) return { shouldCrossDock: false };
+
+        return {
+            shouldCrossDock: true,
+            stagingLocationId: stagingLocation.id,
+            orderId: urgentOrderItems[0].orderId,
+        };
+    }
+
+    async applyPushRules(productId: string, locationId: string, quantity: number, contextData: any = {}, visitedLocations: Set<string> = new Set()) {
+        if (visitedLocations.has(locationId)) {
+            this.logger.warn(`Cycle detected in PUSH rule chain at location ${locationId}. Aborting chain.`);
+            return;
+        }
+        visitedLocations.add(locationId);
+
         this.logger.log(`Checking PUSH rules for Product ${productId} at Location ${locationId}`);
 
         // 1. Check for modern multi-step Route Workflows first
@@ -70,32 +122,52 @@ export class RuleService {
             if (matchingTemplate) {
                 this.logger.log(`Dispatching multi-step Route Workflow: ${matchingTemplate.name}`);
                 
-                // Construct a context payload for the workflow
+                // Construct a context payload for the workflow and pass it atomically
                 const payload = { productId, locationId, quantity, ...contextData };
-                
-                const { instance } = await this.workflowEngine.startWorkflow(
+
+                await this.workflowEngine.startWorkflow(
                     matchingTemplate.id,
                     location.warehouseId,
                     contextData.orderId || productId,
-                    matchingTemplate.triggerType
+                    matchingTemplate.triggerType,
+                    payload
                 );
-
-                // Update context with payload so the first step can use it
-                await this.prisma.workflowInstance.update({
-                    where: { id: instance.id },
-                    data: { context: JSON.stringify(payload) }
-                });
 
                 // Let the workflow handle all movements from here
                 return;
             }
         }
 
-        // Find active PUSH rules for this source location
+        // Cross-dock check: only on inbound events when we know the warehouse
+        if (!contextData.isOutbound && location?.warehouseId) {
+            const crossDock = await this.checkCrossDockOpportunity(productId, quantity, location.warehouseId);
+            if (crossDock.shouldCrossDock) {
+                this.logger.log(`Cross-dock opportunity: routing ${productId} to staging for order ${crossDock.orderId}`);
+                try {
+                    await this.inventoryService.createTransfer({
+                        productId,
+                        sourceLocationId: locationId,
+                        destinationLocationId: crossDock.stagingLocationId!,
+                        quantity,
+                        reason: `Cross-dock for order ${crossDock.orderId}`,
+                    });
+                } catch (error: any) {
+                    this.logger.error(`Cross-dock transfer failed: ${error.message} — falling through to putaway rules`);
+                }
+                return;
+            }
+        }
+
+        // Find active PUSH rules for this source location, scoped to the current trigger direction
+        const currentTriggerType = contextData.isOutbound ? 'OUTBOUND' : 'INBOUND';
         const rules = await this.prisma.rule.findMany({
             where: {
                 sourceLocationId: locationId,
                 action: 'PUSH',
+                OR: [
+                    { triggerType: null },
+                    { triggerType: currentTriggerType },
+                ],
             },
             orderBy: { sequence: 'asc' },
             include: { destinationLocation: true },
@@ -108,6 +180,20 @@ export class RuleService {
 
         for (const rule of rules) {
             if (!rule.destinationLocationId) continue;
+
+            // Evaluate per-rule conditions against the current context
+            if (rule.conditions) {
+                try {
+                    const conditionJson = JSON.parse(rule.conditions);
+                    if (!this.conditionHandler.evaluateCondition(conditionJson, contextData)) {
+                        this.logger.log(`Rule ${rule.id} skipped: condition not met`);
+                        continue;
+                    }
+                } catch {
+                    this.logger.warn(`Rule ${rule.id} has invalid conditions JSON — skipping rule`);
+                    continue;
+                }
+            }
 
             this.logger.log(`Applying Rule ${rule.id}: PUSH to ${rule.destinationLocation?.name}`);
 
@@ -123,17 +209,14 @@ export class RuleService {
 
                 this.logger.log(`Successfully pushed ${quantity} units to ${rule.destinationLocation?.name}`);
 
-                // Recursively check for rules at the new destination (Chain)
-                // Note: This assumes the transfer was immediate and successful.
-                // In a real system, this might be async or event-driven.
-                await this.applyPushRules(productId, rule.destinationLocationId, quantity);
+                // Recursively apply rules at the new destination (chain)
+                await this.applyPushRules(productId, rule.destinationLocationId, quantity, contextData, visitedLocations);
 
+                // Full quantity moved — stop processing further rules for this location
+                return;
             } catch (error: any) {
                 this.logger.error(`Failed to apply rule ${rule.id}: ${error.message}`);
-                // Don't stop other rules? Or stop? 
-                // For now, log and continue, but usually stock is moved so we shouldn't apply multiple rules for SAME stock unless split.
-                // Assuming 100% move for now.
-                break; // Stop after successful move to avoid double moving if we assume full quantity move
+                // Transfer failed — try the next rule in sequence
             }
         }
     }

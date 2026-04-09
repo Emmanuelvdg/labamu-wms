@@ -82,6 +82,8 @@ model Rule {
   sourceLocationId      String?
   destinationLocationId String?
   sequence              Int         @default(0)
+  conditions            String?     // JSON condition blob — same format as WorkflowTransition.condition
+  triggerType           String?     // 'INBOUND' | 'OUTBOUND' | null (matches any)
   destinationLocation   Location?   @relation("DestLocation", fields: [destinationLocationId], references: [id])
   sourceLocation        Location?   @relation("SourceLocation", fields: [sourceLocationId], references: [id])
   route                 Route       @relation(fields: [routeId], references: [id])
@@ -1136,13 +1138,17 @@ model WorkflowStep {
   // | WAVE_PICK | BATCH_PICK | ZONE_PICK | WAVELESS_PICK
   // | CONSOLIDATE | STAGE | PACK | SHIP | RETURN
   // | REPLENISH | CONDITION | SLOTTING | CUSTOM
-  name       String
-  config     String  @default("{}") // Step-specific params
-  positionX  Float   @default(0) // Canvas position
-  positionY  Float   @default(0)
-  isStart    Boolean @default(false)
-  isEnd      Boolean @default(false)
-  order      Int     @default(0)
+  name               String
+  config             String  @default("{}") // Step-specific params
+  positionX          Float   @default(0) // Canvas position
+  positionY          Float   @default(0)
+  isStart            Boolean @default(false)
+  isEnd              Boolean @default(false)
+  order              Int     @default(0)
+  slaDurationMinutes  Int?    // If set, tasks for this step get dueAt = now() + slaDurationMinutes
+  maxRetries          Int     @default(0)  // Number of automatic retries on task failure (0 = no retries)
+  retryBackoffSeconds Int     @default(30) // Base delay in seconds; doubles per attempt (exponential backoff)
+  parallelGroup       String? // Steps sharing this key fan out simultaneously; engine joins when all complete
 
   template        WorkflowTemplate       @relation(fields: [templateId], references: [id], onDelete: Cascade)
   fromTransitions WorkflowTransition[]   @relation("FromStep")
@@ -1194,6 +1200,9 @@ model WorkflowTaskInstance {
   output       String?   @default("{}")
   startedAt    DateTime?
   completedAt  DateTime?
+  dueAt        DateTime? // SLA deadline — set at task creation from step.slaDurationMinutes
+  retryCount   Int       @default(0) // Number of retry attempts made so far
+  retryAfter   DateTime? // Earliest time this task is eligible for re-execution after a failure
   errorMessage String?
 
   instance WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)

@@ -22,7 +22,12 @@ export class PermissionsGuard implements CanActivate {
         }
 
         const request = context.switchToHttp().getRequest();
-        const userId = request.headers['x-user-id'];
+        let userId = request.headers['x-user-id'];
+
+        // Fallback to query parameter for browser direct downloads (e.g., <a href="..." target="_blank">)
+        if (!userId && request.query?.userId) {
+            userId = request.query.userId;
+        }
 
         if (!userId) {
             this.logger.warn('Permission check failed: No x-user-id header found');

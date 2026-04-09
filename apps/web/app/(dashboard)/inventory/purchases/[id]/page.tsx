@@ -514,7 +514,17 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {attachments.map((att: any) => (
                                         <tr key={att.id} data-testid="attachment-row">
-                                            <td className="px-6 py-4 text-sm font-medium text-blue-600">{att.fileName}</td>
+                                            <td className="px-6 py-4 text-sm font-medium text-blue-600">
+                                                <a
+                                                    href={`${API_URL}/purchase-orders/${po.id}/documents/${att.id}/download?userId=${Cookies.get('user_id') || ''}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="hover:underline flex items-center gap-1"
+                                                    title="Click to view or download"
+                                                >
+                                                    🔗 {att.fileName}
+                                                </a>
+                                            </td>
                                             <td className="px-6 py-4">
                                                 <span className={`px-2 py-1 text-xs font-medium rounded-full
                                                     ${att.documentType === 'INVOICE' ? 'bg-purple-100 text-purple-800' :

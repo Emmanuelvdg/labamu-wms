@@ -40,29 +40,52 @@ export class ConditionHandler implements IStepHandler {
         return { valid: true, errors: [] }; // Validation done at transition level
     }
 
-    private evaluateCondition(condition: any, context: any): boolean {
-        // Simple expression evaluator
-        // Format: { field: 'context.priority', op: 'eq', value: 'URGENT' }
+    /**
+     * Evaluate a condition expression against a context object.
+     *
+     * Supports compound logic:
+     *   { and: [...] }  — all sub-conditions must be true
+     *   { or:  [...] }  — at least one sub-condition must be true
+     *   { not: {...}  } — inverts the sub-condition
+     *
+     * Leaf format (backwards-compatible):
+     *   { field: 'priority', op: 'eq', value: 'URGENT' }
+     *   Dot-notation supported: { field: 'order.customerType', op: 'eq', value: 'VIP' }
+     */
+    evaluateCondition(condition: any, context: any): boolean {
+        if (condition.and && Array.isArray(condition.and)) {
+            return condition.and.every((c: any) => this.evaluateCondition(c, context));
+        }
+        if (condition.or && Array.isArray(condition.or)) {
+            return condition.or.some((c: any) => this.evaluateCondition(c, context));
+        }
+        if (condition.not) {
+            return !this.evaluateCondition(condition.not, context);
+        }
+        return this.evaluateLeaf(condition, context);
+    }
+
+    private evaluateLeaf(condition: any, context: any): boolean {
         if (!condition.field || !condition.op) return false;
 
-        // Resolve dot notation for field
+        // Resolve dot-notation path against context
         const fieldParts = condition.field.split('.');
         let actualValue = context;
         for (const part of fieldParts) {
-            if (actualValue === undefined) break;
+            if (actualValue === undefined || actualValue === null) break;
             actualValue = actualValue[part];
         }
 
         switch (condition.op) {
-            case 'eq': return actualValue === condition.value;
+            case 'eq':  return actualValue === condition.value;
             case 'neq': return actualValue !== condition.value;
-            case 'gt': return actualValue > condition.value;
-            case 'lt': return actualValue < condition.value;
+            case 'gt':  return actualValue > condition.value;
+            case 'lt':  return actualValue < condition.value;
             case 'gte': return actualValue >= condition.value;
             case 'lte': return actualValue <= condition.value;
-            case 'in': return Array.isArray(condition.value) && condition.value.includes(actualValue);
+            case 'in':  return Array.isArray(condition.value) && condition.value.includes(actualValue);
             case 'nin': return Array.isArray(condition.value) && !condition.value.includes(actualValue);
-            default: return false;
+            default:    return false;
         }
     }
 }

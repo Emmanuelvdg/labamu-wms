@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { InventoryModule } from './inventory/inventory.module';
 import { StrategyModule } from './strategy/strategy.module';
 import { OrderModule } from './order/order.module';
@@ -43,6 +44,7 @@ import { PrismaService } from './prisma.service';
             limit: 100,
         }]),
         EventEmitterModule.forRoot(),
+        ScheduleModule.forRoot(),
         InventoryModule,
         StrategyModule,
         OrderModule,

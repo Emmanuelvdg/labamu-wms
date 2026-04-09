@@ -473,6 +473,34 @@ export class PurchaseOrderService {
         });
     }
 
+    async downloadDocument(purchaseOrderId: string, docId: string, res: any) {
+        console.log(`[DOWNLOAD] PO: '${purchaseOrderId}', DOC: '${docId}'`);
+        const doc = await this.prisma.documentAttachment.findFirst({
+            where: { id: docId, purchaseOrderId },
+        });
+
+        if (!doc) throw new AppError('DOCUMENT_NOT_FOUND', { docId, purchaseOrderId });
+
+        const { join } = require('path');
+        const fs = require('fs');
+        const { StreamableFile } = require('@nestjs/common');
+
+        const uploadDir = join(process.cwd(), 'uploads', 'po-documents');
+        const file = join(uploadDir, doc.filePath);
+
+        if (!fs.existsSync(file)) {
+            throw new AppError('FILE_NOT_FOUND', { filePath: doc.filePath });
+        }
+
+        res.set({
+            'Content-Type': doc.mimeType || 'application/octet-stream',
+            'Content-Disposition': `inline; filename="${doc.fileName}"`,
+        });
+
+        const fileStream = fs.createReadStream(file);
+        return new StreamableFile(fileStream);
+    }
+
     async submitInspection(purchaseOrderId: string, data: {
         inspectorId?: string;
         notes?: string;

@@ -1,4 +1,5 @@
-import { Controller, Post, Body, Get, Param, UseGuards, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, UseInterceptors, UploadedFile, Req, Res, StreamableFile } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
@@ -105,6 +106,17 @@ export class PurchaseOrderController {
     @RequirePermission('PURCHASE_ORDERS', 'READ')
     getDocuments(@Param('id') id: string) {
         return this.purchaseOrderService.getDocuments(id);
+    }
+
+    @Get(':id/documents/:docId/download')
+    // Can optionally use a permissions guard here or pass token in URL
+    // @RequirePermission('PURCHASE_ORDERS', 'READ')
+    async downloadDocument(
+        @Param('id') poId: string,
+        @Param('docId') docId: string,
+        @Res({ passthrough: true }) res: Response
+    ): Promise<StreamableFile> {
+        return this.purchaseOrderService.downloadDocument(poId, docId, res);
     }
 
     // ===== QA Inspection =====
