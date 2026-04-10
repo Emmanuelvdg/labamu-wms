@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Param, Query, UseGuards, Body } from '@nestjs/common';
 import { WorkflowEngineService } from './workflow-engine.service';
+import { WorkflowAnalyticsService } from './workflow-analytics.service';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { PrismaService } from '../prisma.service';
@@ -9,8 +10,28 @@ import { PrismaService } from '../prisma.service';
 export class WorkflowExecutionController {
     constructor(
         private engineService: WorkflowEngineService,
+        private analyticsService: WorkflowAnalyticsService,
         private prisma: PrismaService
     ) { }
+
+    @Get('analytics')
+    @RequirePermission('WORKFLOW', 'READ')
+    getAnalytics(
+        @Query('warehouseId') warehouseId?: string,
+        @Query('period') period?: '7d' | '30d' | '90d',
+    ) {
+        return this.analyticsService.getAnalytics({ warehouseId, period });
+    }
+
+    @Get('analytics/templates/:templateId')
+    @RequirePermission('WORKFLOW', 'READ')
+    getTemplateDrilldown(
+        @Param('templateId') templateId: string,
+        @Query('warehouseId') warehouseId?: string,
+        @Query('period') period?: '7d' | '30d' | '90d',
+    ) {
+        return this.analyticsService.getTemplateDrilldown(templateId, { warehouseId, period });
+    }
 
     @Post(':id/start')
     @RequirePermission('WORKFLOW', 'CREATE')

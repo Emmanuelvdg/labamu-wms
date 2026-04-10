@@ -157,6 +157,11 @@ export class PurchaseOrderService {
             if (!po) throw new AppError('PO_NOT_FOUND', { purchaseOrderId });
             if (po.status === 'RECEIVED' || po.status === 'CANCELLED') throw new AppError('PO_ALREADY_CLOSED', { status: po.status });
 
+            // Ensure PO is approved
+            if (po.approvalStatus !== 'APPROVED') {
+                throw new AppError('PO_NOT_APPROVED', { approvalStatus: po.approvalStatus || 'DRAFT' });
+            }
+
             // Determine items to process
             let itemsToProcess: { poItem: any; quantity: number }[] = [];
 

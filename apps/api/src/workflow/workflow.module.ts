@@ -8,6 +8,7 @@ import { TaskOptimisationService } from './task-optimisation.service';
 import { WorkflowSlaCheckerService } from './workflow-sla-checker.service';
 import { WorkflowSlaSchedulerService } from './workflow-sla-scheduler.service';
 import { WorkflowRetrySchedulerService } from './workflow-retry-scheduler.service';
+import { WorkflowAnalyticsService } from './workflow-analytics.service';
 import { PrismaService } from '../prisma.service';
 import { ContextEnrichmentService } from './context-enrichment.service';
 import { ConditionHandler } from './handlers/condition-handler';
@@ -37,6 +38,7 @@ import { NotificationModule } from '../notifications/notification.module';
         WorkflowSlaCheckerService,
         WorkflowSlaSchedulerService,
         WorkflowRetrySchedulerService,
+        WorkflowAnalyticsService,
         PrismaService,
         ContextEnrichmentService,
         ConditionHandler,
@@ -52,6 +54,6 @@ import { NotificationModule } from '../notifications/notification.module';
         ReturnHandler,
         ReplenishHandler
     ],
-    exports: [WorkflowTemplateService, WorkflowEngineService, TaskOptimisationService, ConditionHandler]
+    exports: [WorkflowTemplateService, WorkflowEngineService, TaskOptimisationService, ConditionHandler, WorkflowAnalyticsService]
 })
 export class WorkflowModule { }

@@ -20,7 +20,8 @@ export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{
     const router = useRouter();
     const { hasPermission } = useAuth();
     const unwrappedParams = use(params);
-    const id = unwrappedParams.id;
+    // Sanitize ID by replacing any spaces with hyphens (e.g. from copy-pasting URL)
+    const id = unwrappedParams.id.replace(/\s+/g, '-');
     const [po, setPo] = useState<any>(null);
     const [receipts, setReceipts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -122,7 +123,18 @@ export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{
     };
 
     if (loading) return <div className="p-8">Loading...</div>;
-    if (!po) return <div className="p-8">Purchase Order not found</div>;
+    if (!po) return <div className="p-8 text-center">Purchase Order not found</div>;
+    if (po.approvalStatus !== 'APPROVED') {
+        return (
+            <div className="p-8 text-center flex flex-col items-center justify-center min-h-[50vh]">
+                <h1 className="text-2xl font-bold text-red-600 mb-2">Purchase Order Not Approved</h1>
+                <p className="text-gray-600 mb-6">This PO is currently in "{po.approvalStatus || 'DRAFT'}" status. Goods can only be received once the PO has been fully approved.</p>
+                <Button onClick={() => router.push(`/inventory/purchases/${id}`)}>
+                    Return to Order Details
+                </Button>
+            </div>
+        );
+    }
 
     // TODO: Fetch locations for dropdown
     // For MVP, maybe hardcode or fetch warehouses/locations. 

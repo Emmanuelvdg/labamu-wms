@@ -199,7 +199,7 @@ export class OrderService {
     async getOrders(): Promise<Order[]> {
         return this.prisma.order.findMany({
             orderBy: { createdAt: 'desc' },
-            include: { items: true, reservations: true, shipment: true, destinationWarehouse: true },
+            include: { items: true, reservations: true, shipment: true, destinationWarehouse: true, warehouse: true },
         });
     }
 
@@ -447,6 +447,11 @@ export class OrderService {
         // Allow updating delivery method
         if (data.deliveryMethodId) {
             updateData.deliveryMethodId = data.deliveryMethodId;
+        }
+
+        // Allow reassigning warehouse (e.g. fixing orders stuck in PICKING with no warehouse)
+        if (data.warehouseId !== undefined) {
+            updateData.warehouseId = data.warehouseId;
         }
 
         // Allow updating status (for fulfillment workflow transitions)

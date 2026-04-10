@@ -22,7 +22,8 @@ type TabName = 'details' | 'receipts' | 'attachments' | 'qa' | 'match';
 
 export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
-    const { id } = use(params);
+    const rawParams = use(params);
+    const id = rawParams.id.replace(/\s+/g, '-');
     const [po, setPo] = useState<any>(null);
     const [locations, setLocations] = useState<any[]>([]);
     const [destinationId, setDestinationId] = useState('');
@@ -375,7 +376,7 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
                     </div>
 
                     {/* Receive Goods CTA */}
-                    {po.status !== 'RECEIVED' && (
+                    {po.status !== 'RECEIVED' && po.approvalStatus === 'APPROVED' && (
                         <div className="bg-gray-50 p-6 rounded-lg border flex justify-between items-center">
                             <div>
                                 <h3 className="text-lg font-medium">Receive Goods</h3>
@@ -394,7 +395,7 @@ export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ 
                 <div>
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-lg font-semibold">Receipt History (GRNs)</h2>
-                        {po.status !== 'RECEIVED' && (
+                        {po.status !== 'RECEIVED' && po.approvalStatus === 'APPROVED' && (
                             <Button onClick={() => router.push(`/inventory/purchases/${po.id}/receive`)}>
                                 + New Receipt
                             </Button>

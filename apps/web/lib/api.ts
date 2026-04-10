@@ -337,6 +337,14 @@ export async function updateOrderStatus(id: string, status: string) {
     });
 }
 
+export async function reassignOrderWarehouse(id: string, warehouseId: string) {
+    return fetchWithRetry(`${API_URL}/orders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ warehouseId, status: 'RESERVED' }),
+    });
+}
+
 export async function fetchOrders() {
     return fetchWithRetry(`${API_URL}/orders`);
 }
@@ -385,7 +393,10 @@ export async function receivePurchaseOrder(
     return fetchWithRetry(`${API_URL}/purchase-orders/${id}/receive`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ destinationLocationId, itemsToReceive }),
+        body: JSON.stringify({
+            locationId: destinationLocationId,
+            items: itemsToReceive
+        }),
     });
 }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { fetchOrder, checkAvailability, updateCustomer, cancelOrder, deleteOrder, updateOrderStatus } from '@/lib/api';
+import { fetchOrder, checkAvailability, updateCustomer, cancelOrder, deleteOrder, updateOrderStatus, reassignOrderWarehouse, fetchWarehouses } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
     AlertDialog,
@@ -32,9 +32,12 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
 
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [warehouses, setWarehouses] = useState<any[]>([]);
+    const [selectedReassignWarehouse, setSelectedReassignWarehouse] = useState('');
 
     useEffect(() => {
         loadOrder();
+        loadWarehouses();
     }, [id]);
 
     async function loadOrder() {
@@ -47,6 +50,13 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
         } finally {
             setLoading(false);
         }
+    }
+
+    async function loadWarehouses() {
+        try {
+            const data = await fetchWarehouses();
+            setWarehouses(data || []);
+        } catch (e) { /* silent */ }
     }
 
     const handleCheckAvailability = async () => {
@@ -90,6 +100,20 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
             loadOrder();
         } catch (error: any) {
             toast.error(error.message || 'Failed to update order status');
+        }
+    };
+
+    const handleReassignWarehouse = async () => {
+        if (!selectedReassignWarehouse) {
+            toast.error('Please select a warehouse first');
+            return;
+        }
+        try {
+            await reassignOrderWarehouse(id, selectedReassignWarehouse);
+            toast.success('Warehouse assigned — order reset to RESERVED and ready for picking');
+            loadOrder();
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to reassign warehouse');
         }
     };
 
@@ -205,6 +229,29 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                 Check Availability
                             </Button>
                         </>
+                    )}
+
+                    {/* PICKING with no warehouse: show reassign panel */}
+                    {order.status === 'PICKING' && !order.warehouseId && (
+                        <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p className="text-sm font-semibold text-amber-800 mb-2">⚠ No Warehouse Assigned</p>
+                            <p className="text-xs text-amber-700 mb-3">This order is in PICKING status but has no warehouse. Assign a warehouse to reset it to RESERVED so it can be picked normally.</p>
+                            <div className="flex gap-2">
+                                <select
+                                    value={selectedReassignWarehouse}
+                                    onChange={e => setSelectedReassignWarehouse(e.target.value)}
+                                    className="flex-1 text-sm border border-amber-300 rounded px-2 py-1.5 bg-white"
+                                >
+                                    <option value="">Select warehouse…</option>
+                                    {warehouses.map((w: any) => (
+                                        <option key={w.id} value={w.id}>{w.name}</option>
+                                    ))}
+                                </select>
+                                <Button size="sm" onClick={handleReassignWarehouse} className="bg-amber-600 hover:bg-amber-700">
+                                    Assign & Reset to Reserved
+                                </Button>
+                            </div>
+                        </div>
                     )}
 
                     {/* RESERVED / PICKING / EXCEPTION: Cancel only */}

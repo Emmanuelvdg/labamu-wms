@@ -204,6 +204,16 @@ export class InventoryController {
         return this.utilisationService.getLocationUtilisation(id);
     }
 
+    @Get('locations/:id/capacity')
+    async checkLocationCapacity(
+        @Param('id') id: string,
+        @Query('productId') productId: string,
+        @Query('quantity') quantity: string,
+    ) {
+        const result = await this.utilisationService.canAccept(id, productId, parseInt(quantity, 10) || 1);
+        return { canAccept: result.allowed, reason: result.reason };
+    }
+
     @Post('locations/utilisation-batch')
     getBatchUtilisation(@Body() data: { locationIds: string[]; metric?: 'UTILISATION' | 'VELOCITY' | 'CONGESTION' }) {
         return this.utilisationService.getBatchUtilisation(data.locationIds, data.metric);
