@@ -1264,24 +1264,358 @@ async function main() {
     console.log(`   ✅ ${routeDefs.length} routes with stock-move rules`);
 
     // =========================================================================
+    // 16. EDGE-CASE PRODUCTS (for negative/boundary testing)
+    // =========================================================================
+    console.log('── 16. Edge-Case Products');
+
+    const edgeProductDefs = [
+        // Zero-weight / virtual product — tests weight-check bypass
+        { sku: 'VRT-LIC-099', name: 'Software Licence (Virtual)',       category: 'Laptops & Computers', velocity: 'A', abc: 'A', weight: 0,    w: 0,   h: 0,  d: 0,   price: 750000,     tempMin: null, tempMax: null, description: 'Digital licence key — no physical dimensions' },
+        // Near-threshold weight product (exactly 5 kg = boundary of heavy rule)
+        { sku: 'THR-WGT-100', name: 'Threshold Weight Item (5.0 kg)',   category: 'Laptops & Computers', velocity: 'B', abc: 'B', weight: 5.0,  w: 300, h: 200, d: 100, price: 1500000,   tempMin: null, tempMax: null, description: 'Exactly at the heavy-item weight boundary' },
+        // Perishable with very short shelf life — FEFO edge case
+        { sku: 'EXP-INK-101', name: 'Short-Life Ink Cartridge (7-day)', category: 'Printing & Imaging',  velocity: 'C', abc: 'C', weight: 0.2,  w: 80,  h: 60,  d: 40,  price: 220000,    tempMin: 2,    tempMax: 18,  description: 'Nearly expired batch for FEFO testing' },
+        // Discontinued product — for cancel/unavailable order testing
+        { sku: 'DSC-CAM-102', name: 'Discontinued Webcam HD720 (Legacy)', category: 'Laptops & Computers', velocity: 'C', abc: 'C', weight: 0.18, w: 100, h: 80, d: 50,  price: 0,          tempMin: null, tempMax: null, description: 'End-of-life product, no active stock' },
+        // Oversized / heavy item (30 kg) — triggers zone C and weight exception
+        { sku: 'HVY-SRV-103', name: 'Rack Server 2U (30 kg)',           category: 'Laptops & Computers', velocity: 'C', abc: 'C', weight: 30,   w: 445, h: 88,  d: 600, price: 110000000, tempMin: null, tempMax: null, description: 'Data centre rack-mount server — requires forklift' },
+    ];
+
+    for (const pd of edgeProductDefs) {
+        await prisma.product.upsert({
+            where: { sku: pd.sku },
+            update: { name: pd.name, category: pd.category, velocity: pd.velocity, abcClass: pd.abc },
+            create: {
+                sku:           pd.sku,
+                name:          pd.name,
+                description:   pd.description,
+                category:      pd.category,
+                type:          'Finished',
+                unitOfMeasure: 'Unit',
+                isStockable:   true,
+                status:        'Active',
+                velocity:      pd.velocity,
+                abcClass:      pd.abc,
+                classification: pd.abc,
+                weight:        pd.weight,
+                width:         pd.w,
+                height:        pd.h,
+                depth:         pd.d,
+                averageCost:   pd.price,
+                tracking:      'none',
+                stackable:     true,
+                ...(pd.tempMin != null ? { temperatureMin: pd.tempMin } : {}),
+                ...(pd.tempMax != null ? { temperatureMax: pd.tempMax } : {}),
+            }
+        });
+    }
+    console.log(`   ✅ ${edgeProductDefs.length} edge-case products (virtual, boundary-weight, near-expired, discontinued, oversized)`);
+
+    // =========================================================================
+    // 17. EDGE-CASE INVENTORY BATCHES (expired, near-expiry, zero-stock)
+    // =========================================================================
+    console.log('── 17. Edge-Case Inventory Batches');
+
+    const edgeProducts: Record<string, string> = {};
+    for (const ep of edgeProductDefs) {
+        const p = await prisma.product.findUnique({ where: { sku: ep.sku } });
+        if (p) edgeProducts[ep.sku] = p.id;
+    }
+
+    const coldBinForEdge = allBinMap['F1-1-01'] ?? allBinMap['F1-1-02'];
+    const zoneCBinForEdge = allBinMap['C1-1-01'] ?? allBinMap['C1-1-02'];
+    const zoneABinForEdge = allBinMap['A1-1-01'];
+
+    type EdgeBatchDef = {
+        sku: string; binCode: string | null; qty: number;
+        batchNumber: string; purchaseDaysAgo: number; expiryDaysFromNow: number | null;
+    };
+
+    const edgeBatchDefs: EdgeBatchDef[] = [
+        // Already-expired batch of EXP-INK-101 — for FEFO rejection / notification tests
+        { sku: 'EXP-INK-101', binCode: 'F1-1-01', qty: 10,  batchNumber: 'BATCH-EXPIRED-001', purchaseDaysAgo: 60, expiryDaysFromNow: -5 },
+        // Near-expiry batch (3 days) — triggers expiry notification
+        { sku: 'EXP-INK-101', binCode: 'F1-1-02', qty: 15,  batchNumber: 'BATCH-NEAREXP-001', purchaseDaysAgo: 55, expiryDaysFromNow: 3  },
+        // Valid batch of EXP-INK-101 — for FEFO correct-pick test
+        { sku: 'EXP-INK-101', binCode: 'F1-2-01', qty: 30,  batchNumber: 'BATCH-VALID-001',   purchaseDaysAgo: 10, expiryDaysFromNow: 90 },
+        // Threshold-weight item — small qty in Zone B (exactly at boundary)
+        { sku: 'THR-WGT-100', binCode: 'B1-1-01', qty: 5,   batchNumber: 'BATCH-THR-001',     purchaseDaysAgo: 5,  expiryDaysFromNow: null },
+        // Oversized server — zone C
+        { sku: 'HVY-SRV-103', binCode: 'C1-1-01', qty: 2,   batchNumber: 'BATCH-SRV-001',     purchaseDaysAgo: 3,  expiryDaysFromNow: null },
+        // Virtual licence — zone A (weightless)
+        { sku: 'VRT-LIC-099', binCode: 'A1-1-01', qty: 100, batchNumber: 'BATCH-LIC-001',     purchaseDaysAgo: 1,  expiryDaysFromNow: null },
+    ];
+
+    for (const bd of edgeBatchDefs) {
+        const productId = edgeProducts[bd.sku];
+        if (!productId) continue;
+        const locationId = bd.binCode ? allBinMap[bd.binCode] : zoneABinForEdge;
+        if (!locationId) continue;
+
+        const existing = await prisma.inventoryBatch.findFirst({ where: { productId, batchNumber: bd.batchNumber } });
+        if (!existing) {
+            await prisma.inventoryBatch.create({
+                data: {
+                    batchNumber:     bd.batchNumber,
+                    productId,
+                    warehouseId:     dc.id,
+                    locationId,
+                    initialQuantity: bd.qty,
+                    currentQuantity: bd.qty,
+                    reserved:        0,
+                    costPerUnit:     0,
+                    purchaseDate:    daysAgo(bd.purchaseDaysAgo),
+                    status:          'Active',
+                    ...(bd.expiryDaysFromNow != null ? { expiryDate: daysFromNow(bd.expiryDaysFromNow) } : {}),
+                }
+            });
+            // Update ProductInventory
+            const existingPi = await prisma.productInventory.findFirst({ where: { productId, warehouseId: dc.id } });
+            if (!existingPi) {
+                await prisma.productInventory.create({ data: { productId, warehouseId: dc.id, quantity: bd.qty, reserved: 0 } });
+            } else {
+                await prisma.productInventory.update({ where: { id: existingPi.id }, data: { quantity: { increment: bd.qty } } });
+            }
+        }
+    }
+    console.log(`   ✅ ${edgeBatchDefs.length} edge-case batches (expired, near-expiry, boundary-weight, oversized, virtual)`);
+
+    // =========================================================================
+    // 18. EDGE-CASE PURCHASE ORDERS
+    // =========================================================================
+    console.log('── 18. Edge-Case Purchase Orders');
+
+    // PO-REJECT-001 — submitted and rejected
+    let poRejected = await prisma.purchaseOrder.findFirst({ where: { poNumber: 'PO-REJECT-001' } });
+    if (!poRejected) {
+        poRejected = await prisma.purchaseOrder.create({
+            data: {
+                poNumber:        'PO-REJECT-001',
+                supplierId:      suppliers['OfficeWorld Ltd.'],
+                status:          'REJECTED',
+                approvalStatus:  'REJECTED',
+                orderDate:       daysAgo(10),
+                expectedDate:    daysFromNow(20),
+                asnExpectedDate: daysFromNow(20),
+                threeWayMatch:   'PENDING',
+                buyerName:       'Procurement Team',
+                buyerAddress:    'Jl. Raya Bekasi KM 18, Jakarta',
+                buyerContact:    'procurement@labamu.co.id',
+                shipToAddress:   'Jl. Raya Bekasi KM 18, Jakarta 13930',
+                billToAddress:   'Jl. Raya Bekasi KM 18, Jakarta 13930',
+                paymentTerms:    'NET30',
+                deliveryTerms:   'DAP Jakarta',
+                taxAmount:       110000,
+                shippingCost:    50000,
+                totalAmount:     1210000,
+                notes:           'Rejected: budget exceeded for Q1',
+            }
+        });
+        await prisma.purchaseOrderItem.create({
+            data: { purchaseOrderId: poRejected.id, productId: products['PPR-A4-011'], quantity: 200, unitCost: 5000 }
+        });
+        console.log('   ✅ PO-REJECT-001 (rejected PO for unhappy-flow tests)');
+    }
+
+    // PO-PARTIAL-001 — received partially (some items missing)
+    let poPartial = await prisma.purchaseOrder.findFirst({ where: { poNumber: 'PO-PARTIAL-001' } });
+    if (!poPartial) {
+        poPartial = await prisma.purchaseOrder.create({
+            data: {
+                poNumber:        'PO-PARTIAL-001',
+                supplierId:      suppliers['TechSupply Co.'],
+                status:          'PARTIALLY_RECEIVED',
+                approvalStatus:  'APPROVED',
+                orderDate:       daysAgo(14),
+                expectedDate:    daysAgo(3),
+                asnExpectedDate: daysAgo(3),
+                threeWayMatch:   'DISCREPANCY',
+                buyerName:       'Procurement Team',
+                buyerAddress:    'Jl. Raya Bekasi KM 18, Jakarta',
+                buyerContact:    'procurement@labamu.co.id',
+                shipToAddress:   'Jl. Raya Bekasi KM 18, Jakarta 13930',
+                billToAddress:   'Jl. Raya Bekasi KM 18, Jakarta 13930',
+                paymentTerms:    'NET30',
+                deliveryTerms:   'DAP Jakarta',
+                taxAmount:       1980000,
+                shippingCost:    500000,
+                totalAmount:     23730000,
+                notes:           'Partial receipt — 5 of 10 laptops arrived; 5 backordered by supplier',
+            }
+        });
+        await prisma.purchaseOrderItem.createMany({
+            data: [
+                { purchaseOrderId: poPartial.id, productId: products['LAP-STD-002'], quantity: 10, unitCost: 10750000 },
+                { purchaseOrderId: poPartial.id, productId: products['KBD-MEC-004'], quantity: 10, unitCost: 850000  },
+            ]
+        });
+        console.log('   ✅ PO-PARTIAL-001 (partially received, discrepancy 3-way match)');
+    }
+
+    // PO-OVERDUE-001 — approved but expected date passed (overdue)
+    let poOverdue = await prisma.purchaseOrder.findFirst({ where: { poNumber: 'PO-OVERDUE-001' } });
+    if (!poOverdue) {
+        poOverdue = await prisma.purchaseOrder.create({
+            data: {
+                poNumber:        'PO-OVERDUE-001',
+                supplierId:      suppliers['GlobalImport Inc.'],
+                status:          'ORDERED',
+                approvalStatus:  'APPROVED',
+                orderDate:       daysAgo(30),
+                expectedDate:    daysAgo(7),
+                asnExpectedDate: daysAgo(7),
+                threeWayMatch:   'PENDING',
+                buyerName:       'Procurement Team',
+                buyerAddress:    'Jl. Raya Bekasi KM 18, Jakarta',
+                buyerContact:    'procurement@labamu.co.id',
+                shipToAddress:   'Jl. Raya Bekasi KM 18, Jakarta 13930',
+                billToAddress:   'Jl. Raya Bekasi KM 18, Jakarta 13930',
+                paymentTerms:    'NET60',
+                deliveryTerms:   'DAP Jakarta',
+                taxAmount:       550000,
+                shippingCost:    200000,
+                totalAmount:     6050000,
+                notes:           'Overdue — supplier delayed shipment, chasing for ETA',
+            }
+        });
+        await prisma.purchaseOrderItem.createMany({
+            data: [
+                { purchaseOrderId: poOverdue.id, productId: products['INK-CTR-014'], quantity: 50, unitCost: 110000 },
+                { purchaseOrderId: poOverdue.id, productId: products['PHT-PPR-015'], quantity: 20, unitCost: 85000  },
+            ]
+        });
+        console.log('   ✅ PO-OVERDUE-001 (overdue approved PO, expected date in past)');
+    }
+
+    // =========================================================================
+    // 19. EDGE-CASE SALES ORDERS
+    // =========================================================================
+    console.log('── 19. Edge-Case Sales Orders');
+
+    const edgeOrderDefs = [
+        // Cancelled order — for cancel unhappy flow
+        { status: 'CANCELLED', priority: '2', customerId: customers['Acme Corporation'],
+          items: [{ sku: 'CAM-WEB-007', qty: 3 }], expectedDate: daysAgo(2) },
+        // Overdue order — expected date in the past, still PENDING
+        { status: 'PENDING',   priority: '1', customerId: customers['MegaRetail Group'],
+          items: [{ sku: 'HDR-BT-008', qty: 5 }, { sku: 'USB-HUB-006', qty: 5 }], expectedDate: daysAgo(3) },
+        // High-priority order (priority 1 + large qty, tests reservation contention)
+        { status: 'PENDING',   priority: '1', customerId: customers['StartupHub ID'],
+          items: [{ sku: 'LAP-PRO-001', qty: 50 }], expectedDate: daysFromNow(1) },
+        // Order with discontinued product — should fail availability check
+        { status: 'PENDING',   priority: '3', customerId: customers['EduTech Nusantara'],
+          items: [{ sku: 'DSC-CAM-102', qty: 2 }], expectedDate: daysFromNow(5) },
+    ] as Array<{ status: string; priority: string; customerId: string; items: { sku: string; qty: number }[]; expectedDate: Date }>;
+
+    let edgeOrderCount = 0;
+    for (const [i, od] of edgeOrderDefs.entries()) {
+        const orderNum = `ORD-EDGE-${String(i + 1).padStart(3, '0')}`;
+        const existingOrder = await prisma.order.findFirst({ where: { customerId: od.customerId, status: od.status, priority: od.priority } });
+        if (!existingOrder) {
+            const order = await prisma.order.create({
+                data: {
+                    customerId:        od.customerId,
+                    status:            od.status,
+                    fulfillmentStatus: od.status === 'CANCELLED' ? 'CANCELLED' : 'UNALLOCATED',
+                    priority:          od.priority,
+                    type:              'SALES',
+                    warehouseId:       dc.id,
+                    totalAmount:       0,
+                    shippingCost:      25000,
+                    expectedDate:      od.expectedDate,
+                }
+            });
+            for (const item of od.items) {
+                const pid = products[item.sku] ?? edgeProducts[item.sku];
+                if (pid) {
+                    await prisma.orderItem.create({ data: { orderId: order.id, productId: pid, quantity: item.qty } });
+                }
+            }
+            edgeOrderCount++;
+        }
+    }
+    console.log(`   ✅ ${edgeOrderCount} edge-case sales orders (cancelled, overdue, oversell, discontinued product)`);
+
+    // =========================================================================
+    // 20. ADDITIONAL FULFILLMENT RULES (priority + region)
+    // =========================================================================
+    console.log('── 20. Fulfillment Rules');
+
+    const fulfillmentRuleDefs = [
+        { name: 'Priority Fulfillment — Class A Products',      strategy: 'ZONE_PRIORITY',  priority: 10, active: true, actionIfUnavailable: 'NEXT_RULE' },
+        { name: 'Cold Chain Fulfillment — Temperature Sensitive', strategy: 'ZONE_PRIORITY', priority: 20, active: true, actionIfUnavailable: 'NEXT_RULE' },
+        { name: 'Express Fulfillment — Priority 1 Orders',      strategy: 'WAVELESS',       priority: 5,  active: true, actionIfUnavailable: 'NEXT_RULE' },
+        { name: 'Bulk Fulfillment — Office Supply Category',    strategy: 'BATCH',          priority: 30, active: true, actionIfUnavailable: 'NEXT_RULE' },
+    ];
+
+    for (const frd of fulfillmentRuleDefs) {
+        const existing = await prisma.fulfillmentRule.findFirst({ where: { name: frd.name } });
+        if (!existing) {
+            await prisma.fulfillmentRule.create({ data: frd });
+        }
+    }
+    console.log(`   ✅ ${fulfillmentRuleDefs.length} fulfillment rules (priority, cold chain, express, bulk)`);
+
+    // =========================================================================
+    // 21. ADDITIONAL CUSTOMERS (edge-case profiles)
+    // =========================================================================
+    console.log('── 21. Edge-Case Customers');
+
+    const edgeCustomerData = [
+        { name: 'International Buyer (SG)',     address: '1 Raffles Place, Singapore 048616',  latitude: 1.2847, longitude: 103.8519 },
+        { name: 'Walk-In Customer (No Address)', address: '',                                    latitude: null,   longitude: null   },
+    ];
+
+    for (const cd of edgeCustomerData) {
+        const existing = await prisma.customer.findFirst({ where: { name: cd.name } });
+        if (!existing) {
+            await prisma.customer.create({
+                data: { name: cd.name, address: cd.address, latitude: cd.latitude, longitude: cd.longitude }
+            });
+        }
+    }
+    console.log(`   ✅ ${edgeCustomerData.length} edge-case customers (international, walk-in)`);
+
+    // =========================================================================
+    // 22. PICKING STRATEGIES (seeded for strategy module tests)
+    // =========================================================================
+    console.log('── 22. Picking Strategies');
+
+    const pickingStrategyDefs = [
+        { name: 'FIFO Single Pick',    rules: JSON.stringify({ rotation: 'FIFO', batchSize: 1 }),  warehouseId: dc.id },
+        { name: 'FEFO Cold Chain Pick', rules: JSON.stringify({ rotation: 'FEFO', zone: 'COLD' }), warehouseId: dc.id },
+        { name: 'Batch Office Supplies', rules: JSON.stringify({ category: 'Office Supplies', maxOrders: 10 }), warehouseId: dc.id },
+    ];
+
+    for (const ps of pickingStrategyDefs) {
+        const existing = await prisma.pickingStrategy.findFirst({ where: { name: ps.name, warehouseId: ps.warehouseId } });
+        if (!existing) {
+            await prisma.pickingStrategy.create({ data: ps as any });
+        }
+    }
+    console.log(`   ✅ ${pickingStrategyDefs.length} picking strategies`);
+
+    // =========================================================================
     // Done
     // =========================================================================
     console.log('\n✅  Seed complete. Summary:');
     console.log(`     Categories        : ${categoryNames.length}`);
     console.log(`     Suppliers         : ${supplierData.length}`);
-    console.log(`     Customers         : ${customerData.length}`);
+    console.log(`     Customers         : ${customerData.length + edgeCustomerData.length}`);
     console.log(`     Delivery Methods  : ${deliveryMethodData.length}`);
     console.log(`     Attr Definitions  : ${attrDefData.length}`);
     console.log(`     Warehouses        : 2  (DC-JKT 3-step, DEP-SBY 1-step)`);
     console.log(`     Storage Locations : ${totalLocations}+ (4 zones, Zone A/B/C/COLD)`);
-    console.log(`     Products          : ${productDefs.length}`);
+    console.log(`     Products          : ${productDefs.length} core + ${edgeProductDefs.length} edge-case`);
     console.log(`     Putaway Rules     : 6  (velocity, temperature, weight, category)`);
-    console.log(`     Inventory Batches : ${batchDefs.length}`);
-    console.log(`     Purchase Orders   : 4  (Draft/Pending/Approved/Received)`);
-    console.log(`     Sales Orders      : 8  (Pending→Done)`);
+    console.log(`     Inventory Batches : ${batchDefs.length} core + ${edgeBatchDefs.length} edge-case`);
+    console.log(`     Purchase Orders   : 4 core + 3 edge-case (rejected, partial, overdue)`);
+    console.log(`     Sales Orders      : 8 core + ${edgeOrderCount} edge-case (cancelled, overdue, oversell)`);
     console.log(`     Rotation Rules    : ${rotationRuleDefs.length}  (FEFO cold, FIFO global)`);
     console.log(`     Reorder Rules     : ${reorderDefs.length}`);
     console.log(`     Routes            : ${routeDefs.length}`);
+    console.log(`     Fulfillment Rules : ${fulfillmentRuleDefs.length}`);
+    console.log(`     Picking Strategies: ${pickingStrategyDefs.length}`);
     console.log('');
 }
 
