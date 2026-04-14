@@ -45,11 +45,11 @@ export class DrillDownService {
             }
         });
 
-        return inventory.map(inv => ({
+        return inventory.filter(inv => inv.product).map(inv => ({
             productSku: inv.product.sku,
             productName: inv.product.name,
             category: inv.product.category || 'Uncategorized',
-            location: inv.location.name,
+            location: inv.location?.name ?? 'Unknown',
             quantity: inv.quantity,
             unitCost: inv.product.averageCost,
             totalValue: inv.quantity * (inv.product.averageCost || 0)

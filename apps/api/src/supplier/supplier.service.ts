@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
 @Injectable()
@@ -41,9 +41,14 @@ export class SupplierService {
     }
 
     async remove(id: string) {
-        return this.prisma.supplier.delete({
-            where: { id },
-        });
+        try {
+            return await this.prisma.supplier.delete({ where: { id } });
+        } catch (e: any) {
+            if (e?.code === 'P2003' || e?.message?.includes('Foreign key constraint')) {
+                throw new ConflictException('Cannot delete supplier with existing purchase orders');
+            }
+            throw e;
+        }
     }
 
     async getSupplierStats(id: string) {

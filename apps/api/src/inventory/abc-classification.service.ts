@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
 @Injectable()
@@ -15,6 +15,9 @@ export class AbcClassificationService {
      */
     async runClassification(warehouseId: string, periodDays = 90) {
         this.logger.log(`Running ABC classification for warehouse ${warehouseId} over last ${periodDays} days`);
+
+        const warehouse = await this.prisma.warehouse.findUnique({ where: { id: warehouseId } });
+        if (!warehouse) throw new NotFoundException(`Warehouse ${warehouseId} not found`);
 
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - periodDays);

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, UseGuards, UseInterceptors, UploadedFile, Req, Res, StreamableFile } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, UseInterceptors, UploadedFile, Req, Res, StreamableFile, NotFoundException } from '@nestjs/common';
 import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
@@ -37,8 +37,10 @@ export class PurchaseOrderController {
 
     @Get(':id')
     @RequirePermission('PURCHASE_ORDERS', 'READ')
-    findOne(@Param('id') id: string) {
-        return this.purchaseOrderService.getPurchaseOrder(id);
+    async findOne(@Param('id') id: string) {
+        const po = await this.purchaseOrderService.getPurchaseOrder(id);
+        if (!po) throw new NotFoundException(`Purchase order ${id} not found`);
+        return po;
     }
 
     @Get(':id/receipts')
