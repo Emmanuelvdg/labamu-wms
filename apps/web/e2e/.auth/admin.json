@@ -1,0 +1,35 @@
+{
+  "cookies": [
+    {
+      "name": "auth",
+      "value": "true",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1776841442.219998,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "user_id",
+      "value": "c9b6ad61-ce5c-47e0-939c-e6c2b5ac4502",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1776841442.223153,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "user_data",
+      "value": "%7B%22id%22%3A%22c9b6ad61-ce5c-47e0-939c-e6c2b5ac4502%22%2C%22name%22%3A%22Admin%20User%22%2C%22email%22%3A%22admin%40labamu.co.id%22%2C%22permissions%22%3A%5B%22ALL%3AMANAGE%22%2C%22INVENTORY%3ACREATE%22%2C%22INVENTORY%3ADELETE%22%2C%22INVENTORY%3AREAD%22%2C%22INVENTORY%3AUPDATE%22%2C%22INVOICES%3AREAD%22%2C%22ORDERS%3ACREATE%22%2C%22ORDERS%3ADELETE%22%2C%22ORDERS%3AREAD%22%2C%22ORDERS%3AUPDATE%22%2C%22PURCHASE_ORDERS%3AREAD%22%2C%22REPORTS%3AREAD%22%2C%22SETTINGS%3AREAD%22%2C%22SETTINGS%3AUPDATE%22%2C%22SUPPLIERS%3AREAD%22%5D%7D",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1776841442.223228,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

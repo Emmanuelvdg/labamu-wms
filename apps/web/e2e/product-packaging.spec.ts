@@ -17,8 +17,8 @@ test.describe('Product Packaging UI', () => {
     test.beforeEach(async ({ page }) => {
         // Login
         await page.goto('/login');
-        await page.fill('input[type="email"]', 'admin@example.com');
-        await page.fill('input[type="password"]', 'admin123');
+        await page.fill('input[type="email"]', 'admin@labamu.co.id');
+        await page.fill('input[type="password"]', 'admin');
 
         // Wait for the login response to ensure network is done
         const loginResponsePromise = page.waitForResponse(response =>

@@ -5,7 +5,7 @@ test.describe('RBAC Frontend Permission Rendering', () => {
         // Login as admin
         await page.goto('http://localhost:3000/login');
         await page.fill('input[type="email"]', 'admin@labamu.co.id');
-        await page.fill('input[type="password"]', 'admin123');
+        await page.fill('input[type="password"]', 'admin');
         await page.click('button[type="submit"]');
         await page.waitForURL('http://localhost:3000/');
     });
@@ -149,7 +149,7 @@ test.describe('RBAC Frontend - Permission Hook', () => {
 
         await page.goto('http://localhost:3000/login');
         await page.fill('input[type="email"]', 'admin@labamu.co.id');
-        await page.fill('input[type="password"]', 'admin123');
+        await page.fill('input[type="password"]', 'admin');
         await page.click('button[type="submit"]');
         await page.waitForURL('http://localhost:3000/');
 

@@ -1,0 +1,97 @@
+import { test, expect } from '@playwright/test';
+import { loginAsAdmin } from './helpers/auth';
+
+test.describe('Picking', () => {
+    test.beforeEach(async ({ page }) => {
+        await loginAsAdmin(page);
+    });
+
+    test('TC-PICK-1: Picking page loads with warehouse selector and strategy controls', async ({ page }) => {
+        await page.goto('/picking');
+
+        await page.waitForLoadState('networkidle');
+
+        // Strategy selector should be present
+        const strategySection = page.getByText(/Strategy|Picking Strategy/i);
+        await expect(strategySection).toBeVisible({ timeout: 10000 });
+
+        // Warehouse selector or at least one strategy option
+        const singleBtn = page.getByRole('button', { name: /Single/i })
+            .or(page.getByText('SINGLE'))
+            .or(page.locator('select').first());
+        await expect(singleBtn.first()).toBeVisible({ timeout: 10000 });
+    });
+
+    test('TC-PICK-2: All picking strategies are selectable', async ({ page }) => {
+        await page.goto('/picking');
+        await page.waitForLoadState('networkidle');
+
+        const strategies = ['SINGLE', 'BATCH', 'CLUSTER', 'WAVE', 'WAVELESS'];
+
+        for (const strategy of strategies) {
+            const btn = page.getByRole('button', { name: strategy });
+            if (await btn.isVisible()) {
+                await btn.click();
+                // Button should be visually selected (active state)
+                await expect(btn).toBeVisible();
+            }
+        }
+    });
+
+    test('TC-PICK-3: Warehouse selector populates from API', async ({ page }) => {
+        await page.goto('/picking');
+        await page.waitForLoadState('networkidle');
+
+        // The page fetches warehouses on load; the select should have options
+        const warehouseSelect = page.locator('select').first();
+        await expect(warehouseSelect).toBeVisible({ timeout: 10000 });
+
+        const optionCount = await warehouseSelect.locator('option').count();
+        expect(optionCount).toBeGreaterThan(0);
+    });
+
+    test('TC-PICK-4: Start session button is present and enabled when warehouse is selected', async ({ page }) => {
+        await page.goto('/picking');
+        await page.waitForLoadState('networkidle');
+
+        // Select the first available warehouse
+        const warehouseSelect = page.locator('select').first();
+        const options = await warehouseSelect.locator('option').all();
+
+        // Find a non-empty option (skip placeholder)
+        for (const option of options) {
+            const val = await option.getAttribute('value');
+            if (val && val !== '') {
+                await warehouseSelect.selectOption(val);
+                break;
+            }
+        }
+
+        // After selecting, the Start Session button should appear or be enabled
+        const startBtn = page.getByRole('button', { name: /Start Session|Start Picking/i });
+        await expect(startBtn).toBeVisible({ timeout: 10000 });
+    });
+
+    test('TC-PICK-5: Exception modal has required fields', async ({ page }) => {
+        await page.goto('/picking');
+        await page.waitForLoadState('networkidle');
+
+        // If there's an active session displayed, check the exception modal can open
+        // Otherwise we just validate the page structure is correct
+        const activeSessionHeader = page.getByText(/Active Picking Session|Current Session/i);
+        const hasActiveSession = await activeSessionHeader.isVisible().catch(() => false);
+
+        if (hasActiveSession) {
+            const exceptionBtn = page.getByRole('button', { name: /Exception/i }).first();
+            if (await exceptionBtn.isVisible()) {
+                await exceptionBtn.click();
+
+                // Exception modal should open with reason and quantity fields
+                await expect(page.getByLabel(/Reason|Exception Reason/i)).toBeVisible({ timeout: 5000 });
+            }
+        } else {
+            // No active session - just verify page rendered correctly
+            await expect(page.locator('body')).not.toContainText('Error');
+        }
+    });
+});

@@ -1,0 +1,821 @@
+{
+  "pass": 96,
+  "fail": 0,
+  "results": [
+    {
+      "id": "1.1",
+      "name": "Login Happy",
+      "status": 200,
+      "expected": [
+        200,
+        429
+      ],
+      "ok": true
+    },
+    {
+      "id": "1.2",
+      "name": "Login Wrong Pass",
+      "status": 401,
+      "expected": [
+        401,
+        429
+      ],
+      "ok": true
+    },
+    {
+      "id": "1.3",
+      "name": "Login Unknown Email",
+      "status": 400,
+      "expected": [
+        400,
+        401,
+        429
+      ],
+      "ok": true
+    },
+    {
+      "id": "1.4",
+      "name": "Login Rate Limit (6th)",
+      "status": 429,
+      "expected": [
+        429,
+        401
+      ],
+      "ok": true
+    },
+    {
+      "id": "1.5",
+      "name": "Get Current User",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "1.6",
+      "name": "Get User No Header",
+      "status": 401,
+      "expected": [
+        401,
+        403
+      ],
+      "ok": true
+    },
+    {
+      "id": "1.7",
+      "name": "List Users",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "1.8",
+      "name": "Create User",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "1.9",
+      "name": "Create User Dup",
+      "status": 400,
+      "expected": [
+        400,
+        409
+      ],
+      "ok": true
+    },
+    {
+      "id": "1.10",
+      "name": "Reset Password",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "1.11",
+      "name": "Delete User",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "1.12",
+      "name": "Available Permissions",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "2.1",
+      "name": "List Roles",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "2.2",
+      "name": "Create Role",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "2.3",
+      "name": "Create Role Dup",
+      "status": 400,
+      "expected": [
+        400,
+        409
+      ],
+      "ok": true
+    },
+    {
+      "id": "2.4",
+      "name": "Get Role",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "2.5",
+      "name": "Update Role",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "2.6",
+      "name": "Delete Role",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "2.7",
+      "name": "Delete NonExistent Role",
+      "status": 404,
+      "expected": [
+        404,
+        400,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "3.1",
+      "name": "Create API Key",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "3.2",
+      "name": "List API Keys",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "4.1",
+      "name": "List Categories",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "4.2",
+      "name": "Create Category",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "4.3",
+      "name": "Get Category",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "4.4",
+      "name": "Update Category",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "4.5",
+      "name": "Delete Category",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "4.6",
+      "name": "List Attr Defs",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "4.7",
+      "name": "Create Attr Def",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "4.8",
+      "name": "Update Attr Def",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "4.9",
+      "name": "Delete Attr Def",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "5.1",
+      "name": "List Warehouses",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.2",
+      "name": "Create Warehouse",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "5.3",
+      "name": "Update Warehouse",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.4",
+      "name": "Warehouse Details",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.5",
+      "name": "Location Tree",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.6",
+      "name": "Locations Flat",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.7",
+      "name": "Filter Positions",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.8",
+      "name": "Create Location",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "5.9",
+      "name": "Update Location",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.10",
+      "name": "Move Location",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.11",
+      "name": "Location Details",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.12",
+      "name": "Location Utilisation",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.13",
+      "name": "Capacity Can Accept",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.14",
+      "name": "Capacity Exceeds",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.15",
+      "name": "Batch Utilisation",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "5.16",
+      "name": "Batch Util Velocity",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "5.17",
+      "name": "Batch Util Congestion",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "5.18",
+      "name": "Check Dependencies",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.19",
+      "name": "Delete Loc w/ Inv",
+      "status": 400,
+      "expected": [
+        400,
+        409,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "5.21",
+      "name": "Suggest Removal",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.20",
+      "name": "Delete Empty Loc",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "5.22",
+      "name": "Export CSV",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.23",
+      "name": "Import CSV",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "5.24",
+      "name": "Warehouse Zones",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.25",
+      "name": "Bin Utilisation",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.26",
+      "name": "Warehouse Areas",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "5.27",
+      "name": "Warehouse Deps",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "6.1",
+      "name": "List Products",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "6.2",
+      "name": "Search Products",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "6.3",
+      "name": "Filter Category",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "6.4",
+      "name": "Filter Velocity",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "6.5",
+      "name": "Get Product",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "6.6",
+      "name": "Get NonExist Product",
+      "status": 200,
+      "expected": [
+        404,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "6.7",
+      "name": "Create Product",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "6.8",
+      "name": "Create Product Dup SKU",
+      "status": 500,
+      "expected": [
+        400,
+        409,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "6.9",
+      "name": "Update Product",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "6.10",
+      "name": "Create Packaging",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "6.11",
+      "name": "Get Packaging",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "6.12",
+      "name": "Delete Packaging",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "7.1",
+      "name": "List Batches",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "7.2",
+      "name": "Batches for Product",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "7.3",
+      "name": "Add Batch",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "7.4",
+      "name": "Inventory by Product",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "7.5",
+      "name": "Inventory by Location",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "7.6",
+      "name": "Product Transactions",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "7.7",
+      "name": "Stock Transactions",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "7.8",
+      "name": "Valuation",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "7.9",
+      "name": "Check Expired",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "7.10",
+      "name": "Check Near Expiry 7d",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "7.11",
+      "name": "Check Near Expiry 1d",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "8.1",
+      "name": "List Adjustments",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "8.2",
+      "name": "Create Pos Adj",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "8.3",
+      "name": "Create Neg Adj",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "8.4",
+      "name": "Apply Adjustment",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "8.5",
+      "name": "Apply Again (fail)",
+      "status": 400,
+      "expected": [
+        400,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "8.6",
+      "name": "Update Adj Reason",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "8.7",
+      "name": "Create Adj Missing Fields",
+      "status": 500,
+      "expected": [
+        400,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "9.1",
+      "name": "Transfer Stock",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "9.2",
+      "name": "Transfer Exceed",
+      "status": 400,
+      "expected": [
+        400,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "9.3",
+      "name": "Transfer Same Src/Dst",
+      "status": 201,
+      "expected": [
+        201,
+        400,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "9.4",
+      "name": "Create Scrap",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "9.5",
+      "name": "List Scrap",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "9.6",
+      "name": "Create Stock Move",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "9.7",
+      "name": "List Moves",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "9.8",
+      "name": "Validate Move",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "9.9",
+      "name": "Transit Items",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    }
+  ]
+}

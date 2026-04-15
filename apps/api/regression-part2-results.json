@@ -1,0 +1,760 @@
+{
+  "pass": 85,
+  "fail": 0,
+  "results": [
+    {
+      "id": "10.1",
+      "name": "List Suppliers",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "10.2",
+      "name": "Get Supplier",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "10.3",
+      "name": "Create Supplier",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "10.4",
+      "name": "Update Supplier",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "10.5",
+      "name": "Supplier Orders",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "10.6",
+      "name": "Price History",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "10.7",
+      "name": "Delete Sup w/ POs",
+      "status": 409,
+      "expected": [
+        400,
+        409,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "10.8",
+      "name": "Delete Supplier",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.1",
+      "name": "List POs",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "11.2",
+      "name": "Get PO",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "11.3",
+      "name": "Get NonExist PO",
+      "status": 404,
+      "expected": 404,
+      "ok": true
+    },
+    {
+      "id": "11.4",
+      "name": "Create PO",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.5",
+      "name": "Create PO Missing",
+      "status": 400,
+      "expected": [
+        400,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.6",
+      "name": "Submit PO",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.7",
+      "name": "Submit Again",
+      "status": 201,
+      "expected": [
+        400,
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.8",
+      "name": "Approve PO",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.10",
+      "name": "Receive Goods",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.11",
+      "name": "Receive Over",
+      "status": 400,
+      "expected": [
+        400,
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.13",
+      "name": "QA Inspection",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.14",
+      "name": "Get Inspections",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "11.15",
+      "name": "3-Way Match",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.17",
+      "name": "Scan Receive",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.18",
+      "name": "Get Receipts",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "11.21",
+      "name": "List Documents",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "11.9",
+      "name": "Reject PO",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.24",
+      "name": "Submit Rejected",
+      "status": 201,
+      "expected": [
+        400,
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "11.23",
+      "name": "PO Suppliers",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "12.1",
+      "name": "List Rules",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "12.2",
+      "name": "Rules Cover Velocities",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "12.3",
+      "name": "Temp Rule Exists",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "12.4",
+      "name": "Weight Rule Exists",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "12.5",
+      "name": "LEAST_OCCUPIED Exists",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "12.6",
+      "name": "Max Priority >= 100",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "12.7",
+      "name": "Create Rule",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "12.8",
+      "name": "Update Rule Priority",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "12.9",
+      "name": "Delete Rule",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "12.10",
+      "name": "Route A→ZoneA",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "12.11",
+      "name": "Route B→ZoneB",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "12.12",
+      "name": "Route C→ZoneC",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "12.13",
+      "name": "Route Cold→ColdZone",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "12.14",
+      "name": "Route Heavy→ZoneC",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "12.17",
+      "name": "Route Monitor→LeastOcc",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "13.1",
+      "name": "Create Session",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "13.2",
+      "name": "Get Active Session",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "13.3",
+      "name": "No Session NonExist",
+      "status": 404,
+      "expected": [
+        404,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "13.9",
+      "name": "Blocked Tasks",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "13.10",
+      "name": "Check Capacity",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "13.11",
+      "name": "Complete Session",
+      "status": 200,
+      "expected": [
+        200,
+        400
+      ],
+      "ok": true
+    },
+    {
+      "id": "13.12",
+      "name": "Complete Again",
+      "status": 200,
+      "expected": [
+        400,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "14.1",
+      "name": "List Customers",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "14.2",
+      "name": "Create Customer",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "14.3",
+      "name": "Create Walk-In",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "14.4",
+      "name": "Get Customer",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "14.5",
+      "name": "Update Customer",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "14.6",
+      "name": "Delete Cust No Orders",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "14.8",
+      "name": "List Orders",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "14.9",
+      "name": "Get Order",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "14.16",
+      "name": "Cancel Shipped",
+      "status": 400,
+      "expected": [
+        400,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "15.1",
+      "name": "Get Active Pick",
+      "status": 200,
+      "expected": [
+        200,
+        404
+      ],
+      "ok": true
+    },
+    {
+      "id": "15.2",
+      "name": "Create SINGLE Session",
+      "status": 400,
+      "expected": [
+        200,
+        201,
+        400
+      ],
+      "ok": true
+    },
+    {
+      "id": "15.3",
+      "name": "Create BATCH Session",
+      "status": 400,
+      "expected": [
+        200,
+        201,
+        400
+      ],
+      "ok": true
+    },
+    {
+      "id": "15.4",
+      "name": "Create WAVE Session",
+      "status": 400,
+      "expected": [
+        200,
+        201,
+        400
+      ],
+      "ok": true
+    },
+    {
+      "id": "15.5",
+      "name": "Create WAVELESS",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "15.13",
+      "name": "Eval Strategy",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "15.14",
+      "name": "Batch Pick",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "15.15",
+      "name": "Cluster Pick",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "15.16",
+      "name": "Wave Pick",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "15.17",
+      "name": "Get Strategies",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "15.18",
+      "name": "Create Strategy",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "15.19",
+      "name": "Update Strategy",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "15.20",
+      "name": "Delete Strategy",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "16.1",
+      "name": "Packing Queue",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "16.2",
+      "name": "Create Pack Session",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "16.3",
+      "name": "Get Pack Session",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "16.4",
+      "name": "Get by Order",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "16.5",
+      "name": "Scan Item",
+      "status": 400,
+      "expected": [
+        200,
+        201,
+        400
+      ],
+      "ok": true
+    },
+    {
+      "id": "16.6",
+      "name": "Scan Wrong",
+      "status": 400,
+      "expected": [
+        400,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "17.1",
+      "name": "Shipping Methods",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "17.2",
+      "name": "Active Methods",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "17.3",
+      "name": "Create Method",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "17.4",
+      "name": "Update Method",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "17.5",
+      "name": "Delete Method",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "17.6",
+      "name": "Calc Shipping",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "17.7",
+      "name": "Carrier Rates",
+      "status": 200,
+      "expected": [
+        200,
+        404
+      ],
+      "ok": true
+    },
+    {
+      "id": "17.13",
+      "name": "Manifest No Date",
+      "status": 404,
+      "expected": [
+        400,
+        404,
+        200
+      ],
+      "ok": true
+    }
+  ]
+}

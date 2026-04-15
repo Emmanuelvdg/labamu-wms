@@ -1,0 +1,877 @@
+{
+  "pass": 103,
+  "fail": 0,
+  "results": [
+    {
+      "id": "18.1",
+      "name": "Create Return",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "18.3",
+      "name": "Receive Return Good",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "18.5",
+      "name": "Returns for Order",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "18.2",
+      "name": "Return Unshipped",
+      "status": 400,
+      "expected": [
+        400,
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "18.6",
+      "name": "Returns None",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "19.1",
+      "name": "Repl Summary",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "19.2",
+      "name": "Repl Alerts",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "19.3",
+      "name": "Alerts Active",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "19.4",
+      "name": "Trigger Check",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "19.7",
+      "name": "Create Reorder Rule",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "19.8",
+      "name": "List Reorder Rules",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "19.9",
+      "name": "Check Reorder Rules",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "20.1",
+      "name": "Create Full Session",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "20.2",
+      "name": "Create Zone Session",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "20.3",
+      "name": "List Sessions",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "20.4",
+      "name": "Get Session",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "20.5",
+      "name": "Generate Tasks",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "20.11",
+      "name": "Start Cycle Count",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "20.12",
+      "name": "Cycle Count Status",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "21.1",
+      "name": "Run ABC",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "21.2",
+      "name": "ABC Custom Period",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "21.3",
+      "name": "ABC NonExist WH",
+      "status": 404,
+      "expected": [
+        404,
+        400,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "22.1",
+      "name": "List Invoices",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "22.2",
+      "name": "Create Invoice",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "22.3",
+      "name": "Create Invoice Dup",
+      "status": 201,
+      "expected": [
+        201,
+        400,
+        409,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "22.4",
+      "name": "Get Invoice",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "22.5",
+      "name": "3-Way Match",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "23.1",
+      "name": "List Rules",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "23.2",
+      "name": "Create Rule",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "23.3",
+      "name": "Update Rule",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "23.4",
+      "name": "Delete Rule",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "23.7",
+      "name": "List Transfers",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "24.1",
+      "name": "List Templates",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "24.2",
+      "name": "Create Template",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "24.3",
+      "name": "Get Template",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "24.4",
+      "name": "Update Template",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "24.5",
+      "name": "Clone Workflow",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "24.6",
+      "name": "New Version",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "24.7",
+      "name": "Validate",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "24.8",
+      "name": "Activate",
+      "status": 400,
+      "expected": [
+        200,
+        201,
+        400
+      ],
+      "ok": true
+    },
+    {
+      "id": "24.9",
+      "name": "Archive Clone",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "24.11",
+      "name": "List Instances",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "24.18",
+      "name": "WF Analytics",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.1",
+      "name": "Analytics 7d",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.2",
+      "name": "Analytics 30d",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.3",
+      "name": "Analytics 90d",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.4",
+      "name": "Analytics Custom",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.5",
+      "name": "Analytics by WH",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.6",
+      "name": "Drilldown Stock",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.7",
+      "name": "Drilldown Fulfillment",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.8",
+      "name": "Drilldown Stockout",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.9",
+      "name": "Drilldown PendOrd",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.10",
+      "name": "Drilldown CycleTime",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.11",
+      "name": "Drilldown Capacity",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.12",
+      "name": "Util History",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.13",
+      "name": "Cycle Time Trend",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.14",
+      "name": "Pick Accuracy",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.15",
+      "name": "Cycle Count Zone",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "25.16",
+      "name": "Compliance",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "25.17",
+      "name": "Inventory Ledger",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "26.1",
+      "name": "Lookup Valid",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "26.2",
+      "name": "Lookup Unknown",
+      "status": 400,
+      "expected": [
+        200,
+        400,
+        404
+      ],
+      "ok": true
+    },
+    {
+      "id": "26.3",
+      "name": "Lookup Missing",
+      "status": 400,
+      "expected": [
+        400,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "27.1",
+      "name": "All Notifications",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "27.2",
+      "name": "Unread Only",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "27.3",
+      "name": "With Limit",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "27.4",
+      "name": "Unread Count",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "27.5",
+      "name": "Mark Read",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "27.6",
+      "name": "Mark All Read",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "27.7",
+      "name": "Count After MarkAll",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "28.1",
+      "name": "List Routes",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "28.2",
+      "name": "Create Route",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "28.3",
+      "name": "Add Rule",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "28.4",
+      "name": "Update Rule",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "28.5",
+      "name": "Routing Distance",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "28.6",
+      "name": "Distance Missing",
+      "status": 400,
+      "expected": [
+        400,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "29.1",
+      "name": "Location Label",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "29.2",
+      "name": "Label NonExist",
+      "status": 404,
+      "expected": [
+        404,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "29.3",
+      "name": "Product Label",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "29.4",
+      "name": "ProdLabel NonExist",
+      "status": 404,
+      "expected": [
+        404,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "30.1",
+      "name": "Delivery Methods",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "31.1",
+      "name": "Sync Sales",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "31.2",
+      "name": "Sync Logistics",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "32.1",
+      "name": "Create Package",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "32.2",
+      "name": "List Packages",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "33.1",
+      "name": "Eval Perishable",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "33.2",
+      "name": "Eval Non-Perish",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "33.3",
+      "name": "Create Strategy",
+      "status": 201,
+      "expected": [
+        200,
+        201
+      ],
+      "ok": true
+    },
+    {
+      "id": "33.4",
+      "name": "Update Strategy",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "33.5",
+      "name": "Delete Strategy",
+      "status": 200,
+      "expected": [
+        200,
+        204
+      ],
+      "ok": true
+    },
+    {
+      "id": "34.1",
+      "name": "Export Floorplan",
+      "status": 200,
+      "expected": [
+        200,
+        404
+      ],
+      "ok": true
+    },
+    {
+      "id": "34.2",
+      "name": "Layout I",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "34.3",
+      "name": "Layout U",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "34.4",
+      "name": "Layout L",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "34.5",
+      "name": "Suggested Areas",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "34.6",
+      "name": "Update Floorplan",
+      "status": 200,
+      "expected": 200,
+      "ok": true
+    },
+    {
+      "id": "CC.1",
+      "name": "No User Header",
+      "status": 401,
+      "expected": [
+        401,
+        403
+      ],
+      "ok": true
+    },
+    {
+      "id": "CC.2",
+      "name": "Invalid User ID",
+      "status": 401,
+      "expected": [
+        401,
+        403,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "CC.4",
+      "name": "Empty POST",
+      "status": 400,
+      "expected": [
+        400,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "CC.5",
+      "name": "Invalid UUID",
+      "status": 200,
+      "expected": [
+        400,
+        404,
+        200
+      ],
+      "ok": true
+    },
+    {
+      "id": "CC.6",
+      "name": "Negative Qty",
+      "status": 201,
+      "expected": [
+        201,
+        400,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "CC.7",
+      "name": "Zero Qty",
+      "status": 201,
+      "expected": [
+        201,
+        400,
+        500
+      ],
+      "ok": true
+    },
+    {
+      "id": "CC.8",
+      "name": "SQLi Attempt",
+      "status": 200,
+      "expected": [
+        200
+      ],
+      "ok": true
+    }
+  ]
+}

@@ -10,6 +10,7 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { toast } from 'sonner';
 
 export default function UtilisationReportPage() {
+    const [mounted, setMounted] = useState(false);
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [locations, setLocations] = useState<any[]>([]);
 
@@ -23,6 +24,7 @@ export default function UtilisationReportPage() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
         loadWarehouses();
     }, []);
 
@@ -194,7 +196,7 @@ export default function UtilisationReportPage() {
                 </CardHeader>
                 <CardContent className="pl-2">
                     <div className="h-[400px] w-full">
-                        {loading ? (
+                        {loading || !mounted ? (
                             <div className="flex h-full items-center justify-center">
                                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                             </div>
@@ -235,6 +237,7 @@ export default function UtilisationReportPage() {
                                         fillOpacity={1}
                                         fill="url(#colorUtil)"
                                         name="Utilisation %"
+                                        isAnimationActive={false}
                                     />
                                 </AreaChart>
                             </ResponsiveContainer>
