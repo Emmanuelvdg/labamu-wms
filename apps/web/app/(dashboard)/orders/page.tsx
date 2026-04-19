@@ -21,7 +21,9 @@ function OrdersPageContent() {
         status: 'ALL',
         priority: '',
         date: '',
-        items: ''
+        items: '',
+        warehouse: '',
+        total: ''
     });
 
     useEffect(() => {
@@ -77,9 +79,17 @@ function OrdersPageContent() {
         const dateStr = order.expectedDate ? format(new Date(order.expectedDate), 'MMM d, yyyy') : '';
         if (filters.date && !dateStr.toLowerCase().includes(filters.date.toLowerCase())) return false;
 
-        // Items Count Filter
-        const itemsCount = (order.items?.length || 0).toString();
-        if (filters.items && !itemsCount.includes(filters.items)) return false;
+        // Total Qty Filter
+        const totalQty = (order.items?.reduce((sum: number, i: any) => sum + (i.quantity || 0), 0) || 0).toString();
+        if (filters.items && !totalQty.includes(filters.items)) return false;
+
+        // Warehouse Filter
+        const warehouseName = (order.warehouse?.name || '').toLowerCase();
+        if (filters.warehouse && !warehouseName.includes(filters.warehouse.toLowerCase())) return false;
+
+        // Total Amount Filter
+        const totalAmt = (order.totalAmount || 0).toString();
+        if (filters.total && !totalAmt.includes(filters.total)) return false;
 
         return true;
     });
@@ -156,10 +166,65 @@ function OrdersPageContent() {
                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer / Destination</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Warehouse</th>
-                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Items</th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Qty</th>
                             <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                        {/* Column Filter Row */}
+                        <tr className="bg-blue-50/50 border-t border-blue-100">
+                            <th className="px-2 py-1.5">
+                                <input type="text" placeholder="Order #..." value={filters.id}
+                                    onChange={e => handleFilterChange('id', e.target.value)}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <input type="text" placeholder="Date..." value={filters.date}
+                                    onChange={e => handleFilterChange('date', e.target.value)}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <input type="text" placeholder="Customer..." value={filters.customer}
+                                    onChange={e => handleFilterChange('customer', e.target.value)}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <input type="text" placeholder="Warehouse..." value={filters.warehouse}
+                                    onChange={e => handleFilterChange('warehouse', e.target.value)}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <input type="number" placeholder="Qty..." value={filters.items}
+                                    onChange={e => handleFilterChange('items', e.target.value)}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <input type="text" placeholder="Total..." value={filters.total}
+                                    onChange={e => handleFilterChange('total', e.target.value)}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <select value={filters.status} onChange={e => handleFilterChange('status', e.target.value)}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white">
+                                    <option value="ALL">All Status</option>
+                                    <option value="DRAFT">Draft</option>
+                                    <option value="PENDING">Pending</option>
+                                    <option value="RESERVED">Reserved</option>
+                                    <option value="PICKING">Picking</option>
+                                    <option value="PACKING">Packing</option>
+                                    <option value="PACKED">Packed</option>
+                                    <option value="SHIPPED">Shipped</option>
+                                    <option value="DELIVERED">Delivered</option>
+                                    <option value="CANCELLED">Cancelled</option>
+                                </select>
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <button
+                                    onClick={() => setFilters(prev => ({ ...prev, id: '', date: '', customer: '', warehouse: '', items: '', total: '' }))}
+                                    className="w-full text-xs text-red-400 hover:text-red-600 py-1 rounded hover:bg-red-50 transition-colors">
+                                    Clear
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -173,7 +238,7 @@ function OrdersPageContent() {
                                         <h3 className="text-lg font-medium text-gray-900">No orders found</h3>
                                         <p className="text-sm text-gray-500 max-w-sm">We couldn't find any orders matching your current filters.</p>
                                         <button
-                                            onClick={() => setFilters({ id: '', type: 'ALL', customer: '', status: 'ALL', priority: '', date: '', items: '' })}
+                                            onClick={() => setFilters({ id: '', type: 'ALL', customer: '', status: 'ALL', priority: '', date: '', items: '', warehouse: '', total: '' })}
                                             className="mt-4 text-blue-600 font-medium hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors"
                                         >
                                             Clear Filters
@@ -210,7 +275,7 @@ function OrdersPageContent() {
                                         {order.warehouse?.name || 'All Warehouses'}
                                     </td>
                                     <td className="px-6 py-4 text-right text-sm text-gray-900">
-                                        {order.items?.length || 0}
+                                        {order.items?.reduce((sum: number, i: any) => sum + (i.quantity || 0), 0) || 0}
                                     </td>
                                     <td className="px-6 py-4 text-right text-sm font-medium text-gray-900">
                                         {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(order.totalAmount || 0)}

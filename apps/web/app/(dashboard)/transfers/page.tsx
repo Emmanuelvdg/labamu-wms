@@ -29,6 +29,8 @@ export default function TransferOperationsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [statusTab, setStatusTab] = useState('ALL');
+    const [colFilters, setColFilters] = useState({ id: '', source: '', destination: '' });
 
     // Form state
     const [sourceWarehouseId, setSourceWarehouseId] = useState('');
@@ -175,6 +177,16 @@ export default function TransferOperationsPage() {
         );
     }
 
+    const inputCls = 'w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400';
+    const getCount = (s: string) => s === 'ALL' ? transfers.length : transfers.filter(t => t.status === s).length;
+    const filteredTransfers = transfers.filter(t => {
+        if (statusTab !== 'ALL' && t.status !== statusTab) return false;
+        if (colFilters.id && !t.id.substring(0, 8).toLowerCase().includes(colFilters.id.toLowerCase())) return false;
+        if (colFilters.source && !(t.sourceWarehouse?.name || '').toLowerCase().includes(colFilters.source.toLowerCase())) return false;
+        if (colFilters.destination && !(t.destinationWarehouse?.name || '').toLowerCase().includes(colFilters.destination.toLowerCase())) return false;
+        return true;
+    });
+
     return (
         <div className="p-6">
             <div className="mb-6 flex items-center justify-between">
@@ -202,7 +214,25 @@ export default function TransferOperationsPage() {
                 </div>
             )}
 
-            <div className="bg-white rounded-lg shadow">
+            {/* Status Tabs */}
+            <div className="flex space-x-1 border-b border-gray-200 mb-0 overflow-x-auto bg-white rounded-t-lg px-4 pt-4 shadow-sm">
+                {[{ label: 'All', value: 'ALL' }, { label: 'Pending', value: 'PENDING' }, { label: 'Approved', value: 'APPROVED' }, { label: 'In Transit', value: 'IN_TRANSIT' }, { label: 'Completed', value: 'COMPLETED' }, { label: 'Cancelled', value: 'CANCELLED' }].map(tab => (
+                    <button
+                        key={tab.value}
+                        onClick={() => setStatusTab(tab.value)}
+                        className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                            statusTab === tab.value ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                        {tab.label}
+                        <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
+                            statusTab === tab.value ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                        }`}>{getCount(tab.value)}</span>
+                    </button>
+                ))}
+            </div>
+
+            <div className="bg-white rounded-b-lg shadow border border-gray-200 border-t-0">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-200">
@@ -229,16 +259,47 @@ export default function TransferOperationsPage() {
                                     Actions
                                 </th>
                             </tr>
+                            {/* Column Filter Row */}
+                            <tr className="bg-blue-50/50 border-t border-blue-100">
+                                <th className="px-2 py-1.5">
+                                    <input type="text" placeholder="ID..." value={colFilters.id}
+                                        onChange={e => setColFilters(p => ({ ...p, id: e.target.value }))} className={inputCls} />
+                                </th>
+                                <th className="px-2 py-1.5">
+                                    <input type="text" placeholder="Source..." value={colFilters.source}
+                                        onChange={e => setColFilters(p => ({ ...p, source: e.target.value }))} className={inputCls} />
+                                </th>
+                                <th className="px-2 py-1.5">
+                                    <input type="text" placeholder="Destination..." value={colFilters.destination}
+                                        onChange={e => setColFilters(p => ({ ...p, destination: e.target.value }))} className={inputCls} />
+                                </th>
+                                <th className="px-2 py-1.5"></th>
+                                <th className="px-2 py-1.5">
+                                    <select value={statusTab === 'ALL' ? '' : statusTab} onChange={e => setStatusTab(e.target.value || 'ALL')} className={inputCls}>
+                                        <option value="">All</option>
+                                        <option value="PENDING">Pending</option>
+                                        <option value="APPROVED">Approved</option>
+                                        <option value="IN_TRANSIT">In Transit</option>
+                                        <option value="COMPLETED">Completed</option>
+                                        <option value="CANCELLED">Cancelled</option>
+                                    </select>
+                                </th>
+                                <th className="px-2 py-1.5"></th>
+                                <th className="px-2 py-1.5">
+                                    <button onClick={() => { setStatusTab('ALL'); setColFilters({ id:'', source:'', destination:'' }); }}
+                                        className="w-full text-xs text-red-400 hover:text-red-600 py-1 rounded hover:bg-red-50 transition-colors">Clear</button>
+                                </th>
+                            </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {transfers.length === 0 ? (
+                            {filteredTransfers.length === 0 ? (
                                 <tr>
                                     <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                                         No transfers found. Create your first transfer to get started.
                                     </td>
                                 </tr>
                             ) : (
-                                transfers.map((transfer) => (
+                                filteredTransfers.map((transfer) => (
                                     <tr key={transfer.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4">
                                             <div className="text-sm font-medium text-gray-900">

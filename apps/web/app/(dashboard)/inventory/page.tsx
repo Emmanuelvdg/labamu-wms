@@ -23,6 +23,10 @@ export default function InventoryPage() {
         warehouseId: ''
     });
 
+    // Client-side status tab + numeric column filters
+    const [statusTab, setStatusTab] = useState('ALL');
+    const [colFilters, setColFilters] = useState({ onHandMin: '', freeMin: '' });
+
     // New Product Form State
     const [newProduct, setNewProduct] = useState({
         sku: '',
@@ -119,6 +123,14 @@ export default function InventoryPage() {
 
     if (loading && products.length === 0) return <div className="p-8">Loading...</div>;
 
+    const invStatusCount = (s: string) => s === 'ALL' ? products.length : products.filter(p => p.status === s).length;
+    const filteredProducts = products.filter(p => {
+        if (statusTab !== 'ALL' && p.status !== statusTab) return false;
+        if (colFilters.onHandMin && (p.onHand || 0) < parseInt(colFilters.onHandMin)) return false;
+        if (colFilters.freeMin && (p.free || 0) < parseInt(colFilters.freeMin)) return false;
+        return true;
+    });
+
     return (
         <div className="min-h-screen bg-gray-50 p-8">
             <div className="flex justify-between items-center mb-6">
@@ -195,8 +207,30 @@ export default function InventoryPage() {
                 </button>
             </div>
 
+            {/* Status Tabs */}
+            <div className="flex space-x-1 border-b border-gray-200 mb-0 overflow-x-auto bg-white rounded-t-lg px-4 pt-4 shadow-sm">
+                {[{ label: 'All', value: 'ALL' }, { label: 'Active', value: 'Active' }, { label: 'Inactive', value: 'Inactive' }].map(tab => (
+                    <button
+                        key={tab.value}
+                        onClick={() => setStatusTab(tab.value)}
+                        className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                            statusTab === tab.value
+                                ? 'border-blue-600 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                        {tab.label}
+                        <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
+                            statusTab === tab.value ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                            {invStatusCount(tab.value)}
+                        </span>
+                    </button>
+                ))}
+            </div>
+
             {/* Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+            <div className="bg-white rounded-b-lg shadow overflow-hidden border border-gray-200 border-t-0">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
@@ -210,9 +244,62 @@ export default function InventoryPage() {
                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
+                        {/* Column Filter Row */}
+                        <tr className="bg-blue-50/50 border-t border-blue-100">
+                            <th className="px-2 py-1.5">
+                                <input type="text" placeholder="Name / SKU..." value={filters.search}
+                                    onChange={e => handleFilterChange('search', e.target.value)}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <select value={filters.category} onChange={e => handleFilterChange('category', e.target.value)}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white">
+                                    <option value="">All Categories</option>
+                                    {categories.map((c: any) => (
+                                        <option key={c.id} value={c.name}>{c.name}</option>
+                                    ))}
+                                </select>
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <select value={filters.classification} onChange={e => handleFilterChange('classification', e.target.value)}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white">
+                                    <option value="">All Classes</option>
+                                    <option value="A">Class A</option>
+                                    <option value="B">Class B</option>
+                                    <option value="C">Class C</option>
+                                </select>
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <input type="number" placeholder="≥ On Hand" value={colFilters.onHandMin}
+                                    onChange={e => setColFilters(prev => ({ ...prev, onHandMin: e.target.value }))}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                            </th>
+                            <th className="px-2 py-1.5"></th>
+                            <th className="px-2 py-1.5"></th>
+                            <th className="px-2 py-1.5">
+                                <input type="number" placeholder="≥ Free" value={colFilters.freeMin}
+                                    onChange={e => setColFilters(prev => ({ ...prev, freeMin: e.target.value }))}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <select value={statusTab} onChange={e => setStatusTab(e.target.value)}
+                                    className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white">
+                                    <option value="ALL">All Status</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <button
+                                    onClick={() => { setColFilters({ onHandMin: '', freeMin: '' }); setStatusTab('ALL'); }}
+                                    className="w-full text-xs text-red-400 hover:text-red-600 py-1 rounded hover:bg-red-50 transition-colors">
+                                    Clear
+                                </button>
+                            </th>
+                        </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {products.length === 0 ? (
+                        {filteredProducts.length === 0 ? (
                             <tr>
                                 <td colSpan={9} className="px-6 py-16 text-center">
                                     <div className="flex flex-col items-center justify-center space-y-3">
@@ -233,7 +320,7 @@ export default function InventoryPage() {
                                 </td>
                             </tr>
                         ) : (
-                            products.map((product) => (
+                            filteredProducts.map((product) => (
                                 <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">

@@ -4,10 +4,21 @@ import { useEffect, useState } from 'react';
 import { fetchCustomers, createCustomer } from '@/lib/api';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { SearchX } from 'lucide-react';
+
+const inputCls = 'w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400';
 
 export default function CustomersPage() {
     const [customers, setCustomers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Column filter state
+    const [colFilters, setColFilters] = useState({
+        name: '',
+        registered: '',
+        minOrders: '',
+        minLtv: '',
+    });
 
     // Customer Creation State
     const [showModal, setShowModal] = useState(false);
@@ -17,14 +28,12 @@ export default function CustomersPage() {
     const [newCustomerLng, setNewCustomerLng] = useState('');
     const [creatingCustomer, setCreatingCustomer] = useState(false);
 
-    useEffect(() => {
-        loadCustomers();
-    }, []);
+    useEffect(() => { loadCustomers(); }, []);
 
     const loadCustomers = async () => {
         try {
             const data = await fetchCustomers();
-            setCustomers(data);
+            setCustomers(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Failed to load customers:', error);
         } finally {
@@ -35,7 +44,6 @@ export default function CustomersPage() {
     const handleCreateCustomer = async () => {
         if (!newCustomerName.trim()) return;
 
-        // Validate address fields if provided
         if (newCustomerAddress && (!newCustomerLat || !newCustomerLng)) {
             alert('Please provide both latitude and longitude for the address');
             return;
@@ -44,16 +52,12 @@ export default function CustomersPage() {
         setCreatingCustomer(true);
         try {
             const customerData: any = { name: newCustomerName };
-
-            // Add address fields if provided
             if (newCustomerAddress && newCustomerLat && newCustomerLng) {
                 customerData.address = newCustomerAddress;
                 customerData.latitude = parseFloat(newCustomerLat);
                 customerData.longitude = parseFloat(newCustomerLng);
             }
-
-            const newCustomer = await createCustomer(customerData);
-            // Re-fetch to get aggregate LTV and order counts correctly initialized
+            await createCustomer(customerData);
             await loadCustomers();
             setShowModal(false);
             setNewCustomerName('');
@@ -68,34 +72,95 @@ export default function CustomersPage() {
         }
     };
 
+    const setCF = (key: string, val: string) =>
+        setColFilters(prev => ({ ...prev, [key]: val }));
+
+    const clearColFilters = () =>
+        setColFilters({ name: '', registered: '', minOrders: '', minLtv: '' });
+
+    const filtered = customers.filter(c => {
+        const nameStr = `${c.name || ''} ${c.address || ''}`.toLowerCase();
+        if (colFilters.name && !nameStr.includes(colFilters.name.toLowerCase())) return false;
+        if (colFilters.registered) {
+            const regStr = new Date(c.createdAt).toLocaleDateString();
+            if (!regStr.toLowerCase().includes(colFilters.registered.toLowerCase())) return false;
+        }
+        if (colFilters.minOrders && (c.totalOrders || 0) < parseInt(colFilters.minOrders)) return false;
+        if (colFilters.minLtv && (c.lifetimeValue || 0) < parseFloat(colFilters.minLtv)) return false;
+        return true;
+    });
+
     if (loading) return <div className="p-8">Loading CRM...</div>;
 
     return (
-        <div className="p-8">
+        <div className="p-8 bg-gray-50 min-h-screen">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Customers (CRM)</h1>
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Customers (CRM)</h1>
+                    <p className="text-sm text-gray-500">Manage customer profiles and lifetime value</p>
+                </div>
                 <Button onClick={() => setShowModal(true)} data-testid="new-customer-page-btn">
                     + New Customer
                 </Button>
             </div>
 
-            <div className="bg-white rounded-lg shadow overflow-hidden">
+            {/* Table */}
+            <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer Information</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Registered</th>
-                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Total Orders</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Lifetime Value (LTV)</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer Information</th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Registered</th>
+                            <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Orders</th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Lifetime Value (LTV)</th>
+                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                        {/* Column Filter Row */}
+                        <tr className="bg-blue-50/50 border-t border-blue-100">
+                            <th className="px-2 py-1.5">
+                                <input type="text" placeholder="Name / address..." value={colFilters.name}
+                                    onChange={e => setCF('name', e.target.value)} className={inputCls} />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <input type="text" placeholder="Registered..." value={colFilters.registered}
+                                    onChange={e => setCF('registered', e.target.value)} className={inputCls} />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <input type="number" placeholder="≥ Orders" value={colFilters.minOrders}
+                                    onChange={e => setCF('minOrders', e.target.value)} className={inputCls} />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <input type="number" placeholder="≥ LTV" value={colFilters.minLtv}
+                                    onChange={e => setCF('minLtv', e.target.value)} className={inputCls} />
+                            </th>
+                            <th className="px-2 py-1.5">
+                                <button onClick={clearColFilters}
+                                    className="w-full text-xs text-red-400 hover:text-red-600 py-1 rounded hover:bg-red-50 transition-colors">
+                                    Clear
+                                </button>
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {customers.length === 0 ? (
-                            <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-500">No customers found.</td></tr>
+                        {filtered.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-16 text-center">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="bg-gray-50 p-4 rounded-full">
+                                            <SearchX className="h-8 w-8 text-gray-400" />
+                                        </div>
+                                        <h3 className="text-lg font-medium text-gray-900">No customers found</h3>
+                                        <p className="text-sm text-gray-500">Try adjusting your filters</p>
+                                        <button onClick={clearColFilters}
+                                            className="mt-2 text-blue-600 font-medium hover:text-blue-700 hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors text-sm">
+                                            Clear Filters
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
                         ) : (
-                            customers.map((c) => (
-                                <tr key={c.id} className="hover:bg-gray-50">
+                            filtered.map((c) => (
+                                <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="font-medium text-gray-900">{c.name}</div>
                                         {c.address && <div className="text-sm text-gray-500 truncate max-w-xs">{c.address}</div>}
@@ -122,6 +187,10 @@ export default function CustomersPage() {
                     </tbody>
                 </table>
             </div>
+
+            <p className="mt-3 text-xs text-gray-500">
+                Showing {filtered.length} of {customers.length} customers
+            </p>
 
             {/* Customer Modal */}
             {showModal && (

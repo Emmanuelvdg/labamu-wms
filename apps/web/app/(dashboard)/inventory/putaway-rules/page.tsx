@@ -33,6 +33,7 @@ export default function PutawayRulesPage() {
     const [strategyFilter, setStrategyFilter] = useState<string>('');
     const [activeFilter, setActiveFilter] = useState<string>('all');
     const [showFilters, setShowFilters] = useState(false);
+    const [colFilters, setColFilters] = useState({ priority: '', scope: '' });
 
     useEffect(() => {
         fetchRules();
@@ -94,8 +95,11 @@ export default function PutawayRulesPage() {
         const matchesStrategy = !strategyFilter || rule.strategy === strategyFilter;
         const matchesActive =
             activeFilter === 'all' || (activeFilter === 'active' && rule.active) || (activeFilter === 'inactive' && !rule.active);
+        const matchesPriority = !colFilters.priority || rule.priority.toString().includes(colFilters.priority);
+        const matchesScope = !colFilters.scope ||
+            (rule.warehouse?.name || 'All Warehouses').toLowerCase().includes(colFilters.scope.toLowerCase());
 
-        return matchesSearch && matchesStrategy && matchesActive;
+        return matchesSearch && matchesStrategy && matchesActive && matchesPriority && matchesScope;
     });
 
     function getPriorityBadge(priority: number) {
@@ -130,6 +134,28 @@ export default function PutawayRulesPage() {
                     <Plus size={20} />
                     Create Rule
                 </button>
+            </div>
+
+            {/* Status Tabs */}
+            <div className="flex space-x-1 border-b border-gray-200 mb-6 overflow-x-auto">
+                {[{ label: 'All', value: 'all' }, { label: 'Active', value: 'active' }, { label: 'Inactive', value: 'inactive' }].map(tab => (
+                    <button
+                        key={tab.value}
+                        onClick={() => setActiveFilter(tab.value)}
+                        className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                            activeFilter === tab.value
+                                ? 'border-blue-600 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                        {tab.label}
+                        <span className={`ml-2 py-0.5 px-2 rounded-full text-xs ${
+                            activeFilter === tab.value ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                        }`}>
+                            {tab.value === 'all' ? rules.length : rules.filter(r => tab.value === 'active' ? r.active : !r.active).length}
+                        </span>
+                    </button>
+                ))}
             </div>
 
             {/* Search and Filters */}
@@ -214,6 +240,48 @@ export default function PutawayRulesPage() {
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Scope</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                            </tr>
+                            {/* Column Filter Row */}
+                            <tr className="bg-blue-50/50 border-t border-blue-100">
+                                <th className="px-2 py-1.5">
+                                    <input type="number" placeholder="Priority..." value={colFilters.priority}
+                                        onChange={e => setColFilters(p => ({ ...p, priority: e.target.value }))}
+                                        className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                                </th>
+                                <th className="px-2 py-1.5">
+                                    <input type="text" placeholder="Name..." value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                                </th>
+                                <th className="px-2 py-1.5">
+                                    <select value={strategyFilter} onChange={e => setStrategyFilter(e.target.value)}
+                                        className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white">
+                                        <option value="">All Strategies</option>
+                                        {Object.entries(STRATEGY_LABELS).map(([value, { label }]) => (
+                                            <option key={value} value={value}>{label}</option>
+                                        ))}
+                                    </select>
+                                </th>
+                                <th className="px-2 py-1.5">
+                                    <input type="text" placeholder="Warehouse..." value={colFilters.scope}
+                                        onChange={e => setColFilters(p => ({ ...p, scope: e.target.value }))}
+                                        className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400" />
+                                </th>
+                                <th className="px-2 py-1.5">
+                                    <select value={activeFilter} onChange={e => setActiveFilter(e.target.value)}
+                                        className="w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white">
+                                        <option value="all">All</option>
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </th>
+                                <th className="px-2 py-1.5">
+                                    <button
+                                        onClick={() => { setSearchQuery(''); setStrategyFilter(''); setActiveFilter('all'); setColFilters({ priority: '', scope: '' }); }}
+                                        className="w-full text-xs text-red-400 hover:text-red-600 py-1 rounded hover:bg-red-50 transition-colors">
+                                        Clear
+                                    </button>
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
