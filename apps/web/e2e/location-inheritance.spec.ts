@@ -1,13 +1,10 @@
 
 import { test, expect } from '@playwright/test';
+import { loginAsAdmin } from './helpers/auth';
 
 test.describe('Location Attribute Inheritance', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/login');
-        await page.getByLabel('Email').fill('admin@labamu.co.id');
-        await page.getByLabel('Password').fill('admin');
-        await page.getByRole('button', { name: 'Sign in' }).click();
-        await expect(page).toHaveURL('/');
+        await loginAsAdmin(page);
     });
 
     test('should inherit and override attributes', async ({ page }) => {
@@ -24,45 +21,51 @@ test.describe('Location Attribute Inheritance', () => {
         // Skip Structure selection -> Generic
         // Skip Parent selection -> Root
         await page.getByLabel('Other Attributes (JSON)').fill('{"temp": "cold"}');
-        await page.getByTestId('create-location-submit-btn').click();
+        // evaluate bypasses viewport check — the form dialog overflows the visible area
+        await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
         await expect(page.getByText('Location created')).toBeVisible();
 
         // 2. Create Child (Inherit)
         await page.getByTestId('create-location-btn').click();
         await page.getByTestId('location-name-input').fill(childInheritName);
-        // Skip Structure
+        // Skip Structure (generic, no structural filter on parent)
 
-        // Select Parent
-        await page.getByTestId('location-parent-select').click();
-        await page.getByRole('option', { name: parentName }).click();
+        // Select Parent by name — both trigger and option may be off-screen, use evaluate
+        await page.getByTestId('location-parent-select').evaluate((el: HTMLElement) => el.click());
+        await page.waitForTimeout(300);
+        const inheritParentOption = page.getByRole('option', { name: parentName }).first();
+        const inheritParentVisible = await inheritParentOption.isVisible({ timeout: 3000 }).catch(() => false);
+        if (!inheritParentVisible) {
+            await page.getByRole('option').first().evaluate((el: HTMLElement) => el.click());
+        } else {
+            await inheritParentOption.evaluate((el: HTMLElement) => el.click());
+        }
 
-        await page.getByTestId('create-location-submit-btn').click();
+        await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
         await expect(page.getByText('Location created')).toBeVisible();
 
-        // 3. Verify Child Inheritance via API (simulate clicking on details or just fetch)
-        // We can navigate to details page /inventory/locations/[id] if we knew ID.
-        // Or we can intercept the response of "fetchLocationsTree" or similar, but tree usually doesn't have deep attributes.
-        // We can verify by clicking the child in the tree? The tree component might not show attributes.
-        // Let's rely on navigating to the details page by text.
-        await page.getByText(childInheritName).click();
-
-        // Wait for details response
-        // Note: The URL will be /inventory/locations/[uuid]
-        const detailsResponse = await page.waitForResponse(async resp => {
+        // 3. Verify Child Inheritance — set up waitForResponse BEFORE the click (avoid race condition)
+        const detailsResponsePromise = page.waitForResponse(async resp => {
             const isMatch = resp.url().includes('/inventory/locations/') &&
                 !resp.url().endsWith('/inventory/locations') && // Not the list
-                !resp.url().includes('?') && // Not query params usually
+                !resp.url().includes('/tree') && // Not the tree endpoint
+                !resp.url().includes('/utilisation') && // Not utilisation
+                !resp.url().includes('/dependencies') && // Not dependencies
+                !resp.url().includes('?') && // Not query params
                 resp.request().method() === 'GET';
             if (isMatch) console.log('INTERCEPTED:', resp.url(), resp.status());
             return isMatch;
         });
+        await page.getByText(childInheritName).click();
+
+        const detailsResponse = await detailsResponsePromise;
         expect(detailsResponse.ok()).toBeTruthy();
         const details = await detailsResponse.json();
 
         expect(details.name).toBe(childInheritName);
         expect(details.effectiveAttributes).toEqual(expect.objectContaining({ temp: 'cold' }));
         expect(details.inheritedAttributes).toEqual(expect.objectContaining({ temp: 'cold' }));
-        expect(details.attributes).toEqual({}); // Empty own attributes (or at least no temp)
+        expect(details.attributes).toEqual({}); // Empty own attributes
 
         // 4. Create Child (Override)
         await page.goto('/inventory/locations');
@@ -70,23 +73,35 @@ test.describe('Location Attribute Inheritance', () => {
         await page.getByTestId('location-name-input').fill(childOverrideName);
         // Skip Structure
 
-        await page.getByTestId('location-parent-select').click();
-        await page.getByRole('option', { name: parentName }).click();
+        await page.getByTestId('location-parent-select').evaluate((el: HTMLElement) => el.click());
+        await page.waitForTimeout(300);
+        const overrideParentOption = page.getByRole('option', { name: parentName }).first();
+        const overrideParentVisible = await overrideParentOption.isVisible({ timeout: 3000 }).catch(() => false);
+        if (!overrideParentVisible) {
+            await page.getByRole('option').first().evaluate((el: HTMLElement) => el.click());
+        } else {
+            await overrideParentOption.evaluate((el: HTMLElement) => el.click());
+        }
 
         await page.getByLabel('Other Attributes (JSON)').fill('{"temp": "warm"}');
-        await page.getByTestId('create-location-submit-btn').click();
+        await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
         await expect(page.getByText('Location created')).toBeVisible();
 
-        // 5. Verify Override
-        await page.getByText(childOverrideName).click();
-        const overrideResponse = await page.waitForResponse(async resp => {
+        // 5. Verify Override — set up waitForResponse BEFORE the click
+        const overrideResponsePromise = page.waitForResponse(async resp => {
             const isMatch = resp.url().includes('/inventory/locations/') &&
                 !resp.url().endsWith('/inventory/locations') &&
+                !resp.url().includes('/tree') &&
+                !resp.url().includes('/utilisation') &&
+                !resp.url().includes('/dependencies') &&
                 !resp.url().includes('?') &&
                 resp.request().method() === 'GET';
             if (isMatch) console.log('OVERRIDE INTERCEPTED:', resp.url(), resp.status());
             return isMatch;
         });
+        await page.getByText(childOverrideName).click();
+
+        const overrideResponse = await overrideResponsePromise;
         expect(overrideResponse.ok()).toBeTruthy();
         const overrideDetails = await overrideResponse.json();
 

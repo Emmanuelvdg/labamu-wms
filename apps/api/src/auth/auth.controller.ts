@@ -9,7 +9,9 @@ import { LoginDto } from './dto/login.dto';
 export class AuthController {
     constructor(private authService: AuthService, private prisma: PrismaService) { }
 
-    @Throttle({ default: { limit: 5, ttl: 60000 } })
+    // In production keep the strict limit (5/min). During development / E2E
+    // tests raise it so parallel test workers don't get throttled.
+    @Throttle({ default: { limit: process.env.NODE_ENV === 'production' ? 5 : 200, ttl: 60000 } })
     @Post('login')
     @HttpCode(HttpStatus.OK)
     async login(@Body() body: LoginDto) {

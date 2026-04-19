@@ -25,8 +25,9 @@ test.describe('Customers (CRM)', () => {
         // Open modal
         await page.getByRole('button', { name: /New Customer/i }).click();
 
-        // Modal should appear with a name field
-        const nameInput = page.getByLabel(/Name/i).first();
+        // Modal should appear with a name field — use placeholder since the label
+        // isn't connected to the input via a `for` attribute
+        const nameInput = page.getByPlaceholder('Customer Name');
         await expect(nameInput).toBeVisible();
         await nameInput.fill(customerName);
 
@@ -45,7 +46,7 @@ test.describe('Customers (CRM)', () => {
 
         await page.getByRole('button', { name: /New Customer/i }).click();
 
-        const nameInput = page.getByLabel(/Name/i).first();
+        const nameInput = page.getByPlaceholder('Customer Name');
         await nameInput.fill(customerName);
 
         // Fill optional address fields if visible
@@ -91,18 +92,12 @@ test.describe('Customers (CRM)', () => {
     test('TC-CRM-5: Create customer button validation - empty name', async ({ page }) => {
         await page.goto('/customers');
 
-        page.on('dialog', async dialog => {
-            expect(dialog.message()).toBeTruthy();
-            await dialog.accept();
-        });
-
         await page.getByRole('button', { name: /New Customer/i }).click();
 
-        // Attempt to submit without filling the name
-        await page.getByRole('button', { name: /Create|Save|Add/i }).last().click();
-
-        // Either native validation or custom error should prevent submission
-        // Modal should still be open (not navigated away)
-        await expect(page.getByRole('button', { name: /Create|Save|Add/i }).last()).toBeVisible();
+        // The Create button is disabled={!newCustomerName.trim()} — verify it's disabled,
+        // not clickable, which prevents accidental empty-name submission.
+        const createBtn = page.getByRole('button', { name: 'Create' });
+        await expect(createBtn).toBeVisible();
+        await expect(createBtn).toBeDisabled();
     });
 });

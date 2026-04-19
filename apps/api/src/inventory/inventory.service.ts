@@ -1035,7 +1035,19 @@ export class InventoryService {
         try {
             if (data.structuralType) {
                 if (data.structuralType !== 'WAREHOUSE' && !data.parentId) {
-                    throw new BadRequestException(`Location of type ${data.structuralType} must have a parent.`);
+                    // Auto-find the warehouse root location if warehouseId is provided
+                    if (data.warehouseId) {
+                        const rootLoc = await this.prisma.location.findFirst({
+                            where: { warehouseId: data.warehouseId, structuralType: 'WAREHOUSE' }
+                        });
+                        if (rootLoc) {
+                            data.parentId = rootLoc.id;
+                        }
+                        // If no root WAREHOUSE location exists, allow creation with parentId=null
+                        // (the location will be anchored to the warehouse via warehouseId alone)
+                    } else {
+                        throw new BadRequestException(`Location of type ${data.structuralType} must have a parent.`);
+                    }
                 }
                 if (data.parentId) {
                     await this.validateHierarchy(data.structuralType, data.parentId);

@@ -188,15 +188,12 @@ export class PurchaseOrderService {
             }
 
             // 1. Get Warehouse ID
-            const existingMove = await tx.stockMove.findFirst({
-                where: { origin: purchaseOrderId },
-                include: { destinationLocation: true }
-            });
-
+            // Priority: explicit destinationLocationId > stock move's destination warehouse
+            // This ensures that when a caller explicitly passes a receiving location, we use
+            // that location's warehouse rather than the warehouse of an auto-created stock move
+            // (which may point to a different warehouse's "Stock" location).
             let warehouseId: string;
-            if (existingMove?.destinationLocation?.warehouseId) {
-                warehouseId = existingMove.destinationLocation.warehouseId;
-            } else if (destinationLocationId) {
+            if (destinationLocationId) {
                 const location = await tx.location.findUnique({ where: { id: destinationLocationId } });
                 if (location?.warehouseId) {
                     warehouseId = location.warehouseId;
@@ -204,7 +201,15 @@ export class PurchaseOrderService {
                     throw new AppError('WAREHOUSE_NOT_DETERMINED');
                 }
             } else {
-                throw new AppError('WAREHOUSE_NOT_DETERMINED');
+                const existingMove = await tx.stockMove.findFirst({
+                    where: { origin: purchaseOrderId },
+                    include: { destinationLocation: true }
+                });
+                if (existingMove?.destinationLocation?.warehouseId) {
+                    warehouseId = existingMove.destinationLocation.warehouseId;
+                } else {
+                    throw new AppError('WAREHOUSE_NOT_DETERMINED');
+                }
             }
             capturedWarehouseId = warehouseId;
 
@@ -415,15 +420,30 @@ export class PurchaseOrderService {
     }
 
     private async getReceivingLocation(warehouseId: string, tx: any): Promise<string> {
+        // Prefer functional-area-linked location (same logic as getReceivingLocationIds in putaway.service)
+        // so that receiveGoods and createSession always agree on which location holds receipts.
+        const functionalArea = await tx.warehouseFunctionalArea.findFirst({
+            where: {
+                warehouseId,
+                areaType: { in: ['RECEIVING', 'STAGING'] },
+                active: true,
+                linkedLocationId: { not: null }
+            },
+            orderBy: { sequence: 'asc' }
+        });
+
+        if (functionalArea?.linkedLocationId) return functionalArea.linkedLocationId;
+
+        // Fallback: name-based search — exclude Shipping Dock to avoid ambiguity with 'Dock'
         const receivingLoc = await tx.location.findFirst({
             where: {
                 warehouseId,
                 OR: [
                     { name: { contains: 'Receiving' } },
-                    { name: { contains: 'Dock' } },
                     { name: { contains: 'Intake' } },
                     { name: { contains: 'Input' } }
                 ],
+                NOT: { name: { contains: 'Shipping' } },
                 type: 'INTERNAL'
             }
         });

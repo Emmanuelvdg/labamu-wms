@@ -1,13 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { loginAsAdmin } from './helpers/auth';
 
 test.describe('Sales & Exceptions', () => {
     test.beforeEach(async ({ page }) => {
-        await page.goto('/login');
-        await page.getByLabel('Email').fill('admin@labamu.co.id');
-        await page.getByLabel('Password').fill('admin');
-        await page.getByRole('button', { name: 'Sign in' }).click();
-        await page.waitForURL('**/', { timeout: 15000 });
-        await expect(page).toHaveURL(/\/$/);
+        await loginAsAdmin(page);
     });
 
     test('Scenario 5.1: Cancel Pending Order', async ({ page }) => {
@@ -61,6 +57,6 @@ test.describe('Sales & Exceptions', () => {
         await confirmBtn.click();
 
         // 11. Verify Cancelled Status
-        await expect(page.getByText('CANCELLED')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('CANCELLED').first()).toBeVisible({ timeout: 10000 });
     });
 });

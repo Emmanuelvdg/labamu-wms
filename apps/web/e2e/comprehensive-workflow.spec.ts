@@ -1,4 +1,5 @@
 import { test, expect, APIRequestContext } from '@playwright/test';
+import { loginAsAdmin } from './helpers/auth';
 
 /**
  * Comprehensive E2E Workflow Test
@@ -48,11 +49,6 @@ test.describe('Full IMS Lifecycle: Purchase to Ship', () => {
     /** POST helper with auth */
     async function authPost(request: APIRequestContext, url: string, data?: any) {
         return request.post(url, { headers: authHeaders(), data });
-    }
-
-    /** PATCH helper with auth */
-    async function authPatch(request: APIRequestContext, url: string, data?: any) {
-        return request.patch(url, { headers: authHeaders(), data });
     }
 
     /** GET helper with auth */
@@ -109,18 +105,35 @@ test.describe('Full IMS Lifecycle: Purchase to Ship', () => {
         console.log('✓ Warehouse:', warehouseId);
     });
 
-    test('Setup: Create Receiving Location', async ({ request }) => {
-        const res = await authPost(request, `${API}/inventory/locations`, {
-            name: `Receiving Dock ${TIMESTAMP}`,
-            warehouseId,
-            type: 'INTERNAL',
-            maxWeight: 10000,
-            maxVolume: 500,
-        });
-        expect(res.ok(), `Location creation failed: ${await res.text()}`).toBeTruthy();
-        const body = await res.json();
-        receivingLocationId = body.id;
-        console.log('✓ Receiving Location:', receivingLocationId);
+    test('Setup: Find Receiving Location', async ({ request }) => {
+        // Warehouse creation auto-creates a "Receiving Dock" functional area location.
+        // Use THAT location so receiveGoods and createSession agree on which location
+        // holds the receipt (they both use the functional-area-linked location).
+        const res = await authGet(request, `${API}/inventory/locations?warehouseId=${warehouseId}`);
+        expect(res.ok(), `Locations fetch failed: ${await res.text()}`).toBeTruthy();
+        const locations = await res.json();
+        const arr = Array.isArray(locations) ? locations : (locations.data || locations.items || []);
+        const receivingLoc = arr.find((l: any) =>
+            l.type === 'INTERNAL' &&
+            (l.name?.toLowerCase().includes('receiving') || l.name?.toLowerCase().includes('dock'))
+        );
+        if (receivingLoc) {
+            receivingLocationId = receivingLoc.id;
+            console.log('✓ Found existing Receiving Location:', receivingLocationId, '–', receivingLoc.name);
+        } else {
+            // Fallback: create one
+            const createRes = await authPost(request, `${API}/inventory/locations`, {
+                name: `Receiving Dock ${TIMESTAMP}`,
+                warehouseId,
+                type: 'INTERNAL',
+                maxWeight: 10000,
+                maxVolume: 500,
+            });
+            expect(createRes.ok(), `Location creation failed: ${await createRes.text()}`).toBeTruthy();
+            const body = await createRes.json();
+            receivingLocationId = body.id;
+            console.log('✓ Created Receiving Location:', receivingLocationId);
+        }
     });
 
     test('Setup: Create Storage Location', async ({ request }) => {
@@ -201,6 +214,17 @@ test.describe('Full IMS Lifecycle: Purchase to Ship', () => {
         console.log('✓ PO created:', purchaseOrderId, 'Status:', body.status);
     });
 
+    // ==================== STEP 1.5: APPROVE PO ====================
+
+    test('Step 1.5: Approve Purchase Order', async ({ request }) => {
+        // PO must be APPROVED before it can be RECEIVED
+        const res = await authPost(request, `${API}/purchase-orders/${purchaseOrderId}/approve`, {
+            userId: adminUserId,
+        });
+        expect(res.ok(), `PO approval failed: ${await res.text()}`).toBeTruthy();
+        console.log('✓ PO approved');
+    });
+
     // ==================== STEP 2: RECEIVING ====================
 
     test('Step 2: Receive Purchase Order', async ({ request }) => {
@@ -220,14 +244,14 @@ test.describe('Full IMS Lifecycle: Purchase to Ship', () => {
     // ==================== STEP 3: PUTAWAY ====================
 
     test('Step 3: Putaway - Complete Tasks', async ({ request }) => {
-        // The PO `receiveGoods` auto-creates a putaway session via `createTasksForReceipt`.
-        // We just need to GET the active session, not POST a new one.
-        const sessionRes = await request.get(
-            `${API}/inventory/putaway/sessions/${warehouseId}/active`
-        );
-        expect(sessionRes.ok(), `Get active putaway session failed: ${await sessionRes.text()}`).toBeTruthy();
-        const session = await sessionRes.json();
-        console.log('✓ Active putaway session found:', session.id);
+        // receiveGoods emits receipt.completed which runs routing rules but does NOT
+        // auto-create a putaway session. We must POST to create one explicitly.
+        const createSessionRes = await request.post(`${API}/inventory/putaway/sessions`, {
+            data: { warehouseId },
+        });
+        expect(createSessionRes.ok(), `Create putaway session failed: ${await createSessionRes.text()}`).toBeTruthy();
+        const session = await createSessionRes.json();
+        console.log('✓ Putaway session created:', session.id);
 
         // 3b. Find tasks for our product
         const tasks = session.tasks || [];
@@ -441,16 +465,11 @@ test.describe('Full IMS Lifecycle: Purchase to Ship', () => {
     // ==================== STEP 10: UI VERIFICATION ====================
 
     test('Step 10: UI Verification - Dashboard & Orders', async ({ page }) => {
-        // Login
-        await page.goto('/login');
-        await page.getByLabel('Email').fill('admin@labamu.co.id');
-        await page.getByLabel('Password').fill('admin');
-        await page.getByRole('button', { name: 'Sign in' }).click();
-        await page.waitForURL('**/', { timeout: 15000 });
+        await loginAsAdmin(page);
 
-        // Verify Dashboard loads
+        // Verify Dashboard loads — use first() since 'text=Dashboard' may match nav link + loading text
         await page.goto('/');
-        await expect(page.locator('text=Stock Value').or(page.locator('text=Dashboard'))).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('text=Stock Value').or(page.locator('text=Dashboard')).first()).toBeVisible({ timeout: 10000 });
         console.log('✓ Dashboard loads successfully');
 
         // Verify inventory page loads

@@ -14,7 +14,8 @@ test.describe('Stocktaking & Cycle Counting', () => {
         await expect(page.getByText('Manage blind counts, cycle counts, and reconciliations')).toBeVisible();
 
         const newBtn = page.getByRole('link', { name: /New Cycle Count/i })
-            .or(page.getByRole('button', { name: /New Cycle Count/i }));
+            .or(page.getByRole('button', { name: /New Cycle Count/i }))
+            .first();
         await expect(newBtn).toBeVisible();
     });
 
@@ -54,10 +55,10 @@ test.describe('Stocktaking & Cycle Counting', () => {
         const typeSelect = page.locator('select').nth(1);
         await expect(typeSelect).toBeVisible();
 
-        // Description field
-        const descInput = page.getByPlaceholder(/Description|description/i)
-            .or(page.locator('input[id*="description"]'));
-        await expect(descInput).toBeVisible();
+        // Description field — placeholder is "e.g. Weekly Cycle Count for Zone A"
+        const descInput = page.getByPlaceholder(/Weekly Cycle Count/i)
+            .or(page.getByPlaceholder(/e\.g\./i));
+        await expect(descInput.first()).toBeVisible();
     });
 
     test('TC-STOCK-5: New stocktake form - type selector has all options', async ({ page }) => {

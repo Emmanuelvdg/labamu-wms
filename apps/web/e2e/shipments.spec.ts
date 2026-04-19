@@ -13,11 +13,12 @@ test.describe('Shipments', () => {
         await expect(page.getByRole('heading', { name: 'Shipments' })).toBeVisible({ timeout: 10000 });
         await expect(page.getByText('Manage outbound shipments and track deliveries')).toBeVisible();
 
-        // Table headers should be present
-        await expect(page.getByText('Order ID')).toBeVisible();
-        await expect(page.getByText('Carrier')).toBeVisible();
-        await expect(page.getByText('Tracking ID')).toBeVisible();
-        await expect(page.getByText('Status')).toBeVisible();
+        // Table headers should be present — scope to thead to avoid ambiguity with data cells
+        const thead = page.locator('thead');
+        await expect(thead.getByText('Order ID')).toBeVisible();
+        await expect(thead.getByText('Carrier')).toBeVisible();
+        await expect(thead.getByText('Tracking ID')).toBeVisible();
+        await expect(thead.getByText('Status')).toBeVisible();
     });
 
     test('TC-SHIP-2: Empty state shows correct message when no shipments exist', async ({ page }) => {

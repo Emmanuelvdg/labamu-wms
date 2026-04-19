@@ -1903,6 +1903,7 @@ function FloorPlanContent() {
                     <div className="bg-white border shadow-sm">
                         <svg
                             ref={svgRef}
+                            data-testid="floor-plan-canvas"
                             width={width * pixelsPerMeter}
                             height={height * pixelsPerMeter}
                             viewBox={`0 0 ${width * pixelsPerMeter} ${height * pixelsPerMeter}`}

@@ -337,6 +337,12 @@ export class OrderService {
         let order = await this.getOrder(id) as any;
         if (!order) throw new AppError('ORDER_NOT_FOUND', { orderId: id });
 
+        // Idempotent: if already reserved, return as-is
+        if (order.status === 'RESERVED') {
+            this.log(`Order ${id} is already RESERVED, skipping re-reservation`);
+            return order;
+        }
+
         // 1. Ensure Allocation
         if (!order.warehouseId) {
             this.log(`Order ${id} has no warehouse. Triggering allocation...`);

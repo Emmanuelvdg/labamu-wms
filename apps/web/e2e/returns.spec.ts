@@ -12,9 +12,11 @@ test.describe('Returns Management', () => {
 
         await expect(page.getByRole('heading', { name: 'Returns Management' })).toBeVisible({ timeout: 10000 });
 
-        // "New Return Request" link/button should be present
+        // "New Return Request" link/button should be present — .first() avoids strict mode
+        // if both a link and a wrapping button happen to match
         const newReturnBtn = page.getByRole('link', { name: /New Return Request/i })
-            .or(page.getByRole('button', { name: /New Return Request/i }));
+            .or(page.getByRole('button', { name: /New Return Request/i }))
+            .first();
         await expect(newReturnBtn).toBeVisible();
     });
 
@@ -46,9 +48,10 @@ test.describe('Returns Management', () => {
         await page.goto('/returns/new');
         await page.waitForLoadState('networkidle');
 
-        // The new return form should have an order selector
-        const orderSelect = page.locator('select').first()
-            .or(page.getByLabel(/Order/i));
+        await expect(page.getByRole('heading', { name: 'Create Return Request' })).toBeVisible({ timeout: 10000 });
+
+        // The page uses a Radix shadcn Select component (role="combobox"), not a native <select>
+        const orderSelect = page.getByRole('combobox');
         await expect(orderSelect).toBeVisible({ timeout: 10000 });
     });
 
@@ -76,29 +79,32 @@ test.describe('Returns Management', () => {
         await page.goto('/returns/new');
         await page.waitForLoadState('networkidle');
 
-        const orderSelect = page.locator('select').first();
-        await expect(orderSelect).toBeVisible({ timeout: 10000 });
+        // Page uses Radix shadcn Select (role="combobox") — open it and pick an option
+        const orderCombobox = page.getByRole('combobox');
+        await expect(orderCombobox).toBeVisible({ timeout: 10000 });
 
-        const options = await orderSelect.locator('option').all();
+        await orderCombobox.click();
 
-        // Find a non-placeholder option
-        for (const option of options) {
-            const val = await option.getAttribute('value');
-            if (val && val !== '') {
-                await orderSelect.selectOption(val);
-                await page.waitForLoadState('networkidle');
+        // Options rendered as [role="option"] in the Radix dropdown portal
+        const options = page.locator('[role="option"]');
+        const count = await options.count();
 
-                // Items from the selected order should appear
-                const itemRows = page.locator('table tbody tr').or(page.locator('[data-testid="return-item"]'));
-                const hasItems = await itemRows.count() > 0;
+        if (count === 0) {
+            // No eligible orders (SHIPPED/DELIVERED/COMPLETED) — precondition not met
+            return;
+        }
 
-                if (hasItems) {
-                    // Should show quantity and reason inputs for items
-                    const qtyInput = page.locator('input[type="number"]').first();
-                    await expect(qtyInput).toBeVisible({ timeout: 5000 });
-                }
-                break;
-            }
+        await options.first().click();
+        await page.waitForLoadState('networkidle');
+
+        // After selection, order items table should appear
+        const itemTable = page.locator('table tbody tr');
+        const hasItems = await itemTable.count() > 0;
+
+        if (hasItems) {
+            // Each row should show a quantity input
+            const qtyInput = page.locator('input[type="number"]').first();
+            await expect(qtyInput).toBeVisible({ timeout: 5000 });
         }
     });
 });

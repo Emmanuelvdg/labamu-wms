@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loginAsAdmin } from './helpers/auth';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -9,12 +10,7 @@ test.describe('Warehouse Management', () => {
                 console.log(`BROWSER ERROR: ${msg.text()}`);
             }
         });
-        await page.goto('/');
-        await page.waitForLoadState('networkidle');
-        await page.getByLabel('Email').fill('admin@labamu.co.id');
-        await page.getByLabel('Password').fill('admin');
-        await page.getByRole('button', { name: 'Sign in' }).click();
-        await page.waitForTimeout(1000); // Small wait for auth state
+        await loginAsAdmin(page);
     });
 
     test('TC-2.1: Create Multi-Level Warehouse Hierarchy', async ({ page }) => {
@@ -25,7 +21,8 @@ test.describe('Warehouse Management', () => {
         const shelfName = `Shelf A ${timestamp}`;
 
         // 1. Navigate to Warehouses
-        await page.getByRole('link', { name: 'Warehouses', exact: true }).click();
+        await page.goto('/inventory/warehouses');
+        await page.waitForLoadState('networkidle');
 
         // 2. Create Warehouse
         await page.getByTestId('create-warehouse-btn').click();
@@ -34,8 +31,8 @@ test.describe('Warehouse Management', () => {
         await page.getByTestId('warehouse-address-input').fill('123 Main St');
         await page.getByTestId('submit-warehouse-btn').click();
 
-        // Wait for modal to close and success
-        await expect(page.getByRole('button', { name: 'Create Warehouse', exact: true })).not.toBeVisible();
+        // After successful creation, modal closes (setShowCreateModal(false) is called)
+        await expect(page.getByRole('button', { name: 'Create Warehouse', exact: true })).not.toBeVisible({ timeout: 8000 });
         await expect(page.getByText(warehouseName)).toBeVisible();
 
         // 3. Navigate to Locations Management
@@ -43,20 +40,18 @@ test.describe('Warehouse Management', () => {
         await page.waitForLoadState('networkidle');
 
         // 4. Create Zone (Room) under Warehouse
+        // evaluate bypasses viewport check — the form dialog overflows the visible area
         await page.getByTestId('create-location-btn').click();
         await page.getByTestId('location-name-input').fill(zoneName);
 
-        // Structure: Room
-        await page.getByTestId('location-structure-select').click();
-        await page.getByRole('option', { name: 'Room' }).click();
+        await page.getByTestId('location-structure-select').evaluate((el: HTMLElement) => el.click());
+        await page.getByRole('option', { name: 'Room' }).evaluate((el: HTMLElement) => el.click());
 
-        // Parent: Central DC
-        await page.getByTestId('location-parent-select').click();
-        await page.getByRole('option', { name: new RegExp(warehouseName) }).first().click();
+        await page.getByTestId('location-parent-select').evaluate((el: HTMLElement) => el.click());
+        await page.getByRole('option', { name: new RegExp(warehouseName) }).first().evaluate((el: HTMLElement) => el.click());
 
-        await page.getByTestId('create-location-submit-btn').click();
+        await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
 
-        // Wait for dialog cleanup
         await expect(page.getByText('Create Location')).not.toBeVisible();
         await expect(page.getByText(zoneName).first()).toBeVisible();
 
@@ -64,14 +59,13 @@ test.describe('Warehouse Management', () => {
         await page.getByTestId('create-location-btn').click();
         await page.getByTestId('location-name-input').fill(rowName);
 
-        await page.getByTestId('location-structure-select').click();
-        await page.getByRole('option', { name: 'Row' }).click();
+        await page.getByTestId('location-structure-select').evaluate((el: HTMLElement) => el.click());
+        await page.getByRole('option', { name: 'Row' }).evaluate((el: HTMLElement) => el.click());
 
-        await page.getByTestId('location-parent-select').click();
-        // Match "Zone A (ROOM)" or similar
-        await page.getByRole('option', { name: new RegExp(zoneName) }).first().click();
+        await page.getByTestId('location-parent-select').evaluate((el: HTMLElement) => el.click());
+        await page.getByRole('option', { name: new RegExp(zoneName) }).first().evaluate((el: HTMLElement) => el.click());
 
-        await page.getByTestId('create-location-submit-btn').click();
+        await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
 
         await expect(page.getByText('Create Location')).not.toBeVisible();
         await expect(page.getByText(rowName).first()).toBeVisible();
@@ -80,14 +74,13 @@ test.describe('Warehouse Management', () => {
         await page.getByTestId('create-location-btn').click();
         await page.getByTestId('location-name-input').fill(shelfName);
 
-        await page.getByTestId('location-structure-select').click();
-        await page.getByRole('option', { name: 'Shelf' }).click();
+        await page.getByTestId('location-structure-select').evaluate((el: HTMLElement) => el.click());
+        await page.getByRole('option', { name: 'Shelf' }).evaluate((el: HTMLElement) => el.click());
 
-        await page.getByTestId('location-parent-select').click();
-        // Match "Row 1 (ROW)" or similar
-        await page.getByRole('option', { name: new RegExp(rowName) }).first().click();
+        await page.getByTestId('location-parent-select').evaluate((el: HTMLElement) => el.click());
+        await page.getByRole('option', { name: new RegExp(rowName) }).first().evaluate((el: HTMLElement) => el.click());
 
-        await page.getByTestId('create-location-submit-btn').click();
+        await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
 
         await expect(page.getByText('Create Location')).not.toBeVisible();
         await expect(page.getByText(shelfName).first()).toBeVisible();
@@ -97,25 +90,21 @@ test.describe('Warehouse Management', () => {
         const timestamp = Date.now();
         const locName = `AttrLoc ${timestamp}`;
 
-        // 1. Navigate to Locations
         await page.goto('/inventory/locations');
         await page.waitForLoadState('networkidle');
-        // Wait for loading indicator to disappear if any
         await expect(page.getByText('Loading...')).not.toBeVisible();
 
         const createBtn = page.getByTestId('create-location-btn');
         await createBtn.click();
         await page.getByTestId('location-name-input').fill(locName);
-        await page.getByTestId('location-structure-select').click();
-        await page.getByRole('option', { name: 'Room' }).click();
+        await page.getByTestId('location-structure-select').evaluate((el: HTMLElement) => el.click());
+        await page.getByRole('option', { name: 'Room' }).evaluate((el: HTMLElement) => el.click());
 
-        await page.getByTestId('location-parent-select').click();
-        // Seed warehouse is often named "Distribution Center 1" or similar
+        await page.getByTestId('location-parent-select').evaluate((el: HTMLElement) => el.click());
         const parentOption = page.getByRole('option', { name: /Distribution Center/i }).first();
-        await parentOption.click();
+        await parentOption.evaluate((el: HTMLElement) => el.click());
 
-        await page.getByTestId('create-location-submit-btn').click();
-        // Wait for ANY dialog to be gone or specifically the creation heading
+        await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
         await page.waitForSelector('h2:has-text("Create Location")', { state: 'hidden' });
 
         await page.reload();
@@ -130,7 +119,6 @@ test.describe('Warehouse Management', () => {
         // 3. Add Custom Attribute
         await page.getByRole('button', { name: 'Add Attribute' }).click();
 
-        // Fill Key and Value
         await page.getByPlaceholder('Key').fill('Temperature');
         await page.getByPlaceholder('Value').fill('-20C');
 

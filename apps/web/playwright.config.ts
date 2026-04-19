@@ -36,12 +36,15 @@ export default defineConfig({
         },
 
         /**
-         * Main project — all specs, including those that manage their own login.
+         * Main project — all specs start already authenticated via storageState.
+         * The setup project must run first to write the auth cookies to disk.
+         * loginAsAdmin() short-circuits when the browser is already at '/'.
          * testIgnore excludes the setup file and the helpers directory.
          */
         {
             name: 'chromium',
-            use: { ...devices['Desktop Chrome'] },
+            use: { ...devices['Desktop Chrome'], storageState: AUTH_STATE_PATH },
+            dependencies: ['setup'],
             testIgnore: ['**/auth.setup.ts', '**/helpers/**'],
         },
     ],

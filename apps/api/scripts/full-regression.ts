@@ -15,7 +15,7 @@ async function request(path: string, options: any = {}) {
 
     try {
         const res = await fetch(url, { ...options, headers });
-        const body = await res.json().catch(() => ({}));
+        const body = await res.json().catch(() => ({})) as any;
         return { status: res.status, body };
     } catch (e: any) {
         return { status: 500, error: e.message };
