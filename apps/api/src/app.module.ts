@@ -1,6 +1,7 @@
 
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { TenantMiddleware } from './common/tenant/tenant.middleware';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -33,6 +34,7 @@ import { CommonFeaturesModule } from './common/common.module';
 import { WorkflowModule } from './workflow/workflow.module';
 import { BarcodeModule } from './barcode/barcode.module';
 import { RoutingModule } from './routing/routing.module';
+import { CompanyModule } from './company/company.module';
 
 import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
 import { PrismaService } from './prisma.service';
@@ -73,6 +75,7 @@ import { PrismaService } from './prisma.service';
         WorkflowModule,
         BarcodeModule,
         RoutingModule,
+        CompanyModule,
     ],
     controllers: [DeliveryMethodsController],
     providers: [
@@ -83,4 +86,8 @@ import { PrismaService } from './prisma.service';
         }
     ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(TenantMiddleware).forRoutes('*');
+    }
+}

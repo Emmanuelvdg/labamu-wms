@@ -18,5 +18,8 @@
         "prisma": "^5.22.0",
         "ts-node": "latest",
         "typescript": "latest"
+    },
+    "prisma": {
+        "seed": "ts-node prisma/seed.ts"
     }
 }

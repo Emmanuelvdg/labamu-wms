@@ -1,6 +1,9 @@
-
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+    Injectable, CanActivate, ExecutionContext,
+    UnauthorizedException, ForbiddenException, Logger,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma.service';
 import { PERMISSIONS_KEY } from './permissions.decorator';
 
@@ -8,41 +11,54 @@ import { PERMISSIONS_KEY } from './permissions.decorator';
 export class PermissionsGuard implements CanActivate {
     private readonly logger = new Logger(PermissionsGuard.name);
 
-    constructor(private reflector: Reflector, private prisma: PrismaService) { }
+    constructor(
+        private reflector: Reflector,
+        private prisma: PrismaService,
+        private jwtService: JwtService,
+    ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        const requiredPermission = this.reflector.getAllAndOverride<{ resource: string; action: string }>(PERMISSIONS_KEY, [
-            context.getHandler(),
-            context.getClass(),
-        ]);
+        const requiredPermission = this.reflector.getAllAndOverride<{ resource: string; action: string }>(
+            PERMISSIONS_KEY,
+            [context.getHandler(), context.getClass()],
+        );
 
-        // No permission decorator means endpoint is public or uses different auth
-        if (!requiredPermission) {
-            return true;
-        }
+        if (!requiredPermission) return true;
 
         const request = context.switchToHttp().getRequest();
-        let userId = request.headers['x-user-id'];
 
-        // Fallback to query parameter for browser direct downloads (e.g., <a href="..." target="_blank">)
-        if (!userId && request.query?.userId) {
-            userId = request.query.userId;
+        // ── Resolve userId + companyId ─────────────────────────────────────
+        let userId: string | undefined;
+        let companyId: string | null = null;
+
+        const authHeader: string | undefined = request.headers['authorization'];
+
+        if (authHeader?.startsWith('Bearer ')) {
+            // JWT path
+            try {
+                const payload = this.jwtService.verify<{ sub: string; companyId?: string }>(
+                    authHeader.slice(7),
+                    { secret: process.env.JWT_SECRET ?? 'labamu-jwt-secret-change-in-production-please' },
+                );
+                userId = payload.sub;
+                companyId = payload.companyId ?? null;
+            } catch {
+                throw new UnauthorizedException('Invalid or expired token');
+            }
+        } else {
+            // Legacy x-user-id path (E2E tests, dev tooling)
+            userId = request.headers['x-user-id'] ?? request.query?.userId;
         }
 
         if (!userId) {
-            this.logger.warn('Permission check failed: No x-user-id header found');
+            this.logger.warn('Permission check failed: no auth identifier present');
             throw new UnauthorizedException('User not identified');
         }
 
-        // Fetch user with roles and permissions
+        // ── Load user ──────────────────────────────────────────────────────
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            include: {
-                roles: {
-                    include: { permissions: true }
-                },
-                warehouses: true
-            }
+            include: { roles: { include: { permissions: true } }, warehouses: true },
         });
 
         if (!user) {
@@ -51,45 +67,38 @@ export class PermissionsGuard implements CanActivate {
         }
 
         if (!user.roles || user.roles.length === 0) {
-            this.logger.warn(`Permission check failed: User ${userId} has no roles assigned`);
+            this.logger.warn(`Permission check failed: User ${userId} has no roles`);
             throw new ForbiddenException('User has no roles assigned');
         }
 
+        // ── Check permissions ──────────────────────────────────────────────
         const allPermissions = user.roles.flatMap(r => r.permissions);
 
-        // Check for admin/super-user permission (wildcard)
-        const hasWildcard = allPermissions.some(p =>
-            (p.resource === '*' || p.resource === 'ALL') &&
-            (p.action === '*' || p.action === 'MANAGE')
+        const hasWildcard = allPermissions.some(
+            p => (p.resource === '*' || p.resource === 'ALL') &&
+                 (p.action === '*' || p.action === 'MANAGE'),
         );
 
         if (hasWildcard) {
-            this.logger.log(`User ${user.email} granted access via wildcard permission`);
-            request.user = user;
+            request.user = { ...user, companyId: companyId ?? (user as any).companyId ?? null };
             return true;
         }
 
-        // Check for specific permission
-        const hasPermission = allPermissions.some(p =>
-            (p.resource === requiredPermission.resource || p.resource === '*') &&
-            (p.action === requiredPermission.action || p.action === '*')
+        const hasPermission = allPermissions.some(
+            p => (p.resource === requiredPermission.resource || p.resource === '*') &&
+                 (p.action === requiredPermission.action || p.action === '*'),
         );
 
         if (!hasPermission) {
             this.logger.warn(
-                `Permission denied: User ${user.email} attempted ${requiredPermission.action} on ${requiredPermission.resource}`
+                `Permission denied: ${user.email} attempted ${requiredPermission.action} on ${requiredPermission.resource}`,
             );
             throw new ForbiddenException(
-                `Insufficient permissions. Required: ${requiredPermission.resource}:${requiredPermission.action}`
+                `Insufficient permissions. Required: ${requiredPermission.resource}:${requiredPermission.action}`,
             );
         }
 
-        // Log successful authorization
-        this.logger.debug(
-            `Permission granted: User ${user.email} can ${requiredPermission.action} on ${requiredPermission.resource}`
-        );
-
-        request.user = user;
+        request.user = { ...user, companyId: companyId ?? (user as any).companyId ?? null };
         return true;
     }
 }

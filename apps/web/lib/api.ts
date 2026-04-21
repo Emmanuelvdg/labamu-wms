@@ -11,6 +11,12 @@ export async function fetchWithRetry(url: string, options?: RequestInit) {
     try {
         const userId = Cookies.get('user_id');
 
+        // Build auth headers: prefer JWT (via server cookie read) but keep
+        // the legacy x-user-id for E2E/dev backward compat.
+        // Note: the httpOnly `token` cookie is sent automatically by the browser
+        // to same-origin Next.js API routes, which then proxy it to the backend.
+        // For direct /api (Next.js rewrites to backend) requests, the browser
+        // sends the httpOnly cookie automatically — no manual header needed.
         const headers = {
             ...options?.headers,
             ...(userId ? { 'x-user-id': userId } : {}),

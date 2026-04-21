@@ -3,9 +3,31 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
+// ─── MULTI-TENANCY ───────────────────────────────────────────────────────────
+// Every top-level entity (Product, Warehouse, Supplier, Customer, Role, User)
+// carries a companyId that scopes it to a single tenant. Warehouse already had
+// an unused companyId field; all others are added here.
+model Company {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  slug      String     @unique   // used for subdomain routing (e.g. "acme")
+  plan      String     @default("STARTER")   // STARTER | GROWTH | ENTERPRISE
+  status    String     @default("ACTIVE")    // ACTIVE | SUSPENDED | CANCELLED
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  users      User[]
+  warehouses Warehouse[]
+  products   Product[]
+  suppliers  Supplier[]
+  customers  Customer[]
+  roles      Role[]
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 model Product {
   id                   String                       @id @default(uuid())
@@ -39,6 +61,7 @@ model Product {
   reorderQuantity      Int?
   maxStock             Int?
   requiredAttributeId  String?
+  companyId            String?
   inventoryAdjustments InventoryAdjustment[]
   batches              InventoryBatch[]
   orderItems           OrderItem[]
@@ -63,6 +86,7 @@ model Product {
   packageItems         PackingParcelItem[]
   replenishmentAlerts  ReplenishmentAlert[]
   routes               Route[]                      @relation("ProductToRoute")
+  company              Company?                     @relation(fields: [companyId], references: [id])
 }
 
 model Route {
@@ -108,6 +132,7 @@ model Warehouse {
   latitude               Float?
   longitude              Float?
   companyId              String?
+  company                Company?                  @relation(fields: [companyId], references: [id])
   location               String                    @default("{}")
   type                   String
   workflowTemplates      WorkflowTemplate[]
@@ -620,12 +645,16 @@ model LocationAttribute {
 
 model Supplier {
   id             String          @id @default(uuid())
-  name           String          @unique
+  name           String
   contactInfo    String?
+  companyId      String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   invoices       Invoice[]
   purchaseOrders PurchaseOrder[]
+  company        Company?        @relation(fields: [companyId], references: [id])
+
+  @@unique([name, companyId])
 }
 
 model PurchaseOrder {
@@ -777,6 +806,7 @@ model User {
   email              String                 @unique
   password           String?
   name               String
+  companyId          String?
   apiKeys            ApiKey[]
   pickingSessions    PickingSession[]
   putawaySessions    PutawaySession[]
@@ -785,6 +815,7 @@ model User {
   roles              Role[]                 @relation("RoleToUser")
   warehouses         Warehouse[]            @relation("UserToWarehouse")
   workflowTasks      WorkflowTaskInstance[]
+  company            Company?               @relation(fields: [companyId], references: [id])
 }
 
 model ApiKey {
@@ -808,6 +839,7 @@ model Customer {
   address       String?
   latitude      Float?
   longitude     Float?
+  companyId     String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   city          String?
@@ -817,6 +849,7 @@ model Customer {
   state         String?
   orders        Order[]
   rotationRules RotationRule[]
+  company       Company?       @relation(fields: [companyId], references: [id])
 }
 
 model FulfillmentRule {
@@ -898,13 +931,17 @@ model StockMove {
 
 model Role {
   id          String       @id @default(uuid())
-  name        String       @unique
+  name        String
   description String?
   isSystem    Boolean      @default(false)
+  companyId   String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   permissions Permission[]
   users       User[]       @relation("RoleToUser")
+  company     Company?     @relation(fields: [companyId], references: [id])
+
+  @@unique([name, companyId])
 }
 
 model DeliveryMethod {
