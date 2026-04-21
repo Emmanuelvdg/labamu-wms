@@ -7,7 +7,7 @@ export class RolesService {
     constructor(private prisma: PrismaService) { }
 
     async createRole(data: { name: string; description?: string; permissions?: { resource: string; action: string }[] }) {
-        const existing = await this.prisma.role.findUnique({ where: { name: data.name } });
+        const existing = await this.prisma.role.findFirst({ where: { name: data.name } });
         if (existing) throw new BadRequestException('Role with this name already exists');
 
         return this.prisma.role.create({

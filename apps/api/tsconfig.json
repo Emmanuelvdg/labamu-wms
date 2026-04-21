@@ -25,7 +25,7 @@
         "dist",
         "check_e2e_putaway_setup.ts",
         "fix_e2e_locations.ts",
-        "scripts/check_functional_areas.ts"
+        "scripts"
     ],
     "ts-node": {
         "ignore": [
