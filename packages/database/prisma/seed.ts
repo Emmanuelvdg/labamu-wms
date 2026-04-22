@@ -71,7 +71,7 @@ async function main() {
         create: {
             name: 'Admin User',
             email: adminEmail,
-            password: await bcrypt.hash('password123', 10),
+            password: await bcrypt.hash('admin', 10),
             companyId: defaultCompany.id,
             roles: { connect: { id: adminRole.id } },
         } as any,
