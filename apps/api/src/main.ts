@@ -61,7 +61,10 @@ async function bootstrap() {
 
         const port = process.env.PORT || 3001;
         Logger.log(`Attempting to listen on port ${port}...`, 'Bootstrap');
-        await app.listen(port, '0.0.0.0');
+        // Listen without an explicit host so Node creates both IPv4 (0.0.0.0)
+        // and IPv6 (::) sockets. This is required on Windows so that the Next.js
+        // server-side fetch (which resolves localhost → ::1) can reach the API.
+        await app.listen(port);
         Logger.log(`Application is running on: ${await app.getUrl()}`, 'Bootstrap');
         Logger.log('--- SERVER STARTED WITH RESERVATION LOGIC ---', 'Bootstrap');
     } catch (err) {
