@@ -80,13 +80,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const allPermissions = user.roles.flatMap(r => r.permissions);
 
-        // Admin Super-User Check
-        if (allPermissions.some(p => p.resource === 'ALL' && p.action === 'MANAGE')) {
+        // Super-user wildcard: ALL:MANAGE (platform seed) or *:MANAGE (registerCompany)
+        if (allPermissions.some(
+            p => (p.resource === 'ALL' || p.resource === '*') &&
+                 (p.action === 'MANAGE' || p.action === '*')
+        )) {
             return true;
         }
 
         return allPermissions.some(
-            p => p.resource === resource && p.action === action
+            p => (p.resource === resource || p.resource === '*') &&
+                 (p.action === action || p.action === '*')
         );
     };
 

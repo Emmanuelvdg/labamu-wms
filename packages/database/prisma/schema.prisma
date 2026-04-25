@@ -15,17 +15,78 @@ model Company {
   id        String     @id @default(uuid())
   name      String     @unique
   slug      String     @unique   // used for subdomain routing (e.g. "acme")
-  plan      String     @default("STARTER")   // STARTER | GROWTH | ENTERPRISE
+  plan      String     @default("STARTER")   // FREE | STARTER | PROFESSIONAL | ENTERPRISE
   status    String     @default("ACTIVE")    // ACTIVE | SUSPENDED | CANCELLED
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  users      User[]
-  warehouses Warehouse[]
-  products   Product[]
-  suppliers  Supplier[]
-  customers  Customer[]
-  roles      Role[]
+  users         User[]
+  warehouses    Warehouse[]
+  products      Product[]
+  suppliers     Supplier[]
+  customers     Customer[]
+  roles         Role[]
+  tenantPlan    TenantPlan?
+  featureFlags  FeatureFlag[]
+  auditLogs     AuditLog[]
+}
+
+// ── Platform admin models ─────────────────────────────────────────────────────
+
+model TenantPlan {
+  id                 String    @id @default(uuid())
+  companyId          String    @unique
+  billingCycle       String    @default("MONTHLY")  // MONTHLY | ANNUAL | LIFETIME
+  trialEndsAt        DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  maxUsers           Int?      // null = use plan default
+  maxWarehouses      Int?
+  maxProducts        Int?
+  maxOrders          Int?
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  company            Company   @relation(fields: [companyId], references: [id])
+}
+
+model FeatureFlag {
+  id        String   @id @default(uuid())
+  companyId String
+  key       String
+  enabled   Boolean  @default(false)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, key])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorId     String
+  actorEmail  String
+  action      String   // TENANT_CREATE | TENANT_UPDATE | STATUS_CHANGE | PLAN_UPDATE | IMPERSONATE | FLAG_TOGGLE | ANNOUNCE
+  targetType  String   // COMPANY | USER
+  targetId    String
+  targetLabel String
+  metadata    String?  // JSON blob
+  createdAt   DateTime @default(now())
+  company     Company? @relation(fields: [targetId], references: [id])
+}
+
+model Announcement {
+  id          String    @id @default(uuid())
+  title       String
+  body        String
+  targetType  String    @default("ALL")  // ALL | PLAN | COMPANY
+  targetValue String?   // plan name or companyId
+  startsAt    DateTime  @default(now())
+  endsAt      DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -807,6 +868,7 @@ model User {
   password           String?
   name               String
   companyId          String?
+  lastLoginAt        DateTime?
   apiKeys            ApiKey[]
   pickingSessions    PickingSession[]
   putawaySessions    PutawaySession[]

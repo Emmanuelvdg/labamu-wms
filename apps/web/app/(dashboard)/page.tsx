@@ -58,12 +58,23 @@ export default function Dashboard() {
       setAnalytics(analyticsData);
       setProducts(productsData);
     } catch (err: any) {
-      console.error(err);
-      if (err.message && (err.message.includes('Unauthorized') || err.message.includes('Forbidden'))) {
+      console.error('[Dashboard] loadData error:', err?.message);
+      const msg = err?.message ?? '';
+      // Treat any auth-related error as a session expiry → redirect to login
+      if (
+        msg.includes('Unauthorized') ||
+        msg.includes('Forbidden') ||
+        msg.includes('not identified') ||
+        msg.includes('not found') ||
+        msg.includes('Invalid') ||
+        msg.includes('expired') ||
+        msg.includes('401') ||
+        msg.includes('403')
+      ) {
         window.location.href = '/login';
         return;
       }
-      setError('Failed to connect to the backend. Please ensure the API server is running.');
+      setError(`Failed to connect to the backend: ${msg || 'unknown error'}. Please ensure the API server is running.`);
     } finally {
       setLoading(false);
     }

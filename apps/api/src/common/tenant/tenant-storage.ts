@@ -14,3 +14,16 @@ export const tenantStorage = new AsyncLocalStorage<TenantStore>();
 export function getCurrentCompanyId(): string | null {
     return tenantStorage.getStore()?.companyId ?? null;
 }
+
+/**
+ * Run `fn` with tenant scoping disabled (companyId = null).
+ * Use for cross-tenant admin operations (CompanyService, etc.) that must
+ * not be filtered or corrupted by the Prisma tenant middleware.
+ */
+export function runWithoutTenant<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+        tenantStorage.run({ companyId: null }, () => {
+            fn().then(resolve).catch(reject);
+        });
+    });
+}

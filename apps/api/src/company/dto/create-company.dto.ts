@@ -38,5 +38,24 @@ export class InviteUserDto {
 
     @IsString()
     @IsOptional()
+    password?: string;
+
+    @IsString()
+    @IsOptional()
     roleId?: string;
+}
+
+export class UpdateCompanyDto {
+    @IsString()
+    @IsOptional()
+    name?: string;
+
+    @IsString()
+    @IsOptional()
+    @Matches(/^[a-z0-9-]+$/, { message: 'slug must only contain lowercase letters, numbers and hyphens' })
+    slug?: string;
+
+    @IsString()
+    @IsOptional()
+    plan?: string;
 }

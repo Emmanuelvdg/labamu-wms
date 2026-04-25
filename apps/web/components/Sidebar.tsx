@@ -18,6 +18,7 @@ import {
     ClipboardList,
     BookOpen,
     GitBranch,
+    Building2,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -97,6 +98,7 @@ const navigation: NavItem[] = [
         ]
     },
     { name: 'Settings', href: '/settings', icon: Settings, permission: { resource: 'SETTINGS', action: 'READ' } },
+    { name: 'Backoffice', href: '/admin', icon: Building2, permission: { resource: 'ALL', action: 'MANAGE' } },
     { name: 'User Guide', href: '/user-guide', icon: BookOpen },
 ];
 
@@ -107,7 +109,8 @@ export default function Sidebar() {
         'Inbound': true,
         'Outbound': true,
         'Inventory': true,
-        'Warehouse': true
+        'Warehouse': true,
+        'Platform': true,
     });
 
     const toggleSection = (name: string) => {

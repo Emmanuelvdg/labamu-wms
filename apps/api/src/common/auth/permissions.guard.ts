@@ -31,14 +31,14 @@ export class PermissionsGuard implements CanActivate {
         let userId: string | undefined;
         let companyId: string | null = null;
 
+        const secret = process.env.JWT_SECRET ?? 'labamu-jwt-secret-change-in-production-please';
         const authHeader: string | undefined = request.headers['authorization'];
 
         if (authHeader?.startsWith('Bearer ')) {
-            // JWT path
+            // JWT path — explicit Authorization header
             try {
                 const payload = this.jwtService.verify<{ sub: string; companyId?: string }>(
-                    authHeader.slice(7),
-                    { secret: process.env.JWT_SECRET ?? 'labamu-jwt-secret-change-in-production-please' },
+                    authHeader.slice(7), { secret },
                 );
                 userId = payload.sub;
                 companyId = payload.companyId ?? null;
@@ -46,8 +46,25 @@ export class PermissionsGuard implements CanActivate {
                 throw new UnauthorizedException('Invalid or expired token');
             }
         } else {
+            // Try the httpOnly `token` cookie forwarded by Next.js rewrite
+            const cookieHeader: string = request.headers['cookie'] ?? '';
+            const tokenMatch = cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
+            if (tokenMatch) {
+                try {
+                    const payload = this.jwtService.verify<{ sub: string; companyId?: string }>(
+                        tokenMatch[1], { secret },
+                    );
+                    userId = payload.sub;
+                    companyId = payload.companyId ?? null;
+                } catch {
+                    // Invalid cookie token — fall through to x-user-id
+                }
+            }
+
             // Legacy x-user-id path (E2E tests, dev tooling)
-            userId = request.headers['x-user-id'] ?? request.query?.userId;
+            if (!userId) {
+                userId = request.headers['x-user-id'] ?? request.query?.userId;
+            }
         }
 
         if (!userId) {
@@ -74,6 +91,25 @@ export class PermissionsGuard implements CanActivate {
         // ── Check permissions ──────────────────────────────────────────────
         const allPermissions = user.roles.flatMap(r => r.permissions);
 
+        // Platform-level check (resource === 'ALL'): strict literal match only.
+        // Tenant admins with '*:MANAGE' (scoped to their own tenant) must NOT be
+        // able to access platform endpoints — only users seeded with 'ALL:MANAGE' pass.
+        if (requiredPermission.resource === 'ALL') {
+            const hasPlatformAccess = allPermissions.some(
+                p => p.resource === 'ALL' &&
+                     (p.action === requiredPermission.action || p.action === '*'),
+            );
+            if (!hasPlatformAccess) {
+                this.logger.warn(
+                    `Platform access denied: ${user.email} attempted ${requiredPermission.action} on ALL`,
+                );
+                throw new ForbiddenException('Platform administration access required');
+            }
+            request.user = { ...user, companyId: companyId ?? (user as any).companyId ?? null };
+            return true;
+        }
+
+        // Tenant-scoped checks: '*:MANAGE' or 'ALL:MANAGE' grants full access
         const hasWildcard = allPermissions.some(
             p => (p.resource === '*' || p.resource === 'ALL') &&
                  (p.action === '*' || p.action === 'MANAGE'),

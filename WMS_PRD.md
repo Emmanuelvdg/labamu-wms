@@ -1,8 +1,8 @@
 # Labamu Class A WMS - Product Requirements Document (PRD)
 
-**Version:** 2.0
+**Version:** 3.0
 **Status:** Approved
-**Date:** 2026-03-06
+**Date:** 2026-04-25
 
 ## 1. Executive Summary
 
@@ -17,6 +17,7 @@ Labamu WMS is a comprehensive, cloud-native Warehouse Management System designed
 | **Inventory Controller** | Stock Specialist | Perform cycle counts, investigate discrepancies, and manage stock adjustments and scrap. |
 | **Purchasing Agent** | Procurement | Manage suppliers, create purchase orders, and monitor inbound lead times. |
 | **System Admin** | IT Support | Manage users, roles, permissions, and system configurations. |
+| **Platform Admin** | Labamu Operations | Manage the multi-tenant platform: onboard companies, configure plans, toggle feature flags, monitor health, impersonate tenants for support, and broadcast announcements. |
 
 ## 3. Unique Selling Points (USPs) & Acceptance Criteria
 
@@ -35,6 +36,11 @@ This section outlines the key differentiators of Labamu WMS, aligned with specif
 | **Insufficient Checking Stock (Unhappy Flow)** | Picker | To know immediately if there is a stock discrepancy during picking. | I don't waste time looking for items that aren't there. | The system thinks we have 10 units, but I can only find 8. | I enter "8" as the picked quantity (short pick). | The system flags the discrepancy, triggers a cycle count task for that bin, and directs me to another location for the remaining 2 units. |
 
 ## 4. Functional Requirements
+
+### 4.0 Multi-Tenancy
+- **Tenant Isolation:** All data is logically scoped by `companyId` using Prisma middleware. No tenant can read or write another tenant's data.
+- **Self-Service Onboarding:** `POST /companies/register` creates a new company + first admin user in a single transaction, with no platform admin involvement required.
+- **Tenant Lifecycle:** Companies transition through `ACTIVE → SUSPENDED → CANCELLED` statuses. Suspended tenants cannot log in.
 
 ### 4.1 Inventory Management
 - **Product Catalog:** Manage products with support for variants, barcodes (SKU/EAN), and physical dimensions.
@@ -110,6 +116,63 @@ This section outlines the key differentiators of Labamu WMS, aligned with specif
 - **Zone-Scoped Cycle Counts:** Generate expected inventory counts scoped to specific zones or location patterns for targeted auditing.
 - **Multi-Carrier Rate Comparison:** Mock carrier integration providing rate comparison across USPS, FedEx, and UPS.
 
+### 4.13 Backoffice Admin Portal
+The backoffice is an internal operations portal accessible only to Labamu platform admins (`ALL:MANAGE` permission). It is completely separate from the tenant-facing dashboard (`/` → `/(dashboard)/`) and has its own route group (`/(admin)/`) with a distinct dark-slate UI.
+
+#### 4.13.1 Tenant Management
+- **CRUD:** Create, view, edit, and list all tenant companies with column-level filtering.
+- **Status Control:** Suspend or reactivate tenants individually or in bulk.
+- **Invite Users:** Add users to any tenant directly from the backoffice.
+- **Detail View:** Per-tenant page with tabbed sections: Overview, Plan & Billing, Feature Flags.
+
+#### 4.13.2 Health & Usage Monitoring
+- **Usage Metrics:** Per-tenant counts for Products, Warehouses, Suppliers, Customers, Users, Orders.
+- **Health Dashboard:** Active user count (30-day window), last login date, days since last activity.
+- **Onboarding Tracker:** 5-step completion checklist with progress bar.
+
+#### 4.13.3 Plan & Billing Management
+- **Plan Tiers:** FREE / STARTER / PROFESSIONAL / ENTERPRISE with configurable default limits per tier.
+- **Limit Overrides:** Platform admins can set custom `maxUsers`, `maxWarehouses`, `maxProducts`, `maxOrders` per tenant.
+- **Trial Management:** Set `trialEndsAt` date per tenant.
+- **Billing Cycles:** MONTHLY or ANNUAL.
+- **Limits vs. Usage:** Visual progress bars show current usage against each limit.
+
+#### 4.13.4 Feature Flags
+- **8 System Flags:** `ADVANCED_PICKING`, `BETA_FLOOR_PLAN`, `AI_REORDER`, `MULTI_CURRENCY`, `SUPPLIER_PORTAL`, `ADVANCED_ANALYTICS`, `BARCODE_PRINT`, `API_ACCESS`.
+- **Per-Tenant Toggles:** Enable or disable any flag for any tenant independently, with optional internal notes.
+- **Global Overview Page:** `/admin/feature-flags` — select a tenant and manage their flags from a single toggle matrix.
+- **Tenant Detail Flags Tab:** Feature flag management is also available inline on the tenant detail page.
+
+#### 4.13.5 Tenant Impersonation
+- **Action:** Platform admin clicks "Impersonate" on a tenant's detail page.
+- **Token Swap:** A 15-minute JWT scoped to the target company is issued. The admin's original session token is saved and restored on exit.
+- **Impersonation Banner:** An amber banner appears at the top of the tenant dashboard indicating the active impersonation session.
+- **Exit:** Admin clicks "Exit Impersonation" in the banner to restore their platform admin session and return to `/admin`.
+- **Audit:** Every impersonation is written to the `AuditLog`.
+
+#### 4.13.6 Platform Analytics
+- **KPI Cards:** Total tenants, total users, total orders, active tenants.
+- **Growth Chart:** Bar chart — new tenants per month over the last 12 months.
+- **Plan Distribution:** Pie chart and tabular breakdown of tenants per plan tier.
+- **Status Distribution:** Pie chart — ACTIVE / SUSPENDED / CANCELLED split.
+
+#### 4.13.7 Audit Log
+- **Scope:** All platform administration actions (status changes, plan updates, flag toggles, impersonation, bulk ops, announcements).
+- **Fields:** Timestamp, actor email, action type, target type/ID/label, metadata (JSON).
+- **UI:** Filterable by action type, searchable by actor or target. Configurable page size (50 / 200 / 500).
+
+#### 4.13.8 Announcements
+- **Create:** Title, body, target (All Tenants | By Plan | Specific Company), optional start/end times.
+- **Active Resolution:** Tenants call `GET /platform/announcements/active?companyId=&plan=` — the API returns only announcements relevant to them based on targeting rules.
+- **Lifecycle:** Announcements are active between `startsAt` and `endsAt` (no `endsAt` = indefinite).
+- **Delete:** Platform admins can delete any announcement immediately.
+
+#### 4.13.9 Bulk Operations
+- **Multi-Select:** Checkboxes on the tenant list; "select all filtered" toggle.
+- **Bulk Status Change:** Apply ACTIVE / SUSPENDED / CANCELLED to all selected companies in one API call.
+- **Bulk Plan Change:** Set plan tier for all selected companies in one API call.
+- **Audit:** Each company in a bulk operation generates a separate `AuditLog` entry.
+
 ## 5. Non-Functional Requirements
 
 ### 5.1 Performance
@@ -128,16 +191,34 @@ This section outlines the key differentiators of Labamu WMS, aligned with specif
 ## 6. Technical Architecture
 
 - **Frontend:** Next.js (React) for a fast, SEO-friendly, and interactive implementation.
+  - Route Groups: `(dashboard)` for tenant app, `(admin)` for backoffice, `(mobile)` for worker UX.
+  - State: Client-side React hooks + cookie-based auth context.
+  - Charts: Recharts (bar, pie) for analytics visualisations.
 - **Backend:** NestJS (Node.js) for a modular, scalable, and type-safe server-side architecture.
+  - Auth: `@Global()` `AuthModule` with `JwtModule`, cookie-based strategy.
+  - Multi-tenancy: AsyncLocalStorage + Prisma middleware for row-level isolation.
+  - Admin guard: `PermissionsGuard` with strict `ALL` resource literal matching.
 - **Database:** PostgreSQL for robust relational data integrity using Prisma ORM.
+  - Tenant models: `Company`, `TenantPlan`, `FeatureFlag`, `AuditLog`, `Announcement`.
 - **Hosting:** Dockerized container deployment compatible with AWS ECS or Kubernetes.
 
 ## 7. Future Roadmap (Post-MVP)
+
+### Delivered (v3.0)
+- **Backoffice Admin Portal:** Complete platform administration UI at `/admin` (Phases 0–9).
+- **Multi-Tenancy:** Row-level isolation, self-service onboarding, tenant lifecycle management.
+- **Tenant Impersonation:** 15-minute scoped JWT flow with banner + audit trail.
+- **Feature Flags:** 8 system flags toggleable per tenant.
+- **Platform Analytics:** Growth charts, plan/status distribution, KPI cards.
+
+### Planned
 - **Mobile App:** Native iOS/Android app for barcode scanning using device camera.
 - **Integration:** Pre-built connectors for Shopify, WooCommerce, and NetSuite.
 - **Advanced Labor Management:** Tracking worker productivity and picking rates.
 - **Predictive Analytics:** Demand forecasting and automated reorder suggestions using ML.
 - **Wave Picking Optimization:** Route optimization using spatial coordinates from the floor plan.
+- **Billing Integration:** Stripe subscription management linked to `TenantPlan` tier.
+- **SSO / SAML:** Enterprise single sign-on for larger tenants.
 
 ## 8. Dynamic Routing & Workflow Engine
 - **Visual Builder:** Drag-and-drop interface for creating custom inbound/outbound material flows.

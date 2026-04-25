@@ -1,7 +1,7 @@
 # Labamu WMS - System Architecture
 
-**Version:** 3.0  
-**Last Updated:** March 6, 2026  
+**Version:** 4.0  
+**Last Updated:** April 25, 2026  
 **Status:** Production-Ready
 
 ---
@@ -15,7 +15,9 @@
 5. [API Structure](#api-structure)
 6. [Data Model](#data-model)
 7. [Security & Authorization](#security--authorization)
-8. [Integration Points](#integration-points)
+8. [Multi-Tenancy Architecture](#multi-tenancy-architecture)
+9. [Backoffice Admin Portal](#backoffice-admin-portal)
+10. [Integration Points](#integration-points)
 
 ---
 
@@ -87,6 +89,18 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 - Dedicated Next.js Route Group `(mobile)` for isolated layouts
 - Simplified UI optimized for touch targets and handheld scanners
 - Context-aware navigation (Back/Home/Exit)
+
+### 10. **Multi-Tenancy (Row-Level Isolation)**
+- Every tenant (company) is a logical silo in a shared PostgreSQL database
+- A Prisma middleware layer automatically injects `WHERE companyId = ?` on all queries for tenant-scoped models
+- `TENANT_SCOPED_MODELS = ['Product','Warehouse','Supplier','Customer','User','Role']`
+- Cross-tenant operations (e.g., admin reporting) bypass isolation via `runWithoutTenant(fn)`, which executes the callback with `companyId: null` inside an AsyncLocalStorage context
+
+### 11. **Platform Administration Separation**
+- Tenant admins carry `*:MANAGE` permissions and can manage their own company's resources
+- Platform admins (Labamu staff) carry `ALL:MANAGE` — a literally different resource name, not a wildcard match
+- `PermissionsGuard` performs a strict resource comparison: when `requiredPermission.resource === 'ALL'`, only a permission where `p.resource === 'ALL'` satisfies the check
+- This prevents tenant admins from accessing any platform-level endpoint
 
 ---
 
@@ -176,19 +190,31 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 | **ReplenishmentModule** | Reorder point monitoring, auto-PO generation, alerts | `ReplenishmentService`, `ReplenishmentController` |
 | **BarcodeModule** | Universal barcode lookup, context-aware validation | `BarcodeValidatorService` |
 | **AnalyticsServices** (in InventoryModule) | ABC classification, pick accuracy, zone cycle counts | `AbcClassificationService`, `PickAccuracyService`, `CycleCountService`, `ReportingController` |
+| **CompanyModule** | Multi-tenant company registry, backoffice operations | `CompanyService`, `PlanService`, `FeatureFlagService`, `AuditService`, `PlatformService` |
 
 ### Frontend Structure
 
 ```
 apps/web/
 ├── app/                         # Next.js App Router
-│   ├── api/                     # API Proxy Routes
+│   ├── api/                     # API Proxy Routes & Server-Side Handlers
 │   │   ├── auth/
+│   │   ├── admin/
+│   │   │   └── impersonate/     # Sets/clears impersonation cookies
+│   │   │       └── stop/
 │   │   └── inventory/
 │   │       ├── putaway-rules/
 │   │       └── putaway/
 │   │           └── sessions/
-│   ├── (dashboard)/             # Main dashboard route group
+│   ├── (admin)/                 # Backoffice route group (ALL:MANAGE only)
+│   │   ├── page.tsx             # Backoffice overview / KPI cards
+│   │   ├── tenants/             # Tenant CRUD, bulk ops, invite
+│   │   │   └── [id]/            # Tenant detail: tabs for Overview / Plan / Flags
+│   │   ├── analytics/           # Platform-wide analytics with Recharts
+│   │   ├── audit-log/           # Filterable platform audit trail
+│   │   ├── feature-flags/       # Per-tenant feature flag matrix
+│   │   └── announcements/       # Create/manage in-app announcements
+│   ├── (dashboard)/             # Main tenant dashboard route group
 │   │   ├── inventory/           # Inventory Pages
 │   │   │   ├── products/
 │   │   │   ├── locations/
@@ -204,10 +230,13 @@ apps/web/
 ├── components/                  # Reusable UI Components
 │   ├── ui/                      # shadcn/ui components
 │   ├── Sidebar.tsx
+│   ├── AdminNav.tsx             # Dark-slate sidebar for backoffice
+│   ├── ImpersonationBanner.tsx  # Amber banner shown during tenant impersonation
 │   └── auth/
 │       └── PermissionGate.tsx
 ├── lib/                         # Utilities & API Clients
-│   ├── api.ts                   # Core API client
+│   ├── api.ts                   # Core API client (fetchWithRetry)
+│   ├── admin-api.ts             # Backoffice-specific API helpers
 │   ├── auth.tsx                 # Auth Context
 │   ├── putaway-api.ts           # Putaway-specific API
 │   └── transfer-api.ts          # Transfer-specific API
@@ -449,6 +478,38 @@ PATCH  /inventory/replenishment/alerts/:id/dismiss  Dismiss alert
 ```
 POST   /barcode/lookup                      Universal barcode lookup (Product/Location/Batch)
 POST   /barcode/validate                    Context-aware barcode validation
+```
+
+#### Tenant & Company Management (ALL:MANAGE only)
+```
+POST   /companies/register                  Self-service company registration (public)
+GET    /companies                           List all companies / tenants
+GET    /companies/:id                       Get company details + users
+PATCH  /companies/:id                       Update company info
+PATCH  /companies/:id/status               Update company status (ACTIVE|SUSPENDED|CANCELLED)
+POST   /companies/:id/invite               Invite a user to a company
+GET    /companies/:id/health               Tenant health metrics (users, last login, days inactive)
+GET    /companies/:id/metrics              Tenant usage counts (products, orders, warehouses…)
+GET    /companies/:id/onboarding           Onboarding checklist progress
+GET    /companies/:id/plan                 Get current TenantPlan record
+PUT    /companies/:id/plan                 Upsert plan configuration (tier, limits, trial)
+GET    /companies/:id/plan/limits          Effective limits + current usage for each dimension
+GET    /companies/:id/feature-flags        Get all feature flags for a company
+PUT    /companies/:id/feature-flags/:key   Toggle a specific feature flag
+POST   /companies/:id/impersonate          Generate 15-min impersonation JWT scoped to tenant
+PATCH  /companies/bulk/status              Bulk update status across multiple companies
+PATCH  /companies/bulk/plan                Bulk update plan across multiple companies
+```
+
+#### Platform Operations (ALL:MANAGE only)
+```
+GET    /platform/analytics                 Platform-wide KPIs + charts data
+GET    /platform/audit-log                 Paginated audit log (limit param)
+GET    /platform/announcements             List all announcements
+GET    /platform/announcements/active      Active announcements (filterable by companyId/plan)
+POST   /platform/announcements             Create announcement
+DELETE /platform/announcements/:id         Delete announcement
+GET    /feature-flags/available            List all known feature flag definitions
 ```
 
 #### Analytics & Reporting
@@ -944,6 +1005,108 @@ This virtual model enables:
 - Simplified pagination and CSV export via `InventoryLedgerService`
 ```
 
+#### Company (Tenant)
+```typescript
+Company {
+  id: string (UUID)
+  name: string
+  slug: string (unique)  // URL identifier
+  plan: string           // FREE | STARTER | PROFESSIONAL | ENTERPRISE
+  status: string         // ACTIVE | SUSPENDED | CANCELLED
+  
+  // Relations
+  users: User[]
+  tenantPlan: TenantPlan?
+  featureFlags: FeatureFlag[]
+  auditLogs: AuditLog[]
+  
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+```
+
+#### TenantPlan
+```typescript
+TenantPlan {
+  id: string (UUID)
+  companyId: string (unique)
+  company: Company
+  
+  tier: string?           // Plan tier label
+  billingCycle: string    // MONTHLY | ANNUAL
+  trialEndsAt: DateTime?
+  currentPeriodStart: DateTime?
+  currentPeriodEnd: DateTime?
+  
+  // Limits (null = unlimited)
+  maxUsers: int?
+  maxWarehouses: int?
+  maxProducts: int?
+  maxOrders: int?
+  
+  notes: string?
+  
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+```
+
+#### FeatureFlag
+```typescript
+FeatureFlag {
+  id: string (UUID)
+  companyId: string
+  company: Company
+  
+  key: string     // e.g. ADVANCED_PICKING, AI_REORDER, MULTI_CURRENCY
+  enabled: boolean
+  notes: string?  // Internal admin notes
+  
+  createdAt: DateTime
+  updatedAt: DateTime
+  
+  @@unique([companyId, key])
+}
+```
+
+#### AuditLog
+```typescript
+AuditLog {
+  id: string (UUID)
+  
+  actorId: string       // Admin user who performed the action
+  actorEmail: string
+  action: string        // TENANT_UPDATE | STATUS_CHANGE | PLAN_UPDATE | FLAG_TOGGLE |
+                        //   IMPERSONATE | ANNOUNCE | BULK_STATUS | BULK_PLAN
+  targetType: string    // COMPANY
+  targetId: string
+  targetLabel: string?
+  metadata: string?     // JSON payload of what changed
+  
+  createdAt: DateTime
+}
+```
+
+#### Announcement
+```typescript
+Announcement {
+  id: string (UUID)
+  
+  title: string
+  body: string
+  
+  targetType: string    // ALL | PLAN | COMPANY
+  targetValue: string?  // Plan name or Company ID when targetType ≠ ALL
+  
+  startsAt: DateTime
+  endsAt: DateTime?     // null = indefinite
+  
+  createdById: string
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+```
+
 ### Entity Relationships Diagram
 
 ```mermaid
@@ -991,10 +1154,22 @@ graph TD
 
 ### Authentication Flow
 
-1. **Login**: `POST /auth/login` → Server validates credentials, sets cookie with `user_id`
-2. **Session**: Cookie automatically sent with every request
-3. **Authorization**: Backend validates `user_id` header, loads user with roles/permissions
-4. **Logout**: `POST /auth/logout` → Server clears cookie
+1. **Login**: `POST /auth/login` → NestJS validates credentials, Next.js API route sets 5 cookies
+2. **Session**: `token` (httpOnly JWT) + `user_data` (non-httpOnly JSON with permissions) sent automatically
+3. **Authorization**: NestJS JwtStrategy validates `token` cookie; `PermissionsGuard` checks permissions
+4. **Logout**: `POST /auth/logout` → Clears all session cookies
+
+### Cookie Architecture
+
+| Cookie | `httpOnly` | Purpose |
+|--------|-----------|---------|
+| `token` | ✅ Yes | JWT — never readable by JS, auto-sent to backend |
+| `auth` | ✅ Yes | Gate flag for Next.js middleware auth checks |
+| `user_id` | No | Legacy E2E compat; sent as `x-user-id` header |
+| `company_id` | No | Client-side tenant context |
+| `user_data` | No | JSON with `{ id, name, email, permissions[] }` for UI rendering |
+| `impersonating` | No | Set during impersonation; client reads for banner |
+| `orig_token` | ✅ Yes | Saved admin token during impersonation; restored on exit |
 
 ### Role-Based Access Control (RBAC)
 
@@ -1009,8 +1184,14 @@ Examples:
 - INVENTORY:DELETE
 - ORDER:FULFILL
 - PUTAWAY:MANAGE
-- ALL:MANAGE  (Super Admin)
+- *:MANAGE        (Tenant Admin — manages own company's resources)
+- ALL:MANAGE      (Platform Admin — manages the platform itself)
 ```
+
+> **Critical distinction**: `*:MANAGE` and `ALL:MANAGE` are NOT equivalent.  
+> The `PermissionsGuard` uses strict literal matching: endpoints decorated with  
+> `@RequirePermission('ALL', 'MANAGE')` can only be reached by users whose  
+> permissions include `ALL:MANAGE` exactly — `*:MANAGE` does not satisfy this.
 
 #### Role Examples
 ```typescript
@@ -1026,6 +1207,18 @@ Role {
     { resource: "PICKING", action: "MANAGE" }
   ]
 }
+
+// Created by registerCompany() — tenant admin
+Role {
+  name: "Admin"
+  permissions: [{ resource: "*", action: "MANAGE" }]
+}
+
+// Seeded by the platform — Labamu ops staff
+Role {
+  name: "Platform Admin"
+  permissions: [{ resource: "ALL", action: "MANAGE" }]
+}
 ```
 
 ### Permission Decorators
@@ -1033,9 +1226,14 @@ Role {
 Backend uses NestJS decorators for authorization:
 
 ```typescript
-@Permission('INVENTORY', 'CREATE')
+@RequirePermission('INVENTORY', 'CREATE')
 async createProduct(@Body() dto: CreateProductDto) {
   // Only accessible to users with INVENTORY:CREATE
+}
+
+@RequirePermission('ALL', 'MANAGE')
+async listAllTenants() {
+  // Only accessible to platform admins
 }
 ```
 
@@ -1048,6 +1246,124 @@ const { hasPermission } = useAuth();
   <button onClick={createProduct}>Create</button>
 )}
 ```
+
+---
+
+## Multi-Tenancy Architecture
+
+### Row-Level Isolation
+
+All tenant data shares a single PostgreSQL database. Isolation is enforced at the ORM layer via a Prisma middleware that auto-injects `companyId` on every query for scoped models.
+
+```
+TENANT_SCOPED_MODELS = [
+  'Product', 'Warehouse', 'Supplier', 'Customer', 'User', 'Role',
+]
+```
+
+For every query on these models, Prisma middleware adds:
+```typescript
+// findMany → WHERE companyId = <current>
+// create   → data.companyId = <current>
+// update   → WHERE companyId = <current>
+```
+
+### AsyncLocalStorage Context
+
+The current tenant context is stored in a Node.js `AsyncLocalStorage` instance populated by `TenantMiddleware` (reads the JWT `companyId` claim).
+
+```typescript
+// Set by TenantMiddleware on every request
+tenantStorage.run({ companyId: req.user.companyId }, next)
+
+// Read inside Prisma middleware
+const { companyId } = tenantStorage.getStore() ?? {}
+```
+
+### Cross-Tenant Operations
+
+Admin operations (analytics, impersonation, bulk updates) must bypass tenant filtering. The `runWithoutTenant` helper sets `companyId: null` for the duration of the callback:
+
+```typescript
+export function runWithoutTenant<T>(fn: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    tenantStorage.run({ companyId: null }, () => {
+      fn().then(resolve).catch(reject);
+    });
+  });
+}
+```
+
+All `CompanyService`, `PlatformService`, `PlanService`, `FeatureFlagService`, and `AuditService` methods are wrapped in `runWithoutTenant`.
+
+---
+
+## Backoffice Admin Portal
+
+### Overview
+
+The backoffice is a separate Next.js route group `app/(admin)/` with its own layout (dark slate sidebar). Access is restricted to users with `ALL:MANAGE` permission — enforced in both `middleware.ts` (server-side redirect) and the NestJS backend (`PermissionsGuard`).
+
+### Frontend Route Group: `(admin)/`
+
+| Route | Description |
+|-------|-------------|
+| `/admin` | Dashboard — KPI cards (total tenants, active, suspended) |
+| `/admin/tenants` | Tenant table with filters, bulk actions, create/edit/invite modals |
+| `/admin/tenants/:id` | Tenant detail — tabbed: Overview, Plan & Billing, Feature Flags |
+| `/admin/analytics` | Platform analytics — Recharts bar + pie charts, plan/status breakdown |
+| `/admin/audit-log` | Searchable & filterable platform audit trail |
+| `/admin/feature-flags` | Per-tenant feature flag toggle matrix |
+| `/admin/announcements` | Create/delete in-app announcements with targeting |
+
+### Tenant Impersonation Flow
+
+```
+1. Admin clicks "Impersonate" on /admin/tenants/:id
+2. Browser POST /api/admin/impersonate { companyId }
+3. Next.js API route:
+   a. Reads admin `token` cookie
+   b. Calls POST /companies/:id/impersonate (backend returns 15-min JWT)
+   c. Saves admin token → `orig_token` cookie (httpOnly)
+   d. Sets `token` cookie to impersonation JWT (httpOnly)
+   e. Sets `impersonating` cookie (non-httpOnly) = { companyId, companyName }
+4. Browser redirects to /
+5. <ImpersonationBanner> reads `impersonating` cookie → shows amber banner
+6. Admin clicks "Exit Impersonation"
+7. Browser POST /api/admin/impersonate/stop
+8. Next.js API route:
+   a. Restores `orig_token` → `token`
+   b. Clears `orig_token` and `impersonating` cookies
+9. Browser redirects to /admin
+```
+
+### Available Feature Flags
+
+| Key | Label | Description |
+|-----|-------|-------------|
+| `ADVANCED_PICKING` | Advanced Picking | Multi-step batch picking workflow |
+| `BETA_FLOOR_PLAN` | Beta Floor Plan | Interactive warehouse floor plan editor |
+| `AI_REORDER` | AI Reorder Suggestions | ML-based reorder point recommendations |
+| `MULTI_CURRENCY` | Multi-Currency | Support for multiple currencies on orders |
+| `SUPPLIER_PORTAL` | Supplier Portal | Self-service portal for suppliers |
+| `ADVANCED_ANALYTICS` | Advanced Analytics | Extended reporting and KPI dashboards |
+| `BARCODE_PRINT` | Barcode Printing | Direct barcode label printing integration |
+| `API_ACCESS` | API Access | Allow tenant to generate API keys |
+
+### Audit Log Actions
+
+All platform admin actions are recorded in `AuditLog`:
+
+| Action | Trigger |
+|--------|---------|
+| `TENANT_UPDATE` | PATCH `/companies/:id` |
+| `STATUS_CHANGE` | PATCH `/companies/:id/status` |
+| `PLAN_UPDATE` | PUT `/companies/:id/plan` |
+| `FLAG_TOGGLE` | PUT `/companies/:id/feature-flags/:key` |
+| `IMPERSONATE` | POST `/companies/:id/impersonate` |
+| `ANNOUNCE` | POST `/platform/announcements` |
+| `BULK_STATUS` | PATCH `/companies/bulk/status` |
+| `BULK_PLAN` | PATCH `/companies/bulk/plan` |
 
 ---
 

@@ -23,16 +23,30 @@ export class AuthController {
     async getMe(
         @Headers('authorization') authHeader: string,
         @Headers('x-user-id') userId: string,
+        @Headers('cookie') cookieHeader: string,
     ) {
         let resolvedUserId: string | undefined = userId;
 
-        // If no x-user-id, try to resolve from Bearer token
+        // 1. Try Bearer token
         if (!resolvedUserId && authHeader?.startsWith('Bearer ')) {
             try {
                 const payload = this.authService.verifyToken(authHeader.slice(7));
                 resolvedUserId = payload.sub;
             } catch {
                 throw new UnauthorizedException('Invalid token');
+            }
+        }
+
+        // 2. Try httpOnly `token` cookie forwarded by Next.js rewrite
+        if (!resolvedUserId && cookieHeader) {
+            const match = cookieHeader.match(/(?:^|;\s*)token=([^;]+)/);
+            if (match) {
+                try {
+                    const payload = this.authService.verifyToken(match[1]);
+                    resolvedUserId = payload.sub;
+                } catch {
+                    // Invalid cookie token
+                }
             }
         }
 

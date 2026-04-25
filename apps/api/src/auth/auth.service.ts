@@ -40,6 +40,12 @@ export class AuthService {
 
         const token = this.jwtService.sign(payload);
 
+        // Track last login time (fire-and-forget — don't block the login response)
+        (this.prisma.user.update as any)({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() },
+        }).catch(() => { /* non-critical, ignore errors */ });
+
         // Return both the token and the user profile so the frontend can store both
         const { password: _pw, ...safeUser } = user as any;
         return { token, user: safeUser };

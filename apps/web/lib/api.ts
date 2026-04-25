@@ -1134,3 +1134,52 @@ export async function pauseWorkflowInstance(id: string, userId: string) {
 export async function resumeWorkflowInstance(id: string) {
     return fetchWithRetry(`${API_URL}/workflow-instances/${id}/resume`, { method: 'POST' });
 }
+
+// --- Platform Tenants ---
+
+export async function fetchTenants() {
+    return fetchWithRetry(`${API_URL}/companies`);
+}
+
+export async function getTenant(id: string) {
+    return fetchWithRetry(`${API_URL}/companies/${id}`);
+}
+
+export async function registerTenant(data: {
+    name: string;
+    slug: string;
+    plan: string;
+    adminName: string;
+    adminEmail: string;
+    adminPassword: string;
+}) {
+    return fetchWithRetry(`${API_URL}/companies/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateTenant(id: string, data: { name?: string; slug?: string; plan?: string }) {
+    return fetchWithRetry(`${API_URL}/companies/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateTenantStatus(id: string, status: 'ACTIVE' | 'SUSPENDED' | 'CANCELLED') {
+    return fetchWithRetry(`${API_URL}/companies/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+    });
+}
+
+export async function inviteUserToTenant(companyId: string, data: { name: string; email: string; password: string }) {
+    return fetchWithRetry(`${API_URL}/companies/${companyId}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
