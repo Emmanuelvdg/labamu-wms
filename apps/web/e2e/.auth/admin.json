@@ -5,27 +5,47 @@
       "value": "true",
       "domain": "localhost",
       "path": "/",
-      "expires": 1777178457.280781,
+      "expires": 1777839623.407992,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhOWJkZjc2Mi00MjFhLTQyNDgtYmE2My00NTJmMGI3ZjgxNTIiLCJlbWFpbCI6ImFkbWluQGxhYmFtdS5jby5pZCIsImNvbXBhbnlJZCI6ImRiZGM5NjMxLTU4ODMtNGQ3Ny05MjIyLTYwNzNkZDVmNGMzNCIsImNvbXBhbnlTbHVnIjoibGFiYW11IiwiaWF0IjoxNzc3MjM0ODIzLCJleHAiOjE3Nzc4Mzk2MjN9.vOZWLXkQLjKFWUI4ycrls-vUsu6G5reriVlEpmEjxhc",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1777839623.41181,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "user_id",
-      "value": "c9b6ad61-ce5c-47e0-939c-e6c2b5ac4502",
+      "value": "a9bdf762-421a-4248-ba63-452f0b7f8152",
       "domain": "localhost",
       "path": "/",
-      "expires": 1777178457.284504,
+      "expires": 1777839623.411877,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "company_id",
+      "value": "dbdc9631-5883-4d77-9222-6073dd5f4c34",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1777839623.411924,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "user_data",
-      "value": "%7B%22id%22%3A%22c9b6ad61-ce5c-47e0-939c-e6c2b5ac4502%22%2C%22name%22%3A%22Updated%20User%20Name%22%2C%22email%22%3A%22admin%40labamu.co.id%22%2C%22permissions%22%3A%5B%22ALL%3AMANAGE%22%2C%22INVENTORY%3ACREATE%22%2C%22INVENTORY%3ADELETE%22%2C%22INVENTORY%3AREAD%22%2C%22INVENTORY%3AUPDATE%22%2C%22INVOICES%3AREAD%22%2C%22ORDERS%3ACREATE%22%2C%22ORDERS%3ADELETE%22%2C%22ORDERS%3AREAD%22%2C%22ORDERS%3AUPDATE%22%2C%22PURCHASE_ORDERS%3AREAD%22%2C%22REPORTS%3AREAD%22%2C%22SETTINGS%3AREAD%22%2C%22SETTINGS%3AUPDATE%22%2C%22SUPPLIERS%3AREAD%22%5D%7D",
+      "value": "%7B%22id%22%3A%22a9bdf762-421a-4248-ba63-452f0b7f8152%22%2C%22name%22%3A%22Admin%20User%22%2C%22email%22%3A%22admin%40labamu.co.id%22%2C%22companyId%22%3A%22dbdc9631-5883-4d77-9222-6073dd5f4c34%22%2C%22companySlug%22%3A%22labamu%22%2C%22permissions%22%3A%5B%22ALL%3AMANAGE%22%5D%7D",
       "domain": "localhost",
       "path": "/",
-      "expires": 1777178457.28464,
+      "expires": 1777839623.411967,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
