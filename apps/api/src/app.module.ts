@@ -37,6 +37,7 @@ import { RoutingModule } from './routing/routing.module';
 import { CompanyModule } from './company/company.module';
 
 import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
+import { HealthController } from './health.controller';
 import { PrismaService } from './prisma.service';
 
 @Module({
@@ -77,7 +78,7 @@ import { PrismaService } from './prisma.service';
         RoutingModule,
         CompanyModule,
     ],
-    controllers: [DeliveryMethodsController],
+    controllers: [DeliveryMethodsController, HealthController],
     providers: [
         PrismaService,
         {

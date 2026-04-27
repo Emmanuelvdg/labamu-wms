@@ -9,10 +9,8 @@ interface PrintButtonProps {
 export function PrintButton({ endpoint, label = "Print Label" }: PrintButtonProps) {
     const handlePrint = async () => {
         try {
-            // Because our API is on port 3001, we need to make sure we hit the full URL or use the proxy.
-            // Assuming proxy or direct call. If direct, needs CORS.
-            // Simplest way is window.open if it's GET and downloads PDF.
-            const url = `http://localhost:3001${endpoint}`;
+            // Route through the Next.js /api rewrite proxy to avoid CORS and hardcoded URLs
+            const url = `/api${endpoint}`;
             window.open(url, '_blank');
         } catch (error) {
             console.error(error);

@@ -21,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
                 (req: any) => req?.cookies?.token ?? null,
             ]),
             ignoreExpiration: false,
-            secretOrKey: process.env.JWT_SECRET ?? 'labamu-jwt-secret-change-in-production-please',
+            secretOrKey: process.env.JWT_SECRET ?? 'labamu-jwt-secret-change-in-production-please', // resolveJwtSecret() runs first in AuthModule
         });
     }
 

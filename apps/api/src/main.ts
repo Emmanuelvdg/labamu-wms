@@ -9,67 +9,61 @@ import { PrismaService } from './prisma.service';
 import { ErrorCatalogService } from './common/errors/error-catalog.service';
 import { AppExceptionFilter } from './common/filters/app-exception.filter';
 
-// Load .env file from apps/api directory
-const envPath = path.join(process.cwd(), '.env');
-console.log('[ENV] Loading .env from:', envPath);
-dotenv.config({ path: envPath });
-console.log('[ENV] LALAMOVE_API_KEY loaded:', !!process.env.LALAMOVE_API_KEY);
-console.log('[ENV] LALAMOVE_API_SECRET loaded:', !!process.env.LALAMOVE_API_SECRET);
+dotenv.config({ path: path.join(process.cwd(), '.env') });
 
-async function bootstrap() {
-    try {
-        console.log('Bootstrap starting...');
-        const app = await NestFactory.create(AppModule);
+const logger = new Logger('Bootstrap');
 
-        // Security middleware
-        app.use(helmet());
+function validateEnv() {
+    const isProd = process.env.NODE_ENV === 'production';
+    const missing: string[] = [];
 
-        // CORS config
-        const corsOrigins = process.env.CORS_ORIGINS
-            ? process.env.CORS_ORIGINS.split(',')
-            : [
-                'http://localhost:3000',
-                'http://127.0.0.1:3000',
-                'http://localhost:3001',
-                'http://127.0.0.1:3001',
-            ];
+    if (!process.env.DATABASE_URL) missing.push('DATABASE_URL');
+    if (!process.env.JWT_SECRET) missing.push('JWT_SECRET');
 
-        app.enableCors({
-            origin: corsOrigins,
-            credentials: true,
-            allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'x-user-id'],
-        });
-        if (process.env.NODE_ENV !== 'production') {
-            app.use((req: any, res: any, next: any) => {
-                Logger.debug(`[REQUEST] ${req.method} ${req.url}`, 'HTTP');
-                next();
-            });
+    if (isProd) {
+        if (!process.env.CORS_ORIGINS) missing.push('CORS_ORIGINS');
+        if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'labamu-jwt-secret-change-in-production-please') {
+            throw new Error('JWT_SECRET must be set to a strong unique value in production.');
         }
+    }
 
-        // Register global error catalog filter
-        const errorCatalog = new ErrorCatalogService();
-        app.useGlobalFilters(new AppExceptionFilter(errorCatalog));
-
-        // Global Input Validation
-        app.useGlobalPipes(new ValidationPipe({
-            whitelist: true,       // Strip unknown properties
-            forbidNonWhitelisted: false,  // Don't reject unknown properties
-            transform: true,       // Auto-transform payloads to DTO instances
-        }));
-
-
-
-        const port = process.env.PORT || 3001;
-        Logger.log(`Attempting to listen on port ${port}...`, 'Bootstrap');
-        // Listen without an explicit host so Node creates both IPv4 (0.0.0.0)
-        // and IPv6 (::) sockets. This is required on Windows so that the Next.js
-        // server-side fetch (which resolves localhost → ::1) can reach the API.
-        await app.listen(port);
-        Logger.log(`Application is running on: ${await app.getUrl()}`, 'Bootstrap');
-        Logger.log('--- SERVER STARTED WITH RESERVATION LOGIC ---', 'Bootstrap');
-    } catch (err) {
-        console.error('Bootstrap Error:', err);
+    if (missing.length > 0) {
+        throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
     }
 }
-bootstrap();
 
+async function bootstrap() {
+    validateEnv();
+
+    const app = await NestFactory.create(AppModule);
+
+    app.use(helmet());
+
+    const corsOrigins = process.env.CORS_ORIGINS
+        ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+        : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+    app.enableCors({
+        origin: corsOrigins,
+        credentials: true,
+        allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'x-user-id'],
+    });
+
+    const errorCatalog = new ErrorCatalogService();
+    app.useGlobalFilters(new AppExceptionFilter(errorCatalog));
+
+    app.useGlobalPipes(new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: false,
+        transform: true,
+    }));
+
+    const port = process.env.PORT ?? 3001;
+    await app.listen(port);
+    logger.log(`Application running on port ${port} [${process.env.NODE_ENV ?? 'development'}]`);
+}
+
+bootstrap().catch(err => {
+    new Logger('Bootstrap').error(`Fatal startup error: ${err.message}`, err.stack);
+    process.exit(1);
+});

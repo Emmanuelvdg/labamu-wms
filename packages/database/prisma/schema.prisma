@@ -74,6 +74,9 @@ model AuditLog {
   metadata    String?  // JSON blob
   createdAt   DateTime @default(now())
   company     Company? @relation(fields: [targetId], references: [id])
+
+  @@index([targetId])
+  @@index([createdAt])
 }
 
 model Announcement {
@@ -148,6 +151,10 @@ model Product {
   replenishmentAlerts  ReplenishmentAlert[]
   routes               Route[]                      @relation("ProductToRoute")
   company              Company?                     @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+  @@index([status])
+  @@index([supplierId])
 }
 
 model Route {
@@ -347,6 +354,8 @@ model ProductInventory {
   location    Location? @relation(fields: [locationId], references: [id])
   warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
   product     Product   @relation(fields: [productId], references: [id])
+
+  @@index([productId, warehouseId])
 }
 
 model InventoryBatch {
@@ -372,6 +381,10 @@ model InventoryBatch {
   warehouse       Warehouse             @relation(fields: [warehouseId], references: [id])
   product         Product               @relation(fields: [productId], references: [id])
   stockMoves      StockMove[]
+
+  @@index([productId, warehouseId])
+  @@index([status])
+  @@index([expiryDate])
 }
 
 model Package {
@@ -403,6 +416,8 @@ model StockTransaction {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   product     Product  @relation(fields: [productId], references: [id])
+
+  @@index([productId, date])
 }
 
 model Order {
@@ -436,6 +451,11 @@ model Order {
   shipment               Shipment?
   packingSession         PackingSession?
   transferOrders         TransferOrder[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([warehouseId])
+  @@index([createdAt])
 }
 
 model OrderItem {

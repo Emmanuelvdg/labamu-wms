@@ -28,6 +28,7 @@ export async function POST(request: Request) {
         const cookieOpts = {
             path: '/',
             secure: isProd,
+            sameSite: 'lax' as const,
             maxAge: 60 * 60 * 24 * 7, // 7 days
         };
 
@@ -69,10 +70,6 @@ export async function POST(request: Request) {
 
         return response;
     } catch (error: any) {
-        console.error('Login error:', error);
-        return NextResponse.json({
-            error: 'Internal server error',
-            details: error.message,
-        }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

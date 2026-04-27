@@ -4,8 +4,8 @@ import Cookies from 'js-cookie';
 // (avoids cross-origin / CORS issues between localhost and 127.0.0.1)
 export const API_URL = '/api';
 
-// Keep the direct backend URL for any server-side usage
-export const INTERNAL_API_URL = 'http://127.0.0.1:3001';
+// Server-side backend URL — set API_URL in .env (never exposed to the browser)
+export const INTERNAL_API_URL = process.env.API_URL ?? 'http://127.0.0.1:3001';
 
 export async function fetchWithRetry(url: string, options?: RequestInit) {
     try {
