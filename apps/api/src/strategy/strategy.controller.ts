@@ -1,12 +1,17 @@
-import { Controller, Post, Body, Get, Patch, Param, Put, Delete, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch, Param, Put, Delete, Query, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { StrategyService } from './strategy.service';
 import { PickingStrategyService } from './picking-strategy.service';
+import { WaveReleaseRuleService } from './wave-release-rule.service';
+
+type PickingStrategyType = 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE' | 'WAVELESS' | 'ZONE';
 
 @Controller('strategy')
 export class StrategyController {
     constructor(
         private readonly strategyService: StrategyService,
-        private readonly pickingStrategyService: PickingStrategyService
+        private readonly pickingStrategyService: PickingStrategyService,
+        private readonly waveReleaseRuleService: WaveReleaseRuleService,
     ) { }
 
     @Post('picking')
@@ -23,8 +28,6 @@ export class StrategyController {
     getPickingStrategies(@Query('warehouseId') warehouseId: string) {
         return this.strategyService.getPickingStrategies(warehouseId);
     }
-
-    // ...
 
     // --- Picking CRUD ---
 
@@ -80,9 +83,12 @@ export class StrategyController {
     // --- Picking Session Management ---
 
     @Post('picking/sessions')
-    createSession(@Body() data: { warehouseId: string; strategy: 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE' | 'WAVELESS'; criteria?: string; maxOrders?: number }) {
+    createSession(@Body() data: { warehouseId: string; strategy: PickingStrategyType; criteria?: string; maxOrders?: number }) {
         if (data.strategy === 'WAVELESS') {
             return this.pickingStrategyService.createWavelessSession(data.warehouseId);
+        }
+        if (data.strategy === 'ZONE') {
+            return this.pickingStrategyService.createZoneSession(data.warehouseId, data.maxOrders);
         }
         return this.pickingStrategyService.createSession(data);
     }
@@ -95,6 +101,15 @@ export class StrategyController {
     @Get('picking/sessions/active')
     getActiveSession(@Query('warehouseId') warehouseId: string) {
         return this.pickingStrategyService.getActiveSession(warehouseId);
+    }
+
+    // M3.3 — Picking list PDF
+    @Get('picking/sessions/:id/picklist')
+    async getPicklist(@Param('id') id: string, @Res() res: Response) {
+        const pdf = await this.pickingStrategyService.generatePicklistPdf(id);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="picklist-${id.slice(0, 8)}.pdf"`);
+        res.send(pdf);
     }
 
     @Patch('picking/tasks/:id')
@@ -110,5 +125,40 @@ export class StrategyController {
     @Post('picking/sessions/:id/complete')
     completeSession(@Param('id') id: string) {
         return this.pickingStrategyService.completeSession(id);
+    }
+
+    // --- Wave Release Rules (M3.2) ---
+
+    @Get('wave-rules')
+    listWaveRules(@Query('warehouseId') warehouseId: string) {
+        return this.waveReleaseRuleService.list(warehouseId);
+    }
+
+    @Post('wave-rules')
+    createWaveRule(@Body() data: {
+        warehouseId: string;
+        name: string;
+        triggerType?: string;
+        cronExpression?: string;
+        minOrders?: number;
+        maxOrders?: number;
+        enabled?: boolean;
+    }) {
+        return this.waveReleaseRuleService.create(data);
+    }
+
+    @Put('wave-rules/:id')
+    updateWaveRule(@Param('id') id: string, @Body() data: any) {
+        return this.waveReleaseRuleService.update(id, data);
+    }
+
+    @Delete('wave-rules/:id')
+    deleteWaveRule(@Param('id') id: string) {
+        return this.waveReleaseRuleService.remove(id);
+    }
+
+    @Post('wave-rules/:id/trigger')
+    triggerWaveRule(@Param('id') id: string) {
+        return this.waveReleaseRuleService.triggerRule(id);
     }
 }

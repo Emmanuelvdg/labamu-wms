@@ -3,15 +3,24 @@
 import { useState, useEffect } from 'react';
 import { fetchAnalytics } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { format } from 'date-fns';
+import { Lock } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ReportingPage() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [advancedEnabled, setAdvancedEnabled] = useState<boolean | null>(null);
 
     useEffect(() => {
         async function load() {
+            // M5.5 — ADVANCED_ANALYTICS flag
+            const flagRes = await fetch('/api/feature-flags').catch(() => null);
+            if (flagRes?.ok) {
+                const flags: Array<{ key: string; enabled: boolean }> = await flagRes.json();
+                setAdvancedEnabled(flags.find(f => f.key === 'ADVANCED_ANALYTICS')?.enabled ?? false);
+            } else {
+                setAdvancedEnabled(false);
+            }
             try {
                 const res = await fetchAnalytics();
                 setData(res);
@@ -37,6 +46,17 @@ export default function ReportingPage() {
                 <h1 className="text-3xl font-bold text-gray-900">Warehouse Overview</h1>
                 <div className="text-sm text-gray-500">Last 7 days</div>
             </div>
+
+            {/* M5.5 — ADVANCED_ANALYTICS flag banner */}
+            {advancedEnabled === false && (
+                <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <Lock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-medium text-amber-900">Advanced Analytics not enabled</p>
+                        <p className="text-sm text-amber-700 mt-1">Enable the <strong>Advanced Analytics</strong> feature flag in the admin portal to unlock cycle-time trends, utilisation history, and the inventory ledger.</p>
+                    </div>
+                </div>
+            )}
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -120,6 +140,20 @@ export default function ReportingPage() {
                         </CardContent>
                     </Card>
                 </Link>
+
+                {advancedEnabled && (
+                    <Link href="/reporting/inventory-ledger" className="block hover:opacity-80 transition-opacity">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-gray-500">Inventory Ledger</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-indigo-600">Movements</div>
+                                <p className="text-xs text-muted-foreground">Full stock movement history &rarr;</p>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                )}
             </div>
 
             {/* Charts Section */}

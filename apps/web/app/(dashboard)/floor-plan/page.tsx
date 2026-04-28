@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { API_URL } from '@/lib/api';
-import { ArrowLeft, Save, ZoomIn, ZoomOut, RotateCw, Trash2, Layers, Eye, EyeOff, Upload, Download, Ruler, Undo2, Redo2, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, ZoomIn, ZoomOut, RotateCw, Trash2, Layers, Eye, EyeOff, Upload, Download, Ruler, Undo2, Redo2, Image as ImageIcon, Lock } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { ImportLocationsModal } from './ImportLocationsModal';
 import Link from 'next/link';
@@ -152,6 +152,9 @@ function FloorPlanContent() {
 
     // Helper: read user ID from cookie (set by auth)
     const getUserId = () => Cookies.get('user_id') || '';
+
+    // M4.5 — BETA_FLOOR_PLAN feature flag
+    const [flagEnabled, setFlagEnabled] = useState<boolean | null>(null);
 
     // Data state
     const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -331,6 +334,15 @@ function FloorPlanContent() {
     }, [selectedWarehouseId]);
 
     async function loadWarehouses() {
+        // Check BETA_FLOOR_PLAN feature flag
+        const flagRes = await fetch('/api/feature-flags').catch(() => null);
+        if (flagRes?.ok) {
+            const flags: Array<{ key: string; enabled: boolean }> = await flagRes.json();
+            setFlagEnabled(flags.find(f => f.key === 'BETA_FLOOR_PLAN')?.enabled ?? false);
+        } else {
+            setFlagEnabled(false);
+        }
+
         try {
             const res = await fetch('/api/warehouses');
             const data = await res.json();
@@ -1674,6 +1686,16 @@ function FloorPlanContent() {
 
     return (
         <div className="h-[calc(100vh-4rem)] flex flex-col">
+            {/* M4.5 — BETA_FLOOR_PLAN flag banner */}
+            {flagEnabled === false && (
+                <div className="flex items-start gap-3 border-b border-amber-200 bg-amber-50 px-4 py-3">
+                    <Lock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-medium text-amber-900">Floor Plan Editor is in beta</p>
+                        <p className="text-sm text-amber-700">Enable the <strong>Beta Floor Plan</strong> feature flag in the admin portal to create and edit floor plan areas.</p>
+                    </div>
+                </div>
+            )}
             {/* Header */}
             <div className="border-b p-4 flex items-center justify-between bg-background">
                 <div className="flex items-center space-x-4">

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { INTERNAL_API_URL } from '@/lib/api';
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     const cookies = request.headers.get('cookie') || '';
     const tokenMatch = cookies.match(/(?:^|;\s*)token=([^;]+)/);
-    const res = await fetch(`${INTERNAL_API_URL}/printing/printers/${params.id}/default`, {
+    const res = await fetch(`${INTERNAL_API_URL}/printing/printers/${id}/default`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${tokenMatch?.[1] ?? ''}`, Cookie: cookies },
     });

@@ -52,7 +52,7 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const [analyticsData, productsData] = await Promise.all([
-        fetchAnalytics(),
+        fetchAnalytics({ period }),
         fetchInventory()
       ]);
       setAnalytics(analyticsData);

@@ -1,18 +1,48 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, ForbiddenException } from '@nestjs/common';
+import * as path from 'path';
 import { PrismaService } from '../prisma.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { RotationRuleResolverService } from '../inventory/rotation-rule-resolver.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PICKING_SESSION_COMPLETED, PickingSessionCompletedEvent } from './events/picking.events';
+import { FeatureFlagService } from '../company/feature-flag.service';
+import { getCurrentCompanyId } from '../common/tenant/tenant-storage';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const PdfPrinter = require('pdfmake/js/printer').default;
+
+type PickingStrategyType = 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE' | 'WAVELESS' | 'ZONE';
 
 @Injectable()
 export class PickingStrategyService {
+    private readonly fonts = {
+        Roboto: {
+            normal: path.join(process.cwd(), '../../node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf'),
+            bold: path.join(process.cwd(), '../../node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf'),
+            italics: path.join(process.cwd(), '../../node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf'),
+            bolditalics: path.join(process.cwd(), '../../node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf'),
+        },
+    };
+
     constructor(
         private prisma: PrismaService,
         private inventoryService: InventoryService,
         private ruleResolver: RotationRuleResolverService,
-        private eventEmitter: EventEmitter2
+        private eventEmitter: EventEmitter2,
+        private featureFlags: FeatureFlagService,
     ) { }
+
+    // ── Feature flag check ────────────────────────────────────────────────────
+
+    private async assertAdvancedPickingEnabled(): Promise<void> {
+        const companyId = getCurrentCompanyId();
+        if (!companyId) return; // platform admin bypasses
+        const flags = await this.featureFlags.getFlagsForCompany(companyId);
+        const flag = flags.find(f => f.key === 'ADVANCED_PICKING');
+        if (!flag?.enabled) {
+            throw new ForbiddenException('The "ADVANCED_PICKING" feature is not enabled for your account.');
+        }
+    }
 
     // --- Batch Picking ---
     // Groups whole orders together based on criteria
@@ -262,11 +292,106 @@ export class PickingStrategyService {
         return { success: true, message: 'Urgent pick inserted', addedTasks: orderHasTasks };
     }
 
+    // --- Zone Picking (M3.1) ---
+    // Groups pending order lines by the warehouse zone of their source location.
+    // Creates tasks ordered by zone proximity (zonePriority ascending).
+    async createZoneSession(warehouseId: string, maxOrders?: number) {
+        await this.assertAdvancedPickingEnabled();
+
+        const orders = await this.prisma.order.findMany({
+            where: {
+                OR: [{ warehouseId }, { warehouseId: null }],
+                status: 'RESERVED',
+            },
+            take: maxOrders || 50,
+            include: { items: { include: { product: true } } },
+            orderBy: { createdAt: 'asc' },
+        });
+
+        if (orders.length === 0) {
+            throw new HttpException('No orders available for picking', HttpStatus.BAD_REQUEST);
+        }
+
+        const session = await this.prisma.pickingSession.create({
+            data: { warehouseId, strategy: 'ZONE', status: 'IN_PROGRESS' },
+        });
+
+        type PendingTask = {
+            zonePriority: number;
+            orderId: string;
+            productId: string;
+            sourceLocationId: string;
+            quantity: number;
+        };
+
+        const pendingTasks: PendingTask[] = [];
+        const orderHasTasksMap = new Map<string, boolean>();
+
+        for (const order of orders) {
+            for (const item of order.items) {
+                const allocations = await this.allocateStock(item.productId, item.quantity, warehouseId, 'FEFO');
+                for (const alloc of allocations) {
+                    const zone = await this.findZoneAncestor(alloc.locationId);
+                    pendingTasks.push({
+                        zonePriority: zone.zonePriority,
+                        orderId: order.id,
+                        productId: item.productId,
+                        sourceLocationId: alloc.locationId,
+                        quantity: alloc.quantity,
+                    });
+                    orderHasTasksMap.set(order.id, true);
+                }
+            }
+        }
+
+        // Sort by zone proximity so pickers move through zones in order
+        pendingTasks.sort((a, b) => a.zonePriority - b.zonePriority);
+
+        for (const t of pendingTasks) {
+            await this.prisma.pickingTask.create({
+                data: {
+                    sessionId: session.id,
+                    orderId: t.orderId,
+                    productId: t.productId,
+                    sourceLocationId: t.sourceLocationId,
+                    quantity: t.quantity,
+                    status: 'PENDING',
+                },
+            });
+        }
+
+        for (const orderId of orderHasTasksMap.keys()) {
+            await this.prisma.order.update({ where: { id: orderId }, data: { status: 'PICKING' } });
+        }
+
+        return this.getActiveSession(warehouseId);
+    }
+
+    // Walks up the location hierarchy to find the nearest ZONE ancestor.
+    private async findZoneAncestor(locationId: string): Promise<{ id: string; zonePriority: number }> {
+        let loc = await this.prisma.location.findUnique({
+            where: { id: locationId },
+            select: { id: true, structuralType: true, parentId: true, zonePriority: true },
+        });
+
+        while (loc) {
+            if (loc.structuralType === 'ZONE' || !loc.parentId) {
+                return { id: loc.id, zonePriority: loc.zonePriority };
+            }
+            loc = await this.prisma.location.findUnique({
+                where: { id: loc.parentId },
+                select: { id: true, structuralType: true, parentId: true, zonePriority: true },
+            });
+        }
+
+        return { id: locationId, zonePriority: 100 };
+    }
+
     // --- Picking Session Management ---
 
     async createSession(data: {
         warehouseId: string;
-        strategy?: 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE' | 'WAVELESS';
+        strategy?: PickingStrategyType;
         criteria?: string;
         maxOrders?: number;
     }) {
@@ -275,6 +400,11 @@ export class PickingStrategyService {
 
         if (!strategy) {
             strategy = 'SINGLE';
+        }
+
+        // ADVANCED_PICKING flag required for any strategy other than SINGLE
+        if (strategy !== 'SINGLE' && strategy !== 'WAVELESS') {
+            await this.assertAdvancedPickingEnabled();
         }
 
         // 1. Find Candidate Orders (RESERVED)
@@ -624,5 +754,78 @@ export class PickingStrategyService {
         }
 
         return { success: true };
+    }
+
+    // --- Picking List PDF (M3.3) ---
+    async generatePicklistPdf(sessionId: string): Promise<Buffer> {
+        const session = await this.prisma.pickingSession.findUnique({
+            where: { id: sessionId },
+            include: {
+                tasks: {
+                    include: {
+                        product: true,
+                        sourceLocation: true,
+                        order: true,
+                    },
+                    orderBy: { sourceLocation: { name: 'asc' } },
+                },
+                warehouse: true,
+            },
+        });
+
+        if (!session) throw new HttpException('Session not found', HttpStatus.NOT_FOUND);
+
+        const rows = session.tasks.map(t => [
+            { text: t.sourceLocation?.name ?? '—', style: 'cell' },
+            { text: t.order?.id?.slice(0, 8) ?? t.orderId.slice(0, 8), style: 'cell' },
+            { text: t.product?.sku ?? '—', style: 'cell' },
+            { text: t.product?.name ?? '—', style: 'cell' },
+            { text: String(t.quantity), style: 'cell', alignment: 'right' },
+            { text: '', style: 'cell' }, // Picked qty (manual fill)
+        ]);
+
+        const docDefinition = {
+            pageSize: 'A4',
+            pageMargins: [30, 50, 30, 30],
+            content: [
+                { text: `Picking List — ${session.warehouse?.name ?? session.warehouseId}`, style: 'title' },
+                { text: `Session: ${session.id.slice(0, 8)}  |  Strategy: ${session.strategy}  |  ${new Date().toLocaleDateString()}`, style: 'subtitle', margin: [0, 4, 0, 16] },
+                {
+                    table: {
+                        headerRows: 1,
+                        widths: [80, 70, 70, '*', 45, 50],
+                        body: [
+                            [
+                                { text: 'Location', style: 'tableHeader' },
+                                { text: 'Order', style: 'tableHeader' },
+                                { text: 'SKU', style: 'tableHeader' },
+                                { text: 'Product', style: 'tableHeader' },
+                                { text: 'Qty', style: 'tableHeader', alignment: 'right' },
+                                { text: 'Picked', style: 'tableHeader' },
+                            ],
+                            ...rows,
+                        ],
+                    },
+                    layout: 'lightHorizontalLines',
+                },
+            ],
+            styles: {
+                title: { fontSize: 16, bold: true },
+                subtitle: { fontSize: 10, color: '#555' },
+                tableHeader: { bold: true, fontSize: 10, fillColor: '#f0f0f0' },
+                cell: { fontSize: 9 },
+            },
+            defaultStyle: { font: 'Roboto' },
+        };
+
+        const printer = new PdfPrinter(this.fonts);
+        return new Promise((resolve, reject) => {
+            const doc = printer.createPdfKitDocument(docDefinition);
+            const chunks: Buffer[] = [];
+            doc.on('data', (c: Buffer) => chunks.push(c));
+            doc.on('end', () => resolve(Buffer.concat(chunks)));
+            doc.on('error', reject);
+            doc.end();
+        });
     }
 }

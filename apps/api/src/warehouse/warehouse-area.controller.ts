@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Put, Delete, Patch, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Patch, Param, Body, UseGuards } from '@nestjs/common';
 import { WarehouseAreaService, CreateAreaDto, UpdateAreaDto, UpdateFloorPlanDto } from './warehouse-area.service';
 import { PrismaService } from '../prisma.service';
+import { FeatureFlagGuard, RequireFlag } from '../common/guards/feature-flag.guard';
 
 @Controller('warehouses')
 export class WarehouseAreaController {
@@ -92,6 +93,8 @@ export class WarehouseAreaController {
         return this.warehouseAreaService.getSuggestedLayout(warehouseId, layoutType);
     }
 
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('BETA_FLOOR_PLAN')
     @Post(':id/areas')
     async createArea(
         @Param('id') warehouseId: string,
@@ -100,6 +103,8 @@ export class WarehouseAreaController {
         return this.warehouseAreaService.createArea(warehouseId, data);
     }
 
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('BETA_FLOOR_PLAN')
     @Put(':warehouseId/areas/:areaId')
     async updateArea(
         @Param('areaId') areaId: string,
@@ -108,11 +113,15 @@ export class WarehouseAreaController {
         return this.warehouseAreaService.updateArea(areaId, data);
     }
 
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('BETA_FLOOR_PLAN')
     @Delete(':warehouseId/areas/:areaId')
     async deleteArea(@Param('areaId') areaId: string) {
         return this.warehouseAreaService.deleteArea(areaId);
     }
 
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('BETA_FLOOR_PLAN')
     @Patch(':id/floor-plan')
     async updateFloorPlan(
         @Param('id') warehouseId: string,

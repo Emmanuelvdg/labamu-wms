@@ -11,9 +11,10 @@ function backendHeaders(request: Request) {
     };
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     const body = await request.json();
-    const res = await fetch(`${INTERNAL_API_URL}/printing/printers/${params.id}`, {
+    const res = await fetch(`${INTERNAL_API_URL}/printing/printers/${id}`, {
         method: 'PUT',
         headers: backendHeaders(request),
         body: JSON.stringify(body),
@@ -22,8 +23,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     return NextResponse.json(data, { status: res.status });
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-    const res = await fetch(`${INTERNAL_API_URL}/printing/printers/${params.id}`, {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const res = await fetch(`${INTERNAL_API_URL}/printing/printers/${id}`, {
         method: 'DELETE',
         headers: backendHeaders(request),
     });

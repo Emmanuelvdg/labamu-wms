@@ -645,8 +645,9 @@ export async function createRule(routeId: string, data: any) {
 
 // --- Reporting ---
 
-export async function fetchAnalytics() {
-    return fetchWithRetry(`${API_URL}/reporting/analytics`);
+export async function fetchAnalytics(params?: { period?: string; startDate?: string; endDate?: string }) {
+    const qs = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([, v]) => v))).toString() : '';
+    return fetchWithRetry(`${API_URL}/reporting/analytics${qs}`);
 }
 
 export async function generateReport(type: string, period: string) {
