@@ -1228,6 +1228,22 @@ model Notification {
   updatedAt DateTime @updatedAt
 }
 
+model PrinterConfig {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  outputType  String   @default("PDF")  // PDF | ZPL
+  host        String?
+  port        Int?
+  isDefault   Boolean  @default(false)
+  labelWidth  Int      @default(288)    // points (4 in)
+  labelHeight Int      @default(144)    // points (2 in)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+}
+
 // ─── WORKFLOW DEFINITIONS ───
 model WorkflowTemplate {
   id          String   @id @default(uuid())

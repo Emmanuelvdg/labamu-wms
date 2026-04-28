@@ -16,137 +16,180 @@ export class PrintingService {
         },
     };
 
-    constructor(private prisma: PrismaService) { }
+    constructor(private readonly prisma: PrismaService) {}
+
+    // ── Internals ─────────────────────────────────────────────────────────────
 
     private async generateBarcodeImage(text: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            bwipjs.toBuffer({
-                bcid: 'code128',       // Barcode type
-                text: text,            // Text to encode
-                scale: 3,              // 3x scaling factor
-                height: 10,            // Bar height, in millimeters
-                includetext: true,     // Show human-readable text
-                textxalign: 'center',  // Always good to align text
-            }, (err, png) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(`data:image/png;base64,${png.toString('base64')}`);
-                }
-            });
+            bwipjs.toBuffer(
+                { bcid: 'code128', text, scale: 3, height: 10, includetext: true, textxalign: 'center' },
+                (err, png) => (err ? reject(err) : resolve(`data:image/png;base64,${png.toString('base64')}`)),
+            );
         });
     }
 
-    async generateLocationLabel(locationId: string): Promise<Buffer> {
-        try {
-            const location = await this.prisma.location.findUnique({
-                where: { id: locationId },
-                include: { parent: true }
-            });
-
-            if (!location) throw new NotFoundException('Location not found');
-
-            const barcodeDataURL = await this.generateBarcodeImage(location.id);
-
-            const docDefinition: any = {
-                pageSize: { width: 288, height: 144 }, // 4x2 inches approx
-                pageMargins: [10, 10, 10, 10],
-                content: [
-                    { text: 'LOCATION LABEL', style: 'header', alignment: 'center' },
-                    { text: location.name, style: 'locationName', alignment: 'center', margin: [0, 10, 0, 5] },
-                    {
-                        image: barcodeDataURL,
-                        width: 200,
-                        alignment: 'center'
-                    },
-                    { text: location.structuralType || 'LOCATION', style: 'subtext', alignment: 'center', margin: [0, 5, 0, 0] },
-                    { text: location.parent ? `Parent: ${location.parent.name}` : '', style: 'small', alignment: 'center' }
-                ],
-                styles: {
-                    header: { fontSize: 10, bold: true },
-                    locationName: { fontSize: 18, bold: true },
-                    subtext: { fontSize: 10 },
-                    small: { fontSize: 8, italics: true }
-                },
-                defaultStyle: {
-                    font: 'Roboto'
-                }
-            };
-
-            const printer = new PdfPrinter(this.fonts);
-            return new Promise(async (resolve, reject) => {
-                const pdfDoc = await printer.createPdfKitDocument(docDefinition);
-                const chunks: any[] = [];
-                pdfDoc.on('data', (chunk) => chunks.push(chunk));
-                pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-                pdfDoc.on('error', (err) => reject(err));
-                pdfDoc.end();
-            });
-        } catch (e: any) {
-            console.error('generateLocationLabel ERROR:', e);
-            throw new NotFoundException(`Printing Error: ${e.message}`);
-        }
+    private renderPdf(docDefinition: object): Promise<Buffer> {
+        const printer = new PdfPrinter(this.fonts);
+        return new Promise((resolve, reject) => {
+            const doc = printer.createPdfKitDocument(docDefinition);
+            const chunks: Buffer[] = [];
+            doc.on('data', (c: Buffer) => chunks.push(c));
+            doc.on('end', () => resolve(Buffer.concat(chunks)));
+            doc.on('error', reject);
+            doc.end();
+        });
     }
+
+    private readonly labelStyles = {
+        header:       { fontSize: 10, bold: true },
+        locationName: { fontSize: 18, bold: true },
+        sku:          { fontSize: 14, bold: true },
+        productName:  { fontSize: 10 },
+        subtext:      { fontSize: 10 },
+        small:        { fontSize: 8, italics: true },
+    };
+
+    // ── Location PDF ──────────────────────────────────────────────────────────
+
+    async generateLocationLabel(locationId: string): Promise<Buffer> {
+        const location = await this.prisma.location.findUnique({
+            where: { id: locationId },
+            include: { parent: true },
+        });
+        if (!location) throw new NotFoundException('Location not found');
+
+        const barcodeDataURL = await this.generateBarcodeImage(location.id);
+
+        return this.renderPdf({
+            pageSize: { width: 288, height: 144 },
+            pageMargins: [10, 10, 10, 10],
+            content: [
+                { text: 'LOCATION LABEL', style: 'header', alignment: 'center' },
+                { text: location.name, style: 'locationName', alignment: 'center', margin: [0, 10, 0, 5] },
+                { image: barcodeDataURL, width: 200, alignment: 'center' },
+                { text: location.structuralType || 'LOCATION', style: 'subtext', alignment: 'center', margin: [0, 5, 0, 0] },
+                { text: location.parent ? `Parent: ${location.parent.name}` : '', style: 'small', alignment: 'center' },
+            ],
+            styles: this.labelStyles,
+            defaultStyle: { font: 'Roboto' },
+        });
+    }
+
+    // ── Location ZPL ──────────────────────────────────────────────────────────
+
+    async generateLocationZpl(locationId: string): Promise<string> {
+        const location = await this.prisma.location.findUnique({
+            where: { id: locationId },
+            include: { parent: true },
+        });
+        if (!location) throw new NotFoundException('Location not found');
+
+        return [
+            '^XA',
+            '^FO20,20^ADN,24,12^FDLocation^FS',
+            `^FO20,50^ADN,36,20^FD${location.name}^FS`,
+            location.parent ? `^FO20,90^ADN,18,10^FDParent: ${location.parent.name}^FS` : '',
+            `^FO20,115^ADN,14,8^FD${location.structuralType ?? 'LOCATION'}^FS`,
+            '^FO20,135^BCN,60,Y,N,N',
+            `^FD${location.id}^FS`,
+            '^XZ',
+        ].filter(Boolean).join('\n');
+    }
+
+    // ── Product PDF ───────────────────────────────────────────────────────────
 
     async generateItemLabel(productId: string): Promise<Buffer> {
-        try {
-            const product = await this.prisma.product.findUnique({
-                where: { id: productId }
-            });
+        const product = await this.prisma.product.findUnique({ where: { id: productId } });
+        if (!product) throw new NotFoundException('Product not found');
 
-            if (!product) throw new NotFoundException('Product not found');
+        const barcodeText = product.sku || product.id;
+        const barcodeDataURL = await this.generateBarcodeImage(barcodeText);
 
-            const barcodeText = product.sku || product.id;
-            if (!barcodeText) {
-                throw new Error('Product has no SKU or ID for barcode generation');
-            }
-            const barcodeDataURL = await this.generateBarcodeImage(barcodeText);
-
-            const docDefinition: any = {
-                pageSize: { width: 216, height: 144 }, // 3x2 inches
-                pageMargins: [10, 10, 10, 10],
-                content: [
-                    { text: product.sku, style: 'sku', alignment: 'center' },
-                    { text: product.name, style: 'productName', alignment: 'center', margin: [0, 5, 0, 5], maxLines: 2 },
-                    {
-                        image: barcodeDataURL,
-                        width: 150,
-                        alignment: 'center'
-                    }
-                ],
-                styles: {
-                    sku: { fontSize: 14, bold: true },
-                    productName: { fontSize: 10 },
-                },
-                defaultStyle: {
-                    font: 'Roboto'
-                }
-            };
-
-            const printer = new PdfPrinter(this.fonts);
-            return new Promise(async (resolve, reject) => {
-                const pdfDoc = await printer.createPdfKitDocument(docDefinition);
-                const chunks: any[] = [];
-                pdfDoc.on('data', (chunk) => chunks.push(chunk));
-                pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-                pdfDoc.on('error', (err) => reject(err));
-                pdfDoc.end();
-            });
-        } catch (e: any) {
-            console.error('generateItemLabel ERROR:', e);
-            throw new NotFoundException(`Printing Error: ${e.message}`);
-        }
+        return this.renderPdf({
+            pageSize: { width: 216, height: 144 },
+            pageMargins: [10, 10, 10, 10],
+            content: [
+                { text: product.sku ?? '', style: 'sku', alignment: 'center' },
+                { text: product.name, style: 'productName', alignment: 'center', margin: [0, 5, 0, 5], maxLines: 2 },
+                { image: barcodeDataURL, width: 150, alignment: 'center' },
+            ],
+            styles: this.labelStyles,
+            defaultStyle: { font: 'Roboto' },
+        });
     }
 
-    generateZPL(data: { id: string, name: string, subtext?: string }): string {
-        // Simple ZPL Template
-        return `
-^XA
-^FO50,50^ADN,36,20^FD${data.name}^FS
-^FO50,100^BCN,100,Y,N,N
-^FD${data.id}^FS
-^FO50,220^ADN,18,10^FD${data.subtext || ''}^FS
-^XZ
-        `.trim();
+    // ── Product ZPL ───────────────────────────────────────────────────────────
+
+    async generateProductZpl(productId: string): Promise<string> {
+        const product = await this.prisma.product.findUnique({ where: { id: productId } });
+        if (!product) throw new NotFoundException('Product not found');
+
+        const barcodeValue = product.sku || product.id;
+        const name = product.name.substring(0, 30);
+
+        return [
+            '^XA',
+            `^FO20,20^ADN,24,12^FD${product.sku ?? ''}^FS`,
+            `^FO20,50^ADN,18,10^FD${name}^FS`,
+            '^FO20,75^BCN,60,Y,N,N',
+            `^FD${barcodeValue}^FS`,
+            '^XZ',
+        ].join('\n');
+    }
+
+    // ── Batch printing ────────────────────────────────────────────────────────
+
+    async generateBatchPdf(items: Array<{ type: 'product' | 'location'; id: string }>): Promise<Buffer> {
+        const pages: object[] = [];
+
+        for (const item of items) {
+            if (item.type === 'product') {
+                const product = await this.prisma.product.findUnique({ where: { id: item.id } });
+                if (!product) continue;
+                const barcodeDataURL = await this.generateBarcodeImage(product.sku || product.id);
+                pages.push(
+                    { text: product.sku ?? '', style: 'sku', alignment: 'center' },
+                    { text: product.name, style: 'productName', alignment: 'center', margin: [0, 5, 0, 5], maxLines: 2 },
+                    { image: barcodeDataURL, width: 150, alignment: 'center' },
+                    { text: '', pageBreak: 'after' },
+                );
+            } else {
+                const location = await this.prisma.location.findUnique({ where: { id: item.id }, include: { parent: true } });
+                if (!location) continue;
+                const barcodeDataURL = await this.generateBarcodeImage(location.id);
+                pages.push(
+                    { text: 'LOCATION LABEL', style: 'header', alignment: 'center' },
+                    { text: location.name, style: 'locationName', alignment: 'center', margin: [0, 10, 0, 5] },
+                    { image: barcodeDataURL, width: 200, alignment: 'center' },
+                    { text: location.structuralType || 'LOCATION', style: 'subtext', alignment: 'center', margin: [0, 5, 0, 0] },
+                    { text: '', pageBreak: 'after' },
+                );
+            }
+        }
+
+        // Remove trailing page break on the last item
+        const last = pages[pages.length - 1] as any;
+        if (last?.pageBreak) pages.pop();
+
+        return this.renderPdf({
+            pageSize: { width: 288, height: 144 },
+            pageMargins: [10, 10, 10, 10],
+            content: pages,
+            styles: this.labelStyles,
+            defaultStyle: { font: 'Roboto' },
+        });
+    }
+
+    async generateBatchZpl(items: Array<{ type: 'product' | 'location'; id: string }>): Promise<string> {
+        const labels: string[] = [];
+        for (const item of items) {
+            if (item.type === 'product') {
+                labels.push(await this.generateProductZpl(item.id));
+            } else {
+                labels.push(await this.generateLocationZpl(item.id));
+            }
+        }
+        return labels.join('\n');
     }
 }
