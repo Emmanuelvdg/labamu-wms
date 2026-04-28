@@ -10,6 +10,7 @@ export interface CreateApiKeyDto {
 }
 
 export interface ApiKeyValidationResult {
+    keyId: string;
     userId: string;
     scopes: string[];
 }
@@ -85,8 +86,9 @@ export class ApiKeyService {
         });
 
         return {
+            keyId: apiKey.id,
             userId: apiKey.userId,
-            scopes: JSON.parse(apiKey.scopes)
+            scopes: JSON.parse(apiKey.scopes),
         };
     }
 

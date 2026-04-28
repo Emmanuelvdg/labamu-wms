@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Copy, Trash2, AlertTriangle, Check, Key } from 'lucide-react';
+import { Plus, Copy, Trash2, AlertTriangle, Check, Key, Lock } from 'lucide-react';
 
 interface ApiKey {
     id: string;
@@ -15,46 +15,55 @@ interface ApiKey {
 }
 
 const AVAILABLE_SCOPES = [
-    { value: 'INVENTORY:READ', label: 'Inventory - Read' },
-    { value: 'INVENTORY:CREATE', label: 'Inventory - Create' },
-    { value: 'INVENTORY:UPDATE', label: 'Inventory - Update' },
-    { value: 'INVENTORY:DELETE', label: 'Inventory - Delete' },
-    { value: 'ORDERS:READ', label: 'Orders - Read' },
-    { value: 'ORDERS:CREATE', label: 'Orders - Create' },
-    { value: 'PURCHASE_ORDERS:READ', label: 'Purchase Orders - Read' },
-    { value: 'PURCHASE_ORDERS:CREATE', label: 'Purchase Orders - Create' },
-    { value: 'PUTAWAY:READ', label: 'Putaway - Read' },
-    { value: 'PUTAWAY:UPDATE', label: 'Putaway - Update' },
+    { value: 'INVENTORY:READ',        label: 'Inventory — Read' },
+    { value: 'INVENTORY:CREATE',      label: 'Inventory — Create' },
+    { value: 'INVENTORY:UPDATE',      label: 'Inventory — Update' },
+    { value: 'INVENTORY:DELETE',      label: 'Inventory — Delete' },
+    { value: 'ORDERS:READ',           label: 'Orders — Read' },
+    { value: 'ORDERS:CREATE',         label: 'Orders — Create' },
+    { value: 'PURCHASE_ORDERS:READ',  label: 'Purchase Orders — Read' },
+    { value: 'PURCHASE_ORDERS:CREATE', label: 'Purchase Orders — Create' },
+    { value: 'PUTAWAY:READ',          label: 'Putaway — Read' },
+    { value: 'PUTAWAY:UPDATE',        label: 'Putaway — Update' },
 ];
 
 export default function ApiKeysPage() {
     const [keys, setKeys] = useState<ApiKey[]>([]);
     const [loading, setLoading] = useState(true);
+    const [flagEnabled, setFlagEnabled] = useState<boolean | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newKey, setNewKey] = useState({ name: '', description: '', scopes: [] as string[] });
     const [generatedKey, setGeneratedKey] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
     useEffect(() => {
-        loadApiKeys();
+        checkFlagThenLoad();
     }, []);
+
+    const checkFlagThenLoad = async () => {
+        try {
+            const flagRes = await fetch('/api/feature-flags');
+            if (flagRes.ok) {
+                const flags: Array<{ key: string; enabled: boolean }> = await flagRes.json();
+                const apiAccess = flags.find(f => f.key === 'API_ACCESS');
+                setFlagEnabled(apiAccess?.enabled ?? false);
+            } else {
+                setFlagEnabled(false);
+            }
+        } catch {
+            setFlagEnabled(false);
+        }
+
+        await loadApiKeys();
+    };
 
     const loadApiKeys = async () => {
         try {
             const response = await fetch('/api/api-keys');
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`API error: ${response.status}`);
             const data = await response.json();
-            // Ensure we have an array
-            if (Array.isArray(data)) {
-                setKeys(data);
-            } else {
-                console.error('API returned non-array:', data);
-                setKeys([]);
-            }
-        } catch (error) {
-            console.error('Failed to load API keys:', error);
+            setKeys(Array.isArray(data) ? data : []);
+        } catch {
             setKeys([]);
         } finally {
             setLoading(false);
@@ -66,26 +75,28 @@ export default function ApiKeysPage() {
             const response = await fetch('/api/api-keys', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newKey)
+                body: JSON.stringify(newKey),
             });
+            if (!response.ok) {
+                const err = await response.json();
+                alert(err.message || 'Failed to create API key');
+                return;
+            }
             const data = await response.json();
             setGeneratedKey(data.key);
             setNewKey({ name: '', description: '', scopes: [] });
             await loadApiKeys();
-        } catch (error) {
-            console.error('Failed to create API key:', error);
+        } catch {
             alert('Failed to create API key');
         }
     };
 
     const handleRevokeKey = async (keyId: string) => {
         if (!confirm('Are you sure you want to revoke this API key?')) return;
-
         try {
             await fetch(`/api/api-keys/${keyId}/revoke`, { method: 'DELETE' });
             await loadApiKeys();
-        } catch (error) {
-            console.error('Failed to revoke API key:', error);
+        } catch {
             alert('Failed to revoke API key');
         }
     };
@@ -103,7 +114,7 @@ export default function ApiKeysPage() {
             ...prev,
             scopes: prev.scopes.includes(scope)
                 ? prev.scopes.filter(s => s !== scope)
-                : [...prev.scopes, scope]
+                : [...prev.scopes, scope],
         }));
     };
 
@@ -114,21 +125,38 @@ export default function ApiKeysPage() {
                     <h1 className="text-2xl font-bold text-gray-900">API Keys</h1>
                     <p className="text-gray-600 mt-1">Manage API keys for external integrations and MCP servers</p>
                 </div>
-                <button
-                    onClick={() => { setShowCreateModal(true); setGeneratedKey(null); }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
-                >
-                    <Plus className="h-5 w-5" />
-                    Generate New Key
-                </button>
+                {flagEnabled && (
+                    <button
+                        onClick={() => { setShowCreateModal(true); setGeneratedKey(null); }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+                    >
+                        <Plus className="h-5 w-5" />
+                        Generate New Key
+                    </button>
+                )}
             </div>
+
+            {/* Feature flag disabled banner */}
+            {flagEnabled === false && (
+                <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <Lock className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-medium text-amber-900">API Access not enabled</p>
+                        <p className="text-sm text-amber-700 mt-1">
+                            API key generation is disabled for your account. Contact your platform administrator to enable the <strong>API Access</strong> feature.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {loading ? (
                 <div className="text-center py-12">Loading...</div>
             ) : keys.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg">
                     <Key className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No API keys yet. Create one to get started.</p>
+                    <p className="text-gray-600">
+                        {flagEnabled ? 'No API keys yet. Create one to get started.' : 'No API keys found.'}
+                    </p>
                 </div>
             ) : (
                 <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -167,8 +195,7 @@ export default function ApiKeysPage() {
                                         {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : 'Never'}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${key.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                                            }`}>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${key.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                                             {key.isActive ? 'Active' : 'Revoked'}
                                         </span>
                                     </td>
@@ -190,7 +217,6 @@ export default function ApiKeysPage() {
                 </div>
             )}
 
-            {/* Create Modal */}
             {showCreateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -203,9 +229,9 @@ export default function ApiKeysPage() {
                                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                                     <div className="flex items-start gap-2">
                                         <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                        <div className="text-sm text-yellow-800">
-                                            <strong>Important:</strong> Copy this key now. You won't be able to see it again!
-                                        </div>
+                                        <p className="text-sm text-yellow-800">
+                                            <strong>Important:</strong> Copy this key now — you will not be able to see it again.
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="bg-gray-50 p-4 rounded-lg mb-6">
@@ -244,7 +270,7 @@ export default function ApiKeysPage() {
                                             value={newKey.name}
                                             onChange={e => setNewKey({ ...newKey, name: e.target.value })}
                                             className="w-full px-3 py-2 border rounded-md"
-                                            placeholder="e.g., MCP Server - Production"
+                                            placeholder="e.g., MCP Server — Production"
                                         />
                                     </div>
                                     <div>

@@ -20,6 +20,6 @@ import { PermissionsGuard } from '../common/auth/permissions.guard';
         PrismaService,
         PermissionsGuard,
     ],
-    exports: [CompanyService, AuditService],
+    exports: [CompanyService, AuditService, FeatureFlagService],
 })
 export class CompanyModule {}

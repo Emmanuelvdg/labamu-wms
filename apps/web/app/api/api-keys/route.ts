@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { INTERNAL_API_URL } from '@/lib/api';
 
-const API_BASE = 'http://127.0.0.1:3001';
+const API_BASE = INTERNAL_API_URL;
 
 export async function POST(request: Request) {
     try {
