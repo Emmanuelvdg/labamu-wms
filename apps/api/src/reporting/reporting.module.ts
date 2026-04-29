@@ -6,9 +6,10 @@ import { ReportingController } from './reporting.controller';
 import { PrismaService } from '../prisma.service';
 import { CompanyModule } from '../company/company.module';
 import { FeatureFlagGuard } from '../common/guards/feature-flag.guard';
+import { CurrencyModule } from '../currency/currency.module';
 
 @Module({
-    imports: [CompanyModule],
+    imports: [CompanyModule, CurrencyModule],
     controllers: [ReportingController],
     providers: [ReportingService, DrillDownService, InventoryLedgerService, PrismaService, FeatureFlagGuard],
 })

@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { CurrencyService } from '../currency/currency.service';
 
 @Injectable()
 export class ReportingService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService, private currency: CurrencyService) { }
 
     async generateComplianceReport(type: string, period: string): Promise<any> {
         const startOfMonth = new Date(`${period}-01`);
@@ -107,6 +108,10 @@ export class ReportingService {
 
     async getDashboardAnalytics(query?: any): Promise<any> {
         const { startDate, endDate } = this.parseDateRange(query);
+
+        const currencies = await this.currency.listCurrencies();
+        const baseCurrency = currencies.find((c: any) => c.isBase) ?? { code: 'IDR', symbol: 'Rp' };
+
         // 1. Inventory Value
         const products = await this.prisma.product.findMany({
             include: { inventory: true }
@@ -252,6 +257,7 @@ export class ReportingService {
             capacityUtilization: parseFloat(capacityUtilization.toFixed(1)),
             categoryValue,
             dailySales,
+            baseCurrency: { code: baseCurrency.code, symbol: baseCurrency.symbol },
             meta: {
                 startDate: startDate.toISOString(),
                 endDate: endDate.toISOString(),

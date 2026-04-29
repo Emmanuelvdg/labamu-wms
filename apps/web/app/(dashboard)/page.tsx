@@ -26,6 +26,7 @@ interface DashboardAnalytics {
   capacityUtilization: number;
   categoryValue: Record<string, number>;
   dailySales: { date: string; count: number }[];
+  baseCurrency?: { code: string; symbol: string };
 }
 
 export default function Dashboard() {
@@ -151,7 +152,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <KpiCard
           title="Total Stock Value"
-          value={`Rp ${analytics.totalStockValue.toLocaleString('id-ID')}`}
+          value={`${analytics.baseCurrency?.symbol ?? 'Rp'} ${analytics.totalStockValue.toLocaleString('id-ID')}`}
           icon={<Database className="h-5 w-5 text-blue-600" />}
           trend="Current Asset Value"
           color="blue"

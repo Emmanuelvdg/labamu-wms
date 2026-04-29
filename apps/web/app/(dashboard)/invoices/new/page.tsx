@@ -5,13 +5,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { fetchSuppliers, fetchPurchaseOrders, createInvoice, fetchOrder } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
 
 export default function NewInvoicePage() {
     const router = useRouter();
-    const { hasPermission } = useAuth();
     const [suppliers, setSuppliers] = useState<any[]>([]);
     const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
+    const [currencies, setCurrencies] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [formData, setFormData] = useState({
@@ -20,6 +19,7 @@ export default function NewInvoicePage() {
         issueDate: new Date().toISOString().split('T')[0],
         dueDate: new Date().toISOString().split('T')[0],
         purchaseOrderId: '',
+        currencyCode: 'IDR',
         items: [] as any[]
     });
 
@@ -29,12 +29,18 @@ export default function NewInvoicePage() {
 
     async function loadData() {
         try {
-            const [suppliersData, posData] = await Promise.all([
+            const [suppliersData, posData, currRes] = await Promise.all([
                 fetchSuppliers(),
-                fetchPurchaseOrders()
+                fetchPurchaseOrders(),
+                fetch('/api/currencies').then(r => r.ok ? r.json() : []).catch(() => []),
             ]);
             setSuppliers(suppliersData);
             setPurchaseOrders(posData.filter((po: any) => po.status !== 'CANCELLED'));
+            if (Array.isArray(currRes) && currRes.length > 0) {
+                setCurrencies(currRes);
+                const base = currRes.find((c: any) => c.isBase);
+                if (base) setFormData(prev => ({ ...prev, currencyCode: base.code }));
+            }
         } catch (err) {
             console.error('Failed to load data', err);
         } finally {
@@ -180,6 +186,20 @@ export default function NewInvoicePage() {
                         />
                     </div>
                 </div>
+                {currencies.length > 0 && (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                        <select
+                            className="w-full border rounded p-2"
+                            value={formData.currencyCode}
+                            onChange={e => setFormData({ ...formData, currencyCode: e.target.value })}
+                        >
+                            {currencies.map((c: any) => (
+                                <option key={c.code} value={c.code}>{c.code} — {c.name} ({c.symbol})</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
             </div>
 
             <h3 className="text-lg font-medium mb-4">Invoice Items</h3>
@@ -221,7 +241,7 @@ export default function NewInvoicePage() {
                                 />
                             </td>
                             <td className="px-4 py-2 text-right">
-                                ${(item.quantity * item.unitPrice).toFixed(2)}
+                                {formData.currencyCode} {(item.quantity * item.unitPrice).toFixed(2)}
                             </td>
                             <td className="px-4 py-2 text-center">
                                 <button onClick={() => removeItem(index)} className="text-red-600 hover:text-red-800">&times;</button>
@@ -232,7 +252,7 @@ export default function NewInvoicePage() {
                 <tfoot>
                     <tr>
                         <td colSpan={3} className="px-4 py-2 text-right font-bold">Total Amount:</td>
-                        <td className="px-4 py-2 text-right font-bold">${calculateTotal().toFixed(2)}</td>
+                        <td className="px-4 py-2 text-right font-bold">{formData.currencyCode} {calculateTotal().toFixed(2)}</td>
                         <td></td>
                     </tr>
                 </tfoot>

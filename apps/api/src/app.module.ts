@@ -35,6 +35,7 @@ import { WorkflowModule } from './workflow/workflow.module';
 import { BarcodeModule } from './barcode/barcode.module';
 import { RoutingModule } from './routing/routing.module';
 import { CompanyModule } from './company/company.module';
+import { CurrencyModule } from './currency/currency.module';
 
 import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
 import { HealthController } from './health.controller';
@@ -76,6 +77,7 @@ import { PrismaService } from './prisma.service';
         WorkflowModule,
         BarcodeModule,
         RoutingModule,
+        CurrencyModule,
         CompanyModule,
     ],
     controllers: [DeliveryMethodsController, HealthController],

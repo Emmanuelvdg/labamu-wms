@@ -433,6 +433,7 @@ model Order {
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
   totalAmount            Float              @default(0)
+  currencyCode           String             @default("IDR")
   type                   String             @default("SALES")
   destinationWarehouseId String?
   parentOrderId          String?
@@ -761,6 +762,7 @@ model PurchaseOrder {
   taxAmount       Float                @default(0)
   shippingCost    Float                @default(0)
   totalAmount     Float                @default(0)
+  currencyCode    String               @default("IDR")
   paymentTerms    String?
   deliveryTerms   String?
   notes           String?
@@ -823,6 +825,7 @@ model Invoice {
   purchaseOrderId String?
   status          String         @default("DRAFT")
   totalAmount     Float
+  currencyCode    String         @default("IDR")
   issueDate       DateTime
   dueDate         DateTime
   createdAt       DateTime       @default(now())
@@ -1373,4 +1376,30 @@ model WorkflowAuditLog {
   timestamp  DateTime @default(now())
 
   instance WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+}
+
+// M6.1 — Multi-currency models
+model Currency {
+  id        String   @id @default(uuid())
+  code      String   @unique  // ISO 4217: USD, EUR, IDR, SGD
+  name      String
+  symbol    String
+  isBase    Boolean  @default(false)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExchangeRate {
+  id        String   @id @default(uuid())
+  fromCode  String
+  toCode    String
+  rate      Float
+  source    String   @default("MANUAL") // MANUAL | OPENEXCHANGE | ECB
+  fetchedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([fromCode, toCode])
+  @@index([fromCode])
 }

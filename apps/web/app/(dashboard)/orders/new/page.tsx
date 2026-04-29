@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchProducts, createOrder, fetchCustomers, createCustomer, fetchWarehouses, fetchWithRetry } from '@/lib/api';
+
+interface CurrencyOption { code: string; name: string; symbol: string; }
 import { Button } from '@/components/ui/button';
 
 export default function NewOrderPage() {
@@ -11,6 +13,7 @@ export default function NewOrderPage() {
     const [customers, setCustomers] = useState<any[]>([]);
     const [warehouses, setWarehouses] = useState<any[]>([]);
     const [deliveryMethods, setDeliveryMethods] = useState<any[]>([]);
+    const [currencies, setCurrencies] = useState<CurrencyOption[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
@@ -27,25 +30,32 @@ export default function NewOrderPage() {
         priority: 'NORMAL',
         expectedDate: '',
         items: [{ productId: '', quantity: 1 }],
-        type: 'SALES', // SALES, TRANSFER
-        warehouseId: '', // Optional for Sales (Source), Required for Transfer (Source)
-        destinationWarehouseId: '', // Required for Transfer
-        deliveryMethodId: '' // NEW: Delivery method selection
+        type: 'SALES',
+        warehouseId: '',
+        destinationWarehouseId: '',
+        deliveryMethodId: '',
+        currencyCode: 'IDR',
     });
 
     useEffect(() => {
         async function loadData() {
             try {
-                const [prods, custs, whs, methods] = await Promise.all([
+                const [prods, custs, whs, methods, currRes] = await Promise.all([
                     fetchProducts(),
                     fetchCustomers(),
                     fetchWarehouses(),
-                    fetchWithRetry('/api/configuration/delivery-methods') // Need to fetch delivery methods
+                    fetchWithRetry('/api/configuration/delivery-methods'),
+                    fetch('/api/currencies').then(r => r.ok ? r.json() : []).catch(() => []),
                 ]);
                 setProducts(prods || []);
                 setCustomers(custs || []);
                 setWarehouses(whs || []);
                 setDeliveryMethods(methods || []);
+                if (Array.isArray(currRes) && currRes.length > 0) {
+                    setCurrencies(currRes);
+                    const base = currRes.find((c: CurrencyOption) => (c as any).isBase);
+                    if (base) setFormData(prev => ({ ...prev, currencyCode: base.code }));
+                }
             } catch (error) {
                 console.error('Failed to load data:', error);
                 alert('Failed to load data');
@@ -335,6 +345,23 @@ export default function NewOrderPage() {
                         </div>
                     )}
 
+                    {/* Currency */}
+                    {currencies.length > 0 && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Currency</label>
+                            <select
+                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                value={formData.currencyCode}
+                                onChange={(e) => setFormData({ ...formData, currencyCode: e.target.value })}
+                                data-testid="order-currency-select"
+                            >
+                                {currencies.map((c) => (
+                                    <option key={c.code} value={c.code}>{c.code} — {c.name} ({c.symbol})</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     {/* Optional Source Warehouse for Sales Orders (Manual Override) */}
                     {formData.type === 'SALES' && (
                         <div>
@@ -400,18 +427,18 @@ export default function NewOrderPage() {
                         <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600">Subtotal:</span>
-                                <span className="font-medium">IDR {orderTotals.subtotal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span className="font-medium">{formData.currencyCode} {orderTotals.subtotal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                             {formData.deliveryMethodId && orderTotals.shippingCost > 0 && (
                                 <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Shipping Cost:</span>
-                                    <span className="font-medium">IDR {orderTotals.shippingCost.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                    <span className="font-medium">{formData.currencyCode} {orderTotals.shippingCost.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 </div>
                             )}
                             <div className="border-t border-gray-300 pt-2 mt-2"></div>
                             <div className="flex justify-between text-lg font-bold">
                                 <span className="text-gray-900">Grand Total:</span>
-                                <span className="text-theme-600">IDR {orderTotals.grandTotal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                <span className="text-theme-600">{formData.currencyCode} {orderTotals.grandTotal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                         </div>
                     </div>
