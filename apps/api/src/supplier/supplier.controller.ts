@@ -51,4 +51,10 @@ export class SupplierController {
     getOrders(@Param('id') id: string) {
         return this.supplierService.getSupplierOrders(id);
     }
+
+    @Post(':id/invite')
+    @RequirePermission('SUPPLIERS', 'UPDATE')
+    invite(@Param('id') id: string, @Body() body: { email: string }) {
+        return this.supplierService.createInvitation(id, body.email);
+    }
 }

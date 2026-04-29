@@ -1,4 +1,5 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma.service';
 
 @Injectable()
@@ -106,5 +107,17 @@ export class SupplierService {
             unitCost: item.unitCost,
             quantity: item.quantity,
         }));
+    }
+
+    async createInvitation(supplierId: string, email: string) {
+        const supplier = await this.prisma.supplier.findUnique({ where: { id: supplierId } });
+        if (!supplier) throw new NotFoundException('Supplier not found');
+
+        const token = randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000); // 72 hours
+
+        return this.prisma.supplierInvitation.create({
+            data: { supplierId, email, token, expiresAt },
+        });
     }
 }

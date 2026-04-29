@@ -150,6 +150,7 @@ model Product {
   packageItems         PackingParcelItem[]
   replenishmentAlerts  ReplenishmentAlert[]
   routes               Route[]                      @relation("ProductToRoute")
+  asnItems             AsnItem[]
   company              Company?                     @relation(fields: [companyId], references: [id])
 
   @@index([companyId])
@@ -727,15 +728,17 @@ model LocationAttribute {
 }
 
 model Supplier {
-  id             String          @id @default(uuid())
+  id             String              @id @default(uuid())
   name           String
   contactInfo    String?
   companyId      String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   invoices       Invoice[]
   purchaseOrders PurchaseOrder[]
-  company        Company?        @relation(fields: [companyId], references: [id])
+  company        Company?            @relation(fields: [companyId], references: [id])
+  supplierUsers  SupplierUser[]
+  invitations    SupplierInvitation[]
 
   @@unique([name, companyId])
 }
@@ -770,11 +773,12 @@ model PurchaseOrder {
   updatedAt       DateTime             @updatedAt
   documents       DocumentAttachment[]
   invoices        Invoice[]
-  supplier        Supplier             @relation(fields: [supplierId], references: [id])
+  supplier        Supplier               @relation(fields: [supplierId], references: [id])
   items           PurchaseOrderItem[]
   inspections     QaInspection[]
   receipts        Receipt[]
   transfers       TransferOrder[]
+  asns            AdvancedShippingNotice[]
 }
 
 model PurchaseOrderItem {
@@ -1376,6 +1380,52 @@ model WorkflowAuditLog {
   timestamp  DateTime @default(now())
 
   instance WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+}
+
+// M7.1 — Supplier portal models
+model SupplierUser {
+  id           String    @id @default(uuid())
+  supplierId   String
+  email        String    @unique
+  passwordHash String
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  supplier     Supplier  @relation(fields: [supplierId], references: [id])
+}
+
+model SupplierInvitation {
+  id         String    @id @default(uuid())
+  supplierId String
+  email      String
+  token      String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+  supplier   Supplier  @relation(fields: [supplierId], references: [id])
+}
+
+// M7.5 — Advanced Shipping Notice models
+model AdvancedShippingNotice {
+  id               String    @id @default(uuid())
+  purchaseOrderId  String
+  supplierId       String
+  estimatedArrival DateTime
+  trackingNumber   String?
+  notes            String?
+  status           String    @default("SUBMITTED")
+  items            AsnItem[]
+  createdAt        DateTime  @default(now())
+  purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+}
+
+model AsnItem {
+  id        String @id @default(uuid())
+  asnId     String
+  productId String
+  quantity  Int
+  asn       AdvancedShippingNotice @relation(fields: [asnId], references: [id])
+  product   Product                @relation(fields: [productId], references: [id])
 }
 
 // M6.1 — Multi-currency models

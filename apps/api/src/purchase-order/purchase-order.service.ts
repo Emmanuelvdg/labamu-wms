@@ -715,4 +715,12 @@ export class PurchaseOrderService {
             items: matchResults,
         };
     }
+
+    async getAsn(purchaseOrderId: string) {
+        return this.prisma.advancedShippingNotice.findMany({
+            where: { purchaseOrderId },
+            include: { items: { include: { product: true } } },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
 }

@@ -157,4 +157,10 @@ export class PurchaseOrderController {
     scanReceive(@Param('id') id: string, @Body() data: { barcode: string; locationId?: string }) {
         return this.purchaseOrderService.scanReceive(id, data.barcode, data.locationId);
     }
+
+    @Get(':id/asn')
+    @RequirePermission('PURCHASE_ORDERS', 'READ')
+    getAsn(@Param('id') id: string) {
+        return this.purchaseOrderService.getAsn(id);
+    }
 }

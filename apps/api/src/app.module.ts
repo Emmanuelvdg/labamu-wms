@@ -36,6 +36,7 @@ import { BarcodeModule } from './barcode/barcode.module';
 import { RoutingModule } from './routing/routing.module';
 import { CompanyModule } from './company/company.module';
 import { CurrencyModule } from './currency/currency.module';
+import { SupplierAuthModule } from './supplier-auth/supplier-auth.module';
 
 import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
 import { HealthController } from './health.controller';
@@ -78,6 +79,7 @@ import { PrismaService } from './prisma.service';
         BarcodeModule,
         RoutingModule,
         CurrencyModule,
+        SupplierAuthModule,
         CompanyModule,
     ],
     controllers: [DeliveryMethodsController, HealthController],

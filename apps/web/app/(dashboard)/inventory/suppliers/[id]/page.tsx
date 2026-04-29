@@ -30,6 +30,10 @@ export default function SupplierDetailPage() {
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({ name: '', contactInfo: '' });
+    const [portalEnabled, setPortalEnabled] = useState(false);
+    const [showInviteModal, setShowInviteModal] = useState(false);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviting, setInviting] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -38,13 +42,16 @@ export default function SupplierDetailPage() {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [supplierData, ordersData] = await Promise.all([
+            const [supplierData, ordersData, flagRes] = await Promise.all([
                 getSupplier(id),
-                fetchSupplierOrders(id)
+                fetchSupplierOrders(id),
+                fetch('/api/feature-flags').then(r => r.ok ? r.json() : []).catch(() => []),
             ]);
             setSupplier(supplierData);
             setEditForm({ name: supplierData.name, contactInfo: supplierData.contactInfo || '' });
             setOrders(ordersData);
+            const flags: Array<{ key: string; enabled: boolean }> = flagRes;
+            setPortalEnabled(flags.find(f => f.key === 'SUPPLIER_PORTAL')?.enabled ?? false);
         } catch (error) {
             console.error('Failed to load supplier data:', error);
             toast.error('Failed to load supplier data');
@@ -95,6 +102,9 @@ export default function SupplierDetailPage() {
                         </>
                     ) : (
                         <>
+                            {portalEnabled && (
+                                <Button variant="outline" onClick={() => setShowInviteModal(true)}>Invite Supplier</Button>
+                            )}
                             <Button variant="outline" onClick={() => setIsEditing(true)}>Edit</Button>
                             <Button variant="destructive" onClick={handleDelete}>Delete</Button>
                         </>
@@ -209,6 +219,35 @@ export default function SupplierDetailPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {showInviteModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+                        <h2 className="text-lg font-bold mb-4">Invite Supplier to Portal</h2>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" className="w-full border rounded-md px-3 py-2 text-sm"
+                                    value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
+                                    placeholder="supplier@example.com" />
+                            </div>
+                        </div>
+                        <div className="mt-5 flex gap-3">
+                            <Button variant="outline" className="flex-1" onClick={() => { setShowInviteModal(false); setInviteEmail(''); }}>Cancel</Button>
+                            <Button className="flex-1" disabled={!inviteEmail || inviting} onClick={async () => {
+                                setInviting(true);
+                                try {
+                                    const res = await fetch(`/api/suppliers/${id}/invite`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: inviteEmail }) });
+                                    if (res.ok) { toast.success('Invitation sent'); setShowInviteModal(false); setInviteEmail(''); }
+                                    else toast.error('Failed to send invitation');
+                                } finally { setInviting(false); }
+                            }}>
+                                {inviting ? 'Sending…' : 'Send Invite'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
