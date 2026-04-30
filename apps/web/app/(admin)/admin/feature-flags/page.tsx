@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getAvailableFlags, fetchTenants, getTenantFlags, setTenantFlag } from '@/lib/admin-api';
-import { ToggleLeft, ToggleRight, ChevronDown } from 'lucide-react';
+import { getAvailableFlags, fetchTenants, getTenantFlags, setTenantFlag, getAiReorderReadiness } from '@/lib/admin-api';
+import { ToggleLeft, ToggleRight, ChevronDown, AlertTriangle } from 'lucide-react';
 
 export default function FeatureFlagsPage() {
     const [availableFlags, setAvailableFlags] = useState<any[]>([]);
@@ -12,6 +12,7 @@ export default function FeatureFlagsPage() {
     const [loadingFlags, setLoadingFlags] = useState(false);
     const [toggling, setToggling] = useState<string | null>(null);
     const [error, setError] = useState('');
+    const [readinessWarning, setReadinessWarning] = useState('');
 
     useEffect(() => {
         Promise.all([getAvailableFlags(), fetchTenants()])
@@ -32,6 +33,15 @@ export default function FeatureFlagsPage() {
     }, [selectedTenantId]);
 
     const handleToggle = async (key: string, currentEnabled: boolean) => {
+        setReadinessWarning('');
+        if (key === 'AI_REORDER' && !currentEnabled) {
+            try {
+                const r = await getAiReorderReadiness(selectedTenantId);
+                if (!r.ready) {
+                    setReadinessWarning(`Only ${r.days} day(s) of sales data available — AI forecasts need at least 7 days. Enabling anyway, but forecasts will improve as data accumulates.`);
+                }
+            } catch { }
+        }
         setToggling(key);
         try {
             await setTenantFlag(selectedTenantId, key, !currentEnabled);
@@ -53,6 +63,12 @@ export default function FeatureFlagsPage() {
             </div>
 
             {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm">{error}</div>}
+            {readinessWarning && (
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg text-sm">
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                    <span>{readinessWarning}</span>
+                </div>
+            )}
 
             {/* Available Flags Overview */}
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">

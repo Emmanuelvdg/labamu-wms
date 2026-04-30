@@ -119,6 +119,10 @@ export function setTenantFlag(id: string, key: string, enabled: boolean, notes?:
     });
 }
 
+export function getAiReorderReadiness(companyId: string) {
+    return fetchWithRetry(`${API_URL}/replenishment/forecast/readiness?companyId=${companyId}`);
+}
+
 // ── Platform Analytics (Phase 8) ─────────────────────────────────────────────
 
 export function getPlatformAnalytics() {

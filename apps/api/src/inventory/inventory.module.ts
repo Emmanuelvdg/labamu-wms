@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { InventoryController } from './inventory.controller';
 import { InventoryService } from './inventory.service';
 import { PrismaService } from '../prisma.service';
+import { ForecastService } from './forecast.service';
+import { CompanyModule } from '../company/company.module';
 
 import { PackagingService } from './packaging.service';
 import { PutawayService } from './putaway.service';
@@ -18,6 +20,7 @@ import { ReportingController } from './reporting.controller';
 import { CycleCountService } from './cycle-count.service';
 
 @Module({
+    imports: [CompanyModule],
     controllers: [
         InventoryController,
         PutawayController,
@@ -36,7 +39,8 @@ import { CycleCountService } from './cycle-count.service';
         ReplenishmentService,
         AbcClassificationService,
         PickAccuracyService,
-        CycleCountService
+        CycleCountService,
+        ForecastService,
     ],
     exports: [
         InventoryService,
@@ -48,7 +52,8 @@ import { CycleCountService } from './cycle-count.service';
         ReplenishmentService,
         AbcClassificationService,
         PickAccuracyService,
-        CycleCountService
+        CycleCountService,
+        ForecastService,
     ]
 })
 export class InventoryModule { }

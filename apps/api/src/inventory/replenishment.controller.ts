@@ -1,9 +1,15 @@
-import { Controller, Get, Post, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ReplenishmentService } from './replenishment.service';
+import { ForecastService } from './forecast.service';
+import { PrismaService } from '../prisma.service';
 
 @Controller('replenishment')
 export class ReplenishmentController {
-    constructor(private readonly replenishmentService: ReplenishmentService) { }
+    constructor(
+        private readonly replenishmentService: ReplenishmentService,
+        private readonly forecastService: ForecastService,
+        private readonly prisma: PrismaService,
+    ) { }
 
     @Get('summary')
     async getSummary(@Query('warehouseId') warehouseId?: string) {
@@ -20,8 +26,8 @@ export class ReplenishmentController {
     }
 
     @Post('check')
-    async checkStockLevels(@Query('warehouseId') warehouseId?: string) {
-        return this.replenishmentService.checkStockLevels(warehouseId);
+    async checkStockLevels(@Query('warehouseId') warehouseId?: string, @Query('companyId') companyId?: string) {
+        return this.replenishmentService.checkStockLevels(warehouseId, companyId);
     }
 
     @Post('alerts/:id/auto-po')
@@ -32,5 +38,50 @@ export class ReplenishmentController {
     @Post('alerts/:id/dismiss')
     async dismissAlert(@Param('id') id: string) {
         return this.replenishmentService.dismissAlert(id);
+    }
+
+    @Post('forecast/run')
+    async runForecast(@Body() body: { companyId: string }) {
+        return this.forecastService.runForecastsForCompany(body.companyId);
+    }
+
+    @Get('forecast/:productId')
+    async getForecast(
+        @Param('productId') productId: string,
+        @Query('companyId') companyId: string,
+        @Query('warehouseId') warehouseId?: string,
+    ) {
+        return this.forecastService.getForecastForProduct(companyId, productId, warehouseId);
+    }
+
+    @Get('forecast/accuracy')
+    async getAccuracy(@Query('companyId') companyId: string) {
+        return this.forecastService.getAccuracy(companyId);
+    }
+
+    @Get('forecast/readiness')
+    async getDataReadiness(@Query('companyId') companyId: string) {
+        return this.forecastService.getDataReadiness(companyId);
+    }
+
+    // M8.4 — Seasonality profiles CRUD
+    @Get('seasonality')
+    async listSeasonalityProfiles(@Query('companyId') companyId: string) {
+        return this.prisma.seasonalityProfile.findMany({ where: { companyId }, include: { periods: true } });
+    }
+
+    @Post('seasonality')
+    async createSeasonalityProfile(@Body() body: { companyId: string; name: string }) {
+        return this.prisma.seasonalityProfile.create({ data: body });
+    }
+
+    @Post('seasonality/:id/periods')
+    async addPeriod(@Param('id') profileId: string, @Body() body: { label: string; startMD: string; endMD: string; multiplier: number }) {
+        return this.prisma.seasonalityPeriod.create({ data: { profileId, ...body } });
+    }
+
+    @Post('seasonality/periods/:id')
+    async deletePeriod(@Param('id') id: string) {
+        return this.prisma.seasonalityPeriod.delete({ where: { id } });
     }
 }

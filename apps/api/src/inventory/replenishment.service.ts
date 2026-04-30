@@ -1,65 +1,77 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { FeatureFlagService } from '../company/feature-flag.service';
+
+const LEAD_TIME_DAYS = 7;
+const SAFETY_DAYS = 3;
+const REORDER_CYCLE_DAYS = 14;
 
 @Injectable()
 export class ReplenishmentService {
     private readonly logger = new Logger(ReplenishmentService.name);
 
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService, private featureFlags: FeatureFlagService) { }
 
     /**
      * Check stock levels for all products and generate alerts for those below reorder point.
      */
-    async checkStockLevels(warehouseId?: string) {
-        // Get all products with reorder points defined
+    async checkStockLevels(warehouseId?: string, companyId?: string) {
+        const aiEnabled = companyId ? (await this.featureFlags.getFlagsForCompany(companyId)).find((f: any) => f.key === 'AI_REORDER' && f.enabled) : false;
+
         const products = await this.prisma.product.findMany({
-            where: {
-                reorderPoint: { not: null },
-                isStockable: true,
-            },
-            include: {
-                inventory: warehouseId ? { where: { warehouseId } } : true,
-            },
+            where: { reorderPoint: { not: null }, isStockable: true, ...(companyId ? { companyId } : {}) },
+            include: { inventory: warehouseId ? { where: { warehouseId } } : true },
         });
 
         const alerts: any[] = [];
 
         for (const product of products) {
             const totalQty = product.inventory.reduce((sum, inv) => sum + inv.quantity, 0);
+            let shouldAlert = false;
+            let forecastedDemand: number | undefined;
+            let daysOfCover: number | undefined;
+            let suggestedOrderQty: number | undefined;
 
-            if (product.reorderPoint !== null && totalQty <= product.reorderPoint) {
-                // Check if an active alert already exists
-                const existing = await this.prisma.replenishmentAlert.findFirst({
-                    where: {
-                        productId: product.id,
-                        status: 'ACTIVE',
-                        ...(warehouseId ? { warehouseId } : {}),
-                    },
+            if (aiEnabled) {
+                const forecast = await this.prisma.salesForecast.findFirst({
+                    where: { productId: product.id, ...(companyId ? { companyId } : {}), forecastDate: { gte: new Date() } },
+                    orderBy: { forecastDate: 'asc' },
                 });
-
-                if (!existing) {
-                    const alert = await this.prisma.replenishmentAlert.create({
-                        data: {
-                            productId: product.id,
-                            warehouseId: warehouseId || null,
-                            type: totalQty <= (product.safetyStock || 0) ? 'CRITICAL_LOW' : 'LOW_STOCK',
-                            currentQty: totalQty,
-                            threshold: product.reorderPoint,
-                            status: 'ACTIVE',
-                        },
-                        include: { product: true, warehouse: true },
-                    });
-                    alerts.push(alert);
+                if (forecast) {
+                    forecastedDemand = forecast.predictedQty;
+                    daysOfCover = forecastedDemand > 0 ? totalQty / forecastedDemand : 999;
+                    shouldAlert = daysOfCover < (LEAD_TIME_DAYS + SAFETY_DAYS);
+                    suggestedOrderQty = Math.ceil(forecastedDemand * REORDER_CYCLE_DAYS);
                 } else {
-                    // Update the existing alert's current quantity
-                    await this.prisma.replenishmentAlert.update({
-                        where: { id: existing.id },
-                        data: {
-                            currentQty: totalQty,
-                            type: totalQty <= (product.safetyStock || 0) ? 'CRITICAL_LOW' : 'LOW_STOCK',
-                        },
-                    });
+                    shouldAlert = product.reorderPoint !== null && totalQty <= product.reorderPoint;
                 }
+            } else {
+                shouldAlert = product.reorderPoint !== null && totalQty <= product.reorderPoint;
+            }
+
+            if (!shouldAlert) continue;
+
+            const existing = await this.prisma.replenishmentAlert.findFirst({
+                where: { productId: product.id, status: 'ACTIVE', ...(warehouseId ? { warehouseId } : {}) },
+            });
+
+            const alertData = {
+                type: totalQty <= (product.safetyStock || 0) ? 'CRITICAL_LOW' : 'LOW_STOCK',
+                currentQty: totalQty,
+                threshold: product.reorderPoint ?? 0,
+                forecastedDemand,
+                daysOfCover,
+                suggestedOrderQty,
+            };
+
+            if (!existing) {
+                const alert = await this.prisma.replenishmentAlert.create({
+                    data: { productId: product.id, warehouseId: warehouseId || null, status: 'ACTIVE', ...alertData },
+                    include: { product: true, warehouse: true },
+                });
+                alerts.push(alert);
+            } else {
+                await this.prisma.replenishmentAlert.update({ where: { id: existing.id }, data: alertData });
             }
         }
 

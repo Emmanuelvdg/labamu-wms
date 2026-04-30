@@ -1227,17 +1227,20 @@ model PackingParcelItem {
 }
 
 model ReplenishmentAlert {
-  id          String     @id @default(uuid())
-  productId   String
-  warehouseId String?
-  type        String     @default("LOW_STOCK")
-  currentQty  Int
-  threshold   Int
-  status      String     @default("ACTIVE")
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  product     Product    @relation(fields: [productId], references: [id])
-  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+  id               String     @id @default(uuid())
+  productId        String
+  warehouseId      String?
+  type             String     @default("LOW_STOCK")
+  currentQty       Int
+  threshold        Int
+  status           String     @default("ACTIVE")
+  forecastedDemand Float?
+  daysOfCover      Float?
+  suggestedOrderQty Int?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  product          Product    @relation(fields: [productId], references: [id])
+  warehouse        Warehouse? @relation(fields: [warehouseId], references: [id])
 }
 
 model Notification {
@@ -1403,6 +1406,62 @@ model SupplierInvitation {
   usedAt     DateTime?
   createdAt  DateTime  @default(now())
   supplier   Supplier  @relation(fields: [supplierId], references: [id])
+}
+
+// M8 — AI_REORDER models
+model DailySalesSummary {
+  id          String   @id @default(uuid())
+  companyId   String
+  productId   String
+  warehouseId String
+  date        DateTime @db.Date
+  unitsSold   Int
+  revenue     Float    @default(0)
+
+  @@unique([companyId, productId, warehouseId, date])
+  @@index([companyId, productId, date])
+}
+
+model SalesForecast {
+  id           String   @id @default(uuid())
+  companyId    String
+  productId    String
+  warehouseId  String
+  forecastDate DateTime @db.Date
+  predictedQty Float
+  confidence   Float
+  method       String   @default("EXPONENTIAL_SMOOTHING")
+  generatedAt  DateTime @default(now())
+  accuracy     ForecastAccuracy?
+
+  @@unique([companyId, productId, warehouseId, forecastDate])
+}
+
+model ForecastAccuracy {
+  id         String        @id @default(uuid())
+  forecastId String        @unique
+  actualQty  Float
+  mae        Float
+  mape       Float
+  computedAt DateTime      @default(now())
+  forecast   SalesForecast @relation(fields: [forecastId], references: [id])
+}
+
+model SeasonalityProfile {
+  id        String              @id @default(uuid())
+  companyId String
+  name      String
+  periods   SeasonalityPeriod[]
+}
+
+model SeasonalityPeriod {
+  id         String             @id @default(uuid())
+  profileId  String
+  label      String
+  startMD    String
+  endMD      String
+  multiplier Float
+  profile    SeasonalityProfile @relation(fields: [profileId], references: [id])
 }
 
 // M7.5 — Advanced Shipping Notice models
