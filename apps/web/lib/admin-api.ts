@@ -108,14 +108,14 @@ export function getAvailableFlags() {
 }
 
 export function getTenantFlags(id: string) {
-    return fetchWithRetry(`${API_URL}/admin/companies/${id}/feature-flags`);
+    return fetchWithRetry(`${API_URL}/admin/companies/flags?companyId=${encodeURIComponent(id)}`);
 }
 
 export function setTenantFlag(id: string, key: string, enabled: boolean, notes?: string) {
-    return fetchWithRetry(`${API_URL}/admin/companies/${id}/feature-flags/${key}`, {
+    return fetchWithRetry(`${API_URL}/admin/companies/flags`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled, notes }),
+        body: JSON.stringify({ companyId: id, key, enabled, notes }),
     });
 }
 
