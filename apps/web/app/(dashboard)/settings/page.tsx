@@ -102,6 +102,24 @@ export default function SettingsPage() {
                             >
                                 Categories
                             </a>
+                            <a
+                                href="/settings/currencies"
+                                className="px-4 py-3 text-left text-sm font-medium border-l-4 border-transparent text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                Currencies & FX
+                            </a>
+                            <a
+                                href="/settings/printers"
+                                className="px-4 py-3 text-left text-sm font-medium border-l-4 border-transparent text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                Printers
+                            </a>
+                            <a
+                                href="/settings/seasonality"
+                                className="px-4 py-3 text-left text-sm font-medium border-l-4 border-transparent text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                Seasonality
+                            </a>
                         </nav>
                     </div>
                 </div>
