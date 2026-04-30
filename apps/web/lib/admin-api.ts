@@ -7,7 +7,7 @@ import { fetchWithRetry, API_URL } from './api';
 // ── Tenants ─────────────────────────────────────────────────────────────────
 
 export function fetchTenants() {
-    return fetchWithRetry(`${API_URL}/companies`);
+    return fetchWithRetry(`${API_URL}/admin/companies`);
 }
 
 export function getTenant(id: string) {
@@ -104,15 +104,15 @@ export function impersonateTenant(id: string) {
 // ── Feature Flags (Phase 7) ───────────────────────────────────────────────────
 
 export function getAvailableFlags() {
-    return fetchWithRetry(`${API_URL}/feature-flags/available`);
+    return fetchWithRetry(`${API_URL}/admin/companies/feature-flags/available`);
 }
 
 export function getTenantFlags(id: string) {
-    return fetchWithRetry(`${API_URL}/companies/${id}/feature-flags`);
+    return fetchWithRetry(`${API_URL}/admin/companies/${id}/feature-flags`);
 }
 
 export function setTenantFlag(id: string, key: string, enabled: boolean, notes?: string) {
-    return fetchWithRetry(`${API_URL}/companies/${id}/feature-flags/${key}`, {
+    return fetchWithRetry(`${API_URL}/admin/companies/${id}/feature-flags/${key}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled, notes }),
