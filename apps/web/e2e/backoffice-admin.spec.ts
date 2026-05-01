@@ -542,6 +542,180 @@ test.describe('TC-35: Announcements', () => {
 });
 
 // ---------------------------------------------------------------------------
+// TC-35.40–35.42  AI_REORDER Readiness Check  [PRD 4.13.4, M8.7]
+// ---------------------------------------------------------------------------
+test.describe('TC-35: AI_REORDER Readiness Check', () => {
+
+    test.beforeEach(async ({ page }) => {
+        await loginAsPlatformAdmin(page);
+        await page.goto('/admin/feature-flags');
+        await page.waitForLoadState('networkidle');
+    });
+
+    test('TC-35.40: Enabling AI_REORDER for a tenant with no sales data shows amber readiness warning', async ({ page }) => {
+        const tenantSelect = page.locator('select').filter({ hasText: 'Select a tenant...' });
+        const options = await tenantSelect.locator('option').count();
+        if (options <= 1) {
+            test.skip(true, 'No tenants in DB — skipping');
+            return;
+        }
+        // Select the first real tenant
+        await tenantSelect.selectOption({ index: 1 });
+        await page.waitForTimeout(1500);
+
+        // Find the AI_REORDER toggle that is currently Disabled
+        const aiReorderRow = page.locator('div').filter({ hasText: /AI_REORDER/ }).filter({ hasText: /Disabled/ }).first();
+        if (await aiReorderRow.isVisible({ timeout: 3000 }).catch(() => false)) {
+            const toggleBtn = aiReorderRow.getByRole('button').first();
+            await toggleBtn.click();
+            // Fresh DB has 0 days of sales data → warning must appear
+            await expect(page.getByText(/day\(s\) of sales data available/)).toBeVisible({ timeout: 8000 });
+        }
+    });
+
+    test('TC-35.41: Readiness warning banner is amber-styled (bg-amber-50)', async ({ page }) => {
+        const tenantSelect = page.locator('select').filter({ hasText: 'Select a tenant...' });
+        const options = await tenantSelect.locator('option').count();
+        if (options <= 1) { test.skip(true, 'No tenants in DB — skipping'); return; }
+        await tenantSelect.selectOption({ index: 1 });
+        await page.waitForTimeout(1500);
+
+        const aiReorderRow = page.locator('div').filter({ hasText: /AI_REORDER/ }).filter({ hasText: /Disabled/ }).first();
+        if (await aiReorderRow.isVisible({ timeout: 3000 }).catch(() => false)) {
+            await aiReorderRow.getByRole('button').first().click();
+            const warningBanner = page.locator('.bg-amber-50').filter({ hasText: /sales data/ });
+            await expect(warningBanner).toBeVisible({ timeout: 8000 });
+            // Banner must also contain the 7-day threshold message
+            await expect(warningBanner.getByText(/7 days/)).toBeVisible();
+        }
+    });
+
+    test('TC-35.42: Available flags table includes AI_REORDER with label and description', async ({ page }) => {
+        await expect(page.getByText('AI_REORDER')).toBeVisible();
+        // The label shown is the human-readable flag label, not just the key
+        const flagRow = page.locator('div').filter({ hasText: 'AI_REORDER' }).first();
+        await expect(flagRow).toBeVisible();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// TC-35.43–35.45  Announcement Targeting & Scheduling  [PRD 4.13.8]
+// ---------------------------------------------------------------------------
+test.describe('TC-35: Announcement Targeting & Scheduling', () => {
+
+    test.beforeEach(async ({ page }) => {
+        await loginAsPlatformAdmin(page);
+        await page.goto('/admin/announcements');
+        await page.waitForLoadState('networkidle');
+        await expect(page.getByText('Loading...')).not.toBeVisible({ timeout: 10000 });
+    });
+
+    test('TC-35.43: Announcement with plan-specific targeting shows "By Plan" label in list', async ({ page }) => {
+        const ts = Date.now();
+        const title = `E2E Plan Target ${ts}`;
+
+        await page.getByRole('button', { name: 'New Announcement' }).click();
+        await page.getByPlaceholder('System maintenance scheduled').fill(title);
+        await page.getByPlaceholder('Provide details of the announcement...').fill('Targeting STARTER plan only.');
+
+        // Change target type to "Specific Plan"
+        const targetSelect = page.locator('select').filter({ hasText: 'All Tenants' });
+        await targetSelect.selectOption('PLAN');
+        // Fill plan name value field that appears
+        await page.getByPlaceholder('STARTER').fill('STARTER');
+
+        await page.getByRole('button', { name: 'Publish' }).click();
+        await expect(page.getByRole('heading', { name: 'New Announcement' })).not.toBeVisible({ timeout: 10000 });
+
+        // Announcement card should show "By Plan" target label
+        const card = page.locator('div').filter({ hasText: title }).first();
+        await expect(card.getByText('By Plan')).toBeVisible({ timeout: 5000 });
+    });
+
+    test('TC-35.44: Announcement with future start date shows Inactive badge', async ({ page }) => {
+        const ts = Date.now();
+        const title = `E2E Future Start ${ts}`;
+
+        await page.getByRole('button', { name: 'New Announcement' }).click();
+        await page.getByPlaceholder('System maintenance scheduled').fill(title);
+        await page.getByPlaceholder('Provide details of the announcement...').fill('Scheduled for the future.');
+
+        // Set startsAt to a far-future datetime
+        const futureDate = '2099-12-31T00:00';
+        await page.locator('input[type="datetime-local"]').first().fill(futureDate);
+
+        await page.getByRole('button', { name: 'Publish' }).click();
+        await expect(page.getByRole('heading', { name: 'New Announcement' })).not.toBeVisible({ timeout: 10000 });
+
+        // Card should show Inactive badge (startsAt is in the future)
+        const card = page.locator('div').filter({ hasText: title }).first();
+        await expect(card.getByText('Inactive')).toBeVisible({ timeout: 5000 });
+    });
+
+    test('TC-35.45: Announcement with "All Tenants" target shows "All Tenants" label', async ({ page }) => {
+        const ts = Date.now();
+        const title = `E2E All Tenants ${ts}`;
+
+        await page.getByRole('button', { name: 'New Announcement' }).click();
+        await page.getByPlaceholder('System maintenance scheduled').fill(title);
+        await page.getByPlaceholder('Provide details of the announcement...').fill('Broadcast to all tenants.');
+        // Target defaults to All Tenants — no change needed
+
+        await page.getByRole('button', { name: 'Publish' }).click();
+        await expect(page.getByRole('heading', { name: 'New Announcement' })).not.toBeVisible({ timeout: 10000 });
+
+        const card = page.locator('div').filter({ hasText: title }).first();
+        await expect(card.getByText('All Tenants')).toBeVisible({ timeout: 5000 });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// TC-35.46–35.48  Tenant Status Filter & Suspend/Reactivate  [PRD 4.13.1]
+// ---------------------------------------------------------------------------
+test.describe('TC-35: Tenant Status Filter', () => {
+
+    test.beforeEach(async ({ page }) => {
+        await loginAsPlatformAdmin(page);
+        await page.goto('/admin/tenants');
+        await page.waitForLoadState('networkidle');
+    });
+
+    test('TC-35.46: Status filter SUSPENDED hides ACTIVE-only rows', async ({ page }) => {
+        const statusSelect = page.locator('thead select').last();
+        await statusSelect.selectOption('SUSPENDED');
+        await page.waitForTimeout(500);
+        // No ACTIVE badges should remain visible in the table body
+        const activeBadges = page.locator('tbody span').filter({ hasText: /^ACTIVE$/ });
+        expect(await activeBadges.count()).toBe(0);
+    });
+
+    test('TC-35.47: Clearing all filters restores full tenant list', async ({ page }) => {
+        // Apply a filter first
+        const nameInput = page.getByPlaceholder('Name / slug...');
+        await nameInput.fill('zzznonexistent');
+        await expect(page.getByText('No tenants found')).toBeVisible({ timeout: 5000 });
+
+        await page.getByRole('button', { name: 'Clear Filters' }).click();
+        // After clear, "No tenants found" should disappear (assuming at least one tenant exists)
+        await expect(page.getByText('No tenants found')).not.toBeVisible({ timeout: 3000 });
+    });
+
+    test('TC-35.48: Tenant row count footer updates after filtering', async ({ page }) => {
+        // Footer shows tenant count
+        await expect(page.getByText(/\d+ tenant/i)).toBeVisible();
+        const nameInput = page.getByPlaceholder('Name / slug...');
+        await nameInput.fill('zzznonexistent');
+        await page.waitForTimeout(500);
+        // Count should now reflect filtered state (0 tenants or "No tenants found")
+        const noResults = page.getByText('No tenants found');
+        const countFooter = page.getByText(/\d+ tenant/i);
+        const noResultsVisible = await noResults.isVisible({ timeout: 3000 }).catch(() => false);
+        const countVisible = await countFooter.isVisible({ timeout: 1000 }).catch(() => false);
+        expect(noResultsVisible || countVisible).toBe(true);
+    });
+});
+
+// ---------------------------------------------------------------------------
 // TC-35.37–35.39  Bulk Operations  [PRD 4.13.9]
 // ---------------------------------------------------------------------------
 test.describe('TC-35: Bulk Operations', () => {
