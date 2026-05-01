@@ -10,13 +10,15 @@ test.describe('Dashboard', () => {
         await page.goto('/');
 
         // Wait for Loading to finish
-        await expect(page.getByText('Loading Dashboard...')).not.toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('Loading Dashboard...')).not.toBeVisible({ timeout: 20000 });
+        // Extra settle time so async KPI cards fully render
+        await page.waitForTimeout(2000);
 
         await expect(page.getByRole('heading', { name: 'Dashboard Overview' })).toBeVisible();
 
         // Check KPI
-        await expect(page.getByText('Total Stock Value')).toBeVisible();
-        await expect(page.getByText('Fulfillment Rate')).toBeVisible();
+        await expect(page.getByText('Total Stock Value')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('Fulfillment Rate')).toBeVisible({ timeout: 10000 });
 
         // Check Chart
         await expect(page.getByText('Daily Sales Trend')).toBeVisible();

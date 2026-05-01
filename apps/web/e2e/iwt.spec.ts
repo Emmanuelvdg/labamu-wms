@@ -21,36 +21,71 @@ test.describe('Inter-Warehouse Transfer', () => {
         await newTransferBtn.click();
 
         // Wait for the transfer form/dialog to appear
-        await page.waitForTimeout(1000);
+        await page.waitForTimeout(1500);
 
-        // Source Warehouse — use the first available option instead of hardcoded name
-        const sourceCombobox = page.getByRole('combobox').first();
-        if (!await sourceCombobox.isVisible({ timeout: 3000 }).catch(() => false)) {
+        // Determine whether the modal uses shadcn comboboxes or native <select> elements
+        const hasCombobox = await page.getByRole('combobox').first().isVisible({ timeout: 2000 }).catch(() => false);
+        const hasSelect = await page.locator('select').first().isVisible({ timeout: 2000 }).catch(() => false);
+
+        if (!hasCombobox && !hasSelect) {
+            // No recognisable warehouse picker found — skip gracefully
             test.skip();
             return;
         }
-        await sourceCombobox.click();
-        const firstSourceOption = page.getByRole('option').first();
-        if (!await firstSourceOption.isVisible({ timeout: 3000 }).catch(() => false)) {
-            test.skip();
-            return;
-        }
-        await firstSourceOption.click();
 
-        // Destination Warehouse — pick the second available option if it exists
-        const destCombobox = page.getByRole('combobox').nth(1);
-        if (await destCombobox.isVisible({ timeout: 2000 }).catch(() => false)) {
-            await destCombobox.click();
-            const options = page.getByRole('option');
-            const optCount = await options.count();
-            if (optCount >= 2) {
-                await options.nth(1).click();
-            } else if (optCount === 1) {
-                await options.first().click();
-            } else {
+        if (hasCombobox) {
+            // Shadcn combobox path
+            const sourceCombobox = page.getByRole('combobox').first();
+            await sourceCombobox.click();
+            const firstSourceOption = page.getByRole('option').first();
+            if (!await firstSourceOption.isVisible({ timeout: 3000 }).catch(() => false)) {
                 test.skip();
                 return;
             }
+            await firstSourceOption.click();
+
+            const destCombobox = page.getByRole('combobox').nth(1);
+            if (await destCombobox.isVisible({ timeout: 2000 }).catch(() => false)) {
+                await destCombobox.click();
+                const options = page.getByRole('option');
+                const optCount = await options.count();
+                if (optCount >= 2) {
+                    await options.nth(1).click();
+                } else if (optCount === 1) {
+                    await options.first().click();
+                } else {
+                    test.skip();
+                    return;
+                }
+            }
+        } else {
+            // Native <select> path (same UI as transfers.spec.ts)
+            const selects = page.locator('select');
+            const selectCount = await selects.count();
+            if (selectCount < 2) {
+                test.skip();
+                return;
+            }
+
+            const sourceSelect = selects.nth(0);
+            const sourceOptions = await sourceSelect.locator('option').all();
+            let sourceId = '';
+            for (const opt of sourceOptions) {
+                const val = await opt.getAttribute('value');
+                if (val && val !== '') { sourceId = val; break; }
+            }
+            if (!sourceId) { test.skip(); return; }
+            await sourceSelect.selectOption(sourceId);
+
+            const destSelect = selects.nth(1);
+            const destOptions = await destSelect.locator('option').all();
+            let destId = '';
+            for (const opt of destOptions) {
+                const val = await opt.getAttribute('value');
+                if (val && val !== '' && val !== sourceId) { destId = val; break; }
+            }
+            if (!destId) { test.skip(); return; }
+            await destSelect.selectOption(destId);
         }
 
         // Add item — this flow is highly data-dependent; just verify form rendered

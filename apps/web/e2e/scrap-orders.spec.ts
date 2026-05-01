@@ -45,7 +45,11 @@ test.describe('Scrap Orders', () => {
         // Reason
         await page.locator('input#reason').fill('Damaged in transit');
 
-        await page.getByRole('button', { name: 'Validate Scrap' }).click();
+        // Wait for the form to be fully interactive before submitting
+        await page.waitForLoadState('networkidle');
+        const validateBtn = page.getByRole('button', { name: 'Validate Scrap' });
+        await expect(validateBtn).toBeVisible({ timeout: 10000 });
+        await validateBtn.click();
 
         // Wait for API call to complete and SWR to refetch
         await page.waitForTimeout(2500);

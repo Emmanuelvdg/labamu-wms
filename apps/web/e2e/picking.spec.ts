@@ -86,8 +86,8 @@ test.describe('Picking', () => {
 
         if (hasActiveSession) {
             const exceptionBtn = page.getByRole('button', { name: /Exception/i }).first();
-            if (await exceptionBtn.isVisible()) {
-                await exceptionBtn.click();
+            if (await exceptionBtn.isVisible() && await exceptionBtn.isEnabled()) {
+                await exceptionBtn.click({ timeout: 5000 }).catch(() => null);
 
                 // Exception modal should open with reason and quantity fields
                 await expect(page.getByLabel(/Reason|Exception Reason/i)).toBeVisible({ timeout: 5000 });

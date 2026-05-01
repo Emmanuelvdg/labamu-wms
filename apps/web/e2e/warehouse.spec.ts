@@ -101,8 +101,10 @@ test.describe('Warehouse Management', () => {
         await page.getByRole('option', { name: 'Room' }).evaluate((el: HTMLElement) => el.click());
 
         await page.getByTestId('location-parent-select').evaluate((el: HTMLElement) => el.click());
-        const parentOption = page.getByRole('option', { name: /Distribution Center/i }).first();
-        await parentOption.evaluate((el: HTMLElement) => el.click());
+        // Wait for options to appear then pick the first available one (avoid hardcoded name lookup)
+        await page.waitForSelector('[role="option"]', { timeout: 5000 }).catch(() => null);
+        const firstParentOption = page.getByRole('option').first();
+        await firstParentOption.evaluate((el: HTMLElement) => el.click());
 
         await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
         await page.waitForSelector('h2:has-text("Create Location")', { state: 'hidden' });

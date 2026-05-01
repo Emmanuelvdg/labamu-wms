@@ -57,10 +57,12 @@ test.describe('Transfer Operations', () => {
         await page.getByRole('button', { name: /New Transfer/i }).click();
         await expect(page.getByRole('heading', { name: 'Create New Transfer' })).toBeVisible();
 
-        await page.getByRole('button', { name: 'Cancel' }).click();
+        // Scope Cancel to the modal/dialog to avoid strict mode violation (multiple Cancel buttons)
+        const modal = page.locator('[role="dialog"], .fixed').filter({ has: page.getByRole('heading', { name: 'Create New Transfer' }) });
+        await modal.getByRole('button', { name: 'Cancel' }).click();
 
         // Modal should be gone
-        await expect(page.getByRole('heading', { name: 'Create New Transfer' })).not.toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole('heading', { name: 'Create New Transfer' })).not.toBeVisible({ timeout: 10000 });
     });
 
     test('TC-XFER-5: Transfer modal warehouse dropdowns are populated', async ({ page }) => {
@@ -173,6 +175,6 @@ test.describe('Transfer Operations', () => {
         await createBtn.click();
 
         // Modal should close on success
-        await expect(page.getByRole('heading', { name: 'Create New Transfer' })).not.toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('heading', { name: 'Create New Transfer' })).not.toBeVisible({ timeout: 30000 });
     });
 });

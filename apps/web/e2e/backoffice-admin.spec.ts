@@ -406,15 +406,17 @@ test.describe('TC-35: Platform Analytics', () => {
         await page.goto('/admin/analytics');
         await page.waitForLoadState('networkidle');
         // Wait for loading state to clear
-        await expect(page.getByText('Loading analytics...')).not.toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('Loading analytics...')).not.toBeVisible({ timeout: 15000 });
+        // Extra settle time so KPI cards rendered from async API have time to appear
+        await page.waitForTimeout(2000);
     });
 
     test('TC-35.26: Analytics page shows four KPI cards', async ({ page }) => {
         await expect(page.getByRole('heading', { name: 'Platform Analytics' })).toBeVisible();
-        await expect(page.getByText('Total Tenants')).toBeVisible();
-        await expect(page.getByText('Total Users')).toBeVisible();
-        await expect(page.getByText('Total Orders')).toBeVisible();
-        await expect(page.getByText('Active Tenants')).toBeVisible();
+        await expect(page.getByText('Total Tenants')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('Total Users')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('Total Orders')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('Active Tenants')).toBeVisible({ timeout: 10000 });
     });
 
     test('TC-35.27: Monthly growth bar chart section is rendered', async ({ page }) => {

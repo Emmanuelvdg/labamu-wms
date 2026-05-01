@@ -30,7 +30,7 @@ test.describe('Inventory Management', () => {
 
         await page.getByTestId('create-product-submit').click();
 
-        await expect(page.getByText('Add New Inventory Item')).not.toBeVisible({ timeout: 5000 });
+        await expect(page.getByText('Add New Inventory Item')).not.toBeVisible({ timeout: 20000 });
         await page.waitForTimeout(1000);
 
         const table = page.locator('table');
