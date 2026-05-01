@@ -64,10 +64,11 @@ test.describe('Currencies & FX Settings Page', () => {
     });
 
     test('TC-15.5: Currencies page loads with heading and Exchange Rates section', async ({ page }) => {
-        await expect(page.getByRole('heading', { name: 'Currencies', exact: true })).toBeVisible();
+        // Use h1 specifically — the page also has an h2 titled "Currencies" in the section body
+        await expect(page.locator('h1').filter({ hasText: 'Currencies' })).toBeVisible();
         await expect(page.getByText('Manage currencies and exchange rates')).toBeVisible();
-        // Exchange Rates section is always rendered
-        await expect(page.getByText('Exchange Rates')).toBeVisible();
+        // Exchange Rates section heading (h2)
+        await expect(page.locator('h2').filter({ hasText: 'Exchange Rates' })).toBeVisible();
     });
 
     test('TC-15.6: Currencies page shows lock banner when MULTI_CURRENCY flag is disabled', async ({ page }) => {

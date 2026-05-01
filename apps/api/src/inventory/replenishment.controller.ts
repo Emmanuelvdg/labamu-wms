@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Req } from '@nestjs/common';
 import { ReplenishmentService } from './replenishment.service';
 import { ForecastService } from './forecast.service';
 import { PrismaService } from '../prisma.service';
@@ -60,19 +60,21 @@ export class ReplenishmentController {
     }
 
     @Get('forecast/readiness')
-    async getDataReadiness(@Query('companyId') companyId: string) {
-        return this.forecastService.getDataReadiness(companyId);
+    async getDataReadiness(@Req() req: any, @Query('companyId') companyId?: string) {
+        return this.forecastService.getDataReadiness(companyId ?? req.user?.companyId);
     }
 
     // M8.4 — Seasonality profiles CRUD
     @Get('seasonality')
-    async listSeasonalityProfiles(@Query('companyId') companyId: string) {
-        return this.prisma.seasonalityProfile.findMany({ where: { companyId }, include: { periods: true } });
+    async listSeasonalityProfiles(@Req() req: any, @Query('companyId') companyId?: string) {
+        const cId = companyId ?? req.user?.companyId;
+        return this.prisma.seasonalityProfile.findMany({ where: { companyId: cId }, include: { periods: true } });
     }
 
     @Post('seasonality')
-    async createSeasonalityProfile(@Body() body: { companyId: string; name: string }) {
-        return this.prisma.seasonalityProfile.create({ data: body });
+    async createSeasonalityProfile(@Req() req: any, @Body() body: { companyId?: string; name: string }) {
+        const companyId = body.companyId ?? req.user?.companyId;
+        return this.prisma.seasonalityProfile.create({ data: { name: body.name, companyId } });
     }
 
     @Post('seasonality/:id/periods')

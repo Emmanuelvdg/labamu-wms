@@ -563,11 +563,10 @@ test.describe('TC-35: AI_REORDER Readiness Check', () => {
         await tenantSelect.selectOption({ index: 1 });
         await page.waitForTimeout(1500);
 
-        // Find the AI_REORDER toggle that is currently Disabled
-        const aiReorderRow = page.locator('div').filter({ hasText: /AI_REORDER/ }).filter({ hasText: /Disabled/ }).first();
+        // Per-tenant flags show the human-readable label ("AI Reorder Suggestions"), not the key
+        const aiReorderRow = page.locator('div').filter({ hasText: 'AI Reorder Suggestions' }).filter({ hasText: /Disabled/ }).first();
         if (await aiReorderRow.isVisible({ timeout: 3000 }).catch(() => false)) {
-            const toggleBtn = aiReorderRow.getByRole('button').first();
-            await toggleBtn.click();
+            await aiReorderRow.getByRole('button').first().click();
             // Fresh DB has 0 days of sales data → warning must appear
             await expect(page.getByText(/day\(s\) of sales data available/)).toBeVisible({ timeout: 8000 });
         }
@@ -580,12 +579,11 @@ test.describe('TC-35: AI_REORDER Readiness Check', () => {
         await tenantSelect.selectOption({ index: 1 });
         await page.waitForTimeout(1500);
 
-        const aiReorderRow = page.locator('div').filter({ hasText: /AI_REORDER/ }).filter({ hasText: /Disabled/ }).first();
+        const aiReorderRow = page.locator('div').filter({ hasText: 'AI Reorder Suggestions' }).filter({ hasText: /Disabled/ }).first();
         if (await aiReorderRow.isVisible({ timeout: 3000 }).catch(() => false)) {
             await aiReorderRow.getByRole('button').first().click();
             const warningBanner = page.locator('.bg-amber-50').filter({ hasText: /sales data/ });
             await expect(warningBanner).toBeVisible({ timeout: 8000 });
-            // Banner must also contain the 7-day threshold message
             await expect(warningBanner.getByText(/7 days/)).toBeVisible();
         }
     });
@@ -664,8 +662,10 @@ test.describe('TC-35: Announcement Targeting & Scheduling', () => {
         await page.getByRole('button', { name: 'Publish' }).click();
         await expect(page.getByRole('heading', { name: 'New Announcement' })).not.toBeVisible({ timeout: 10000 });
 
-        const card = page.locator('div').filter({ hasText: title }).first();
-        await expect(card.getByText('All Tenants')).toBeVisible({ timeout: 5000 });
+        // Verify via the card heading + the bg-slate-100 target badge (strict-mode safe)
+        await expect(page.getByRole('heading', { name: title })).toBeVisible({ timeout: 5000 });
+        const targetBadge = page.locator('span.bg-slate-100').getByText('All Tenants', { exact: true }).first();
+        await expect(targetBadge).toBeVisible();
     });
 });
 
