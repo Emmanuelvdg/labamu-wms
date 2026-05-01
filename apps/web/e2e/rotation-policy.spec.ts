@@ -46,7 +46,6 @@ test.describe('Stock Rotation Policies', () => {
                 companyId: companyId,
                 location: JSON.stringify({}),
                 type: 'PHYSICAL',
-                viewLocation: { create: { name: `View_${Date.now()}_${Math.random()}`, type: 'VIEW', structuralType: 'WAREHOUSE' } }
             }
         });
         warehouseId = wh.id;
