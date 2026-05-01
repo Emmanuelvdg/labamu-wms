@@ -40,7 +40,7 @@ test.describe('Workflow Templates', () => {
         await page.goto('/workflows');
         await page.waitForLoadState('networkidle');
 
-        await page.getByRole('button', { name: /New Workflow|Create Workflow|Create Template/i }).click();
+        await page.getByRole('button', { name: /New Workflow|Create Workflow|Create Template/i }).first().click();
         await expect(page.getByRole('heading', { name: 'Create New Workflow' })).toBeVisible();
 
         await page.getByRole('button', { name: 'Cancel' }).click();
@@ -55,7 +55,7 @@ test.describe('Workflow Templates', () => {
         const timestamp = Date.now();
         const workflowName = `E2E Workflow ${timestamp}`;
 
-        await page.getByRole('button', { name: /New Workflow|Create Workflow|Create Template/i }).click();
+        await page.getByRole('button', { name: /New Workflow|Create Workflow|Create Template/i }).first().click();
         await expect(page.getByRole('heading', { name: 'Create New Workflow' })).toBeVisible();
 
         const nameInput = page.locator('#new-workflow-name-input')
@@ -108,7 +108,7 @@ test.describe('Workflow Templates', () => {
         const timestamp = Date.now();
         const workflowName = `E2E Activate Test ${timestamp}`;
 
-        await page.getByRole('button', { name: /New Workflow|Create Workflow|Create Template/i }).click();
+        await page.getByRole('button', { name: /New Workflow|Create Workflow|Create Template/i }).first().click();
 
         const nameInput = page.locator('#new-workflow-name-input')
             .or(page.getByPlaceholder(/workflow name/i));
@@ -150,7 +150,7 @@ test.describe('Workflow Templates', () => {
         const timestamp = Date.now();
         const workflowName = `E2E Builder Test ${timestamp}`;
 
-        await page.getByRole('button', { name: /New Workflow|Create Workflow|Create Template/i }).click();
+        await page.getByRole('button', { name: /New Workflow|Create Workflow|Create Template/i }).first().click();
 
         const nameInput = page.locator('#new-workflow-name-input')
             .or(page.getByPlaceholder(/workflow name/i));

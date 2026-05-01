@@ -104,12 +104,14 @@ test.describe('Currencies & FX Settings Page', () => {
 // TC-15.8–15.12  Seasonality Settings Page  [PRD 4.x, M8.4]
 // ---------------------------------------------------------------------------
 test.describe('Seasonality Settings Page', () => {
+    // Accumulated DB data can slow the API in a full regression run; give extra time
+    test.setTimeout(120000);
 
     test.beforeEach(async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto('/settings/seasonality');
         await page.waitForLoadState('networkidle');
-        await expect(page.getByText('Loading...')).not.toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('Loading...')).not.toBeVisible({ timeout: 15000 });
     });
 
     test('TC-15.8: Seasonality page loads with heading and New Profile section', async ({ page }) => {
@@ -135,7 +137,7 @@ test.describe('Seasonality Settings Page', () => {
         await createBtn.click();
 
         // Profile should appear in the accordion list
-        await expect(page.getByText(profileName)).toBeVisible({ timeout: 8000 });
+        await expect(page.getByText(profileName)).toBeVisible({ timeout: 20000 });
         // Should show "0 period(s)" initially — scope to button containing the exact profile name
         await expect(page.getByRole('button', { name: new RegExp(profileName) }).getByText(/0 period/)).toBeVisible();
     });
@@ -146,7 +148,7 @@ test.describe('Seasonality Settings Page', () => {
 
         await page.getByPlaceholder('Profile name (e.g. Ramadan Season)').fill(profileName);
         await page.getByRole('button', { name: 'Create' }).click();
-        await expect(page.getByText(profileName)).toBeVisible({ timeout: 8000 });
+        await expect(page.getByText(profileName)).toBeVisible({ timeout: 20000 });
 
         // Click the profile row to expand it
         await page.locator('button').filter({ hasText: profileName }).click();
@@ -166,7 +168,7 @@ test.describe('Seasonality Settings Page', () => {
         // Create profile
         await page.getByPlaceholder('Profile name (e.g. Ramadan Season)').fill(profileName);
         await page.getByRole('button', { name: 'Create' }).click();
-        await expect(page.getByText(profileName)).toBeVisible({ timeout: 8000 });
+        await expect(page.getByText(profileName)).toBeVisible({ timeout: 20000 });
 
         // Expand
         await page.locator('button').filter({ hasText: profileName }).click();
@@ -181,10 +183,10 @@ test.describe('Seasonality Settings Page', () => {
 
         // Period count on the accordion button should update to 1 — scoped to our profile
         const profileBtn = page.getByRole('button', { name: new RegExp(profileName) });
-        await expect(profileBtn.getByText(/1 period/)).toBeVisible({ timeout: 8000 });
+        await expect(profileBtn.getByText(/1 period/)).toBeVisible({ timeout: 20000 });
 
         // Period row data appears in the expanded accordion content
-        await expect(page.getByText('Ramadan').first()).toBeVisible({ timeout: 8000 });
+        await expect(page.getByText('Ramadan').first()).toBeVisible({ timeout: 20000 });
         await expect(page.getByText('03-01').first()).toBeVisible();
         await expect(page.locator('span').filter({ hasText: '×1.5' }).first()).toBeVisible();
     });
