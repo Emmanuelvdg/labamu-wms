@@ -565,10 +565,13 @@ test.describe('TC-35: AI_REORDER Readiness Check', () => {
         await tenantSelect.selectOption({ index: 1 });
         await page.waitForTimeout(1500);
 
-        // Per-tenant flags show the human-readable label ("AI Reorder Suggestions"), not the key
-        const aiReorderRow = page.locator('div').filter({ hasText: 'AI Reorder Suggestions' }).filter({ hasText: /Disabled/ }).first();
+        // Per-tenant flag rows have class "px-5 py-4 flex items-center justify-between"
+        // Scoping to these specific rows avoids picking ancestor divs that match multiple flags
+        const aiReorderRow = page.locator('div.px-5.py-4')
+            .filter({ has: page.locator('div', { hasText: /^AI Reorder Suggestions$/ }) })
+            .filter({ has: page.locator('span', { hasText: /^Disabled$/ }) });
         if (await aiReorderRow.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await aiReorderRow.getByRole('button').first().click();
+            await aiReorderRow.getByRole('button').click();
             // Fresh DB has 0 days of sales data → warning must appear
             await expect(page.getByText(/day\(s\) of sales data available/)).toBeVisible({ timeout: 8000 });
         }
@@ -581,9 +584,11 @@ test.describe('TC-35: AI_REORDER Readiness Check', () => {
         await tenantSelect.selectOption({ index: 1 });
         await page.waitForTimeout(1500);
 
-        const aiReorderRow = page.locator('div').filter({ hasText: 'AI Reorder Suggestions' }).filter({ hasText: /Disabled/ }).first();
+        const aiReorderRow = page.locator('div.px-5.py-4')
+            .filter({ has: page.locator('div', { hasText: /^AI Reorder Suggestions$/ }) })
+            .filter({ has: page.locator('span', { hasText: /^Disabled$/ }) });
         if (await aiReorderRow.isVisible({ timeout: 3000 }).catch(() => false)) {
-            await aiReorderRow.getByRole('button').first().click();
+            await aiReorderRow.getByRole('button').click();
             const warningBanner = page.locator('.bg-amber-50').filter({ hasText: /sales data/ });
             await expect(warningBanner).toBeVisible({ timeout: 8000 });
             await expect(warningBanner.getByText(/7 days/)).toBeVisible();
@@ -627,9 +632,9 @@ test.describe('TC-35: Announcement Targeting & Scheduling', () => {
         await page.getByRole('button', { name: 'Publish' }).click();
         await expect(page.getByRole('heading', { name: 'New Announcement' })).not.toBeVisible({ timeout: 10000 });
 
-        // Announcement card should show "By Plan" target label
-        const card = page.locator('div').filter({ hasText: title }).first();
-        await expect(card.getByText('By Plan')).toBeVisible({ timeout: 5000 });
+        // Scope to the specific card that contains our unique h3 title
+        const card = page.locator('.rounded-xl').filter({ has: page.locator('h3', { hasText: title }) });
+        await expect(card.locator('span.bg-slate-100').filter({ hasText: /By Plan/ })).toBeVisible({ timeout: 5000 });
     });
 
     test('TC-35.44: Announcement with future start date shows Inactive badge', async ({ page }) => {
@@ -647,9 +652,9 @@ test.describe('TC-35: Announcement Targeting & Scheduling', () => {
         await page.getByRole('button', { name: 'Publish' }).click();
         await expect(page.getByRole('heading', { name: 'New Announcement' })).not.toBeVisible({ timeout: 10000 });
 
-        // Card should show Inactive badge (startsAt is in the future)
-        const card = page.locator('div').filter({ hasText: title }).first();
-        await expect(card.getByText('Inactive')).toBeVisible({ timeout: 5000 });
+        // Scope to the specific card that contains our unique h3 title
+        const card = page.locator('.rounded-xl').filter({ has: page.locator('h3', { hasText: title }) });
+        await expect(card.locator('span').filter({ hasText: /^Inactive$/ })).toBeVisible({ timeout: 5000 });
     });
 
     test('TC-35.45: Announcement with "All Tenants" target shows "All Tenants" label', async ({ page }) => {

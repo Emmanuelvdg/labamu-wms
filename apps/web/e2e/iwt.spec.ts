@@ -23,9 +23,12 @@ test.describe('Inter-Warehouse Transfer', () => {
         // Wait for the transfer form/dialog to appear
         await page.waitForTimeout(1500);
 
+        // Scope all picker lookups to within the modal to avoid backdrop interception
+        const modal = page.locator('.fixed.inset-0').last();
+
         // Determine whether the modal uses shadcn comboboxes or native <select> elements
-        const hasCombobox = await page.getByRole('combobox').first().isVisible({ timeout: 2000 }).catch(() => false);
-        const hasSelect = await page.locator('select').first().isVisible({ timeout: 2000 }).catch(() => false);
+        const hasCombobox = await modal.getByRole('combobox').first().isVisible({ timeout: 2000 }).catch(() => false);
+        const hasSelect = await modal.locator('select').first().isVisible({ timeout: 2000 }).catch(() => false);
 
         if (!hasCombobox && !hasSelect) {
             // No recognisable warehouse picker found — skip gracefully
@@ -34,8 +37,8 @@ test.describe('Inter-Warehouse Transfer', () => {
         }
 
         if (hasCombobox) {
-            // Shadcn combobox path
-            const sourceCombobox = page.getByRole('combobox').first();
+            // Shadcn combobox path — scoped to modal to avoid backdrop interception
+            const sourceCombobox = modal.getByRole('combobox').first();
             await sourceCombobox.click();
             const firstSourceOption = page.getByRole('option').first();
             if (!await firstSourceOption.isVisible({ timeout: 3000 }).catch(() => false)) {
@@ -44,7 +47,7 @@ test.describe('Inter-Warehouse Transfer', () => {
             }
             await firstSourceOption.click();
 
-            const destCombobox = page.getByRole('combobox').nth(1);
+            const destCombobox = modal.getByRole('combobox').nth(1);
             if (await destCombobox.isVisible({ timeout: 2000 }).catch(() => false)) {
                 await destCombobox.click();
                 const options = page.getByRole('option');
@@ -59,8 +62,8 @@ test.describe('Inter-Warehouse Transfer', () => {
                 }
             }
         } else {
-            // Native <select> path (same UI as transfers.spec.ts)
-            const selects = page.locator('select');
+            // Native <select> path — scoped to modal
+            const selects = modal.locator('select');
             const selectCount = await selects.count();
             if (selectCount < 2) {
                 test.skip();

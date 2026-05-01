@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Req, UseGuards } from '@nestjs/common';
 import { ReplenishmentService } from './replenishment.service';
 import { ForecastService } from './forecast.service';
 import { PrismaService } from '../prisma.service';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
+import { RequirePermission } from '../common/auth/permissions.decorator';
 
 @Controller('replenishment')
 export class ReplenishmentController {
@@ -45,15 +47,7 @@ export class ReplenishmentController {
         return this.forecastService.runForecastsForCompany(body.companyId);
     }
 
-    @Get('forecast/:productId')
-    async getForecast(
-        @Param('productId') productId: string,
-        @Query('companyId') companyId: string,
-        @Query('warehouseId') warehouseId?: string,
-    ) {
-        return this.forecastService.getForecastForProduct(companyId, productId, warehouseId);
-    }
-
+    // Static forecast sub-routes must come before /:productId to avoid being swallowed
     @Get('forecast/accuracy')
     async getAccuracy(@Query('companyId') companyId: string) {
         return this.forecastService.getAccuracy(companyId);
@@ -64,13 +58,26 @@ export class ReplenishmentController {
         return this.forecastService.getDataReadiness(companyId ?? req.user?.companyId);
     }
 
+    @Get('forecast/:productId')
+    async getForecast(
+        @Param('productId') productId: string,
+        @Query('companyId') companyId: string,
+        @Query('warehouseId') warehouseId?: string,
+    ) {
+        return this.forecastService.getForecastForProduct(companyId, productId, warehouseId);
+    }
+
     // M8.4 — Seasonality profiles CRUD
+    @UseGuards(PermissionsGuard)
+    @RequirePermission('INVENTORY', 'READ')
     @Get('seasonality')
     async listSeasonalityProfiles(@Req() req: any, @Query('companyId') companyId?: string) {
-        const cId = companyId ?? req.user?.companyId;
+        const cId = (companyId || undefined) ?? req.user?.companyId;
         return this.prisma.seasonalityProfile.findMany({ where: { companyId: cId }, include: { periods: true } });
     }
 
+    @UseGuards(PermissionsGuard)
+    @RequirePermission('INVENTORY', 'CREATE')
     @Post('seasonality')
     async createSeasonalityProfile(@Req() req: any, @Body() body: { companyId?: string; name: string }) {
         const companyId = body.companyId ?? req.user?.companyId;

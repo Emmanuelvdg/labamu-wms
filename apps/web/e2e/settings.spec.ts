@@ -136,8 +136,8 @@ test.describe('Seasonality Settings Page', () => {
 
         // Profile should appear in the accordion list
         await expect(page.getByText(profileName)).toBeVisible({ timeout: 8000 });
-        // Should show "0 period(s)" initially
-        await expect(page.locator('div').filter({ hasText: profileName }).getByText(/0 period/)).toBeVisible();
+        // Should show "0 period(s)" initially — scope to button containing the exact profile name
+        await expect(page.getByRole('button', { name: new RegExp(profileName) }).getByText(/0 period/)).toBeVisible();
     });
 
     test('TC-15.11: Expand profile accordion reveals period add form', async ({ page }) => {
@@ -179,11 +179,13 @@ test.describe('Seasonality Settings Page', () => {
         await page.getByPlaceholder('×1.5').fill('1.5');
         await page.getByRole('button', { name: 'Add' }).click();
 
-        // Period row must appear in the table
-        await expect(page.getByText('Ramadan')).toBeVisible({ timeout: 8000 });
-        await expect(page.getByText('03-01')).toBeVisible();
-        await expect(page.locator('span').filter({ hasText: '×1.5' })).toBeVisible();
-        // Period count should now show 1
-        await expect(page.getByText('1 period(s)')).toBeVisible();
+        // Period count on the accordion button should update to 1 — scoped to our profile
+        const profileBtn = page.getByRole('button', { name: new RegExp(profileName) });
+        await expect(profileBtn.getByText(/1 period/)).toBeVisible({ timeout: 8000 });
+
+        // Period row data appears in the expanded accordion content
+        await expect(page.getByText('Ramadan').first()).toBeVisible({ timeout: 8000 });
+        await expect(page.getByText('03-01').first()).toBeVisible();
+        await expect(page.locator('span').filter({ hasText: '×1.5' }).first()).toBeVisible();
     });
 });

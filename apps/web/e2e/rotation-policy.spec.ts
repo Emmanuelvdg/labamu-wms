@@ -16,8 +16,10 @@ test.describe('Stock Rotation Policies', () => {
         // Clean up previous runs if any
         await prisma.rotationRule.deleteMany();
 
-        // 0. Setup Company ID (No Model exists)
-        const companyId = `Comp_${Date.now()}_${Math.random()}`;
+        // 0. Use the existing default company (seeded by migrations)
+        const company = await prisma.company.findFirst();
+        if (!company) throw new Error('No company found in DB — run seed first');
+        const companyId = company.id;
 
         // 0b. Setup Auth (Admin User)
         const role = await prisma.role.create({
