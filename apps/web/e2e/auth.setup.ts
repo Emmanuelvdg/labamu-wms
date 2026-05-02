@@ -26,6 +26,16 @@ setup('authenticate as admin', async ({ page }) => {
     // Ensure the output directory exists
     fs.mkdirSync(AUTH_DIR, { recursive: true });
 
+    // Reuse existing auth state if it was written within the last 30 minutes.
+    // This prevents triggering the API's 5-logins-per-60s rate limiter when
+    // the regression suite is run multiple times back-to-back.
+    if (fs.existsSync(AUTH_STATE_PATH)) {
+        const ageSec = (Date.now() - fs.statSync(AUTH_STATE_PATH).mtimeMs) / 1000;
+        if (ageSec < 1800) {
+            return;
+        }
+    }
+
     await page.goto('/login');
 
     await page.getByLabel('Email').fill(ADMIN_EMAIL);
