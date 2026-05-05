@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase3 — Scenarios 3.1 (Create & Confirm PO), 3.2 (Receive Goods); TC-4.1 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

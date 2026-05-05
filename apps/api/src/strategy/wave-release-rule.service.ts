@@ -49,17 +49,16 @@ export class WaveReleaseRuleService {
         return { success: true };
     }
 
-    // ── Cron job: runs every minute, triggers TIME_BASED rules ───────────────
+    // ── Cron job: runs every minute, evaluates all auto-trigger rules ─────────
 
     @Cron(CronExpression.EVERY_MINUTE)
-    async processTimeBasedRules() {
+    async processAutoRules() {
         const rules = await this.prisma.waveReleaseRule.findMany({
-            where: { triggerType: 'TIME_BASED', enabled: true },
+            where: { triggerType: { in: ['TIME_BASED', 'ORDER_COUNT'] }, enabled: true },
         });
 
         for (const rule of rules) {
             try {
-                // Count RESERVED orders for this warehouse
                 const reservedCount = await this.prisma.order.count({
                     where: {
                         OR: [{ warehouseId: rule.warehouseId }, { warehouseId: null }],
@@ -67,13 +66,18 @@ export class WaveReleaseRuleService {
                     },
                 });
 
-                if (reservedCount >= rule.minOrders) {
+                const shouldRelease =
+                    rule.triggerType === 'ORDER_COUNT'
+                        ? reservedCount >= rule.minOrders          // release as soon as threshold met
+                        : reservedCount >= rule.minOrders;         // TIME_BASED: cron fires, check threshold
+
+                if (shouldRelease) {
                     await this.pickingStrategy.createSession({
                         warehouseId: rule.warehouseId,
                         strategy: 'WAVE',
                         maxOrders: rule.maxOrders,
                     });
-                    console.log(`[WaveRule] Released wave for warehouse ${rule.warehouseId} (rule: ${rule.name})`);
+                    console.log(`[WaveRule] ${rule.triggerType} wave released — warehouse ${rule.warehouseId}, rule "${rule.name}", orders: ${reservedCount}`);
                 }
             } catch (err) {
                 console.error(`[WaveRule] Failed to process rule ${rule.id}:`, err);
@@ -85,12 +89,30 @@ export class WaveReleaseRuleService {
 
     async triggerRule(id: string) {
         const rule = await this.findOrFail(id);
-        await this.pickingStrategy.createSession({
+
+        const reservedCount = await this.prisma.order.count({
+            where: {
+                OR: [{ warehouseId: rule.warehouseId }, { warehouseId: null }],
+                status: 'RESERVED',
+            },
+        });
+
+        if (reservedCount === 0) {
+            return { success: false, message: 'No RESERVED orders available to wave-release' };
+        }
+
+        const session = await this.pickingStrategy.createSession({
             warehouseId: rule.warehouseId,
             strategy: 'WAVE',
             maxOrders: rule.maxOrders,
         });
-        return { success: true, message: `Wave released for warehouse ${rule.warehouseId}` };
+
+        return {
+            success: true,
+            message: `Wave released for warehouse ${rule.warehouseId}`,
+            sessionId: (session as any)?.id,
+            ordersIncluded: reservedCount,
+        };
     }
 
     private async findOrFail(id: string) {

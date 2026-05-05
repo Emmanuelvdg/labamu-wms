@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase2 — Scenario 2.2 (Create Product); §Phase10 — Scenarios 10.1–10.2 (Adjustment, Ledger Verify); TC-3.1, TC-3.2 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase16 — Scenarios 16.1–16.3 (Shipping Label, Packing Slip, Manifest); TC-SHIP-1–5 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase12 — Scenarios 12.1–12.5 (Session, Generate Tasks, Count, Discrepancy, Reconcile); TC-STOCK-1–6 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

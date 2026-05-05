@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase14 — Scenarios 14.1–14.3 (Access Settings, Create User, Verify Permissions) */
 import { test, expect } from '@playwright/test';
 
 test.describe('User Management', () => {

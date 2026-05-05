@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase10 — Scenarios 10.3 (Create Scrap Order), 10.4 (Verify in Stock Moves); TC-5.1 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

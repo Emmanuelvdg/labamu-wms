@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase15 — Scenarios 15.1–15.4 (Packing Queue, Workspace, Parcels, Complete); TC-PACK-1–5 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

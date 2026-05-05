@@ -1,8 +1,9 @@
-import { Controller, Post, Body, Get, Patch, Param, Put, Delete, Query, Res } from '@nestjs/common';
+import { Controller, Post, Body, Get, Patch, Param, Put, Delete, Query, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { StrategyService } from './strategy.service';
 import { PickingStrategyService } from './picking-strategy.service';
 import { WaveReleaseRuleService } from './wave-release-rule.service';
+import { FeatureFlagGuard, RequireFlag } from '../common/guards/feature-flag.guard';
 
 type PickingStrategyType = 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE' | 'WAVELESS' | 'ZONE';
 
@@ -63,26 +64,34 @@ export class StrategyController {
         return this.strategyService.deleteReservationStrategy(id);
     }
 
-    // --- Advanced Picking Strategies (Batch, Cluster, Wave) ---
+    // --- Advanced Picking Strategies (Batch, Cluster, Wave) — gated by ADVANCED_PICKING ---
 
     @Post('picking/batch')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     createBatch(@Body() data: { criteria: 'contact' | 'carrier' | 'location'; warehouseId?: string }) {
         return this.pickingStrategyService.createBatch(data.criteria, data.warehouseId);
     }
 
     @Post('picking/cluster')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     createCluster(@Body() data: { size: number; warehouseId?: string }) {
         return this.pickingStrategyService.createClusterBatch(data.size, data.warehouseId);
     }
 
     @Post('picking/wave')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     createWave(@Body() data: { criteria: 'product' | 'category'; warehouseId?: string }) {
         return this.pickingStrategyService.createWave(data.criteria, data.warehouseId);
     }
 
-    // --- Picking Session Management ---
+    // --- Picking Session Management — gated by ADVANCED_PICKING ---
 
     @Post('picking/sessions')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     createSession(@Body() data: { warehouseId: string; strategy: PickingStrategyType; criteria?: string; maxOrders?: number }) {
         if (data.strategy === 'WAVELESS') {
             return this.pickingStrategyService.createWavelessSession(data.warehouseId);
@@ -94,17 +103,23 @@ export class StrategyController {
     }
 
     @Get('picking/sessions/:id/waveless-poll')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     pollWavelessTasks(@Param('id') id: string) {
         return this.pickingStrategyService.pollWavelessTasks(id);
     }
 
     @Get('picking/sessions/active')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     getActiveSession(@Query('warehouseId') warehouseId: string) {
         return this.pickingStrategyService.getActiveSession(warehouseId);
     }
 
     // M3.3 — Picking list PDF
     @Get('picking/sessions/:id/picklist')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     async getPicklist(@Param('id') id: string, @Res() res: Response) {
         const pdf = await this.pickingStrategyService.generatePicklistPdf(id);
         res.setHeader('Content-Type', 'application/pdf');
@@ -113,28 +128,38 @@ export class StrategyController {
     }
 
     @Patch('picking/tasks/:id')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     updateTask(@Param('id') id: string, @Body() data: { pickedQuantity: number; status: string; exceptionReason?: string }) {
         return this.pickingStrategyService.updateTask(id, data);
     }
 
     @Post('picking/tasks/:id/scan-pick')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     scanPick(@Param('id') id: string, @Body() data: { barcode: string }) {
         return this.pickingStrategyService.scanPick(id, data.barcode);
     }
 
     @Post('picking/sessions/:id/complete')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     completeSession(@Param('id') id: string) {
         return this.pickingStrategyService.completeSession(id);
     }
 
-    // --- Wave Release Rules (M3.2) ---
+    // --- Wave Release Rules (M3.2) — gated by ADVANCED_PICKING ---
 
     @Get('wave-rules')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     listWaveRules(@Query('warehouseId') warehouseId: string) {
         return this.waveReleaseRuleService.list(warehouseId);
     }
 
     @Post('wave-rules')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     createWaveRule(@Body() data: {
         warehouseId: string;
         name: string;
@@ -148,16 +173,22 @@ export class StrategyController {
     }
 
     @Put('wave-rules/:id')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     updateWaveRule(@Param('id') id: string, @Body() data: any) {
         return this.waveReleaseRuleService.update(id, data);
     }
 
     @Delete('wave-rules/:id')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     deleteWaveRule(@Param('id') id: string) {
         return this.waveReleaseRuleService.remove(id);
     }
 
     @Post('wave-rules/:id/trigger')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
     triggerWaveRule(@Param('id') id: string) {
         return this.waveReleaseRuleService.triggerRule(id);
     }

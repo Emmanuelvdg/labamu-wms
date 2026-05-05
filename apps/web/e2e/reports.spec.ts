@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase6 — Scenario 6.4 (Cycle Time Report); TC-11.1 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase11 — Scenario 11.6 (Verify FEFO Rotation Policy); covers FIFO, LIFO, FEFO+shelf-life */
 import { test, expect } from '@playwright/test';
 import { PrismaClient } from '@labamu/database';
 

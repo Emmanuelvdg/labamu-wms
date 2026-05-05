@@ -819,8 +819,8 @@ export class PickingStrategyService {
         };
 
         const printer = new PdfPrinter(this.fonts);
+        const doc = await Promise.resolve(printer.createPdfKitDocument(docDefinition));
         return new Promise((resolve, reject) => {
-            const doc = printer.createPdfKitDocument(docDefinition);
             const chunks: Buffer[] = [];
             doc.on('data', (c: Buffer) => chunks.push(c));
             doc.on('end', () => resolve(Buffer.concat(chunks)));

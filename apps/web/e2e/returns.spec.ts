@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase13 — Scenarios 13.1–13.3 (Create Return, Receive Damaged, Receive Sellable); TC-RET-1–6 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

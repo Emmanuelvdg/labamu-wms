@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase8 — Scenario 8.1 (Lalamove Live Quote / Delivery Methods); TC-16.1 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

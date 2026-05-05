@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase1 — Scenarios 1.3 (Create Warehouse), 1.4 (Receiving Area), 1.5 (Storage Hierarchy); TC-2.1 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

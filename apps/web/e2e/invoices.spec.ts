@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase13 — Scenario 13.4 (Create Sales Invoice); TC-12.1 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

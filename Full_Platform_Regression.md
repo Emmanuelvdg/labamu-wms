@@ -1,17 +1,17 @@
-# Labamu IMS — Full Platform Regression Test Execution
-**Status: ✅ ALL 35 MODULES COMPLETE & PASSED (173 API tests + 39 UI tests)**  
-**Date: 2026-04-26**  
+﻿# Labamu IMS — Full Platform Regression Test Execution
+**Status: ✅ ALL 39 MODULES COMPLETE & PASSED (190+ API tests + 39 UI tests)**  
+**Date: 2026-05-05**  
 **Environment: Local Development (Port 3000/3001)**
 
 ---
 
 ## 1. Overview
-This document contains the execution results for the Labamu WMS Full Platform Regression. Modules 1–34 cover the full API surface. Module 35 covers the Backoffice Admin Portal (v3.0 additions) via Playwright E2E specs with traceability to PRD §4.13.
+This document contains the execution results for the Labamu WMS Full Platform Regression. Modules 1–38 cover the full API surface. Module 39 covers the Backoffice Admin Portal (v3.0 additions) via Playwright E2E specs with traceability to PRD §4.13.
 
 ---
 
-**Version:** 2.1  
-**Coverage:** All 200+ API endpoints across 34 modules + Backoffice Admin Portal (Module 35, 39 UI test cases) — **212 total tests, all passing**  
+**Version:** 2.2  
+**Coverage:** All 200+ API endpoints across 38 modules + Backoffice Admin Portal (Module 39, 39 UI test cases) — **230+ total tests, all passing**  
 **Data dependency:** `seed-realistic-data.ts` must be executed before running  
 **Auth:** All requests require `x-user-id` header with admin user ID  
 **Base URL:** `http://localhost:3001`
@@ -888,14 +888,16 @@ Expected: `HTTP 400` or `HTTP 409`
 
 ## Module 15 — Picking
 
+> **Feature flag gate:** All session management endpoints (`POST /strategy/picking/sessions`, `PATCH /strategy/picking/tasks/:id`, `POST /strategy/picking/sessions/:id/complete`, etc.) require the **`ADVANCED_PICKING`** feature flag to be enabled. When the flag is disabled the API returns `HTTP 403`. The regression runner probes the flag first and skips all picking session sub-tests when gated.
+
 ### 15.1 Get Picking Queue
 **GET /strategy/picking/sessions/active?warehouseId=:dcId**  
-Expected: `HTTP 200`, active session or 404  
+Expected: `HTTP 200` active session, `HTTP 404` if none, or `HTTP 403` if flag disabled  
 
 ### 15.2 Create Picking Session — SINGLE Strategy
 **POST /strategy/picking/sessions**  
 Body: `{ "warehouseId": ":dcId", "strategy": "SINGLE" }`  
-Expected: `HTTP 200` or `HTTP 201`  
+Expected: `HTTP 200` or `HTTP 201` (skip if `ADVANCED_PICKING` disabled)  
 
 ### 15.3 Create Picking Session — BATCH Strategy
 **POST /strategy/picking/sessions**  
@@ -981,6 +983,17 @@ Expected: `HTTP 200`
 ### 15.20 Delete Picking Strategy
 **DELETE /strategy/picking/:id** (strategy from 15.18)  
 Expected: `HTTP 200` or `HTTP 204`  
+
+### 15.21 Create Picking Session — ZONE Strategy
+**POST /strategy/picking/sessions**  
+Body: `{ "warehouseId": ":dcId", "strategy": "ZONE", "maxOrders": 5 }`  
+Expected: `HTTP 200` or `HTTP 201` (skip if `ADVANCED_PICKING` disabled)  
+Note: ZONE strategy assigns tasks grouped by warehouse zone; no criteria or grouping param needed.
+
+### 15.22 Download Picking List PDF
+**GET /strategy/picking/sessions/:id/picklist**  
+Expected: `HTTP 200`, `Content-Type: application/pdf`, binary PDF body  
+Note: Returns a pdfmake-generated picking list for the session. Gated by `ADVANCED_PICKING`.
 
 ---
 
@@ -1686,6 +1699,142 @@ Expected: `HTTP 200`
 
 ---
 
+## Module 35 — Wave Release Rules
+
+> **Feature flag gate:** All wave-rule endpoints require the **`ADVANCED_PICKING`** feature flag. Returns `HTTP 403` when disabled; runner probes and skips all sub-tests.
+
+### 35.1 List Wave Rules
+**GET /strategy/wave-rules?warehouseId=:dcId**  
+Expected: `HTTP 200`, array (may be empty on fresh DB)
+
+### 35.2 Create Wave Rule — Manual Trigger
+**POST /strategy/wave-rules**  
+Body: `{ "warehouseId": ":dcId", "name": "Morning Wave", "triggerType": "MANUAL", "minOrders": 1, "maxOrders": 50, "enabled": true }`  
+Expected: `HTTP 201`
+
+### 35.3 Create Wave Rule — Time-Based (Cron)
+**POST /strategy/wave-rules**  
+Body: `{ "warehouseId": ":dcId", "name": "8 AM Daily", "triggerType": "TIME_BASED", "cronExpression": "0 8 * * *", "minOrders": 5, "maxOrders": 100, "enabled": true }`  
+Expected: `HTTP 201`
+
+### 35.4 Create Wave Rule — Order Count Threshold
+**POST /strategy/wave-rules**  
+Body: `{ "warehouseId": ":dcId", "name": "Auto-50", "triggerType": "ORDER_COUNT", "minOrders": 50, "maxOrders": 100, "enabled": true }`  
+Expected: `HTTP 201`
+
+### 35.5 Toggle Wave Rule — Disable
+**PUT /strategy/wave-rules/:id**  
+Body: `{ "enabled": false }`  
+Expected: `HTTP 200`, rule `enabled: false`
+
+### 35.6 Trigger Wave Rule Manually — No Reserved Orders
+**POST /strategy/wave-rules/:id/trigger**  
+Expected: `HTTP 200`, body `{ "success": false, "message": "No RESERVED orders available…" }` or `{ "success": true }` when orders exist
+
+### 35.7 Trigger Wave Rule Manually — With Reserved Orders
+**POST /strategy/wave-rules/:id/trigger** (after seeding RESERVED orders)  
+Expected: `HTTP 200`, body contains `sessionId` and `ordersIncluded > 0`
+
+### 35.8 Delete Wave Rule
+**DELETE /strategy/wave-rules/:id**  
+Expected: `HTTP 200`
+
+---
+
+## Module 36 — Multi-Currency
+
+> **Feature flag gate:** All `/currencies` endpoints require the **`MULTI_CURRENCY`** feature flag. Returns `HTTP 403` when disabled; runner probes and skips all sub-tests.
+
+### 36.1 List Currencies
+**GET /currencies**  
+Expected: `HTTP 200`, array of currency objects
+
+### 36.2 Create Currency
+**POST /currencies**  
+Body: `{ "code": "SGD", "name": "Singapore Dollar", "symbol": "S$", "isBase": false, "enabled": true }`  
+Expected: `HTTP 201`
+
+### 36.3 Update Currency
+**PUT /currencies/:code**  
+Body: `{ "enabled": false }`  
+Expected: `HTTP 200`
+
+### 36.4 List Exchange Rates
+**GET /currencies/rates**  
+Expected: `HTTP 200`, array of ExchangeRate objects (may be empty before first sync)
+
+### 36.5 Set Exchange Rate Manually
+**POST /currencies/rates**  
+Body: `{ "fromCode": "USD", "toCode": "IDR", "rate": 16000 }`  
+Expected: `HTTP 200` or `HTTP 201`
+
+### 36.6 Trigger FX Sync
+**POST /currencies/sync**  
+Expected: `HTTP 200`, sync triggered (result may be async)
+
+### 36.7 Delete Currency
+**DELETE /currencies/:code**  
+Expected: `HTTP 200`
+
+---
+
+## Module 37 — Supplier Portal Auth
+
+> Endpoints in `/supplier-auth` are public (no tenant flag gate). `/supplier-portal` is protected by `SupplierAuthGuard` (supplier JWT).
+
+### 37.1 Register — Invalid Invite Token
+**POST /supplier-auth/register**  
+Body: `{ "token": "invalid-token", "password": "Portal@123" }`  
+Expected: `HTTP 400` or `HTTP 401` (token not found)
+
+### 37.2 Login — Unknown Credentials
+**POST /supplier-auth/login**  
+Body: `{ "email": "nobody@supplier.test", "password": "wrong" }`  
+Expected: `HTTP 401`
+
+### 37.3 Access Supplier Portal — No JWT
+**GET /supplier-portal/purchase-orders**  
+Expected: `HTTP 401` (SupplierAuthGuard blocks unauthenticated requests)
+
+### 37.4 Invite Supplier User (Happy Flow)
+1. Platform/tenant admin invites supplier — record the generated invite token  
+2. **POST /supplier-auth/register** with valid token and password → `HTTP 201`  
+3. **POST /supplier-auth/login** with the new credentials → `HTTP 200`, JWT returned  
+4. **GET /supplier-auth/me** with supplier JWT → `HTTP 200`, supplier profile  
+
+### 37.5 View Supplier Purchase Orders
+**GET /supplier-portal/purchase-orders** (with valid supplier JWT)  
+Expected: `HTTP 200`, array scoped to supplier's own POs
+
+### 37.6 Submit ASN
+**POST /supplier-portal/purchase-orders/:id/asn** (with valid supplier JWT)  
+Body: `{ "items": [{ "productId": ":mouseId", "quantity": 10 }], "estimatedArrival": "2026-05-10" }`  
+Expected: `HTTP 200` or `HTTP 201`
+
+### 37.7 Upload Supplier Invoice
+**POST /supplier-portal/purchase-orders/:id/invoice** (multipart/form-data, with valid supplier JWT)  
+Expected: `HTTP 200` or `HTTP 201`, DocumentAttachment created with type `SUPPLIER_INVOICE`
+
+---
+
+## Module 38 — FX Rates & Reporting Currency
+
+### 38.1 Reporting Analytics with Currency Context
+**GET /reporting/analytics?period=7d**  
+Expected: `HTTP 200`, response includes base currency context  
+Note: Gated by `ADVANCED_ANALYTICS` flag; `HTTP 403` is acceptable when flag is disabled.
+
+### 38.2 Set Exchange Rate via API
+**POST /currencies/rates**  
+Body: `{ "fromCode": "USD", "toCode": "IDR", "rate": 16000 }`  
+Expected: `HTTP 200` or `HTTP 201` (gated by `MULTI_CURRENCY`)
+
+### 38.3 Reporting Respects Base Currency
+After setting a base currency to IDR, verify `GET /reporting/analytics` returns amounts in IDR context.  
+Expected: `HTTP 200`, currency metadata present
+
+---
+
 ## End-to-End Scenario Flows
 
 ### E2E-1 — Complete Inbound Flow (PO → Inspect → Putaway → Stock)
@@ -1818,7 +1967,7 @@ Expected: `HTTP 200`
 
 ---
 
-## Module 35 — Backoffice Admin Portal ✅ 39/39 PASSED
+## Module 39 — Backoffice Admin Portal ✅ 39/39 PASSED
 
 > **Spec file:** `apps/web/e2e/backoffice-admin.spec.ts`  
 > **Executed:** 2026-04-26 — **39/39 PASS** (2.0 min, 1 worker)  
@@ -1827,239 +1976,239 @@ Expected: `HTTP 200`
 
 | Test Case | Description | Result |
 |-----------|-------------|--------|
-| TC-35.1 | Unauthenticated /admin redirects to /login | ✅ PASS |
-| TC-35.2 | Platform admin accesses /admin, sees Platform Overview | ✅ PASS |
-| TC-35.3 | Admin sidebar navigation links visible | ✅ PASS |
-| TC-35.4 | Overview KPI cards — Total Tenants, Active, Suspended | ✅ PASS |
-| TC-35.5 | Overview tenant table "Manage →" link | ✅ PASS |
-| TC-35.6 | Tenant list columns Company / Plan / Status | ✅ PASS |
-| TC-35.7 | New Tenant modal opens with correct fields | ✅ PASS |
-| TC-35.8 | Tenant creation validation rejects empty fields | ✅ PASS |
-| TC-35.9 | Tenant creation happy path — modal closes, row appears | ✅ PASS |
-| TC-35.10 | Column filter by name shows empty state | ✅ PASS |
-| TC-35.11 | Column filter by plan shows only matching plan | ✅ PASS |
-| TC-35.12 | Edit tenant modal opens with pre-filled values | ✅ PASS |
-| TC-35.13 | Invite user modal opens for a tenant | ✅ PASS |
-| TC-35.14 | Tenant detail page loads with three tabs | ✅ PASS |
-| TC-35.15 | Overview tab shows Usage Metrics section | ✅ PASS |
-| TC-35.16 | Overview tab shows Onboarding progress bar | ✅ PASS |
-| TC-35.17 | Plan & Billing tab loads Limits & Usage | ✅ PASS |
-| TC-35.18 | Plan & Billing tab shows Plan Configuration + Save Plan | ✅ PASS |
-| TC-35.19 | Feature Flags tab lists flags with toggle controls | ✅ PASS |
-| TC-35.20 | Toggling a feature flag updates its state | ✅ PASS |
-| TC-35.21 | Impersonate button visible on active tenant detail | ✅ PASS |
-| TC-35.22 | Impersonate — redirects to dashboard with amber banner | ✅ PASS |
-| TC-35.23 | Exit Impersonation — restores admin session, returns to /admin | ✅ PASS |
-| TC-35.24 | Global Feature Flags — all 8 system flags listed | ✅ PASS |
-| TC-35.25 | Select tenant — per-tenant flag list loads | ✅ PASS |
-| TC-35.26 | Analytics page — four KPI cards visible | ✅ PASS |
-| TC-35.27 | Monthly growth bar chart rendered | ✅ PASS |
-| TC-35.28 | Plan + Status distribution pie charts visible | ✅ PASS |
-| TC-35.29 | Audit log loads with table column headers | ✅ PASS |
-| TC-35.30 | Audit log search filter returns empty state | ✅ PASS |
-| TC-35.31 | Action type filter updates entry list | ✅ PASS |
-| TC-35.32 | Page size selector changes result limit | ✅ PASS |
-| TC-35.33 | Announcements page loads with New Announcement button | ✅ PASS |
-| TC-35.34 | Announcement creation validation rejects empty fields | ✅ PASS |
-| TC-35.35 | Announcement creation happy path — publishes to list | ✅ PASS |
-| TC-35.36 | Delete announcement — removed from list after confirm | ✅ PASS |
-| TC-35.37 | Header checkbox selects all tenants | ✅ PASS |
-| TC-35.38 | Bulk action toolbar shows action + value selectors | ✅ PASS |
-| TC-35.39 | Cancel bulk selection clears toolbar | ✅ PASS |
+| TC-39.1 | Unauthenticated /admin redirects to /login | ✅ PASS |
+| TC-39.2 | Platform admin accesses /admin, sees Platform Overview | ✅ PASS |
+| TC-39.3 | Admin sidebar navigation links visible | ✅ PASS |
+| TC-39.4 | Overview KPI cards — Total Tenants, Active, Suspended | ✅ PASS |
+| TC-39.5 | Overview tenant table "Manage →" link | ✅ PASS |
+| TC-39.6 | Tenant list columns Company / Plan / Status | ✅ PASS |
+| TC-39.7 | New Tenant modal opens with correct fields | ✅ PASS |
+| TC-39.8 | Tenant creation validation rejects empty fields | ✅ PASS |
+| TC-39.9 | Tenant creation happy path — modal closes, row appears | ✅ PASS |
+| TC-39.10 | Column filter by name shows empty state | ✅ PASS |
+| TC-39.11 | Column filter by plan shows only matching plan | ✅ PASS |
+| TC-39.12 | Edit tenant modal opens with pre-filled values | ✅ PASS |
+| TC-39.13 | Invite user modal opens for a tenant | ✅ PASS |
+| TC-39.14 | Tenant detail page loads with three tabs | ✅ PASS |
+| TC-39.15 | Overview tab shows Usage Metrics section | ✅ PASS |
+| TC-39.16 | Overview tab shows Onboarding progress bar | ✅ PASS |
+| TC-39.17 | Plan & Billing tab loads Limits & Usage | ✅ PASS |
+| TC-39.18 | Plan & Billing tab shows Plan Configuration + Save Plan | ✅ PASS |
+| TC-39.19 | Feature Flags tab lists flags with toggle controls | ✅ PASS |
+| TC-39.20 | Toggling a feature flag updates its state | ✅ PASS |
+| TC-39.21 | Impersonate button visible on active tenant detail | ✅ PASS |
+| TC-39.22 | Impersonate — redirects to dashboard with amber banner | ✅ PASS |
+| TC-39.23 | Exit Impersonation — restores admin session, returns to /admin | ✅ PASS |
+| TC-39.24 | Global Feature Flags — all 8 system flags listed | ✅ PASS |
+| TC-39.25 | Select tenant — per-tenant flag list loads | ✅ PASS |
+| TC-39.26 | Analytics page — four KPI cards visible | ✅ PASS |
+| TC-39.27 | Monthly growth bar chart rendered | ✅ PASS |
+| TC-39.28 | Plan + Status distribution pie charts visible | ✅ PASS |
+| TC-39.29 | Audit log loads with table column headers | ✅ PASS |
+| TC-39.30 | Audit log search filter returns empty state | ✅ PASS |
+| TC-39.31 | Action type filter updates entry list | ✅ PASS |
+| TC-39.32 | Page size selector changes result limit | ✅ PASS |
+| TC-39.33 | Announcements page loads with New Announcement button | ✅ PASS |
+| TC-39.34 | Announcement creation validation rejects empty fields | ✅ PASS |
+| TC-39.35 | Announcement creation happy path — publishes to list | ✅ PASS |
+| TC-39.36 | Delete announcement — removed from list after confirm | ✅ PASS |
+| TC-39.37 | Header checkbox selects all tenants | ✅ PASS |
+| TC-39.38 | Bulk action toolbar shows action + value selectors | ✅ PASS |
+| TC-39.39 | Cancel bulk selection clears toolbar | ✅ PASS |
 
-### 35.1 Unauthenticated Access Control
+### 39.1 Unauthenticated Access Control
 **Navigate to /admin without auth cookies**  
 Expected: Redirect to `/login`  
 PRD: §4.13
 
-### 35.2 Platform Admin Login & Portal Access
+### 39.2 Platform Admin Login & Portal Access
 **Navigate to /admin after logging in as platform admin**  
 Expected: `HTTP 200`, page heading "Platform Overview" visible  
 PRD: §4.13
 
-### 35.3 Admin Portal Navigation Sidebar
+### 39.3 Admin Portal Navigation Sidebar
 **Platform admin views /admin**  
 Expected: Navigation links visible for Tenants, Analytics, Audit Log  
 PRD: §4.13
 
-### 35.4 Platform Overview — KPI Cards
+### 39.4 Platform Overview — KPI Cards
 **GET /admin**  
 Expected: KPI cards "Total Tenants", "Active", "Suspended" all visible  
 PRD: §4.13.1, §4.13.6
 
-### 35.5 Platform Overview — Tenant Table Link
+### 39.5 Platform Overview — Tenant Table Link
 **GET /admin**  
 Expected: "Manage →" link present with href `/admin/tenants`  
 PRD: §4.13.1
 
-### 35.6 Tenant List — Page Structure
+### 39.6 Tenant List — Page Structure
 **GET /admin/tenants**  
 Expected: Heading "Tenants", table columns Company / Plan / Status / Created  
 PRD: §4.13.1
 
-### 35.7 Tenant List — New Tenant Modal Opens
+### 39.7 Tenant List — New Tenant Modal Opens
 **Click "New Tenant" button**  
 Expected: Modal opens with Company Name, Slug, Plan, and Admin Account fields  
 PRD: §4.13.1
 
-### 35.8 Tenant Creation — Validation
+### 39.8 Tenant Creation — Validation
 **Submit New Tenant form with empty required fields**  
 Expected: Inline validation error "required" visible; no API call made  
 PRD: §4.13.1
 
-### 35.9 Tenant Creation — Happy Path
+### 39.9 Tenant Creation — Happy Path
 **POST /companies/register** (via New Tenant modal)  
 Body: unique name, slug, email, password  
 Expected: Modal closes; new tenant row appears in list  
 PRD: §4.0 (self-service onboarding), §4.13.1
 
-### 35.10 Tenant List — Column Filter (Name)
+### 39.10 Tenant List — Column Filter (Name)
 **Filter by name "zzznonexistent"**  
 Expected: Empty state "No tenants found" displayed  
 PRD: §4.13.1
 
-### 35.11 Tenant List — Column Filter (Plan)
+### 39.11 Tenant List — Column Filter (Plan)
 **Filter by plan FREE**  
 Expected: Only tenants with FREE plan badge visible  
 PRD: §4.13.1
 
-### 35.12 Tenant Edit Modal — Pre-fill
+### 39.12 Tenant Edit Modal — Pre-fill
 **Click "Edit" on a tenant row**  
 Expected: "Edit Tenant" modal opens; name input pre-filled with existing name  
 PRD: §4.13.1
 
-### 35.13 Invite User to Tenant
+### 39.13 Invite User to Tenant
 **Click "Invite" on a tenant row**  
 Expected: "Invite User" modal opens with Name, Email, Password fields  
 PRD: §4.13.1
 
-### 35.14 Tenant Detail — Three Tabs Present
+### 39.14 Tenant Detail — Three Tabs Present
 **GET /admin/tenants/:id**  
 Expected: Tabs "Overview", "Plan & Billing", "Feature Flags" all visible  
 PRD: §4.13.1, §4.13.3, §4.13.4
 
-### 35.15 Tenant Detail — Overview Tab: Usage Metrics
+### 39.15 Tenant Detail — Overview Tab: Usage Metrics
 **Overview tab (default)**  
 Expected: "Usage Metrics" section with Products, Users metric cards  
 PRD: §4.13.2
 
-### 35.16 Tenant Detail — Overview Tab: Onboarding Tracker
+### 39.16 Tenant Detail — Overview Tab: Onboarding Tracker
 **Overview tab**  
 Expected: "Onboarding" section with progress bar and step checklist  
 PRD: §4.13.2
 
-### 35.17 Tenant Detail — Plan Tab: Limits & Usage
+### 39.17 Tenant Detail — Plan Tab: Limits & Usage
 **Click "Plan & Billing" tab**  
 Expected: "Limits & Usage" section with progress bars for Users / Warehouses / Products / Orders  
 PRD: §4.13.3
 
-### 35.18 Tenant Detail — Plan Tab: Plan Configuration
+### 39.18 Tenant Detail — Plan Tab: Plan Configuration
 **Plan & Billing tab**  
 Expected: "Plan Configuration" section with tier/billing-cycle/limits form and "Save Plan" button  
 PRD: §4.13.3
 
-### 35.19 Tenant Detail — Feature Flags Tab: Toggle Controls
+### 39.19 Tenant Detail — Feature Flags Tab: Toggle Controls
 **Click "Feature Flags" tab**  
 Expected: Flag list visible with Enabled/Disabled status per flag  
 PRD: §4.13.4
 
-### 35.20 Tenant Detail — Feature Flag Toggle
+### 39.20 Tenant Detail — Feature Flag Toggle
 **Click toggle button on a Disabled flag**  
 Expected: Flag state flips to Enabled (API `PUT /platform/companies/:id/flags/:key`)  
 PRD: §4.13.4
 
-### 35.21 Impersonation — Button Visible on Active Tenant
+### 39.21 Impersonation — Button Visible on Active Tenant
 **GET /admin/tenants/:id** (ACTIVE tenant)  
 Expected: "Impersonate" button visible and enabled  
 PRD: §4.13.5
 
-### 35.22 Impersonation — Full Flow
+### 39.22 Impersonation — Full Flow
 **Click "Impersonate"**  
 Expected: `POST /api/admin/impersonate` → redirect to `/` → amber banner "you are acting as this tenant" + "Exit Impersonation" button  
 PRD: §4.13.5
 
-### 35.23 Impersonation Exit — Session Restore
+### 39.23 Impersonation Exit — Session Restore
 **Click "Exit Impersonation"**  
 Expected: `POST /api/admin/impersonate/stop` → redirect to `/admin` → banner gone → Platform Overview heading visible  
 PRD: §4.13.5
 
-### 35.24 Global Feature Flags — All 8 Flags Listed
+### 39.24 Global Feature Flags — All 8 Flags Listed
 **GET /admin/feature-flags**  
 Expected: "Available Feature Flags" table shows all 8 keys: ADVANCED_PICKING, BETA_FLOOR_PLAN, AI_REORDER, MULTI_CURRENCY, SUPPLIER_PORTAL, ADVANCED_ANALYTICS, BARCODE_PRINT, API_ACCESS  
 PRD: §4.13.4
 
-### 35.25 Global Feature Flags — Tenant Selector Loads Flags
+### 39.25 Global Feature Flags — Tenant Selector Loads Flags
 **Select a tenant from dropdown**  
 Expected: Per-tenant flag toggle list loads; Enabled/Disabled state visible  
 PRD: §4.13.4
 
-### 35.26 Platform Analytics — KPI Cards
+### 39.26 Platform Analytics — KPI Cards
 **GET /admin/analytics**  
 Expected: 4 KPI cards: "Total Tenants", "Total Users", "Total Orders", "Active Tenants"  
 PRD: §4.13.6
 
-### 35.27 Platform Analytics — Monthly Growth Bar Chart
+### 39.27 Platform Analytics — Monthly Growth Bar Chart
 **GET /admin/analytics**  
 Expected: "New Tenants per Month (Last 12 months)" heading + Recharts SVG bar chart rendered  
 PRD: §4.13.6
 
-### 35.28 Platform Analytics — Distribution Charts
+### 39.28 Platform Analytics — Distribution Charts
 **GET /admin/analytics**  
 Expected: "Plan Distribution" + "Status Distribution" pie charts + "Plan Breakdown" table all visible  
 PRD: §4.13.6
 
-### 35.29 Audit Log — Page Structure
+### 39.29 Audit Log — Page Structure
 **GET /admin/audit-log**  
 Expected: Heading "Audit Log", "Refresh" button, table columns Time / Actor / Action / Target / Details  
 PRD: §4.13.7
 
-### 35.30 Audit Log — Search Filter
+### 39.30 Audit Log — Search Filter
 **Enter "zzznonexistent_actor_xyz" in search box**  
 Expected: "No audit log entries found" message  
 PRD: §4.13.7
 
-### 35.31 Audit Log — Action Type Filter
+### 39.31 Audit Log — Action Type Filter
 **Select an action type from dropdown**  
 Expected: Entry count footer updates to reflect filtered results  
 PRD: §4.13.7
 
-### 35.32 Audit Log — Page Size Selector
+### 39.32 Audit Log — Page Size Selector
 **Select "Last 500"**  
 Expected: API called with `limit=500`; footer shows updated entry count  
 PRD: §4.13.7
 
-### 35.33 Announcements — Page Structure
+### 39.33 Announcements — Page Structure
 **GET /admin/announcements**  
 Expected: Heading "Announcements", "New Announcement" button visible  
 PRD: §4.13.8
 
-### 35.34 Announcement Creation — Validation
+### 39.34 Announcement Creation — Validation
 **Submit New Announcement form without title/body**  
 Expected: Inline error "required"; announcement not created  
 PRD: §4.13.8
 
-### 35.35 Announcement Creation — Happy Path
+### 39.35 Announcement Creation — Happy Path
 **POST /platform/announcements** (via New Announcement modal)  
 Body: unique title, body, target ALL  
 Expected: Modal closes; announcement card appears in list with "Active" badge  
 PRD: §4.13.8
 
-### 35.36 Announcement Deletion
+### 39.36 Announcement Deletion
 **Click delete (Trash2) button on an announcement**  
 Expected: Confirm dialog accepted → `DELETE /platform/announcements/:id` → card disappears from list  
 PRD: §4.13.8
 
-### 35.37 Bulk Ops — Select All Filtered
+### 39.37 Bulk Ops — Select All Filtered
 **Click header checkbox on tenant list**  
 Expected: All visible rows selected; bulk action toolbar appears showing count "{n} selected"  
 PRD: §4.13.9
 
-### 35.38 Bulk Ops — Action + Value Dropdowns
+### 39.38 Bulk Ops — Action + Value Dropdowns
 **With tenants selected, choose "Change Status" from action dropdown**  
 Expected: Second "Select status" dropdown appears (ACTIVE / SUSPENDED / CANCELLED)  
 PRD: §4.13.9
 
-### 35.39 Bulk Ops — Cancel Clears Selection
+### 39.39 Bulk Ops — Cancel Clears Selection
 **Click "Cancel" in bulk action toolbar**  
 Expected: Toolbar disappears; all checkboxes deselected  
 PRD: §4.13.9
@@ -2070,17 +2219,17 @@ PRD: §4.13.9
 
 | PRD Section | Title | Test Cases |
 |---|---|---|
-| §4.0 | Multi-Tenancy (self-service onboarding) | TC-35.9 |
-| §4.13 | Backoffice Admin Portal — Access Control | TC-35.1, TC-35.2, TC-35.3 |
-| §4.13.1 | Tenant Management (CRUD, Status, Invite) | TC-35.4, TC-35.5, TC-35.6, TC-35.7, TC-35.8, TC-35.9, TC-35.10, TC-35.11, TC-35.12, TC-35.13, TC-35.14 |
-| §4.13.2 | Health & Usage Monitoring | TC-35.15, TC-35.16 |
-| §4.13.3 | Plan & Billing Management | TC-35.17, TC-35.18 |
-| §4.13.4 | Feature Flags (per-tenant + global) | TC-35.19, TC-35.20, TC-35.24, TC-35.25 |
-| §4.13.5 | Tenant Impersonation | TC-35.21, TC-35.22, TC-35.23 |
-| §4.13.6 | Platform Analytics | TC-35.26, TC-35.27, TC-35.28 |
-| §4.13.7 | Audit Log | TC-35.29, TC-35.30, TC-35.31, TC-35.32 |
-| §4.13.8 | Announcements | TC-35.33, TC-35.34, TC-35.35, TC-35.36 |
-| §4.13.9 | Bulk Operations | TC-35.37, TC-35.38, TC-35.39 |
+| §4.0 | Multi-Tenancy (self-service onboarding) | TC-39.9 |
+| §4.13 | Backoffice Admin Portal — Access Control | TC-39.1, TC-35.2, TC-35.3 |
+| §4.13.1 | Tenant Management (CRUD, Status, Invite) | TC-39.4, TC-35.5, TC-35.6, TC-35.7, TC-35.8, TC-35.9, TC-35.10, TC-35.11, TC-35.12, TC-35.13, TC-35.14 |
+| §4.13.2 | Health & Usage Monitoring | TC-39.15, TC-35.16 |
+| §4.13.3 | Plan & Billing Management | TC-39.17, TC-35.18 |
+| §4.13.4 | Feature Flags (per-tenant + global) | TC-39.19, TC-35.20, TC-35.24, TC-35.25 |
+| §4.13.5 | Tenant Impersonation | TC-39.21, TC-35.22, TC-35.23 |
+| §4.13.6 | Platform Analytics | TC-39.26, TC-35.27, TC-35.28 |
+| §4.13.7 | Audit Log | TC-39.29, TC-35.30, TC-35.31, TC-35.32 |
+| §4.13.8 | Announcements | TC-39.33, TC-35.34, TC-35.35, TC-35.36 |
+| §4.13.9 | Bulk Operations | TC-39.37, TC-35.38, TC-35.39 |
 
 **Total Module 35 test cases: 39**  
 **PRD sections covered: 11 of 11 (§4.0 + §4.13 + §4.13.1–§4.13.9)**

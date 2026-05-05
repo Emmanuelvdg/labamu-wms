@@ -3,15 +3,13 @@
 import { useState, useEffect } from 'react';
 import {
     ClipboardList,
-    Box,
-    Layers,
     CheckCircle2,
     ArrowRight,
-    Package,
-    Building
+    Building,
+    Printer
 } from 'lucide-react';
 
-import { createPickingBatch, createPickingCluster, createPickingWave, fetchWarehouses } from '@/lib/api';
+import { fetchWarehouses } from '@/lib/api';
 import ExceptionModal from './exception-modal';
 
 export default function PickingPage() {
@@ -24,7 +22,7 @@ export default function PickingPage() {
     const [exceptionQuantity, setExceptionQuantity] = useState('0');
 
     // Strategy UI Settings
-    const [strategy, setStrategy] = useState<'SINGLE' | 'BATCH' | 'CLUSTER' | 'WAVE' | 'WAVELESS'>('SINGLE');
+    const [strategy, setStrategy] = useState<'SINGLE' | 'BATCH' | 'CLUSTER' | 'WAVE' | 'WAVELESS' | 'ZONE'>('SINGLE');
     const [criteria, setCriteria] = useState<string>('Destination');
     const [maxOrders, setMaxOrders] = useState<number>(10);
 
@@ -77,7 +75,7 @@ export default function PickingPage() {
             const session = await createPickingSession({
                 warehouseId: selectedWarehouseId,
                 strategy,
-                criteria: strategy === 'WAVELESS' ? undefined : criteria,
+                criteria: (strategy === 'WAVELESS' || strategy === 'ZONE') ? undefined : criteria,
                 maxOrders: strategy === 'WAVELESS' ? undefined : maxOrders
             });
             setActiveSession(session);
@@ -159,6 +157,20 @@ export default function PickingPage() {
         }
     };
 
+    const printPicklist = async () => {
+        if (!activeSession) return;
+        try {
+            const { downloadPicklistPdf } = await import('@/lib/api');
+            const blob = await downloadPicklistPdf(activeSession.id);
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            setTimeout(() => URL.revokeObjectURL(url), 10000);
+        } catch (error) {
+            console.error('Failed to download picklist', error);
+            alert('Failed to download picking list PDF');
+        }
+    };
+
     // Helper: Build location breadcrumb path
     const getLocationPath = (location: any): string[] => {
         const path: string[] = [];
@@ -216,6 +228,7 @@ export default function PickingPage() {
                             <option value="CLUSTER">Cluster Picking</option>
                             <option value="WAVE">Wave Picking</option>
                             <option value="WAVELESS">Waveless (Continuous Flow)</option>
+                            <option value="ZONE">Zone Picking</option>
                         </select>
                         {(strategy === 'BATCH' || strategy === 'CLUSTER') && (
                             <div className="mt-4">
@@ -231,7 +244,7 @@ export default function PickingPage() {
                                 </select>
                             </div>
                         )}
-                        {(strategy === 'WAVE' || strategy === 'SINGLE' || strategy === 'BATCH' || strategy === 'CLUSTER') && (
+                        {(strategy === 'WAVE' || strategy === 'SINGLE' || strategy === 'BATCH' || strategy === 'CLUSTER' || strategy === 'ZONE') && (
                             <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Max Orders Limit</label>
                                 <input
@@ -277,13 +290,22 @@ export default function PickingPage() {
                                 {activeSession.strategy} STRATEGY
                             </span>
                         </div>
-                        <button
-                            onClick={completeSession}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
-                        >
-                            <CheckCircle2 className="h-4 w-4" />
-                            Complete Session
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={printPicklist}
+                                className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
+                            >
+                                <Printer className="h-4 w-4" />
+                                Print Picklist
+                            </button>
+                            <button
+                                onClick={completeSession}
+                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
+                            >
+                                <CheckCircle2 className="h-4 w-4" />
+                                Complete Session
+                            </button>
+                        </div>
                     </div>
 
                     <div className="p-6">

@@ -115,6 +115,12 @@ export default function SettingsPage() {
                                 Printers
                             </a>
                             <a
+                                href="/settings/wave-rules"
+                                className="px-4 py-3 text-left text-sm font-medium border-l-4 border-transparent text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                Wave Rules
+                            </a>
+                            <a
                                 href="/settings/seasonality"
                                 className="px-4 py-3 text-left text-sm font-medium border-l-4 border-transparent text-gray-600 hover:bg-gray-50 transition-colors"
                             >

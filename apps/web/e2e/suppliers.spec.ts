@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase2 — Scenario 2.3 (Create Suppliers); TC-9.1 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

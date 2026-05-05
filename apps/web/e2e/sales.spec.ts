@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase4 — Scenario 4.1 (Create Sales Order); §Phase5 — Scenario 5.1 (Cancel Pending Order) */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

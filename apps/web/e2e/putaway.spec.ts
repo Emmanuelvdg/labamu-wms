@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase3 — Scenario 3.3 (Putaway Process); §Phase11 — Scenarios 11.1–11.4 (Putaway Rules FIXED/ZONE) */
 import { test, expect, APIRequestContext } from '@playwright/test';
 
 const API = 'http://localhost:3001';

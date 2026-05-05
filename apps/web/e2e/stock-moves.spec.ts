@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase13 — Scenario 13.5 (Stock Moves Audit Trail), 13.6 (Ledger Export); TC-14.1 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

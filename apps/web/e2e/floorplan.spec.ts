@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase7 — Scenarios 7.1–7.7 (Floor Plan Canvas, Drag/Drop, Zone Linking) */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

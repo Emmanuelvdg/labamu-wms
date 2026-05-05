@@ -508,6 +508,44 @@ export async function createPickingCluster(size: number, warehouseId?: string) {
     });
 }
 
+// --- Wave Release Rules ---
+
+export async function fetchWaveRules(warehouseId: string) {
+    return fetchWithRetry(`${API_URL}/strategy/wave-rules?warehouseId=${warehouseId}`);
+}
+
+export async function createWaveRule(data: {
+    warehouseId: string;
+    name: string;
+    triggerType?: string;
+    cronExpression?: string;
+    minOrders?: number;
+    maxOrders?: number;
+    enabled?: boolean;
+}) {
+    return fetchWithRetry(`${API_URL}/strategy/wave-rules`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function updateWaveRule(id: string, data: Partial<{ name: string; triggerType: string; cronExpression: string; minOrders: number; maxOrders: number; enabled: boolean }>) {
+    return fetchWithRetry(`${API_URL}/strategy/wave-rules/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+export async function deleteWaveRule(id: string) {
+    return fetchWithRetry(`${API_URL}/strategy/wave-rules/${id}`, { method: 'DELETE' });
+}
+
+export async function triggerWaveRule(id: string) {
+    return fetchWithRetry(`${API_URL}/strategy/wave-rules/${id}/trigger`, { method: 'POST' });
+}
+
 export async function createPickingWave(criteria: string, warehouseId?: string) {
     return fetchWithRetry(`${API_URL}/strategy/picking/wave`, {
         method: 'POST',
@@ -532,6 +570,12 @@ export async function getActivePickingSession(warehouseId: string) {
 
 export async function pollWavelessTasks(sessionId: string) {
     return fetchWithRetry(`${API_URL}/strategy/picking/sessions/${sessionId}/waveless-poll`);
+}
+
+export async function downloadPicklistPdf(sessionId: string): Promise<Blob> {
+    const res = await fetch(`${API_URL}/strategy/picking/sessions/${sessionId}/picklist`);
+    if (!res.ok) throw new Error(`Failed to fetch picklist PDF: ${res.status}`);
+    return res.blob();
 }
 
 export async function updatePickingTask(taskId: string, data: { pickedQuantity: number; status: string; exceptionReason?: string }) {

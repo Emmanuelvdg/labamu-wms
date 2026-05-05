@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase6 — Scenarios 6.1–6.4 (Metrics, Drilldown, Utilisation, Cycle Time); TC-8.1 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

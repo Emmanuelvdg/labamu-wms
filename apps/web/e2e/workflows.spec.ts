@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase21 — Scenarios 21.1–21.5 (Create, View, Version, Clone, Delete Workflow Template); TC-WF-1–7 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

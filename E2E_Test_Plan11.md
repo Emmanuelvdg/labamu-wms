@@ -27,50 +27,55 @@ This test plan extends Plan 8.0 by adding test cases for **Phases 15–20** cove
 
 ## Traceability Matrix: User Guide → E2E Coverage
 
-| # | User Guide Section | E2E Scenario(s) | Phase |
-|---|---|---|---|
-| 1 | Security & Auth | 1.0: Rate Limiting / 1.1: Login | 1 |
-| 2 | Dashboard & Reports | 6.1: Metrics, 6.2: Drilldown, 6.3: Utilisation, 6.4: Cycle Time | 6 |
-| 3 | Products | 2.2: Create Product | 2 |
-| 4 | Locations | 1.4: Define Receiving Area, 1.5: Define Storage Hierarchy | 1 |
-| 5 | Warehouses | 1.3: Create Warehouse (DC1) | 1 |
-| 6 | Unified Floor Plan | 7.1–7.7: Floor Plan Features | 7 |
-| 7 | Adjustments | 10.1: Create Adjustment (Relative), 10.2: Verify in Ledger | 10 |
-| 8 | Scrap Orders | 10.3: Create Scrap Order, 10.4: Verify in Stock Moves | 10 |
-| 9 | Partner Locations | 10.6: Create Partner Location | 10 |
-| 10 | Routes | 10.5: Create Route | 10 |
-| 11 | Stocktaking | 12.1–12.5: Session, Generate Tasks, Count, Discrepancy, Reconcile | 12 |
-| 12 | Suppliers | 2.3: Create Suppliers | 2 |
-| 13 | Purchase Orders | 3.1–3.2: Create & Confirm PO, Receive Goods | 3 |
-| 14 | PO QA & Documents | 9.1–9.7: PO Detail, Upload Invoice, QA Inspection, 3-Way Match | 9 |
-| 15 | Putaway | 3.3: Putaway Process | 3 |
-| 16 | Putaway Rules | 11.1–11.4: Create (FIXED/ZONE_PRIORITY), Edit, Delete Rules | 11 |
-| 17 | Picking Strategies | 11.5: Verify FIFO | 11 |
-| 18 | Rotation Policies | 11.6: Verify FEFO | 11 |
-| 19 | Sales Orders | 4.1: Create Sales Order, 5.1: Cancel Pending Order | 4, 5 |
-| 20 | Worker Interface | 4.3: Mobile Picking (Simulated) | 4 |
-| 21 | Delivery Methods | 8.1: Lalamove Live Quote | 8 |
-| 22 | Shipping | 4.4: Pack & Ship | 4 |
-| 23 | Invoices | 13.4: Create Sales Invoice | 13 |
-| 24 | Returns (RMA) | 13.1–13.3: Create Return, Receive Damaged, Receive Sellable | 13 |
-| 25 | Audit Trail | 13.5: Stock Moves, 13.6: Inventory Ledger Export | 13 |
-| 26 | Settings & RBAC | 14.1: Access Settings, 14.2: Create User, 14.3: Verify Permissions | 14 |
-| 27 | Mobile App | 14.5: Mobile Dashboard, 14.6: Mobile Putaway Workflow | 14 |
-| 28 | User Guide | 14.4: Access User Guide | 14 |
-| 29 | Safety & Limits | 5.2: Deletion Safety, 5.3: Capacity Limit Check | 5 |
-| 30 | **Packing Station** | **15.1–15.4: Packing Queue, Workspace, Parcels, Complete** | **15** |
-| 31 | **Shipping Documents** | **16.1–16.3: Label, Packing Slip, Manifest** | **16** |
-| 32 | **Replenishment** | **17.1–17.4: Alert Check, Dashboard, Auto-PO, Dismiss** | **17** |
-| 33 | **Notifications** | **18.1–18.4: Bell, Dropdown, Page, Expiry Alerts** | **18** |
-| 34 | **Barcode & Mobile** | **19.1–19.6: Barcode Lookup, Scan Receive, Scan Pick, Putaway, Route Optimization** | **19** |
-| 35 | **Analytics & Integrations** | **20.1–20.5: ABC Classification, Pick Accuracy, Cycle Count, Carrier Rates** | **20** |
-| 36 | **Workflow Template CRUD** | **21.1–21.5: Create, View, Version, Clone, Delete** | **21** |
-| 37 | **Visual Builder Canvas** | **22.1–22.5: Drag & Drop, Connections, Validate** | **22** |
-| 38 | **Execution Engine: Basic** | **23.1–23.3: Start, Complete Task, Finish** | **23** |
-| 39 | **Execution Engine: Complex** | **24.1–24.3: Conditions, Cross-Dock logic** | **24** |
-| 40 | **Execution Engine: Admin** | **25.1–25.3: Pause, Resume, Override** | **25** |
-| 41 | **Dashboard & Monitoring** | **26.1–26.2: Monitor display, Visual Trace** | **26** |
-| 42 | **Telemetry & Analytics** | **27.1–27.2: Throughput metrics, Bottleneck Time** | **27** |
+**Verification method key:**
+- 🤖 Playwright spec (automated UI/API)
+- 🔧 API script (`full-regression.js` or phase script)
+- 👁️ Manual / code inspection only
+
+| # | User Guide Section | E2E Scenario(s) | Phase | Method | Spec / Script |
+|---|---|---|---|---|---|
+| 1 | Security & Auth | 1.0: Rate Limiting / 1.1: Login | 1 | 🤖 | `auth.spec.ts` (TC-1.1, TC-1.2) |
+| 2 | Dashboard & Reports | 6.1: Metrics, 6.2: Drilldown, 6.3: Utilisation, 6.4: Cycle Time | 6 | 🤖⚠️ | `dashboard.spec.ts` (TC-8.1); 6.2/6.3 partial |
+| 3 | Products | 2.2: Create Product | 2 | 🤖 | `inventory.spec.ts` (TC-3.1) |
+| 4 | Locations | 1.4: Define Receiving Area, 1.5: Define Storage Hierarchy | 1 | 🤖 | `warehouse.spec.ts` (TC-2.1) |
+| 5 | Warehouses | 1.3: Create Warehouse (DC1) | 1 | 🤖 | `warehouse.spec.ts` (TC-2.1) |
+| 6 | Unified Floor Plan | 7.1–7.7: Floor Plan Features | 7 | 🤖⚠️ | `floorplan.spec.ts`; drag-drop only, 7.2–7.7 partial |
+| 7 | Adjustments | 10.1: Create Adjustment (Relative), 10.2: Verify in Ledger | 10 | 🤖⚠️🔧 | `inventory.spec.ts` (TC-3.2) page nav only; `full-regression.js` M19 covers CRUD |
+| 8 | Scrap Orders | 10.3: Create Scrap Order, 10.4: Verify in Stock Moves | 10 | 🤖 | `scrap-orders.spec.ts` (TC-5.1) |
+| 9 | Partner Locations | 10.6: Create Partner Location | 10 | 🤖 | `partner-locations.spec.ts` (TC-10.1) |
+| 10 | Routes | 10.5: Create Route | 10 | 🤖 | `routes.spec.ts` (TC-13.1) |
+| 11 | Stocktaking | 12.1–12.5: Session, Generate Tasks, Count, Discrepancy, Reconcile | 12 | 🤖 | `stocktaking.spec.ts` (TC-STOCK-1–6); `e2e-stocktaking-flow.spec.ts` (API flow) |
+| 12 | Suppliers | 2.3: Create Suppliers | 2 | 🤖 | `suppliers.spec.ts` (TC-9.1) |
+| 13 | Purchase Orders | 3.1–3.2: Create & Confirm PO, Receive Goods | 3 | 🤖⚠️🔧 | `procurement.spec.ts` (TC-4.1) view only; `full-regression.js` M10 covers full lifecycle |
+| 14 | PO QA & Documents | 9.1–9.7: PO Detail, Upload Invoice, QA Inspection, 3-Way Match | 9 | 🔧 | `phase09_test.js`; `full-regression.js` M24 (invoice match) |
+| 15 | Putaway | 3.3: Putaway Process | 3 | 🤖 | `putaway.spec.ts`; `e2e-putaway-safety.spec.ts` |
+| 16 | Putaway Rules | 11.1–11.4: Create (FIXED/ZONE_PRIORITY), Edit, Delete Rules | 11 | 🤖⚠️ | `putaway.spec.ts`; session tested, rule CRUD partial |
+| 17 | Picking Strategies | 11.5: Verify FIFO | 11 | 🤖⚠️ | `picking.spec.ts` (TC-PICK-1–5); strategy UI tested, FIFO batch assertion partial |
+| 18 | Rotation Policies | 11.6: Verify FEFO | 11 | 🤖 | `rotation-policy.spec.ts`; `e2e-fefo-rotation.spec.ts` (FEFO+shelf-life API flow) |
+| 19 | Sales Orders | 4.1: Create Sales Order, 5.1: Cancel Pending Order | 4, 5 | 🤖 | `sales.spec.ts`; `comprehensive-workflow.spec.ts` |
+| 20 | Worker Interface | 4.3: Mobile Picking (Simulated) | 4 | 👁️ | No mobile Playwright tests |
+| 21 | Delivery Methods | 8.1: Lalamove Live Quote | 8 | 🤖 | `delivery-methods.spec.ts` (TC-16.1) |
+| 22 | Shipping | 4.4: Pack & Ship | 4 | 🤖 | `shipments.spec.ts` (TC-SHIP-1–5); `packing.spec.ts` (TC-PACK-1–5) |
+| 23 | Invoices | 13.4: Create Sales Invoice | 13 | 🤖⚠️ | `invoices.spec.ts` (TC-12.1) view only; `full-regression.js` M24 covers CRUD |
+| 24 | Returns (RMA) | 13.1–13.3: Create Return, Receive Damaged, Receive Sellable | 13 | 🤖 | `returns.spec.ts` (TC-RET-1–6); `e2e-rma-flow.spec.ts` (full API flow) |
+| 25 | Audit Trail | 13.5: Stock Moves, 13.6: Inventory Ledger Export | 13 | 🤖⚠️ | `stock-moves.spec.ts` (TC-14.1) page nav; export not automated |
+| 26 | Settings & RBAC | 14.1: Access Settings, 14.2: Create User, 14.3: Verify Permissions | 14 | 🤖 | `rbac-ui.spec.ts`; `rbac-frontend.spec.ts`; `rbac-role-user-management.spec.ts` |
+| 27 | Mobile App | 14.5: Mobile Dashboard, 14.6: Mobile Putaway Workflow | 14 | 👁️ | No mobile Playwright tests |
+| 28 | User Guide | 14.4: Access User Guide | 14 | 👁️ | Not automated |
+| 29 | Safety & Limits | 5.2: Deletion Safety, 5.3: Capacity Limit Check | 5 | 🤖🔧 | `negative.spec.ts` (NEG-3–6); `e2e-putaway-safety.spec.ts` (Scenario B capacity) |
+| 30 | **Packing Station** | **15.1–15.4: Packing Queue, Workspace, Parcels, Complete** | **15** | 🤖 | `packing.spec.ts` (TC-PACK-1–5) |
+| 31 | **Shipping Documents** | **16.1–16.3: Label, Packing Slip, Manifest** | **16** | 🔧 | `phase16_shipping_test.js`; `full-regression.js` M15 |
+| 32 | **Replenishment** | **17.1–17.4: Alert Check, Dashboard, Auto-PO, Dismiss** | **17** | 🤖 | `e2e-replenishment-flow.spec.ts` |
+| 33 | **Notifications** | **18.1–18.4: Bell, Dropdown, Page, Expiry Alerts** | **18** | 🔧 | `full-regression.js` M25; no Playwright UI spec |
+| 34 | **Barcode & Mobile** | **19.1–19.6: Barcode Lookup, Scan Receive, Scan Pick, Putaway, Route Optimization** | **19** | 👁️ | API-tested only via phase scripts; no Playwright spec |
+| 35 | **Analytics & Integrations** | **20.1–20.5: ABC Classification, Pick Accuracy, Cycle Count, Carrier Rates** | **20** | 🔧 | `full-regression.js` M26, M29 |
+| 36 | **Workflow Template CRUD** | **21.1–21.5: Create, View, Version, Clone, Delete** | **21** | 🤖⚠️ | `workflows.spec.ts` (TC-WF-1–7); create/activate covered; version/clone/delete partial |
+| 37 | **Visual Builder Canvas** | **22.1–22.5: Drag & Drop, Connections, Validate** | **22** | 👁️ | No Playwright canvas interaction |
+| 38 | **Execution Engine: Basic** | **23.1–23.3: Start, Complete Task, Finish** | **23** | 🔧 | `comprehensive-workflow.spec.ts` (API-only) |
+| 39 | **Execution Engine: Complex** | **24.1–24.3: Conditions, Cross-Dock logic** | **24** | 🔧 | API-tested only |
+| 40 | **Execution Engine: Admin** | **25.1–25.3: Pause, Resume, Override** | **25** | 🔧 | API-tested only |
+| 41 | **Dashboard & Monitoring** | **26.1–26.2: Monitor display, Visual Trace** | **26** | 👁️ | Manual verification |
+| 42 | **Telemetry & Analytics** | **27.1–27.2: Throughput metrics, Bottleneck Time** | **27** | 👁️ | Manual / static rendering check |
 
 ---
 

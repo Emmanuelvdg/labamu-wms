@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase1 — Scenarios 1.1–1.2; TC-1.1 (Create Role), TC-1.2 (Create User with Role) */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 

@@ -1,3 +1,4 @@
+/** @planRef E2E_Test_Plan11.md §Phase11 — Scenario 11.5 (Verify FIFO Picking Strategy); TC-PICK-1–5 */
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 
@@ -29,7 +30,7 @@ test.describe('Picking', () => {
         await page.goto('/picking');
         await page.waitForLoadState('networkidle');
 
-        const strategies = ['SINGLE', 'BATCH', 'CLUSTER', 'WAVE', 'WAVELESS'];
+        const strategies = ['SINGLE', 'BATCH', 'CLUSTER', 'WAVE', 'WAVELESS', 'ZONE'];
 
         for (const strategy of strategies) {
             const btn = page.getByRole('button', { name: strategy });
