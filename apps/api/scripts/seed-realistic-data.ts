@@ -120,11 +120,9 @@ async function main() {
     ];
     const suppliers: Record<string, string> = {};
     for (const s of supplierData) {
-        const sup = await prisma.supplier.upsert({
-            where: { name: s.name },
-            update: { contactInfo: s.contactInfo },
-            create: s,
-        });
+        let sup = await prisma.supplier.findFirst({ where: { name: s.name } });
+        if (!sup) sup = await prisma.supplier.create({ data: s });
+        else await prisma.supplier.update({ where: { id: sup.id }, data: { contactInfo: s.contactInfo } });
         suppliers[s.name] = sup.id;
         console.log(`   ✅ ${s.name}`);
     }
