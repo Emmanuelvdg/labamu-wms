@@ -253,6 +253,19 @@ export class PackingService {
         return this.getSession(sessionId);
     }
 
+    async listSessions(orderId?: string) {
+        const where: any = {};
+        if (orderId) where.orderId = orderId;
+        return this.prisma.packingSession.findMany({
+            where,
+            include: {
+                order: { include: { customer: true } },
+                parcels: true,
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
     /**
      * Get all orders awaiting packing (in PACKING status).
      */

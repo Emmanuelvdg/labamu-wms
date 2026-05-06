@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Query, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Query, Delete, UseGuards, NotFoundException } from '@nestjs/common';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { CreateAdjustmentDto } from './dto/create-adjustment.dto';
@@ -43,7 +43,14 @@ export class InventoryController {
     @Post('products')
     @RequirePermission('INVENTORY', 'CREATE')
     createProduct(@Body() data: any) {
-        return this.inventoryService.createProduct(data);
+        const mapped = {
+            ...data,
+            price: data.price ?? data.sellingPrice,
+            averageCost: data.averageCost ?? data.unitCost,
+            velocity: data.velocity ?? data.velocityClass,
+            category: data.category ?? data.categoryId,
+        };
+        return this.inventoryService.createProduct(mapped);
     }
 
     @Get('products')
@@ -59,8 +66,10 @@ export class InventoryController {
 
     @Get('products/:id')
     @RequirePermission('INVENTORY', 'READ')
-    getProduct(@Param('id') id: string) {
-        return this.inventoryService.getProduct(id);
+    async getProduct(@Param('id') id: string) {
+        const product = await this.inventoryService.getProduct(id);
+        if (!product) throw new NotFoundException(`Product ${id} not found`);
+        return product;
     }
 
     @Put('products/:id')
@@ -89,9 +98,9 @@ export class InventoryController {
     addBatch(@Body() data: any) {
         return this.inventoryService.addBatch({
             ...data,
+            costPerUnit: data.costPerUnit ?? data.unitCost ?? 0,
             purchaseDate: new Date(data.purchaseDate),
             expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
-            batchNumber: data.batchNumber,
         });
     }
 

@@ -39,6 +39,7 @@ import { CurrencyModule } from './currency/currency.module';
 import { SupplierAuthModule } from './supplier-auth/supplier-auth.module';
 
 import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
+import { DeliveryMethodsAliasController } from './configuration/delivery-methods-alias.controller';
 import { HealthController } from './health.controller';
 import { PrismaService } from './prisma.service';
 
@@ -82,7 +83,7 @@ import { PrismaService } from './prisma.service';
         SupplierAuthModule,
         CompanyModule,
     ],
-    controllers: [DeliveryMethodsController, HealthController],
+    controllers: [DeliveryMethodsController, DeliveryMethodsAliasController, HealthController],
     providers: [
         PrismaService,
         {

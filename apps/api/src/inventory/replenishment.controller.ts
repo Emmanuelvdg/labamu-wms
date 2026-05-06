@@ -13,6 +13,14 @@ export class ReplenishmentController {
         private readonly prisma: PrismaService,
     ) { }
 
+    @Get('rules')
+    async getRules(@Query('productId') productId?: string) {
+        return this.prisma.reorderingRule.findMany({
+            where: productId ? { productId } : undefined,
+            include: { product: true, location: true },
+        });
+    }
+
     @Get('summary')
     async getSummary(@Query('warehouseId') warehouseId?: string) {
         return this.replenishmentService.getSummary(warehouseId);

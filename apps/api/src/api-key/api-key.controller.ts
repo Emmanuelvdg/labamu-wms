@@ -1,6 +1,6 @@
 import {
     Controller, Post, Get, Delete,
-    Body, Param, Headers, HttpException, HttpStatus, ForbiddenException,
+    Body, Param, Headers, HttpException, HttpStatus, ForbiddenException, BadRequestException, ConflictException,
 } from '@nestjs/common';
 import { ApiKeyService, CreateApiKeyDto } from './api-key.service';
 import { FeatureFlagService } from '../company/feature-flag.service';
@@ -19,6 +19,8 @@ export class ApiKeyController {
         @Body() dto: CreateApiKeyDto,
     ) {
         if (!userId) throw new HttpException('User ID required', HttpStatus.UNAUTHORIZED);
+        if (!dto.name) throw new BadRequestException('name is required');
+        if (!Array.isArray(dto.scopes) || dto.scopes.length === 0) throw new BadRequestException('scopes[] is required');
 
         const companyId = getCurrentCompanyId();
         if (companyId) {
@@ -29,12 +31,18 @@ export class ApiKeyController {
             }
         }
 
-        const result = await this.apiKeyService.createApiKey(userId, dto);
-        return {
-            message: 'API key created successfully. Store this key securely — it will not be shown again.',
-            key: result.key,
-            apiKey: result.apiKey,
-        };
+        try {
+            const result = await this.apiKeyService.createApiKey(userId, dto);
+            return {
+                message: 'API key created successfully. Store this key securely — it will not be shown again.',
+                key: result.key,
+                apiKey: result.apiKey,
+            };
+        } catch (err: any) {
+            if (err?.code === 'P2002') throw new ConflictException('API key with this name already exists');
+            if (err?.code === 'P2003') throw new BadRequestException('Invalid user ID');
+            throw err;
+        }
     }
 
     @Get()

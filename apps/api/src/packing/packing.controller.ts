@@ -5,6 +5,11 @@ import { PackingService } from './packing.service';
 export class PackingController {
     constructor(private readonly packingService: PackingService) { }
 
+    @Get('sessions')
+    async listSessions(@Query('orderId') orderId?: string) {
+        return this.packingService.listSessions(orderId);
+    }
+
     /**
      * GET /packing/queue - List orders awaiting packing
      */

@@ -1,10 +1,20 @@
 
-import { Controller, Post, Body, Get, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Query } from '@nestjs/common';
 import { ReturnsService } from './returns.service';
 
 @Controller('returns')
 export class ReturnsController {
     constructor(private readonly returnsService: ReturnsService) { }
+
+    @Get()
+    async listReturns(@Query('orderId') orderId?: string) {
+        return this.returnsService.listReturns(orderId);
+    }
+
+    @Get(':id')
+    async getReturn(@Param('id') id: string) {
+        return this.returnsService.getReturn(id);
+    }
 
     @Post()
     async createReturnRequest(@Body() createReturnDto: {

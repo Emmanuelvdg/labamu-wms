@@ -146,6 +146,25 @@ export class ReturnsService {
         return { success: true, message: 'Return processed and inventory updated' };
     }
 
+    async listReturns(orderId?: string) {
+        const where: any = { type: 'RETURN' };
+        if (orderId) where.parentOrderId = orderId;
+        return this.prisma.order.findMany({
+            where,
+            include: { items: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    async getReturn(id: string) {
+        const ret = await this.prisma.order.findUnique({
+            where: { id },
+            include: { items: { include: { product: true } } },
+        });
+        if (!ret) throw new NotFoundException('Return not found');
+        return ret;
+    }
+
     async getReturnsByOrder(originalOrderId: string) {
         return this.prisma.order.findMany({
             where: { parentOrderId: originalOrderId, type: 'RETURN' },

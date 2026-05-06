@@ -360,14 +360,20 @@ export class PutawayService {
             where: {
                 warehouseId,
                 type: 'INTERNAL',
+                NOT: {
+                    OR: [
+                        { name: { contains: 'RECEIVING' } },
+                        { name: { contains: 'Receiving' } },
+                        { name: { contains: 'STAGING' } },
+                        { name: { contains: 'Staging' } },
+                    ],
+                },
             },
-            include: {
-                inventory: true,
-            },
+            include: { inventory: true },
             orderBy: [
                 { zonePriority: 'asc' },
-                { putawaySequence: 'asc' }
-            ]
+                { putawaySequence: 'asc' },
+            ],
         });
 
         if (locations.length === 0) return null;
@@ -375,8 +381,8 @@ export class PutawayService {
         let candidateLocations = locations;
 
         if (product.velocity === 'A') {
-            candidateLocations = locations.filter(l => l.zonePriority <= 20);
-            if (candidateLocations.length === 0) candidateLocations = locations;
+            const fastZones = locations.filter(l => l.zonePriority <= 20);
+            if (fastZones.length > 0) candidateLocations = fastZones;
         } else if (product.velocity === 'C') {
             const slowZones = locations.filter(l => l.zonePriority > 50);
             if (slowZones.length > 0) candidateLocations = slowZones;
@@ -389,7 +395,7 @@ export class PutawayService {
             }
         }
 
-        return candidateLocations[0];
+        return null;
     }
 
     /**

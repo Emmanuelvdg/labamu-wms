@@ -7,8 +7,12 @@ export class StocktakingController {
     constructor(private readonly service: StocktakingService) { }
 
     @Post('sessions')
-    createSession(@Body() body: { warehouseId: string; type: string; description?: string }) {
-        return this.service.createSession(body);
+    createSession(@Body() body: { warehouseId: string; type?: string; name?: string; description?: string }) {
+        return this.service.createSession({
+            warehouseId: body.warehouseId,
+            type: body.type ?? body.name ?? 'FULL',
+            description: body.description,
+        });
     }
 
     @Get('sessions')

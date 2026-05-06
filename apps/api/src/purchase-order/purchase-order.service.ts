@@ -1,4 +1,4 @@
-import { Injectable, HttpException } from '@nestjs/common';
+import { Injectable, HttpException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
 import { InventoryService } from '../inventory/inventory.service';
@@ -391,6 +391,11 @@ export class PurchaseOrderService {
     }
 
     async submitForApproval(id: string) {
+        const po = await this.prisma.purchaseOrder.findUnique({ where: { id } });
+        if (!po) throw new NotFoundException(`Purchase order ${id} not found`);
+        if (po.approvalStatus !== 'DRAFT' && po.approvalStatus !== 'REJECTED') {
+            throw new BadRequestException(`PO is already ${po.approvalStatus} — cannot re-submit.`);
+        }
         return this.prisma.purchaseOrder.update({
             where: { id },
             data: { approvalStatus: 'PENDING_APPROVAL' },

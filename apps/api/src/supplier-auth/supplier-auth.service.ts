@@ -36,6 +36,20 @@ export class SupplierAuthService {
         return { access_token: this.jwtService.sign(payload), supplierId: user.supplierId };
     }
 
+    async invite(email: string, supplierId: string, expiresInDays = 7) {
+        const supplier = await this.prisma.supplier.findUnique({ where: { id: supplierId } });
+        if (!supplier) throw new NotFoundException('Supplier not found');
+
+        const token = require('crypto').randomBytes(32).toString('hex');
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+
+        const invitation = await this.prisma.supplierInvitation.create({
+            data: { email, supplierId, token, expiresAt },
+        });
+        return { id: invitation.id, email, supplierId, token, expiresAt };
+    }
+
     async getMe(userId: string) {
         const user = await this.prisma.supplierUser.findUnique({
             where: { id: userId },
