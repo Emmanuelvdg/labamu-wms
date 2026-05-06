@@ -5,17 +5,17 @@
       "value": "true",
       "domain": "localhost",
       "path": "/",
-      "expires": 1777839623.407992,
+      "expires": 1778303498.017068,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "token",
-      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhOWJkZjc2Mi00MjFhLTQyNDgtYmE2My00NTJmMGI3ZjgxNTIiLCJlbWFpbCI6ImFkbWluQGxhYmFtdS5jby5pZCIsImNvbXBhbnlJZCI6ImRiZGM5NjMxLTU4ODMtNGQ3Ny05MjIyLTYwNzNkZDVmNGMzNCIsImNvbXBhbnlTbHVnIjoibGFiYW11IiwiaWF0IjoxNzc3MjM0ODIzLCJleHAiOjE3Nzc4Mzk2MjN9.vOZWLXkQLjKFWUI4ycrls-vUsu6G5reriVlEpmEjxhc",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhOWJkZjc2Mi00MjFhLTQyNDgtYmE2My00NTJmMGI3ZjgxNTIiLCJlbWFpbCI6ImFkbWluQGxhYmFtdS5jby5pZCIsImNvbXBhbnlJZCI6ImRiZGM5NjMxLTU4ODMtNGQ3Ny05MjIyLTYwNzNkZDVmNGMzNCIsImNvbXBhbnlTbHVnIjoibGFiYW11IiwiaWF0IjoxNzc3Njk4Njk3LCJleHAiOjE3NzgzMDM0OTd9._L7jRx-PCgBVtY4lm7PHj8ij3Yd4qiJRMYWyWG-AXoI",
       "domain": "localhost",
       "path": "/",
-      "expires": 1777839623.41181,
+      "expires": 1778303498.02098,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
@@ -25,7 +25,7 @@
       "value": "a9bdf762-421a-4248-ba63-452f0b7f8152",
       "domain": "localhost",
       "path": "/",
-      "expires": 1777839623.411877,
+      "expires": 1778303498.021499,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -35,17 +35,17 @@
       "value": "dbdc9631-5883-4d77-9222-6073dd5f4c34",
       "domain": "localhost",
       "path": "/",
-      "expires": 1777839623.411924,
+      "expires": 1778303498.021573,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "user_data",
-      "value": "%7B%22id%22%3A%22a9bdf762-421a-4248-ba63-452f0b7f8152%22%2C%22name%22%3A%22Admin%20User%22%2C%22email%22%3A%22admin%40labamu.co.id%22%2C%22companyId%22%3A%22dbdc9631-5883-4d77-9222-6073dd5f4c34%22%2C%22companySlug%22%3A%22labamu%22%2C%22permissions%22%3A%5B%22ALL%3AMANAGE%22%5D%7D",
+      "value": "%7B%22id%22%3A%22a9bdf762-421a-4248-ba63-452f0b7f8152%22%2C%22name%22%3A%22Updated%20User%20Name%22%2C%22email%22%3A%22admin%40labamu.co.id%22%2C%22companyId%22%3A%22dbdc9631-5883-4d77-9222-6073dd5f4c34%22%2C%22companySlug%22%3A%22labamu%22%2C%22permissions%22%3A%5B%22ALL%3AMANAGE%22%5D%7D",
       "domain": "localhost",
       "path": "/",
-      "expires": 1777839623.411967,
+      "expires": 1778303498.021613,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
