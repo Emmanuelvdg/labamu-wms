@@ -1159,6 +1159,85 @@ async function runModules() {
         assert('M38.2', 'POST /currencies/rates → not 500',
             rateRes.status !== 500, `HTTP ${rateRes.status}`);
     });
+
+    // ── M39: Settings — Categories (R2 fix) ───────────────────────────────
+    await mod('M39: Settings — Categories', async () => {
+        const listRes = await check('M39.1', 'GET /settings/categories → 200', 'GET', '/settings/categories');
+        if (listRes.ok) {
+            const arr = Array.isArray(listRes.body) ? listRes.body : (listRes.body?.data ?? []);
+            assert('M39.2', '/settings/categories returns array', Array.isArray(arr));
+        }
+        const createRes = await api('POST', '/settings/categories', { name: `RgCat-${TS}` });
+        assert('M39.3', 'POST /settings/categories → 201', createRes.status === 201 || createRes.ok,
+            `HTTP ${createRes.status}`);
+        if (createRes.ok && createRes.body?.id) {
+            const catId = createRes.body.id;
+            await check('M39.4', 'GET /settings/categories/:id → 200', 'GET', `/settings/categories/${catId}`);
+            const patchRes = await api('PATCH', `/settings/categories/${catId}`, { name: `RgCat-${TS}-upd` });
+            assert('M39.5', 'PATCH /settings/categories/:id → 200', patchRes.ok, `HTTP ${patchRes.status}`);
+            const delRes = await api('DELETE', `/settings/categories/${catId}`);
+            assert('M39.6', 'DELETE /settings/categories/:id → 200', delRes.ok, `HTTP ${delRes.status}`);
+        } else {
+            skip('M39.4', 'GET /settings/categories/:id', 'category not created');
+            skip('M39.5', 'PATCH /settings/categories/:id', 'category not created');
+            skip('M39.6', 'DELETE /settings/categories/:id', 'category not created');
+        }
+    });
+
+    // ── M40: Routes CRUD with DELETE (R6 fix) ─────────────────────────────
+    await mod('M40: Inventory Routes CRUD', async () => {
+        const listRes = await check('M40.1', 'GET /inventory/routes → 200', 'GET', '/inventory/routes');
+        if (listRes.ok) {
+            const arr = Array.isArray(listRes.body) ? listRes.body : (listRes.body?.data ?? []);
+            assert('M40.2', '/inventory/routes returns array', Array.isArray(arr));
+        }
+        const createRes = await api('POST', '/inventory/routes', {
+            name: `RgRoute-${TS}`, description: 'Regression test route',
+        });
+        assert('M40.3', 'POST /inventory/routes → 201', createRes.status === 201 || createRes.ok,
+            `HTTP ${createRes.status}`);
+        if (createRes.ok && createRes.body?.id) {
+            const routeId = createRes.body.id;
+            const delRes = await api('DELETE', `/inventory/routes/${routeId}`);
+            assert('M40.4', 'DELETE /inventory/routes/:id → 200', delRes.ok, `HTTP ${delRes.status}`);
+        } else {
+            skip('M40.4', 'DELETE /inventory/routes/:id', 'route not created');
+        }
+    });
+
+    // ── M41: Strategy — Reservation (R4 fix) ──────────────────────────────
+    await mod('M41: Strategy — Reservation', async () => {
+        const evalRes = await api('POST', '/strategy/reservation', {
+            isPerishable: true,
+            location: { zonePriority: 40 },
+        });
+        assert('M41.1', 'POST /strategy/reservation → 200', evalRes.ok, `HTTP ${evalRes.status}`);
+
+        const evalRes2 = await api('POST', '/strategy/reservation', {
+            isPerishable: false,
+            location: { zonePriority: 25 },
+        });
+        assert('M41.2', 'POST /strategy/reservation (non-perishable) → 200',
+            evalRes2.ok, `HTTP ${evalRes2.status}`);
+
+        const createRes = await api('POST', '/strategy/reservation/create', {
+            name: `RgResvStrategy-${TS}`, rules: '{}',
+        });
+        assert('M41.3', 'POST /strategy/reservation/create → 201',
+            createRes.status === 201 || createRes.ok, `HTTP ${createRes.status}`);
+        if (createRes.ok && createRes.body?.id) {
+            const sid = createRes.body.id;
+            const updRes = await api('PUT', `/strategy/reservation/${sid}`, {
+                name: `RgResvStrategy-${TS}-upd`, rules: '{}',
+            });
+            assert('M41.4', 'PUT /strategy/reservation/:id → 200', updRes.ok, `HTTP ${updRes.status}`);
+            const delRes = await api('DELETE', `/strategy/reservation/${sid}`);
+            assert('M41.5', 'DELETE /strategy/reservation/:id → 200', delRes.ok, `HTTP ${delRes.status}`);
+        } else {
+            skip('M41.4', 'PUT /strategy/reservation/:id', 'strategy not created');
+            skip('M41.5', 'DELETE /strategy/reservation/:id', 'strategy not created');
+        }
+    });
 }
 
 // ============================================================

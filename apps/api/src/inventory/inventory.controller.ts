@@ -379,6 +379,11 @@ export class InventoryController {
         return this.inventoryService.getRoutes();
     }
 
+    @Delete('routes/:id')
+    deleteRoute(@Param('id') id: string) {
+        return this.inventoryService.deleteRoute(id);
+    }
+
     @Post('routes/:routeId/rules')
     createRule(@Param('routeId') routeId: string, @Body() data: { action: string; sourceLocationId?: string; destinationLocationId?: string; sequence?: number }) {
         return this.inventoryService.createRule({ ...data, routeId });

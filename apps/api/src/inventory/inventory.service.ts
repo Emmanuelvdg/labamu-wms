@@ -1964,6 +1964,11 @@ export class InventoryService {
         });
     }
 
+    async deleteRoute(id: string) {
+        await this.prisma.rule.deleteMany({ where: { routeId: id } });
+        return this.prisma.route.delete({ where: { id } });
+    }
+
     async createRule(data: { routeId: string; action: string; sourceLocationId?: string; destinationLocationId?: string; sequence?: number }) {
         return this.prisma.rule.create({
             data: {
