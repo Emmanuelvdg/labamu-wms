@@ -1,15 +1,12 @@
 
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { InventoryService } from '../inventory/inventory.service';
-
 @Injectable()
 export class ReturnsService {
     private readonly logger = new Logger(ReturnsService.name);
 
     constructor(
         private prisma: PrismaService,
-        private inventoryService: InventoryService
     ) { }
 
     async createReturnRequest(data: {
@@ -39,16 +36,22 @@ export class ReturnsService {
         }
 
         // 3. Create Return Order
-        // Use 'RETURN' as type. Inherit customerId from original.
-        // Destination Warehouse? Typically the one that shipped it, or a central return center.
-        // For simplicity, stick to original warehouseId (if available) or Main.
+        // Resolve destination warehouse: prefer the order's own warehouse; fall back to the
+        // first warehouse in the system so that "All Warehouses" (null) orders don't block RMA.
+        let returnWarehouseId = order.warehouseId;
+        if (!returnWarehouseId) {
+            const fallback = await this.prisma.warehouse.findFirst({ orderBy: { createdAt: 'asc' } });
+            if (!fallback) throw new BadRequestException('No warehouse found in system — cannot process return');
+            returnWarehouseId = fallback.id;
+        }
+
         const returnOrder = await this.prisma.order.create({
             data: {
                 type: 'RETURN',
                 status: 'REQUESTED', // Workflow: REQUESTED -> RECEIVED -> COMPLETED
                 priority: 'NORMAL',
                 parentOrderId: order.id,
-                warehouseId: order.warehouseId, // Sending back to origin warehouse
+                warehouseId: returnWarehouseId,
                 // customerId: order.customerId, // Optional in refined schema
                 items: {
                     create: data.items.map(item => ({
@@ -87,8 +90,13 @@ export class ReturnsService {
             // If condition == DAMAGED -> Quarantine
             // If condition == SELLABLE -> Regular Stock
 
-            const targetWarehouseId = returnOrder.warehouseId;
-            if (!targetWarehouseId) throw new BadRequestException('Return Order has no target warehouse');
+            let targetWarehouseId = returnOrder.warehouseId;
+            if (!targetWarehouseId) {
+                // Defensive: handle legacy return orders created before the warehouse-resolution fix
+                const fallback = await this.prisma.warehouse.findFirst({ orderBy: { createdAt: 'asc' } });
+                if (!fallback) throw new BadRequestException('No warehouse found in system — cannot receive return');
+                targetWarehouseId = fallback.id;
+            }
 
             let locationId: string | null = null;
 
