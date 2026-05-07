@@ -88,7 +88,9 @@ export default function DeliveryMethodsPage() {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {method.provider === 'FIXED_PRICE'
                                             ? `$${method.fixedPrice.toLocaleString()}`
-                                            : `${method.rules?.length || 0} Rules Defined`}
+                                            : method.provider === 'LALAMOVE'
+                                                ? <span className="inline-flex items-center gap-1 text-blue-700 font-medium">🚚 Live Quote</span>
+                                                : `${method.rules?.length || 0} Rules Defined`}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${method.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -172,6 +174,7 @@ function DeliveryMethodForm({ initialData, onSave, onCancel }: { initialData: an
                         >
                             <option value="FIXED_PRICE">Fixed Price</option>
                             <option value="BASED_ON_RULES">Based on Rules</option>
+                            <option value="LALAMOVE">Lalamove (Live Quote)</option>
                         </select>
                     </div>
                 </div>
@@ -188,7 +191,7 @@ function DeliveryMethodForm({ initialData, onSave, onCancel }: { initialData: an
                     </label>
                 </div>
 
-                {formData.provider === 'FIXED_PRICE' ? (
+                {formData.provider === 'FIXED_PRICE' && (
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700">Fixed Price</label>
                         <input
@@ -199,7 +202,9 @@ function DeliveryMethodForm({ initialData, onSave, onCancel }: { initialData: an
                             onChange={(e) => setFormData({ ...formData, fixedPrice: parseFloat(e.target.value) })}
                         />
                     </div>
-                ) : (
+                )}
+
+                {formData.provider === 'BASED_ON_RULES' && (
                     <div className="mb-4 border-t pt-4">
                         <div className="flex justify-between items-center mb-2">
                             <h3 className="text-lg font-medium">Pricing Rules</h3>
@@ -220,6 +225,24 @@ function DeliveryMethodForm({ initialData, onSave, onCancel }: { initialData: an
                                 </div>
                             ))}
                             {(!formData.rules || formData.rules.length === 0) && <div className="text-gray-400 text-sm italic text-center p-4">No rules defined.</div>}
+                        </div>
+                    </div>
+                )}
+
+                {formData.provider === 'LALAMOVE' && (
+                    <div className="mb-4 border-t pt-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+                            <div className="flex items-center gap-2 font-medium text-blue-900">
+                                🚚 Lalamove On-Demand Delivery
+                            </div>
+                            <p className="text-sm text-blue-800">
+                                Pricing is fetched live from Lalamove at the time of dispatch, based on the order's weight and customer delivery address.
+                                No fixed price or rules are needed here.
+                            </p>
+                            <p className="text-sm text-blue-700">
+                                Configure your Lalamove API credentials and market settings under{' '}
+                                <a href="/settings/lalamove" className="underline font-medium">Settings → Lalamove</a>.
+                            </p>
                         </div>
                     </div>
                 )}

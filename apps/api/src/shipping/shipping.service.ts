@@ -77,6 +77,11 @@ export class ShippingService {
             return method.fixedPrice;
         }
 
+        if (method.provider === 'LALAMOVE') {
+            // Cost is determined at dispatch time via live Lalamove quotation — not calculable here
+            return 0;
+        }
+
         if (method.provider === 'BASED_ON_RULES') {
             // Find FIRST matching rule
             // Rules are ordered by sequence ASC
