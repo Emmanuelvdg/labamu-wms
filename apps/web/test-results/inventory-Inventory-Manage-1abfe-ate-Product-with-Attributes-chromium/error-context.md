@@ -1,0 +1,911 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]: Labamu
+      - navigation [ref=e6]:
+        - link "Dashboard" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - text: Dashboard
+        - link "Mobile Hub" [ref=e13] [cursor=pointer]:
+          - /url: /mobile/dashboard
+          - img [ref=e14]
+          - text: Mobile Hub
+        - link "Report" [ref=e16] [cursor=pointer]:
+          - /url: /reporting
+          - img [ref=e17]
+          - text: Report
+        - link "Product" [ref=e20] [cursor=pointer]:
+          - /url: /inventory
+          - img [ref=e21]
+          - text: Product
+        - link "Lot Number" [ref=e24] [cursor=pointer]:
+          - /url: /inventory/batches
+          - img [ref=e25]
+          - text: Lot Number
+        - link "Package" [ref=e29] [cursor=pointer]:
+          - /url: /inventory/packages
+          - img [ref=e30]
+          - text: Package
+        - generic [ref=e34]:
+          - button "Inbound" [ref=e35]:
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - text: Inbound
+            - img [ref=e42]
+          - generic [ref=e44]:
+            - link "Suppliers" [ref=e45] [cursor=pointer]:
+              - /url: /inventory/suppliers
+            - link "Purchase Orders" [ref=e46] [cursor=pointer]:
+              - /url: /inventory/purchases
+            - link "Putaway" [ref=e47] [cursor=pointer]:
+              - /url: /putaway
+            - link "Putaway Rules" [ref=e48] [cursor=pointer]:
+              - /url: /inventory/putaway-rules
+        - generic [ref=e49]:
+          - button "Outbound" [ref=e50]:
+            - generic [ref=e51]:
+              - img [ref=e52]
+              - text: Outbound
+            - img [ref=e56]
+          - generic [ref=e58]:
+            - link "Customers" [ref=e59] [cursor=pointer]:
+              - /url: /customers
+            - link "Orders" [ref=e60] [cursor=pointer]:
+              - /url: /orders
+            - link "Picking" [ref=e61] [cursor=pointer]:
+              - /url: /picking
+            - link "Packing" [ref=e62] [cursor=pointer]:
+              - /url: /packing
+            - link "Returns (RMA)" [ref=e63] [cursor=pointer]:
+              - /url: /returns
+            - link "Shipments" [ref=e64] [cursor=pointer]:
+              - /url: /shipments
+            - link "Invoices" [ref=e65] [cursor=pointer]:
+              - /url: /invoices
+        - generic [ref=e66]:
+          - button "Inventory" [ref=e67]:
+            - generic [ref=e68]:
+              - img [ref=e69]
+              - text: Inventory
+            - img [ref=e72]
+          - generic [ref=e74]:
+            - link "Inventory List" [ref=e75] [cursor=pointer]:
+              - /url: /inventory
+            - link "Stocktaking" [ref=e76] [cursor=pointer]:
+              - /url: /stocktaking
+            - link "Moves" [ref=e77] [cursor=pointer]:
+              - /url: /inventory/moves
+            - link "Transfers" [ref=e78] [cursor=pointer]:
+              - /url: /transfers
+            - link "Adjustments" [ref=e79] [cursor=pointer]:
+              - /url: /inventory/adjustments
+            - link "Scrap" [ref=e80] [cursor=pointer]:
+              - /url: /inventory/scrap
+            - link "Replenishment" [ref=e81] [cursor=pointer]:
+              - /url: /inventory/replenishment
+        - generic [ref=e82]:
+          - button "Warehouse" [ref=e83]:
+            - generic [ref=e84]:
+              - img [ref=e85]
+              - text: Warehouse
+            - img [ref=e87]
+          - generic [ref=e89]:
+            - link "Locations" [ref=e90] [cursor=pointer]:
+              - /url: /inventory/locations
+            - link "Warehouses" [ref=e91] [cursor=pointer]:
+              - /url: /inventory/warehouses
+            - link "Floor Plan" [ref=e92] [cursor=pointer]:
+              - /url: /floor-plan
+            - link "Routes" [ref=e93] [cursor=pointer]:
+              - /url: /inventory/routes
+        - button "Workflows" [ref=e95]:
+          - generic [ref=e96]:
+            - img [ref=e97]
+            - text: Workflows
+          - img [ref=e101]
+        - link "Settings" [ref=e103] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e104]
+          - text: Settings
+        - link "Backoffice" [ref=e107] [cursor=pointer]:
+          - /url: /admin
+          - img [ref=e108]
+          - text: Backoffice
+        - link "User Guide" [ref=e112] [cursor=pointer]:
+          - /url: /user-guide
+          - img [ref=e113]
+          - text: User Guide
+      - link "Sign Out" [ref=e116] [cursor=pointer]:
+        - /url: /login
+    - generic [ref=e117]:
+      - banner [ref=e118]:
+        - button "Notifications" [ref=e120]:
+          - img [ref=e121]
+      - main [ref=e124]:
+        - generic [ref=e125]:
+          - generic [ref=e126]:
+            - generic [ref=e127]:
+              - heading "Inventory" [level=1] [ref=e128]
+              - paragraph [ref=e129]: Manage your inventory items and stock levels
+            - generic [ref=e130]:
+              - button "+ New Item" [ref=e131]
+              - button "Upload" [ref=e132]
+              - link "Settings" [ref=e133] [cursor=pointer]:
+                - /url: /settings
+                - button "Settings" [ref=e134]
+          - generic [ref=e135]:
+            - textbox "Search inventory by Name or SKU" [ref=e136]
+            - combobox [ref=e137]:
+              - option "All Categories" [selected]
+              - option "Laptops & Computers"
+              - option "Monitors & Displays"
+              - option "Office Supplies"
+              - option "Peripherals & Accessories"
+              - option "Printing & Imaging"
+            - combobox [ref=e138]:
+              - option "All Classifications" [selected]
+              - option "Class A"
+              - option "Class B"
+              - option "Class C"
+            - combobox [ref=e139]:
+              - option "All Warehouses" [selected]
+              - option "Test WH MT"
+              - option "Workflow WH 1777232354868"
+              - option "Retail Store 1777232485913"
+              - option "Putaway WH 1777232499639"
+              - option "Workflow WH 1777598829181"
+              - option "Retail Store 1777598920217"
+              - option "Putaway WH 1777599705092"
+              - option "Central DC 1777599878902"
+              - option "Workflow WH 1777606580792"
+              - option "Retail Store 1777606660948"
+              - option "Putaway WH 1777606672006"
+              - option "Central DC 1777606852556"
+              - option "RotationWH_1777611018749_0.5357129419991637"
+              - option "Workflow WH 1777611667241"
+              - option "Retail Store 1777611732030"
+              - option "Putaway WH 1777611744165"
+              - option "RotationWH_1777611801778_0.9318985040208767"
+              - option "Central DC 1777611901801"
+              - option "Workflow WH 1777612733966"
+              - option "Retail Store 1777612852546"
+              - option "Putaway WH 1777612869791"
+              - option "RotationWH_1777612952405_0.3945560507863619"
+              - option "Central DC 1777617211561"
+              - option "RotationWH_1777621364643_0.9316921825441271"
+              - option "Workflow WH 1777621634834"
+              - option "Retail Store 1777621684778"
+              - option "Putaway WH 1777621697543"
+              - option "RotationWH_1777621755691_0.8229871508213782"
+              - option "Central DC 1777621823613"
+              - option "Workflow WH 1777622544730"
+              - option "Retail Store 1777622591674"
+              - option "Putaway WH 1777622604180"
+              - option "RotationWH_1777622660144_0.011067646278620558"
+              - option "Central DC 1777622726541"
+              - option "Workflow WH 1777625648851"
+              - option "Retail Store 1777625699636"
+              - option "Putaway WH 1777625711790"
+              - option "RotationWH_1777625912391_0.8125807676154915"
+              - option "Central DC 1777625975630"
+              - option "Workflow WH 1777626251698"
+              - option "Retail Store 1777626301995"
+              - option "Putaway WH 1777626313827"
+              - option "RotationWH_1777626369804_0.6446941431640285"
+              - option "Central DC 1777627142724"
+              - option "Workflow WH 1777635624394"
+              - option "Retail Store 1777635674297"
+              - option "Putaway WH 1777635685359"
+              - option "RotationWH_1777635742356_0.37776413445863466"
+              - option "Central DC 1777638597308"
+              - option "Workflow WH 1777638760424"
+              - option "Retail Store 1777638809977"
+              - option "Putaway WH 1777638821830"
+              - option "RotationWH_1777638877485_0.013944720399038601"
+              - option "Central DC 1777639779098"
+              - option "Workflow WH 1777672508096"
+              - option "Retail Store 1777672561493"
+              - option "Putaway WH 1777672574051"
+              - option "Workflow WH 1777690991440"
+              - option "Retail Store 1777691039334"
+              - option "Putaway WH 1777691051390"
+              - option "RotationWH_1777691105738_0.39247280446191035"
+              - option "Central DC 1777691177945"
+              - option "Workflow WH 1777691355069"
+              - option "Retail Store 1777691409464"
+              - option "Putaway WH 1777691423477"
+              - option "RotationWH_1777691483423_0.9288193847317647"
+              - option "Workflow WH 1777698941036"
+              - option "Retail Store 1777699036428"
+              - option "Putaway WH 1777699055812"
+              - option "RotationWH_1777699145099_0.6557431820429149"
+              - option "Central DC 1777699248845"
+              - option "RegressionWH-63074362-upd"
+              - option "RegressionWH-68471160-upd"
+              - option "RegressionWH-79344368-upd"
+              - option "RegressionWH-79373660-upd"
+              - option "Adj WH 596312"
+              - option "Adj2 WH 652062"
+              - option "RegressionWH-79741941-upd"
+              - option "RegressionWH-48789660-upd"
+              - option "RegressionWH-49823822-upd"
+              - option "Distribution Center Jakarta"
+              - option "Secondary Depot Surabaya"
+              - option "Test Warehouse Bandung"
+            - button "Reset" [ref=e140]
+          - generic [ref=e141]:
+            - button "All31" [ref=e142]
+            - button "Active31" [ref=e143]
+            - button "Inactive0" [ref=e144]
+          - table [ref=e146]:
+            - rowgroup [ref=e147]:
+              - row "Product Category Classification On Hand Inc. Out. Free Status Actions" [ref=e148]:
+                - columnheader "Product" [ref=e149]
+                - columnheader "Category" [ref=e150]
+                - columnheader "Classification" [ref=e151]
+                - columnheader "On Hand" [ref=e152]
+                - columnheader "Inc." [ref=e153]
+                - columnheader "Out." [ref=e154]
+                - columnheader "Free" [ref=e155]
+                - columnheader "Status" [ref=e156]
+                - columnheader "Actions" [ref=e157]
+              - row "All Categories All Classes All Status Clear" [ref=e158]:
+                - columnheader [ref=e159]:
+                  - textbox "Name / SKU..." [ref=e160]
+                - columnheader "All Categories" [ref=e161]:
+                  - combobox [ref=e162]:
+                    - option "All Categories" [selected]
+                    - option "Laptops & Computers"
+                    - option "Monitors & Displays"
+                    - option "Office Supplies"
+                    - option "Peripherals & Accessories"
+                    - option "Printing & Imaging"
+                - columnheader "All Classes" [ref=e163]:
+                  - combobox [ref=e164]:
+                    - option "All Classes" [selected]
+                    - option "Class A"
+                    - option "Class B"
+                    - option "Class C"
+                - columnheader [ref=e165]:
+                  - spinbutton [ref=e166]
+                - columnheader [ref=e167]
+                - columnheader [ref=e168]
+                - columnheader [ref=e169]:
+                  - spinbutton [ref=e170]
+                - columnheader "All Status" [ref=e171]:
+                  - combobox [ref=e172]:
+                    - option "All Status" [selected]
+                    - option "Active"
+                    - option "Inactive"
+                - columnheader "Clear" [ref=e173]:
+                  - button "Clear" [ref=e174]
+            - rowgroup [ref=e175]:
+              - row "WF Pro Laptop X 1777232354868 WF-LAP-1777232354868 Electronics Class A 5 - - 5 Active View" [ref=e176]:
+                - cell "WF Pro Laptop X 1777232354868 WF-LAP-1777232354868" [ref=e177]:
+                  - generic [ref=e178]:
+                    - generic [ref=e180]: WF
+                    - generic [ref=e181]:
+                      - generic [ref=e182]: Pro Laptop X 1777232354868
+                      - generic [ref=e183]: WF-LAP-1777232354868
+                - cell "Electronics" [ref=e184]
+                - cell "Class A" [ref=e185]:
+                  - generic [ref=e186]: Class A
+                - cell "5" [ref=e187]:
+                  - generic [ref=e188]: "5"
+                - cell "-" [ref=e189]
+                - cell "-" [ref=e190]
+                - cell "5" [ref=e191]
+                - cell "Active" [ref=e192]:
+                  - generic [ref=e193]: Active
+                - cell "View" [ref=e194]:
+                  - link "View" [ref=e195] [cursor=pointer]:
+                    - /url: /inventory/12127773-d35d-4939-9b29-6c9b01728fea
+              - row "PU Putaway Test Product 1777232499639 PUT-1777232499639 Test Category Class A 100 - - 100 Active View" [ref=e196]:
+                - cell "PU Putaway Test Product 1777232499639 PUT-1777232499639" [ref=e197]:
+                  - generic [ref=e198]:
+                    - generic [ref=e200]: PU
+                    - generic [ref=e201]:
+                      - generic [ref=e202]: Putaway Test Product 1777232499639
+                      - generic [ref=e203]: PUT-1777232499639
+                - cell "Test Category" [ref=e204]
+                - cell "Class A" [ref=e205]:
+                  - generic [ref=e206]: Class A
+                - cell "100" [ref=e207]:
+                  - generic [ref=e208]: "100"
+                - cell "-" [ref=e209]
+                - cell "-" [ref=e210]
+                - cell "100" [ref=e211]
+                - cell "Active" [ref=e212]:
+                  - generic [ref=e213]: Active
+                - cell "View" [ref=e214]:
+                  - link "View" [ref=e215] [cursor=pointer]:
+                    - /url: /inventory/7343e563-4a3b-48fb-9de8-7438d09b7aa0
+              - row "WF Pro Laptop X 1777598829181 WF-LAP-1777598829181 Electronics Class A 5 - - 5 Active View" [ref=e216]:
+                - cell "WF Pro Laptop X 1777598829181 WF-LAP-1777598829181" [ref=e217]:
+                  - generic [ref=e218]:
+                    - generic [ref=e220]: WF
+                    - generic [ref=e221]:
+                      - generic [ref=e222]: Pro Laptop X 1777598829181
+                      - generic [ref=e223]: WF-LAP-1777598829181
+                - cell "Electronics" [ref=e224]
+                - cell "Class A" [ref=e225]:
+                  - generic [ref=e226]: Class A
+                - cell "5" [ref=e227]:
+                  - generic [ref=e228]: "5"
+                - cell "-" [ref=e229]
+                - cell "-" [ref=e230]
+                - cell "5" [ref=e231]
+                - cell "Active" [ref=e232]:
+                  - generic [ref=e233]: Active
+                - cell "View" [ref=e234]:
+                  - link "View" [ref=e235] [cursor=pointer]:
+                    - /url: /inventory/b726e379-9f40-4ca3-8d45-f0295b4e5804
+              - row "PU Putaway Test Product 1777599705092 PUT-1777599705092 Test Category Class A 100 - - 100 Active View" [ref=e236]:
+                - cell "PU Putaway Test Product 1777599705092 PUT-1777599705092" [ref=e237]:
+                  - generic [ref=e238]:
+                    - generic [ref=e240]: PU
+                    - generic [ref=e241]:
+                      - generic [ref=e242]: Putaway Test Product 1777599705092
+                      - generic [ref=e243]: PUT-1777599705092
+                - cell "Test Category" [ref=e244]
+                - cell "Class A" [ref=e245]:
+                  - generic [ref=e246]: Class A
+                - cell "100" [ref=e247]:
+                  - generic [ref=e248]: "100"
+                - cell "-" [ref=e249]
+                - cell "-" [ref=e250]
+                - cell "100" [ref=e251]
+                - cell "Active" [ref=e252]:
+                  - generic [ref=e253]: Active
+                - cell "View" [ref=e254]:
+                  - link "View" [ref=e255] [cursor=pointer]:
+                    - /url: /inventory/94559c3d-e0aa-4fd0-b1df-bc1395a9857a
+              - row "WF Pro Laptop X 1777606580792 WF-LAP-1777606580792 Electronics Class A 5 - - 5 Active View" [ref=e256]:
+                - cell "WF Pro Laptop X 1777606580792 WF-LAP-1777606580792" [ref=e257]:
+                  - generic [ref=e258]:
+                    - generic [ref=e260]: WF
+                    - generic [ref=e261]:
+                      - generic [ref=e262]: Pro Laptop X 1777606580792
+                      - generic [ref=e263]: WF-LAP-1777606580792
+                - cell "Electronics" [ref=e264]
+                - cell "Class A" [ref=e265]:
+                  - generic [ref=e266]: Class A
+                - cell "5" [ref=e267]:
+                  - generic [ref=e268]: "5"
+                - cell "-" [ref=e269]
+                - cell "-" [ref=e270]
+                - cell "5" [ref=e271]
+                - cell "Active" [ref=e272]:
+                  - generic [ref=e273]: Active
+                - cell "View" [ref=e274]:
+                  - link "View" [ref=e275] [cursor=pointer]:
+                    - /url: /inventory/29bc241e-caf2-4ae4-bd98-858c34281913
+              - row "PU Putaway Test Product 1777606672006 PUT-1777606672006 Test Category Class A 100 - - 100 Active View" [ref=e276]:
+                - cell "PU Putaway Test Product 1777606672006 PUT-1777606672006" [ref=e277]:
+                  - generic [ref=e278]:
+                    - generic [ref=e280]: PU
+                    - generic [ref=e281]:
+                      - generic [ref=e282]: Putaway Test Product 1777606672006
+                      - generic [ref=e283]: PUT-1777606672006
+                - cell "Test Category" [ref=e284]
+                - cell "Class A" [ref=e285]:
+                  - generic [ref=e286]: Class A
+                - cell "100" [ref=e287]:
+                  - generic [ref=e288]: "100"
+                - cell "-" [ref=e289]
+                - cell "-" [ref=e290]
+                - cell "100" [ref=e291]
+                - cell "Active" [ref=e292]:
+                  - generic [ref=e293]: Active
+                - cell "View" [ref=e294]:
+                  - link "View" [ref=e295] [cursor=pointer]:
+                    - /url: /inventory/2cee02cc-c7fe-424a-ad9d-682f4fe05e28
+              - row "TE Test Product A TEST-SKU-9999 Standard Class C 0 - - 0 Active View" [ref=e296]:
+                - cell "TE Test Product A TEST-SKU-9999" [ref=e297]:
+                  - generic [ref=e298]:
+                    - generic [ref=e300]: TE
+                    - generic [ref=e301]:
+                      - generic [ref=e302]: Test Product A
+                      - generic [ref=e303]: TEST-SKU-9999
+                - cell "Standard" [ref=e304]
+                - cell "Class C" [ref=e305]:
+                  - generic [ref=e306]: Class C
+                - cell "0" [ref=e307]:
+                  - generic [ref=e308]: "0"
+                - cell "-" [ref=e309]
+                - cell "-" [ref=e310]
+                - cell "0" [ref=e311]
+                - cell "Active" [ref=e312]:
+                  - generic [ref=e313]: Active
+                - cell "View" [ref=e314]:
+                  - link "View" [ref=e315] [cursor=pointer]:
+                    - /url: /inventory/0ea00b9e-92d8-4b93-982e-55210e2e4de2
+              - row "WF Pro Laptop X 1777611667241 WF-LAP-1777611667241 Electronics Class A 5 - - 5 Active View" [ref=e316]:
+                - cell "WF Pro Laptop X 1777611667241 WF-LAP-1777611667241" [ref=e317]:
+                  - generic [ref=e318]:
+                    - generic [ref=e320]: WF
+                    - generic [ref=e321]:
+                      - generic [ref=e322]: Pro Laptop X 1777611667241
+                      - generic [ref=e323]: WF-LAP-1777611667241
+                - cell "Electronics" [ref=e324]
+                - cell "Class A" [ref=e325]:
+                  - generic [ref=e326]: Class A
+                - cell "5" [ref=e327]:
+                  - generic [ref=e328]: "5"
+                - cell "-" [ref=e329]
+                - cell "-" [ref=e330]
+                - cell "5" [ref=e331]
+                - cell "Active" [ref=e332]:
+                  - generic [ref=e333]: Active
+                - cell "View" [ref=e334]:
+                  - link "View" [ref=e335] [cursor=pointer]:
+                    - /url: /inventory/ba2ffc7f-ae1f-4836-a9e0-43054267a064
+              - row "PU Putaway Test Product 1777611744165 PUT-1777611744165 Test Category Class A 100 - - 100 Active View" [ref=e336]:
+                - cell "PU Putaway Test Product 1777611744165 PUT-1777611744165" [ref=e337]:
+                  - generic [ref=e338]:
+                    - generic [ref=e340]: PU
+                    - generic [ref=e341]:
+                      - generic [ref=e342]: Putaway Test Product 1777611744165
+                      - generic [ref=e343]: PUT-1777611744165
+                - cell "Test Category" [ref=e344]
+                - cell "Class A" [ref=e345]:
+                  - generic [ref=e346]: Class A
+                - cell "100" [ref=e347]:
+                  - generic [ref=e348]: "100"
+                - cell "-" [ref=e349]
+                - cell "-" [ref=e350]
+                - cell "100" [ref=e351]
+                - cell "Active" [ref=e352]:
+                  - generic [ref=e353]: Active
+                - cell "View" [ref=e354]:
+                  - link "View" [ref=e355] [cursor=pointer]:
+                    - /url: /inventory/c8d0f06d-e5c1-4008-9b65-79782ed57fe5
+              - row "WF Pro Laptop X 1777612733966 WF-LAP-1777612733966 Electronics Class A 5 - - 5 Active View" [ref=e356]:
+                - cell "WF Pro Laptop X 1777612733966 WF-LAP-1777612733966" [ref=e357]:
+                  - generic [ref=e358]:
+                    - generic [ref=e360]: WF
+                    - generic [ref=e361]:
+                      - generic [ref=e362]: Pro Laptop X 1777612733966
+                      - generic [ref=e363]: WF-LAP-1777612733966
+                - cell "Electronics" [ref=e364]
+                - cell "Class A" [ref=e365]:
+                  - generic [ref=e366]: Class A
+                - cell "5" [ref=e367]:
+                  - generic [ref=e368]: "5"
+                - cell "-" [ref=e369]
+                - cell "-" [ref=e370]
+                - cell "5" [ref=e371]
+                - cell "Active" [ref=e372]:
+                  - generic [ref=e373]: Active
+                - cell "View" [ref=e374]:
+                  - link "View" [ref=e375] [cursor=pointer]:
+                    - /url: /inventory/0c78c5ba-5376-4f29-8ede-27f198b64338
+              - row "PU Putaway Test Product 1777612869791 PUT-1777612869791 Test Category Class A 100 - - 100 Active View" [ref=e376]:
+                - cell "PU Putaway Test Product 1777612869791 PUT-1777612869791" [ref=e377]:
+                  - generic [ref=e378]:
+                    - generic [ref=e380]: PU
+                    - generic [ref=e381]:
+                      - generic [ref=e382]: Putaway Test Product 1777612869791
+                      - generic [ref=e383]: PUT-1777612869791
+                - cell "Test Category" [ref=e384]
+                - cell "Class A" [ref=e385]:
+                  - generic [ref=e386]: Class A
+                - cell "100" [ref=e387]:
+                  - generic [ref=e388]: "100"
+                - cell "-" [ref=e389]
+                - cell "-" [ref=e390]
+                - cell "100" [ref=e391]
+                - cell "Active" [ref=e392]:
+                  - generic [ref=e393]: Active
+                - cell "View" [ref=e394]:
+                  - link "View" [ref=e395] [cursor=pointer]:
+                    - /url: /inventory/ee991b5a-d2d8-455d-8739-cc9568916d30
+              - row "WF Pro Laptop X 1777621634834 WF-LAP-1777621634834 Electronics Class A 5 - - 5 Active View" [ref=e396]:
+                - cell "WF Pro Laptop X 1777621634834 WF-LAP-1777621634834" [ref=e397]:
+                  - generic [ref=e398]:
+                    - generic [ref=e400]: WF
+                    - generic [ref=e401]:
+                      - generic [ref=e402]: Pro Laptop X 1777621634834
+                      - generic [ref=e403]: WF-LAP-1777621634834
+                - cell "Electronics" [ref=e404]
+                - cell "Class A" [ref=e405]:
+                  - generic [ref=e406]: Class A
+                - cell "5" [ref=e407]:
+                  - generic [ref=e408]: "5"
+                - cell "-" [ref=e409]
+                - cell "-" [ref=e410]
+                - cell "5" [ref=e411]
+                - cell "Active" [ref=e412]:
+                  - generic [ref=e413]: Active
+                - cell "View" [ref=e414]:
+                  - link "View" [ref=e415] [cursor=pointer]:
+                    - /url: /inventory/91956b69-b122-4012-a3fc-945b1873abe7
+              - row "PU Putaway Test Product 1777621697543 PUT-1777621697543 Test Category Class A 100 - - 100 Active View" [ref=e416]:
+                - cell "PU Putaway Test Product 1777621697543 PUT-1777621697543" [ref=e417]:
+                  - generic [ref=e418]:
+                    - generic [ref=e420]: PU
+                    - generic [ref=e421]:
+                      - generic [ref=e422]: Putaway Test Product 1777621697543
+                      - generic [ref=e423]: PUT-1777621697543
+                - cell "Test Category" [ref=e424]
+                - cell "Class A" [ref=e425]:
+                  - generic [ref=e426]: Class A
+                - cell "100" [ref=e427]:
+                  - generic [ref=e428]: "100"
+                - cell "-" [ref=e429]
+                - cell "-" [ref=e430]
+                - cell "100" [ref=e431]
+                - cell "Active" [ref=e432]:
+                  - generic [ref=e433]: Active
+                - cell "View" [ref=e434]:
+                  - link "View" [ref=e435] [cursor=pointer]:
+                    - /url: /inventory/76b713e7-9d0d-4b23-9082-f1f0d856dd4e
+              - row "WF Pro Laptop X 1777622544730 WF-LAP-1777622544730 Electronics Class A 5 - - 5 Active View" [ref=e436]:
+                - cell "WF Pro Laptop X 1777622544730 WF-LAP-1777622544730" [ref=e437]:
+                  - generic [ref=e438]:
+                    - generic [ref=e440]: WF
+                    - generic [ref=e441]:
+                      - generic [ref=e442]: Pro Laptop X 1777622544730
+                      - generic [ref=e443]: WF-LAP-1777622544730
+                - cell "Electronics" [ref=e444]
+                - cell "Class A" [ref=e445]:
+                  - generic [ref=e446]: Class A
+                - cell "5" [ref=e447]:
+                  - generic [ref=e448]: "5"
+                - cell "-" [ref=e449]
+                - cell "-" [ref=e450]
+                - cell "5" [ref=e451]
+                - cell "Active" [ref=e452]:
+                  - generic [ref=e453]: Active
+                - cell "View" [ref=e454]:
+                  - link "View" [ref=e455] [cursor=pointer]:
+                    - /url: /inventory/0675d49f-88ea-4b54-b516-b9b800609917
+              - row "PU Putaway Test Product 1777622604180 PUT-1777622604180 Test Category Class A 100 - - 100 Active View" [ref=e456]:
+                - cell "PU Putaway Test Product 1777622604180 PUT-1777622604180" [ref=e457]:
+                  - generic [ref=e458]:
+                    - generic [ref=e460]: PU
+                    - generic [ref=e461]:
+                      - generic [ref=e462]: Putaway Test Product 1777622604180
+                      - generic [ref=e463]: PUT-1777622604180
+                - cell "Test Category" [ref=e464]
+                - cell "Class A" [ref=e465]:
+                  - generic [ref=e466]: Class A
+                - cell "100" [ref=e467]:
+                  - generic [ref=e468]: "100"
+                - cell "-" [ref=e469]
+                - cell "-" [ref=e470]
+                - cell "100" [ref=e471]
+                - cell "Active" [ref=e472]:
+                  - generic [ref=e473]: Active
+                - cell "View" [ref=e474]:
+                  - link "View" [ref=e475] [cursor=pointer]:
+                    - /url: /inventory/be4ddf36-1b58-496c-a1ee-f6b622431ee4
+              - row "WF Pro Laptop X 1777625648851 WF-LAP-1777625648851 Electronics Class A 5 - - 5 Active View" [ref=e476]:
+                - cell "WF Pro Laptop X 1777625648851 WF-LAP-1777625648851" [ref=e477]:
+                  - generic [ref=e478]:
+                    - generic [ref=e480]: WF
+                    - generic [ref=e481]:
+                      - generic [ref=e482]: Pro Laptop X 1777625648851
+                      - generic [ref=e483]: WF-LAP-1777625648851
+                - cell "Electronics" [ref=e484]
+                - cell "Class A" [ref=e485]:
+                  - generic [ref=e486]: Class A
+                - cell "5" [ref=e487]:
+                  - generic [ref=e488]: "5"
+                - cell "-" [ref=e489]
+                - cell "-" [ref=e490]
+                - cell "5" [ref=e491]
+                - cell "Active" [ref=e492]:
+                  - generic [ref=e493]: Active
+                - cell "View" [ref=e494]:
+                  - link "View" [ref=e495] [cursor=pointer]:
+                    - /url: /inventory/4191d02a-c87e-4389-92ee-554138936a6e
+              - row "PU Putaway Test Product 1777625711790 PUT-1777625711790 Test Category Class A 100 - - 100 Active View" [ref=e496]:
+                - cell "PU Putaway Test Product 1777625711790 PUT-1777625711790" [ref=e497]:
+                  - generic [ref=e498]:
+                    - generic [ref=e500]: PU
+                    - generic [ref=e501]:
+                      - generic [ref=e502]: Putaway Test Product 1777625711790
+                      - generic [ref=e503]: PUT-1777625711790
+                - cell "Test Category" [ref=e504]
+                - cell "Class A" [ref=e505]:
+                  - generic [ref=e506]: Class A
+                - cell "100" [ref=e507]:
+                  - generic [ref=e508]: "100"
+                - cell "-" [ref=e509]
+                - cell "-" [ref=e510]
+                - cell "100" [ref=e511]
+                - cell "Active" [ref=e512]:
+                  - generic [ref=e513]: Active
+                - cell "View" [ref=e514]:
+                  - link "View" [ref=e515] [cursor=pointer]:
+                    - /url: /inventory/b8a6cd2b-22ac-4666-aa40-fb7afba7ae95
+              - row "WF Pro Laptop X 1777626251698 WF-LAP-1777626251698 Electronics Class A 5 - - 5 Active View" [ref=e516]:
+                - cell "WF Pro Laptop X 1777626251698 WF-LAP-1777626251698" [ref=e517]:
+                  - generic [ref=e518]:
+                    - generic [ref=e520]: WF
+                    - generic [ref=e521]:
+                      - generic [ref=e522]: Pro Laptop X 1777626251698
+                      - generic [ref=e523]: WF-LAP-1777626251698
+                - cell "Electronics" [ref=e524]
+                - cell "Class A" [ref=e525]:
+                  - generic [ref=e526]: Class A
+                - cell "5" [ref=e527]:
+                  - generic [ref=e528]: "5"
+                - cell "-" [ref=e529]
+                - cell "-" [ref=e530]
+                - cell "5" [ref=e531]
+                - cell "Active" [ref=e532]:
+                  - generic [ref=e533]: Active
+                - cell "View" [ref=e534]:
+                  - link "View" [ref=e535] [cursor=pointer]:
+                    - /url: /inventory/d5f84179-02a2-4453-a679-58b5e4685179
+              - row "PU Putaway Test Product 1777626313827 PUT-1777626313827 Test Category Class A 100 - - 100 Active View" [ref=e536]:
+                - cell "PU Putaway Test Product 1777626313827 PUT-1777626313827" [ref=e537]:
+                  - generic [ref=e538]:
+                    - generic [ref=e540]: PU
+                    - generic [ref=e541]:
+                      - generic [ref=e542]: Putaway Test Product 1777626313827
+                      - generic [ref=e543]: PUT-1777626313827
+                - cell "Test Category" [ref=e544]
+                - cell "Class A" [ref=e545]:
+                  - generic [ref=e546]: Class A
+                - cell "100" [ref=e547]:
+                  - generic [ref=e548]: "100"
+                - cell "-" [ref=e549]
+                - cell "-" [ref=e550]
+                - cell "100" [ref=e551]
+                - cell "Active" [ref=e552]:
+                  - generic [ref=e553]: Active
+                - cell "View" [ref=e554]:
+                  - link "View" [ref=e555] [cursor=pointer]:
+                    - /url: /inventory/43e20a4a-7de9-44d5-ab0b-81a92dbb6837
+              - row "WF Pro Laptop X 1777635624394 WF-LAP-1777635624394 Electronics Class A 5 - - 5 Active View" [ref=e556]:
+                - cell "WF Pro Laptop X 1777635624394 WF-LAP-1777635624394" [ref=e557]:
+                  - generic [ref=e558]:
+                    - generic [ref=e560]: WF
+                    - generic [ref=e561]:
+                      - generic [ref=e562]: Pro Laptop X 1777635624394
+                      - generic [ref=e563]: WF-LAP-1777635624394
+                - cell "Electronics" [ref=e564]
+                - cell "Class A" [ref=e565]:
+                  - generic [ref=e566]: Class A
+                - cell "5" [ref=e567]:
+                  - generic [ref=e568]: "5"
+                - cell "-" [ref=e569]
+                - cell "-" [ref=e570]
+                - cell "5" [ref=e571]
+                - cell "Active" [ref=e572]:
+                  - generic [ref=e573]: Active
+                - cell "View" [ref=e574]:
+                  - link "View" [ref=e575] [cursor=pointer]:
+                    - /url: /inventory/70f36e5a-6826-4073-ba13-2a277c1772a6
+              - row "PU Putaway Test Product 1777635685359 PUT-1777635685359 Test Category Class A 100 - - 100 Active View" [ref=e576]:
+                - cell "PU Putaway Test Product 1777635685359 PUT-1777635685359" [ref=e577]:
+                  - generic [ref=e578]:
+                    - generic [ref=e580]: PU
+                    - generic [ref=e581]:
+                      - generic [ref=e582]: Putaway Test Product 1777635685359
+                      - generic [ref=e583]: PUT-1777635685359
+                - cell "Test Category" [ref=e584]
+                - cell "Class A" [ref=e585]:
+                  - generic [ref=e586]: Class A
+                - cell "100" [ref=e587]:
+                  - generic [ref=e588]: "100"
+                - cell "-" [ref=e589]
+                - cell "-" [ref=e590]
+                - cell "100" [ref=e591]
+                - cell "Active" [ref=e592]:
+                  - generic [ref=e593]: Active
+                - cell "View" [ref=e594]:
+                  - link "View" [ref=e595] [cursor=pointer]:
+                    - /url: /inventory/2a42489e-f276-482a-a872-54decf12b3df
+              - row "WF Pro Laptop X 1777638760424 WF-LAP-1777638760424 Electronics Class A 5 - - 5 Active View" [ref=e596]:
+                - cell "WF Pro Laptop X 1777638760424 WF-LAP-1777638760424" [ref=e597]:
+                  - generic [ref=e598]:
+                    - generic [ref=e600]: WF
+                    - generic [ref=e601]:
+                      - generic [ref=e602]: Pro Laptop X 1777638760424
+                      - generic [ref=e603]: WF-LAP-1777638760424
+                - cell "Electronics" [ref=e604]
+                - cell "Class A" [ref=e605]:
+                  - generic [ref=e606]: Class A
+                - cell "5" [ref=e607]:
+                  - generic [ref=e608]: "5"
+                - cell "-" [ref=e609]
+                - cell "-" [ref=e610]
+                - cell "5" [ref=e611]
+                - cell "Active" [ref=e612]:
+                  - generic [ref=e613]: Active
+                - cell "View" [ref=e614]:
+                  - link "View" [ref=e615] [cursor=pointer]:
+                    - /url: /inventory/36068f30-fa69-498f-b65d-4488bab12cc9
+              - row "PU Putaway Test Product 1777638821830 PUT-1777638821830 Test Category Class A 100 - - 100 Active View" [ref=e616]:
+                - cell "PU Putaway Test Product 1777638821830 PUT-1777638821830" [ref=e617]:
+                  - generic [ref=e618]:
+                    - generic [ref=e620]: PU
+                    - generic [ref=e621]:
+                      - generic [ref=e622]: Putaway Test Product 1777638821830
+                      - generic [ref=e623]: PUT-1777638821830
+                - cell "Test Category" [ref=e624]
+                - cell "Class A" [ref=e625]:
+                  - generic [ref=e626]: Class A
+                - cell "100" [ref=e627]:
+                  - generic [ref=e628]: "100"
+                - cell "-" [ref=e629]
+                - cell "-" [ref=e630]
+                - cell "100" [ref=e631]
+                - cell "Active" [ref=e632]:
+                  - generic [ref=e633]: Active
+                - cell "View" [ref=e634]:
+                  - link "View" [ref=e635] [cursor=pointer]:
+                    - /url: /inventory/144c7d4f-e2dd-44cc-b058-c73c7785b708
+              - row "WF Pro Laptop X 1777672508096 WF-LAP-1777672508096 Electronics Class A 5 - - 5 Active View" [ref=e636]:
+                - cell "WF Pro Laptop X 1777672508096 WF-LAP-1777672508096" [ref=e637]:
+                  - generic [ref=e638]:
+                    - generic [ref=e640]: WF
+                    - generic [ref=e641]:
+                      - generic [ref=e642]: Pro Laptop X 1777672508096
+                      - generic [ref=e643]: WF-LAP-1777672508096
+                - cell "Electronics" [ref=e644]
+                - cell "Class A" [ref=e645]:
+                  - generic [ref=e646]: Class A
+                - cell "5" [ref=e647]:
+                  - generic [ref=e648]: "5"
+                - cell "-" [ref=e649]
+                - cell "-" [ref=e650]
+                - cell "5" [ref=e651]
+                - cell "Active" [ref=e652]:
+                  - generic [ref=e653]: Active
+                - cell "View" [ref=e654]:
+                  - link "View" [ref=e655] [cursor=pointer]:
+                    - /url: /inventory/9a4ad652-46b2-4999-9781-f94f8e43e5de
+              - row "PU Putaway Test Product 1777672574051 PUT-1777672574051 Test Category Class A 100 - - 100 Active View" [ref=e656]:
+                - cell "PU Putaway Test Product 1777672574051 PUT-1777672574051" [ref=e657]:
+                  - generic [ref=e658]:
+                    - generic [ref=e660]: PU
+                    - generic [ref=e661]:
+                      - generic [ref=e662]: Putaway Test Product 1777672574051
+                      - generic [ref=e663]: PUT-1777672574051
+                - cell "Test Category" [ref=e664]
+                - cell "Class A" [ref=e665]:
+                  - generic [ref=e666]: Class A
+                - cell "100" [ref=e667]:
+                  - generic [ref=e668]: "100"
+                - cell "-" [ref=e669]
+                - cell "-" [ref=e670]
+                - cell "100" [ref=e671]
+                - cell "Active" [ref=e672]:
+                  - generic [ref=e673]: Active
+                - cell "View" [ref=e674]:
+                  - link "View" [ref=e675] [cursor=pointer]:
+                    - /url: /inventory/8fee1197-a7fb-4c9e-b292-e61de4ef3161
+              - row "WF Pro Laptop X 1777690991440 WF-LAP-1777690991440 Electronics Class A 5 - - 5 Active View" [ref=e676]:
+                - cell "WF Pro Laptop X 1777690991440 WF-LAP-1777690991440" [ref=e677]:
+                  - generic [ref=e678]:
+                    - generic [ref=e680]: WF
+                    - generic [ref=e681]:
+                      - generic [ref=e682]: Pro Laptop X 1777690991440
+                      - generic [ref=e683]: WF-LAP-1777690991440
+                - cell "Electronics" [ref=e684]
+                - cell "Class A" [ref=e685]:
+                  - generic [ref=e686]: Class A
+                - cell "5" [ref=e687]:
+                  - generic [ref=e688]: "5"
+                - cell "-" [ref=e689]
+                - cell "-" [ref=e690]
+                - cell "5" [ref=e691]
+                - cell "Active" [ref=e692]:
+                  - generic [ref=e693]: Active
+                - cell "View" [ref=e694]:
+                  - link "View" [ref=e695] [cursor=pointer]:
+                    - /url: /inventory/e52bbb54-53ae-4a22-b74f-508b53d2bc25
+              - row "PU Putaway Test Product 1777691051390 PUT-1777691051390 Test Category Class A 100 - - 100 Active View" [ref=e696]:
+                - cell "PU Putaway Test Product 1777691051390 PUT-1777691051390" [ref=e697]:
+                  - generic [ref=e698]:
+                    - generic [ref=e700]: PU
+                    - generic [ref=e701]:
+                      - generic [ref=e702]: Putaway Test Product 1777691051390
+                      - generic [ref=e703]: PUT-1777691051390
+                - cell "Test Category" [ref=e704]
+                - cell "Class A" [ref=e705]:
+                  - generic [ref=e706]: Class A
+                - cell "100" [ref=e707]:
+                  - generic [ref=e708]: "100"
+                - cell "-" [ref=e709]
+                - cell "-" [ref=e710]
+                - cell "100" [ref=e711]
+                - cell "Active" [ref=e712]:
+                  - generic [ref=e713]: Active
+                - cell "View" [ref=e714]:
+                  - link "View" [ref=e715] [cursor=pointer]:
+                    - /url: /inventory/ab3b5e7e-9d90-414e-87ac-32188f819631
+              - row "WF Pro Laptop X 1777691355069 WF-LAP-1777691355069 Electronics Class A 5 - - 5 Active View" [ref=e716]:
+                - cell "WF Pro Laptop X 1777691355069 WF-LAP-1777691355069" [ref=e717]:
+                  - generic [ref=e718]:
+                    - generic [ref=e720]: WF
+                    - generic [ref=e721]:
+                      - generic [ref=e722]: Pro Laptop X 1777691355069
+                      - generic [ref=e723]: WF-LAP-1777691355069
+                - cell "Electronics" [ref=e724]
+                - cell "Class A" [ref=e725]:
+                  - generic [ref=e726]: Class A
+                - cell "5" [ref=e727]:
+                  - generic [ref=e728]: "5"
+                - cell "-" [ref=e729]
+                - cell "-" [ref=e730]
+                - cell "5" [ref=e731]
+                - cell "Active" [ref=e732]:
+                  - generic [ref=e733]: Active
+                - cell "View" [ref=e734]:
+                  - link "View" [ref=e735] [cursor=pointer]:
+                    - /url: /inventory/ca7f1dd0-9643-4980-80e7-0622f562c8b7
+              - row "PU Putaway Test Product 1777691423477 PUT-1777691423477 Test Category Class A 100 - - 100 Active View" [ref=e736]:
+                - cell "PU Putaway Test Product 1777691423477 PUT-1777691423477" [ref=e737]:
+                  - generic [ref=e738]:
+                    - generic [ref=e740]: PU
+                    - generic [ref=e741]:
+                      - generic [ref=e742]: Putaway Test Product 1777691423477
+                      - generic [ref=e743]: PUT-1777691423477
+                - cell "Test Category" [ref=e744]
+                - cell "Class A" [ref=e745]:
+                  - generic [ref=e746]: Class A
+                - cell "100" [ref=e747]:
+                  - generic [ref=e748]: "100"
+                - cell "-" [ref=e749]
+                - cell "-" [ref=e750]
+                - cell "100" [ref=e751]
+                - cell "Active" [ref=e752]:
+                  - generic [ref=e753]: Active
+                - cell "View" [ref=e754]:
+                  - link "View" [ref=e755] [cursor=pointer]:
+                    - /url: /inventory/158e5455-dd74-48b5-9633-c49cade056ca
+              - row "WF Pro Laptop X 1777698941036 WF-LAP-1777698941036 Electronics Class A 5 - - 5 Active View" [ref=e756]:
+                - cell "WF Pro Laptop X 1777698941036 WF-LAP-1777698941036" [ref=e757]:
+                  - generic [ref=e758]:
+                    - generic [ref=e760]: WF
+                    - generic [ref=e761]:
+                      - generic [ref=e762]: Pro Laptop X 1777698941036
+                      - generic [ref=e763]: WF-LAP-1777698941036
+                - cell "Electronics" [ref=e764]
+                - cell "Class A" [ref=e765]:
+                  - generic [ref=e766]: Class A
+                - cell "5" [ref=e767]:
+                  - generic [ref=e768]: "5"
+                - cell "-" [ref=e769]
+                - cell "-" [ref=e770]
+                - cell "5" [ref=e771]
+                - cell "Active" [ref=e772]:
+                  - generic [ref=e773]: Active
+                - cell "View" [ref=e774]:
+                  - link "View" [ref=e775] [cursor=pointer]:
+                    - /url: /inventory/44ae4020-1d4b-4120-b85c-493a5f5d5ecd
+              - row "PU Putaway Test Product 1777699055812 PUT-1777699055812 Test Category Class A 100 - - 100 Active View" [ref=e776]:
+                - cell "PU Putaway Test Product 1777699055812 PUT-1777699055812" [ref=e777]:
+                  - generic [ref=e778]:
+                    - generic [ref=e780]: PU
+                    - generic [ref=e781]:
+                      - generic [ref=e782]: Putaway Test Product 1777699055812
+                      - generic [ref=e783]: PUT-1777699055812
+                - cell "Test Category" [ref=e784]
+                - cell "Class A" [ref=e785]:
+                  - generic [ref=e786]: Class A
+                - cell "100" [ref=e787]:
+                  - generic [ref=e788]: "100"
+                - cell "-" [ref=e789]
+                - cell "-" [ref=e790]
+                - cell "100" [ref=e791]
+                - cell "Active" [ref=e792]:
+                  - generic [ref=e793]: Active
+                - cell "View" [ref=e794]:
+                  - link "View" [ref=e795] [cursor=pointer]:
+                    - /url: /inventory/fbd15507-a587-499d-8f03-ea74038738c5
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e801] [cursor=pointer]:
+    - img [ref=e802]
+  - alert [ref=e805]
+```

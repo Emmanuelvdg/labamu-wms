@@ -1,0 +1,173 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]: Labamu
+      - navigation [ref=e6]:
+        - link "Dashboard" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - text: Dashboard
+        - link "Mobile Hub" [ref=e13] [cursor=pointer]:
+          - /url: /mobile/dashboard
+          - img [ref=e14]
+          - text: Mobile Hub
+        - link "Report" [ref=e16] [cursor=pointer]:
+          - /url: /reporting
+          - img [ref=e17]
+          - text: Report
+        - link "Product" [ref=e20] [cursor=pointer]:
+          - /url: /inventory
+          - img [ref=e21]
+          - text: Product
+        - link "Lot Number" [ref=e24] [cursor=pointer]:
+          - /url: /inventory/batches
+          - img [ref=e25]
+          - text: Lot Number
+        - link "Package" [ref=e29] [cursor=pointer]:
+          - /url: /inventory/packages
+          - img [ref=e30]
+          - text: Package
+        - generic [ref=e34]:
+          - button "Inbound" [ref=e35]:
+            - generic [ref=e36]:
+              - img [ref=e37]
+              - text: Inbound
+            - img [ref=e42]
+          - generic [ref=e44]:
+            - link "Suppliers" [ref=e45] [cursor=pointer]:
+              - /url: /inventory/suppliers
+            - link "Purchase Orders" [ref=e46] [cursor=pointer]:
+              - /url: /inventory/purchases
+            - link "Putaway" [ref=e47] [cursor=pointer]:
+              - /url: /putaway
+            - link "Putaway Rules" [ref=e48] [cursor=pointer]:
+              - /url: /inventory/putaway-rules
+        - generic [ref=e49]:
+          - button "Outbound" [ref=e50]:
+            - generic [ref=e51]:
+              - img [ref=e52]
+              - text: Outbound
+            - img [ref=e56]
+          - generic [ref=e58]:
+            - link "Customers" [ref=e59] [cursor=pointer]:
+              - /url: /customers
+            - link "Orders" [ref=e60] [cursor=pointer]:
+              - /url: /orders
+            - link "Picking" [ref=e61] [cursor=pointer]:
+              - /url: /picking
+            - link "Packing" [ref=e62] [cursor=pointer]:
+              - /url: /packing
+            - link "Returns (RMA)" [ref=e63] [cursor=pointer]:
+              - /url: /returns
+            - link "Shipments" [ref=e64] [cursor=pointer]:
+              - /url: /shipments
+            - link "Invoices" [ref=e65] [cursor=pointer]:
+              - /url: /invoices
+        - generic [ref=e66]:
+          - button "Inventory" [ref=e67]:
+            - generic [ref=e68]:
+              - img [ref=e69]
+              - text: Inventory
+            - img [ref=e72]
+          - generic [ref=e74]:
+            - link "Inventory List" [ref=e75] [cursor=pointer]:
+              - /url: /inventory
+            - link "Stocktaking" [ref=e76] [cursor=pointer]:
+              - /url: /stocktaking
+            - link "Moves" [ref=e77] [cursor=pointer]:
+              - /url: /inventory/moves
+            - link "Transfers" [ref=e78] [cursor=pointer]:
+              - /url: /transfers
+            - link "Adjustments" [ref=e79] [cursor=pointer]:
+              - /url: /inventory/adjustments
+            - link "Scrap" [ref=e80] [cursor=pointer]:
+              - /url: /inventory/scrap
+            - link "Replenishment" [ref=e81] [cursor=pointer]:
+              - /url: /inventory/replenishment
+        - generic [ref=e82]:
+          - button "Warehouse" [ref=e83]:
+            - generic [ref=e84]:
+              - img [ref=e85]
+              - text: Warehouse
+            - img [ref=e87]
+          - generic [ref=e89]:
+            - link "Locations" [ref=e90] [cursor=pointer]:
+              - /url: /inventory/locations
+            - link "Warehouses" [ref=e91] [cursor=pointer]:
+              - /url: /inventory/warehouses
+            - link "Floor Plan" [ref=e92] [cursor=pointer]:
+              - /url: /floor-plan
+            - link "Routes" [ref=e93] [cursor=pointer]:
+              - /url: /inventory/routes
+        - button "Workflows" [ref=e95]:
+          - generic [ref=e96]:
+            - img [ref=e97]
+            - text: Workflows
+          - img [ref=e101]
+        - link "Settings" [ref=e103] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e104]
+          - text: Settings
+        - link "Backoffice" [ref=e107] [cursor=pointer]:
+          - /url: /admin
+          - img [ref=e108]
+          - text: Backoffice
+        - link "User Guide" [ref=e112] [cursor=pointer]:
+          - /url: /user-guide
+          - img [ref=e113]
+          - text: User Guide
+      - link "Sign Out" [ref=e116] [cursor=pointer]:
+        - /url: /login
+    - generic [ref=e117]:
+      - banner [ref=e118]:
+        - button "Notifications" [ref=e120]:
+          - img [ref=e121]
+      - main [ref=e124]:
+        - generic [ref=e126]:
+          - generic [ref=e127]:
+            - generic [ref=e128]:
+              - heading "Packing Station" [level=1] [ref=e129]:
+                - img [ref=e130]
+                - text: Packing Station
+              - paragraph [ref=e134]: Orders ready to be packed and shipped
+            - button "Refresh" [ref=e135]:
+              - img [ref=e136]
+              - text: Refresh
+          - generic [ref=e142]:
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - generic [ref=e145]:
+                  - generic [ref=e146]: Order
+                  - generic [ref=e147]: "#19BE9ADE"
+                - generic [ref=e148]:
+                  - generic [ref=e149]: Customer
+                  - generic [ref=e150]:
+                    - img [ref=e151]
+                    - text: EduTech Nusantara
+                - generic [ref=e154]:
+                  - generic [ref=e155]: Items
+                  - generic [ref=e156]: 2 products, 10 units
+                - generic [ref=e157]:
+                  - generic [ref=e158]: Created
+                  - generic [ref=e159]:
+                    - img [ref=e160]
+                    - text: 5/5/2026
+              - button "Start Packing" [active] [ref=e164]:
+                - text: Start Packing
+                - img [ref=e165]
+            - generic [ref=e167]:
+              - generic [ref=e168]: MON-27F-009 × 5
+              - generic [ref=e169]: LAP-PRO-001 × 5
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e175] [cursor=pointer]:
+    - generic [ref=e178]:
+      - text: Rendering
+      - generic [ref=e179]:
+        - generic [ref=e180]: .
+        - generic [ref=e181]: .
+        - generic [ref=e182]: .
+  - alert [ref=e183]
+```
