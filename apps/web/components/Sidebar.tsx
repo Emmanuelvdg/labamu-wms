@@ -60,6 +60,7 @@ const navigation: NavItem[] = [
             { name: 'Returns (RMA)', href: '/returns', permission: { resource: 'ORDERS', action: 'READ' } },
             { name: 'Shipments', href: '/shipments', permission: { resource: 'ORDERS', action: 'READ' } },
             { name: 'Invoices', href: '/invoices', permission: { resource: 'INVOICES', action: 'READ' } },
+            { name: 'Delivery Methods', href: '/configuration/delivery-methods', permission: { resource: 'SETTINGS', action: 'READ' } },
         ]
     },
     {
