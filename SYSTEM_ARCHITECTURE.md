@@ -1,7 +1,7 @@
 # Labamu WMS - System Architecture
 
-**Version:** 4.0  
-**Last Updated:** April 25, 2026  
+**Version:** 5.0  
+**Last Updated:** May 9, 2026  
 **Status:** Production-Ready
 
 ---
@@ -17,7 +17,8 @@
 7. [Security & Authorization](#security--authorization)
 8. [Multi-Tenancy Architecture](#multi-tenancy-architecture)
 9. [Backoffice Admin Portal](#backoffice-admin-portal)
-10. [Integration Points](#integration-points)
+10. [Supplier Portal](#supplier-portal)
+11. [Integration Points](#integration-points)
 
 ---
 
@@ -191,6 +192,12 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 | **BarcodeModule** | Universal barcode lookup, context-aware validation | `BarcodeValidatorService` |
 | **AnalyticsServices** (in InventoryModule) | ABC classification, pick accuracy, zone cycle counts | `AbcClassificationService`, `PickAccuracyService`, `CycleCountService`, `ReportingController` |
 | **CompanyModule** | Multi-tenant company registry, backoffice operations | `CompanyService`, `PlanService`, `FeatureFlagService`, `AuditService`, `PlatformService` |
+| **WorkflowModule** | Dynamic workflow templates, execution engine, step transitions, audit trail | `WorkflowTemplateController`, `WorkflowExecutionController` |
+| **CurrencyModule** | Multi-currency support, exchange rate management | `CurrencyController` |
+| **PrintingModule** | Printer configuration, barcode label printing | `PrintingController`, `PrinterConfigController` |
+| **PickingStrategiesModule** | Picking strategy CRUD, wave release rules | `PickingStrategiesController` |
+| **SupplierPortalModule** | Supplier self-service portal — auth, invitation, PO visibility | `SupplierAuthController`, `SupplierPortalController` |
+| **ConfigurationModule** | Delivery method CRUD (dual-prefix: `/configuration/delivery-methods` and `/delivery-methods`) | `DeliveryMethodsController`, `DeliveryMethodsAliasController` |
 
 ### Frontend Structure
 
@@ -212,24 +219,67 @@ apps/web/
 │   │   │   └── [id]/            # Tenant detail: tabs for Overview / Plan / Flags
 │   │   ├── analytics/           # Platform-wide analytics with Recharts
 │   │   ├── audit-log/           # Filterable platform audit trail
-│   │   ├── feature-flags/       # Per-tenant feature flag matrix
 │   │   └── announcements/       # Create/manage in-app announcements
 │   ├── (dashboard)/             # Main tenant dashboard route group
-│   │   ├── inventory/           # Inventory Pages
-│   │   │   ├── products/
-│   │   │   ├── locations/
-│   │   │   ├── warehouses/
-│   │   │   ├── adjustments/
-│   │   │   └── putaway-rules/
-│   │   ├── orders/              # Order Management
-│   │   ├── picking/             # Picking Operations
-│   │   ├── putaway/             # Putaway Operations
-│   │   ├── transfers/           # Transfer Operations
+│   │   ├── inventory/           # Inventory Management
+│   │   │   ├── [id]/            # Product detail
+│   │   │   ├── batches/         # Lot/batch tracking
+│   │   │   ├── packages/        # Packaging unitization
+│   │   │   ├── locations/       # Location hierarchy + floor plan
+│   │   │   ├── warehouses/      # Warehouse config + floor plan per warehouse
+│   │   │   ├── routes/          # Inventory routes & route builder
+│   │   │   ├── moves/           # Stock moves
+│   │   │   ├── adjustments/     # Inventory adjustments
+│   │   │   ├── cycle-counts/    # Cycle count dashboard
+│   │   │   ├── ledger/          # Inventory ledger (virtual view)
+│   │   │   ├── operations/      # Operations hub (incl. transit)
+│   │   │   ├── suppliers/       # Supplier management
+│   │   │   ├── purchases/       # Purchase orders + receive flow
+│   │   │   ├── putaway-rules/   # Putaway rule configuration
+│   │   │   ├── reordering-rules/# Reordering rules
+│   │   │   ├── scrap/           # Scrap orders
+│   │   │   └── replenishment/   # Replenishment alerts + forecasting
+│   │   ├── orders/              # Sales order management (list, detail, new)
+│   │   ├── customers/           # Customer management
+│   │   ├── packing/             # Packing station + session detail
+│   │   ├── shipments/           # Shipments list
+│   │   ├── returns/             # Returns / RMA (list, new, receive flow)
+│   │   ├── invoices/            # VAT invoicing
+│   │   ├── stocktaking/         # Stocktake sessions (count + reconcile)
+│   │   ├── transfers/           # Inter-warehouse transfer requests
+│   │   ├── floor-plan/          # Global floor plan view
+│   │   ├── reporting/           # Analytics, compliance, cycle-time, utilisation, ledger
+│   │   ├── workflows/           # Workflow templates, monitor, analytics, builder
+│   │   ├── notifications/       # In-app notification centre
+│   │   ├── settings/            # System settings
+│   │   │   ├── users/           # User management
+│   │   │   ├── roles/           # Role & permission management
+│   │   │   ├── attributes/      # Custom attribute definitions
+│   │   │   ├── categories/      # Product category management
+│   │   │   ├── fulfillment/     # Fulfillment rules
+│   │   │   ├── lalamove/        # Lalamove integration settings
+│   │   │   ├── api-keys/        # API key management
+│   │   │   ├── printers/        # Printer configuration
+│   │   │   ├── currencies/      # Currency & exchange rate management
+│   │   │   └── seasonality/     # Seasonality profile management
+│   │   ├── configuration/
+│   │   │   └── delivery-methods/# Delivery method CRUD
+│   │   ├── getting-started/     # Onboarding checklist
 │   │   └── user-guide/          # Documentation
+│   ├── (mobile)/                # Mobile Hub route group (simplified worker UX)
+│   │   ├── dashboard/           # Mobile home
+│   │   ├── picking/             # Picking task list + task detail
+│   │   ├── putaway/             # Putaway task list + task detail
+│   │   ├── stocktaking/         # Stocktaking session + detail
+│   │   └── scan/                # Universal barcode scanner
+│   ├── (supplier)/              # Supplier self-service portal route group
+│   │   ├── login/               # Supplier login
+│   │   ├── dashboard/           # Supplier dashboard (PO overview)
+│   │   └── purchase-orders/[id] # PO detail for supplier
 │   └── layout.tsx               # Root Layout
 ├── components/                  # Reusable UI Components
 │   ├── ui/                      # shadcn/ui components
-│   ├── Sidebar.tsx
+│   ├── Sidebar.tsx              # Main tenant navigation (collapsible sections)
 │   ├── AdminNav.tsx             # Dark-slate sidebar for backoffice
 │   ├── ImpersonationBanner.tsx  # Amber banner shown during tenant impersonation
 │   └── auth/
@@ -384,12 +434,12 @@ GET    /routing/:warehouseId/distance       Get distance between two points
 GET    /orders                              List orders
 GET    /orders/:id                          Get order details
 POST   /orders                              Create order
-PATCH  /orders/:id                          Update order
-POST   /orders/:id/reserve                  Reserve inventory
-POST   /orders/:id/unreserve                Release reservations
-POST   /orders/:id/fulfill                  Mark as fulfilled
-POST   /orders/:id/cancel                   Cancel order (Release stock)
-DELETE /orders/:id                          Delete order (If clean/cancelled)
+PUT    /orders/:id                          Full update (delivery method, warehouse, status, priority)
+PATCH  /orders/:id                          Partial update (same handler as PUT)
+POST   /orders/:id/check-availability       Reserve inventory
+POST   /orders/:id/cancel                   Cancel order (release stock)
+POST   /orders/ship                         Create shipment (mark order SHIPPED)
+DELETE /orders/:id                          Delete order (only PENDING empty or CANCELLED)
 ```
 
 #### Putaway Operations
@@ -412,29 +462,27 @@ DELETE /inventory/putaway-rules/:id         Delete rule
 
 #### Picking Operations
 ```
-POST   /inventory/picking/sessions          Create picking session
-GET    /inventory/picking/sessions/:warehouseId/active  Get active session
-PATCH  /inventory/picking/tasks/:id         Update picking task
-PATCH  /inventory/picking/sessions/:id/complete  Complete session
+POST   /strategy/picking/sessions                     Create picking session (SINGLE, ZONE, BATCH, WAVE)
+GET    /strategy/picking/sessions/:id/picklist         Get session picklist
+PATCH  /strategy/picking/tasks/:id                     Update picking task status
+POST   /strategy/picking/sessions/:id/complete         Complete session
 ```
 
 #### Returns Management
 ```
-GET    /returns                             List returns
-GET    /returns/:id                         Get details
+GET    /returns/order/:orderId              Get returns by order
 POST   /returns                             Create return request
 POST   /returns/:id/receive                 Receive & assess items
-GET    /returns/order/:orderId              Get returns by order
 ```
 
 #### Stocktaking
 ```
-GET    /stocktaking                         List sessions
-POST   /stocktaking                         Create session
-POST   /stocktaking/:id/tasks               Generate tasks
-GET    /stocktaking/:id/tasks               List tasks
+GET    /stocktaking/sessions                List sessions
+POST   /stocktaking/sessions                Create session
+POST   /stocktaking/sessions/:id/tasks      Generate tasks
+GET    /stocktaking/sessions/:id/tasks      List tasks
 POST   /stocktaking/tasks/:id/count         Submit count
-POST   /stocktaking/:id/reconcile           Approve adjustments
+POST   /stocktaking/sessions/:id/reconcile  Approve adjustments
 ```
 
 #### Transfer Operations
@@ -466,12 +514,87 @@ POST   /packing/sessions/:id/parcels        Add parcel to session
 POST   /packing/sessions/:id/complete       Complete packing session
 ```
 
-#### Replenishment
+#### Replenishment & Forecasting
 ```
-POST   /inventory/replenishment/check       Check stock against reorder points
-GET    /inventory/replenishment/alerts       List active replenishment alerts
-POST   /inventory/replenishment/auto-po     Auto-create PO from alerts
-PATCH  /inventory/replenishment/alerts/:id/dismiss  Dismiss alert
+GET    /replenishment/rules                 List reordering rules
+POST   /replenishment/rules                 Create reordering rule
+GET    /replenishment/summary               Replenishment summary
+GET    /replenishment/alerts                List active replenishment alerts
+POST   /replenishment/check                 Check stock against reorder points
+POST   /replenishment/alerts/:id/auto-po    Auto-create PO from alert
+POST   /replenishment/alerts/:id/dismiss    Dismiss alert
+POST   /replenishment/forecast/run          Run forecasts for company
+GET    /replenishment/forecast/accuracy     Forecast accuracy metrics
+GET    /replenishment/forecast/readiness    Data readiness check
+GET    /replenishment/forecast/:productId   Forecast for specific product
+GET    /replenishment/seasonality           List seasonality profiles
+POST   /replenishment/seasonality           Create seasonality profile
+POST   /replenishment/seasonality/:id/periods  Add seasonality period
+POST   /replenishment/seasonality/periods/:id  Delete seasonality period
+```
+
+#### Delivery Methods
+```
+GET    /configuration/delivery-methods      List delivery methods (config route)
+GET    /delivery-methods                    List delivery methods (alias)
+POST   /delivery-methods                    Create delivery method
+PUT    /delivery-methods/:id                Update delivery method
+DELETE /delivery-methods/:id                Delete delivery method
+```
+
+#### Settings
+```
+GET    /settings/users                      List users
+GET    /settings/users/:id                  Get user
+PATCH  /settings/users/:id                  Update user
+GET    /settings/roles                      List roles
+POST   /settings/roles                      Create role
+DELETE /settings/roles/:id                  Delete role
+GET    /settings/roles/available-permissions  Available permission list
+GET    /settings/attributes                 List attribute definitions
+POST   /settings/attributes                 Create attribute definition
+GET    /settings/categories                 List categories
+POST   /settings/categories                 Create category
+GET    /settings/categories/:id             Get category
+PATCH  /settings/categories/:id             Update category
+DELETE /settings/categories/:id             Delete category
+```
+
+#### Multi-Currency
+```
+GET    /currencies                          List currencies
+POST   /currencies                          Add currency
+DELETE /currencies/:code                    Remove currency
+GET    /currencies/rates                    List exchange rates
+POST   /currencies/rates                    Set exchange rate
+```
+
+#### Wave Release Rules
+```
+GET    /picking-strategies/wave-rules       List wave release rules
+POST   /picking-strategies/wave-rules       Create wave rule
+PUT    /picking-strategies/wave-rules/:id   Update wave rule
+DELETE /picking-strategies/wave-rules/:id   Delete wave rule
+```
+
+#### Workflow Engine
+```
+GET    /workflows                           List workflow templates
+POST   /workflows                           Create workflow template
+GET    /workflows/:id                       Get template with steps
+POST   /workflows/:id/steps                 Add step to template
+POST   /workflow-instances                  Start workflow instance
+GET    /workflow-instances/:id              Get instance status
+POST   /workflow-instances/:id/advance      Advance to next step
+```
+
+#### Supplier Portal
+```
+POST   /supplier-auth/invite                Invite supplier user (admin)
+POST   /supplier-auth/register              Supplier self-registration via token
+POST   /supplier-auth/login                 Supplier login
+GET    /supplier-portal/purchase-orders     List POs visible to supplier (JWT auth)
+GET    /supplier-portal/purchase-orders/:id Get PO detail
 ```
 
 #### Barcode Validation
@@ -829,7 +952,6 @@ Order {
   pickingTasks: PickingTask[]
   
   createdAt: DateTime
-  createdAt: DateTime
   deliveryDate: DateTime?
 }
 
@@ -860,7 +982,6 @@ StockTransaction {
   // Audit
   userId: string?
   notes: string?
-  timestamp: DateTime
   timestamp: DateTime
 }
 
@@ -942,6 +1063,100 @@ StocktakeTask {
   status: string        // PENDING, COUNTED, VERIFIED
   
   countedBy: string?
+  updatedAt: DateTime
+}
+```
+
+#### SupplierUser & Invitation
+```typescript
+SupplierUser {
+  id: string (UUID)
+  supplierId: string
+  supplier: Supplier
+  email: string (unique)
+  passwordHash: string
+  isActive: boolean
+  lastLoginAt: DateTime?
+  createdAt: DateTime
+}
+
+SupplierInvitation {
+  id: string (UUID)
+  supplierId: string
+  email: string
+  token: string (unique)   // 64-char hex, shown once
+  expiresAt: DateTime
+  usedAt: DateTime?        // set on registration
+  createdAt: DateTime
+}
+```
+
+#### WorkflowTemplate & Execution
+```typescript
+WorkflowTemplate {
+  id: string (UUID)
+  name: string
+  description: string?
+  steps: WorkflowStep[]
+  instances: WorkflowInstance[]
+  createdAt: DateTime
+}
+
+WorkflowStep {
+  id: string (UUID)
+  templateId: string
+  name: string
+  action: string
+  sequence: int
+  transitions: WorkflowTransition[]
+}
+
+WorkflowInstance {
+  id: string (UUID)
+  templateId: string
+  status: string   // RUNNING, COMPLETED, FAILED, CANCELLED
+  currentStepId: string?
+  tasks: WorkflowTaskInstance[]
+  auditLogs: WorkflowAuditLog[]
+  createdAt: DateTime
+  completedAt: DateTime?
+}
+```
+
+#### SeasonalityProfile
+```typescript
+SeasonalityProfile {
+  id: string (UUID)
+  companyId: string
+  name: string
+  periods: SeasonalityPeriod[]
+  createdAt: DateTime
+}
+
+SeasonalityPeriod {
+  id: string (UUID)
+  profileId: string
+  label: string
+  startMD: string   // MM-DD, e.g. "11-01"
+  endMD: string     // MM-DD, e.g. "12-31"
+  multiplier: float // e.g. 1.5 = 50% uplift during this window
+}
+```
+
+#### Currency & Exchange Rates
+```typescript
+Currency {
+  code: string (PK)  // ISO 4217, e.g. "USD", "IDR"
+  name: string
+  symbol: string
+  isBase: boolean
+}
+
+ExchangeRate {
+  id: string (UUID)
+  fromCode: string
+  toCode: string
+  rate: float
   updatedAt: DateTime
 }
 ```
@@ -1140,12 +1355,23 @@ graph TD
     
     WarehouseFunctionalArea -->|belongs to| Warehouse
     WarehouseFunctionalArea -->|links to| Location
-    WarehouseFunctionalArea -->|belongs to| Warehouse
-    WarehouseFunctionalArea -->|links to| Location
 
     TransferOrder -->|linked to| PurchaseOrder
     TransferOrder -->|has many| StockMove
     StockMove -->|chained to| StockMove
+
+    Company -->|has many| User
+    Company -->|has one| TenantPlan
+    Company -->|has many| FeatureFlag
+    Company -->|has many| AuditLog
+
+    SupplierUser -->|belongs to| Supplier
+    SupplierInvitation -->|belongs to| Supplier
+
+    WorkflowTemplate -->|has many| WorkflowStep
+    WorkflowStep -->|has many| WorkflowTransition
+    WorkflowInstance -->|belongs to| WorkflowTemplate
+    WorkflowInstance -->|has many| WorkflowTaskInstance
 ```
 
 ---
@@ -1313,7 +1539,6 @@ The backoffice is a separate Next.js route group `app/(admin)/` with its own lay
 | `/admin/tenants/:id` | Tenant detail — tabbed: Overview, Plan & Billing, Feature Flags |
 | `/admin/analytics` | Platform analytics — Recharts bar + pie charts, plan/status breakdown |
 | `/admin/audit-log` | Searchable & filterable platform audit trail |
-| `/admin/feature-flags` | Per-tenant feature flag toggle matrix |
 | `/admin/announcements` | Create/delete in-app announcements with targeting |
 
 ### Tenant Impersonation Flow
@@ -1364,6 +1589,40 @@ All platform admin actions are recorded in `AuditLog`:
 | `ANNOUNCE` | POST `/platform/announcements` |
 | `BULK_STATUS` | PATCH `/companies/bulk/status` |
 | `BULK_PLAN` | PATCH `/companies/bulk/plan` |
+
+---
+
+## Supplier Portal
+
+### Overview
+
+The Supplier Portal is a separate Next.js route group `app/(supplier)/` that gives suppliers a self-service interface to view their purchase orders. Access is gated by a separate JWT issued by `supplier-auth` — entirely distinct from the main `Auth` system.
+
+### Authentication Flow
+
+1. **Invite**: Admin calls `POST /supplier-auth/invite` → system creates a `SupplierInvitation` with a 64-char token and sends the link out-of-band
+2. **Register**: Supplier opens the invite link, submits `POST /supplier-auth/register` with the token and a password — creates `SupplierUser`, marks invitation `usedAt`
+3. **Login**: `POST /supplier-auth/login` → returns a JWT with `{ sub, supplierId, role: 'SUPPLIER' }`
+4. **Access**: JWT is included on subsequent calls to `/supplier-portal/*`; `SupplierJwtGuard` validates it
+
+### Frontend Route Group: `(supplier)/`
+
+| Route | Description |
+|-------|-------------|
+| `/portal/login` | Supplier login page |
+| `/portal/dashboard` | PO overview — list of all POs visible to the supplier |
+| `/portal/purchase-orders/:id` | PO detail — line items, status, documents |
+
+### Backend Endpoints
+
+```
+POST   /supplier-auth/invite                  Admin invites a supplier user
+POST   /supplier-auth/register                Supplier registers via invitation token
+POST   /supplier-auth/login                   Supplier login → JWT
+GET    /supplier-auth/me                      Get current supplier user + supplier info
+GET    /supplier-portal/purchase-orders        List POs for the authenticated supplier
+GET    /supplier-portal/purchase-orders/:id    PO detail with line items
+```
 
 ---
 
@@ -1922,11 +2181,10 @@ The repository includes comprehensive E2E test plans:
 ### Future Enhancements
 
 - [ ] Real-time inventory updates via WebSockets
-- [ ] Mobile app for warehouse workers
-- [ ] Advanced analytics with machine learning for demand forecasting
-- [ ] Multi-tenant architecture for SaaS deployment
+- [ ] Native mobile app (iOS/Android) for warehouse workers
+- [ ] IoT sensor integration for environmental monitoring (temperature, humidity)
 - [ ] Blockchain-based traceability for regulated industries
-- [ ] Integration with IoT sensors for environmental monitoring
+- [ ] ERP deep integration (bi-directional sync with SAP/Oracle)
 
 ---
 
