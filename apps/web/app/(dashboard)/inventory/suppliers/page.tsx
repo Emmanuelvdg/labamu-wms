@@ -24,21 +24,20 @@ import {
 import Link from 'next/link';
 import { toast } from 'sonner';
 
+const EMPTY_FORM = { name: '', email: '', phone: '', address: '', contactInfo: '' };
+
 export default function SuppliersPage() {
     const [suppliers, setSuppliers] = useState<any[]>([]);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [newSupplier, setNewSupplier] = useState({ name: '', contactInfo: '' });
+    const [newSupplier, setNewSupplier] = useState(EMPTY_FORM);
 
-    useEffect(() => {
-        loadSuppliers();
-    }, []);
+    useEffect(() => { loadSuppliers(); }, []);
 
     const loadSuppliers = async () => {
         try {
             const data = await fetchSuppliers();
             setSuppliers(data);
-        } catch (error) {
-            console.error('Failed to load suppliers:', error);
+        } catch {
             toast.error('Failed to load suppliers');
         }
     };
@@ -48,13 +47,26 @@ export default function SuppliersPage() {
             await createSupplier(newSupplier);
             toast.success('Supplier created successfully');
             setIsCreateOpen(false);
-            setNewSupplier({ name: '', contactInfo: '' });
+            setNewSupplier(EMPTY_FORM);
             loadSuppliers();
-        } catch (error) {
-            console.error('Failed to create supplier:', error);
+        } catch {
             toast.error('Failed to create supplier');
         }
     };
+
+    const field = (key: keyof typeof EMPTY_FORM, label: string, type = 'text') => (
+        <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor={key} className="text-right">{label}</Label>
+            <Input
+                id={key}
+                type={type}
+                value={newSupplier[key]}
+                onChange={e => setNewSupplier({ ...newSupplier, [key]: e.target.value })}
+                className="col-span-3"
+                data-testid={key === 'name' ? 'supplier-name-input' : undefined}
+            />
+        </div>
+    );
 
     return (
         <div className="p-8">
@@ -69,32 +81,15 @@ export default function SuppliersPage() {
                             <DialogTitle>Add New Supplier</DialogTitle>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="name" className="text-right">
-                                    Name
-                                </Label>
-                                <Input
-                                    id="name"
-                                    data-testid="supplier-name-input"
-                                    value={newSupplier.name}
-                                    onChange={(e) => setNewSupplier({ ...newSupplier, name: e.target.value })}
-                                    className="col-span-3"
-                                />
-                            </div>
-                            <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="contact" className="text-right">
-                                    Contact Info
-                                </Label>
-                                <Input
-                                    id="contact"
-                                    value={newSupplier.contactInfo}
-                                    onChange={(e) => setNewSupplier({ ...newSupplier, contactInfo: e.target.value })}
-                                    className="col-span-3"
-                                />
-                            </div>
+                            {field('name', 'Name')}
+                            {field('email', 'Email', 'email')}
+                            {field('phone', 'Phone')}
+                            {field('address', 'Address')}
                         </div>
                         <DialogFooter>
-                            <Button onClick={handleCreate} data-testid="create-supplier-submit">Create</Button>
+                            <Button onClick={handleCreate} disabled={!newSupplier.name} data-testid="create-supplier-submit">
+                                Create
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
@@ -105,7 +100,8 @@ export default function SuppliersPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Name</TableHead>
-                            <TableHead>Contact Info</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Phone</TableHead>
                             <TableHead>Orders</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
@@ -113,7 +109,7 @@ export default function SuppliersPage() {
                     <TableBody>
                         {suppliers.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                                     No suppliers found.
                                 </TableCell>
                             </TableRow>
@@ -125,13 +121,12 @@ export default function SuppliersPage() {
                                             {supplier.name}
                                         </Link>
                                     </TableCell>
-                                    <TableCell>{supplier.contactInfo || '-'}</TableCell>
+                                    <TableCell>{supplier.email || '-'}</TableCell>
+                                    <TableCell>{supplier.phone || '-'}</TableCell>
                                     <TableCell>{supplier._count?.purchaseOrders || 0}</TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="sm" asChild>
-                                            <Link href={`/inventory/suppliers/${supplier.id}`}>
-                                                View
-                                            </Link>
+                                            <Link href={`/inventory/suppliers/${supplier.id}`}>View</Link>
                                         </Button>
                                     </TableCell>
                                 </TableRow>

@@ -10,7 +10,7 @@ export class SupplierController {
 
     @Post()
     @RequirePermission('SUPPLIERS', 'CREATE')
-    create(@Body() data: { name: string; contactInfo?: string }) {
+    create(@Body() data: { name: string; contactInfo?: string; email?: string; phone?: string; address?: string }) {
         return this.supplierService.create(data);
     }
 
@@ -36,7 +36,7 @@ export class SupplierController {
 
     @Patch(':id')
     @RequirePermission('SUPPLIERS', 'UPDATE')
-    update(@Param('id') id: string, @Body() data: { name?: string; contactInfo?: string }) {
+    update(@Param('id') id: string, @Body() data: { name?: string; contactInfo?: string; email?: string; phone?: string; address?: string }) {
         return this.supplierService.update(id, data);
     }
 

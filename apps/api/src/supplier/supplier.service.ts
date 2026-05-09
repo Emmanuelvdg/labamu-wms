@@ -6,10 +6,8 @@ import { PrismaService } from '../prisma.service';
 export class SupplierService {
     constructor(private prisma: PrismaService) { }
 
-    async create(data: { name: string; contactInfo?: string }) {
-        return this.prisma.supplier.create({
-            data,
-        });
+    async create(data: { name: string; contactInfo?: string; email?: string; phone?: string; address?: string }) {
+        return this.prisma.supplier.create({ data });
     }
 
     async findAll() {
@@ -34,11 +32,8 @@ export class SupplierService {
         });
     }
 
-    async update(id: string, data: { name?: string; contactInfo?: string }) {
-        return this.prisma.supplier.update({
-            where: { id },
-            data,
-        });
+    async update(id: string, data: { name?: string; contactInfo?: string; email?: string; phone?: string; address?: string }) {
+        return this.prisma.supplier.update({ where: { id }, data });
     }
 
     async remove(id: string) {

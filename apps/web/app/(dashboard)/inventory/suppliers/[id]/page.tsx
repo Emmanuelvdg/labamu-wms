@@ -20,6 +20,8 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
+const EMPTY_FORM = { name: '', email: '', phone: '', address: '', contactInfo: '' };
+
 export default function SupplierDetailPage() {
     const params = useParams();
     const router = useRouter();
@@ -29,31 +31,30 @@ export default function SupplierDetailPage() {
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState({ name: '', contactInfo: '' });
-    const [portalEnabled, setPortalEnabled] = useState(false);
+    const [editForm, setEditForm] = useState(EMPTY_FORM);
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviting, setInviting] = useState(false);
 
-    useEffect(() => {
-        loadData();
-    }, [id]);
+    useEffect(() => { loadData(); }, [id]);
 
     const loadData = async () => {
         try {
             setLoading(true);
-            const [supplierData, ordersData, flagRes] = await Promise.all([
+            const [supplierData, ordersData] = await Promise.all([
                 getSupplier(id),
                 fetchSupplierOrders(id),
-                fetch('/api/feature-flags').then(r => r.ok ? r.json() : []).catch(() => []),
             ]);
             setSupplier(supplierData);
-            setEditForm({ name: supplierData.name, contactInfo: supplierData.contactInfo || '' });
+            setEditForm({
+                name: supplierData.name || '',
+                email: supplierData.email || '',
+                phone: supplierData.phone || '',
+                address: supplierData.address || '',
+                contactInfo: supplierData.contactInfo || '',
+            });
             setOrders(ordersData);
-            const flags: Array<{ key: string; enabled: boolean }> = flagRes;
-            setPortalEnabled(flags.find(f => f.key === 'SUPPLIER_PORTAL')?.enabled ?? false);
-        } catch (error) {
-            console.error('Failed to load supplier data:', error);
+        } catch {
             toast.error('Failed to load supplier data');
         } finally {
             setLoading(false);
@@ -66,8 +67,7 @@ export default function SupplierDetailPage() {
             toast.success('Supplier updated successfully');
             setIsEditing(false);
             loadData();
-        } catch (error) {
-            console.error('Failed to update supplier:', error);
+        } catch {
             toast.error('Failed to update supplier');
         }
     };
@@ -78,11 +78,23 @@ export default function SupplierDetailPage() {
             await deleteSupplier(id);
             toast.success('Supplier deleted successfully');
             router.push('/inventory/suppliers');
-        } catch (error) {
-            console.error('Failed to delete supplier:', error);
+        } catch {
             toast.error('Failed to delete supplier');
         }
     };
+
+    const field = (key: keyof typeof EMPTY_FORM, label: string, type = 'text') => (
+        <div className="grid w-full max-w-lg items-center gap-1.5">
+            <Label htmlFor={key}>{label}</Label>
+            <Input
+                id={key}
+                type={type}
+                value={editForm[key]}
+                onChange={e => setEditForm({ ...editForm, [key]: e.target.value })}
+                disabled={!isEditing}
+            />
+        </div>
+    );
 
     if (loading) return <div className="p-8">Loading...</div>;
     if (!supplier) return <div className="p-8">Supplier not found</div>;
@@ -102,9 +114,9 @@ export default function SupplierDetailPage() {
                         </>
                     ) : (
                         <>
-                            {portalEnabled && (
-                                <Button variant="outline" onClick={() => setShowInviteModal(true)}>Invite Supplier</Button>
-                            )}
+                            <Button variant="outline" onClick={() => setShowInviteModal(true)}>
+                                Invite to Portal
+                            </Button>
                             <Button variant="outline" onClick={() => setIsEditing(true)}>Edit</Button>
                             <Button variant="destructive" onClick={handleDelete}>Delete</Button>
                         </>
@@ -112,7 +124,7 @@ export default function SupplierDetailPage() {
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+            <div className="grid gap-6 md:grid-cols-3 mb-8">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
@@ -144,33 +156,21 @@ export default function SupplierDetailPage() {
                     <TabsTrigger value="details">Details</TabsTrigger>
                     <TabsTrigger value="orders">Order History</TabsTrigger>
                 </TabsList>
+
                 <TabsContent value="details" className="space-y-4">
                     <Card>
                         <CardHeader>
                             <CardTitle>Supplier Information</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid w-full max-w-sm items-center gap-1.5">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    value={editForm.name}
-                                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                                    disabled={!isEditing}
-                                />
-                            </div>
-                            <div className="grid w-full max-w-sm items-center gap-1.5">
-                                <Label htmlFor="contact">Contact Info</Label>
-                                <Input
-                                    id="contact"
-                                    value={editForm.contactInfo}
-                                    onChange={(e) => setEditForm({ ...editForm, contactInfo: e.target.value })}
-                                    disabled={!isEditing}
-                                />
-                            </div>
+                            {field('name', 'Name')}
+                            {field('email', 'Email', 'email')}
+                            {field('phone', 'Phone')}
+                            {field('address', 'Address')}
                         </CardContent>
                     </Card>
                 </TabsContent>
+
                 <TabsContent value="orders">
                     <Card>
                         <CardHeader>
@@ -205,9 +205,7 @@ export default function SupplierDetailPage() {
                                                 <TableCell className="text-right">${order.totalAmount.toFixed(2)}</TableCell>
                                                 <TableCell className="text-right">
                                                     <Button variant="ghost" size="sm" asChild>
-                                                        <Link href={`/inventory/purchases/${order.id}`}>
-                                                            View
-                                                        </Link>
+                                                        <Link href={`/inventory/purchases/${order.id}`}>View</Link>
                                                     </Button>
                                                 </TableCell>
                                             </TableRow>
@@ -223,25 +221,50 @@ export default function SupplierDetailPage() {
             {showInviteModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-sm">
-                        <h2 className="text-lg font-bold mb-4">Invite Supplier to Portal</h2>
+                        <h2 className="text-lg font-bold mb-1">Invite to Supplier Portal</h2>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Send an invitation link so this supplier can log in and view their purchase orders.
+                        </p>
                         <div className="space-y-3">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input type="email" className="w-full border rounded-md px-3 py-2 text-sm"
-                                    value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
-                                    placeholder="supplier@example.com" />
+                                <input
+                                    type="email"
+                                    className="w-full border rounded-md px-3 py-2 text-sm"
+                                    value={inviteEmail}
+                                    onChange={e => setInviteEmail(e.target.value)}
+                                    placeholder={supplier.email || 'supplier@example.com'}
+                                />
                             </div>
                         </div>
                         <div className="mt-5 flex gap-3">
-                            <Button variant="outline" className="flex-1" onClick={() => { setShowInviteModal(false); setInviteEmail(''); }}>Cancel</Button>
-                            <Button className="flex-1" disabled={!inviteEmail || inviting} onClick={async () => {
-                                setInviting(true);
-                                try {
-                                    const res = await fetch(`/api/suppliers/${id}/invite`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: inviteEmail }) });
-                                    if (res.ok) { toast.success('Invitation sent'); setShowInviteModal(false); setInviteEmail(''); }
-                                    else toast.error('Failed to send invitation');
-                                } finally { setInviting(false); }
-                            }}>
+                            <Button variant="outline" className="flex-1" onClick={() => { setShowInviteModal(false); setInviteEmail(''); }}>
+                                Cancel
+                            </Button>
+                            <Button
+                                className="flex-1"
+                                disabled={!inviteEmail || inviting}
+                                onClick={async () => {
+                                    setInviting(true);
+                                    try {
+                                        const res = await fetch(`/api/suppliers/${id}/invite`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ email: inviteEmail }),
+                                        });
+                                        if (res.ok) {
+                                            toast.success('Invitation sent successfully');
+                                            setShowInviteModal(false);
+                                            setInviteEmail('');
+                                        } else {
+                                            const err = await res.json().catch(() => ({}));
+                                            toast.error(err.message || 'Failed to send invitation');
+                                        }
+                                    } finally {
+                                        setInviting(false);
+                                    }
+                                }}
+                            >
                                 {inviting ? 'Sending…' : 'Send Invite'}
                             </Button>
                         </div>
