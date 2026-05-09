@@ -450,6 +450,10 @@ export class OrderService {
     async updateOrder(id: string, data: any): Promise<Order> {
         const updateData: any = {};
 
+        if (data.priority !== undefined) {
+            updateData.priority = data.priority;
+        }
+
         // Allow updating delivery method
         if (data.deliveryMethodId) {
             updateData.deliveryMethodId = data.deliveryMethodId;

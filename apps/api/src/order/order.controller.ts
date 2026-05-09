@@ -46,9 +46,14 @@ export class OrderController {
     }
 
     @Put(':id')
-    @Patch(':id')
     @RequirePermission('ORDERS', 'UPDATE')
     updateOrder(@Param('id') id: string, @Body() data: any) {
+        return this.orderService.updateOrder(id, data);
+    }
+
+    @Patch(':id')
+    @RequirePermission('ORDERS', 'UPDATE')
+    patchOrder(@Param('id') id: string, @Body() data: any) {
         return this.orderService.updateOrder(id, data);
     }
 
