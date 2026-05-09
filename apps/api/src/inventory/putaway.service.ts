@@ -298,13 +298,13 @@ export class PutawayService {
                     include: { inventory: true }
                 });
             } else if (rule.strategy === 'ZONE_PRIORITY') {
-                // Zone-based selection
+                // Zone-based selection — use ?? 1 so zp=0 virtual locations are never selected by default
                 candidateLocations = await this.prisma.location.findMany({
                     where: {
                         warehouseId,
                         type: 'INTERNAL',
                         zonePriority: {
-                            gte: rule.preferredZonePriorityMin || 0,
+                            gte: rule.preferredZonePriorityMin ?? 1,
                             lte: rule.preferredZonePriorityMax || 999
                         }
                     },
@@ -360,6 +360,7 @@ export class PutawayService {
             where: {
                 warehouseId,
                 type: 'INTERNAL',
+                zonePriority: { gt: 0 }, // exclude virtual/placeholder locations (zp=0)
                 NOT: {
                     OR: [
                         { name: { contains: 'RECEIVING' } },
@@ -563,35 +564,12 @@ export class PutawayService {
         });
 
         if (receipts.length === 0) {
-            const warehouse = await this.prisma.warehouse.findUnique({
-                where: { id: warehouseId },
-                select: { name: true }
+            // Create an empty OPEN session — tasks are generated as goods arrive at receiving
+            const emptySession = await this.prisma.putawaySession.create({
+                data: { warehouseId, workerId: workerId ?? null, status: 'OPEN' },
+                include: { tasks: true },
             });
-
-            throw new HttpException(
-                {
-                    message: `No items available for putaway in warehouse "${warehouse?.name || warehouseId}"`,
-                    error: 'NO_PUTAWAY_ITEMS',
-                    details: {
-                        warehouseId,
-                        warehouseName: warehouse?.name || 'Unknown',
-                        receivingLocationsChecked: receivingLocationIds.length,
-                        receiptsFound: 0,
-                        explanation: 'No recent receipts found at receiving/staging locations. Items must be received before they can be put away.'
-                    },
-                    remediation: {
-                        steps: [
-                            '1. Navigate to Purchase Orders',
-                            '2. Create and confirm a purchase order',
-                            '3. Navigate to Procurement > Receive Products',
-                            '4. Select the purchase order and receive items to a receiving/staging location',
-                            '5. Return to Putaway and create a new session'
-                        ],
-                        quickFix: 'Receive a purchase order to a receiving or staging location first'
-                    }
-                },
-                HttpStatus.NOT_FOUND
-            );
+            return { ...emptySession, tasks: [], pendingItems: 0 };
         }
 
         // Create session

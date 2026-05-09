@@ -1238,6 +1238,70 @@ async function runModules() {
             skip('M41.5', 'DELETE /strategy/reservation/:id', 'strategy not created');
         }
     });
+
+    // ── M42: Delivery Methods — Write via alias (R10 fix) ──────────────────
+    await mod('M42: Delivery Methods CRUD', async () => {
+        const listRes = await check('M42.1', 'GET /delivery-methods → 200', 'GET', '/delivery-methods');
+        if (listRes.ok) {
+            const arr = Array.isArray(listRes.body) ? listRes.body : (listRes.body?.data ?? []);
+            assert('M42.2', '/delivery-methods returns array', Array.isArray(arr));
+        }
+        const createRes = await api('POST', '/delivery-methods', {
+            name: `RgDM-${TS}`,
+            provider: 'FIXED_PRICE',
+            fixedPrice: 9.99,
+            active: true,
+        });
+        assert('M42.3', 'POST /delivery-methods → 201', createRes.status === 201 || createRes.ok,
+            `HTTP ${createRes.status}`);
+        if (createRes.ok && createRes.body?.id) {
+            const dmId = createRes.body.id;
+            const updRes = await api('PUT', `/delivery-methods/${dmId}`, {
+                name: `RgDM-${TS}-upd`, provider: 'FIXED_PRICE', fixedPrice: 14.99, active: true,
+            });
+            assert('M42.4', 'PUT /delivery-methods/:id → 200', updRes.ok, `HTTP ${updRes.status}`);
+            const delRes = await api('DELETE', `/delivery-methods/${dmId}`);
+            assert('M42.5', 'DELETE /delivery-methods/:id → 200', delRes.ok, `HTTP ${delRes.status}`);
+        } else {
+            skip('M42.4', 'PUT /delivery-methods/:id', 'method not created');
+            skip('M42.5', 'DELETE /delivery-methods/:id', 'method not created');
+        }
+    });
+
+    // ── M43: Replenishment Rules — POST (R11 fix) ──────────────────────────
+    await mod('M43: Replenishment Rules CRUD', async () => {
+        const listRes = await check('M43.1', 'GET /replenishment/rules → 200', 'GET', '/replenishment/rules');
+        if (listRes.ok) {
+            const arr = Array.isArray(listRes.body) ? listRes.body : (listRes.body?.data ?? []);
+            assert('M43.2', '/replenishment/rules returns array', Array.isArray(arr));
+        }
+        if (!state.productId || !state.storageLocationId) {
+            skip('M43.3', 'POST /replenishment/rules', 'missing productId or storageLocationId'); return;
+        }
+        const createRes = await api('POST', '/replenishment/rules', {
+            productId: state.productId,
+            locationId: state.storageLocationId,
+            minQuantity: 20,
+            maxQuantity: 200,
+        });
+        assert('M43.3', 'POST /replenishment/rules → 201', createRes.status === 201 || createRes.ok,
+            `HTTP ${createRes.status}`);
+        if (createRes.ok && createRes.body?.id) {
+            const byProduct = await api('GET', `/replenishment/rules?productId=${state.productId}`);
+            assert('M43.4', 'GET /replenishment/rules?productId filters correctly',
+                byProduct.ok && Array.isArray(byProduct.body), `HTTP ${byProduct.status}`);
+        }
+    });
+
+    // ── M44: Orders PATCH update (R9 fix) ──────────────────────────────────
+    await mod('M44: Orders PATCH', async () => {
+        if (!state.orderId) { skip('M44.1', 'PATCH /orders/:id', 'no orderId from bootstrap'); return; }
+        const patchRes = await api('PATCH', `/orders/${state.orderId}`, { priority: 'HIGH' });
+        assert('M44.1', 'PATCH /orders/:id → 200', patchRes.ok, `HTTP ${patchRes.status}`);
+        if (patchRes.ok) {
+            assert('M44.2', 'PATCH response contains id', !!patchRes.body?.id, JSON.stringify(patchRes.body));
+        }
+    });
 }
 
 // ============================================================

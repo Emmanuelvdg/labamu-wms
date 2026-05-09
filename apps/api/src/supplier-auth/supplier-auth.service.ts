@@ -8,7 +8,12 @@ export class SupplierAuthService {
     constructor(private prisma: PrismaService, private jwtService: JwtService) { }
 
     async register(token: string, password: string) {
-        const invitation = await this.prisma.supplierInvitation.findUnique({ where: { token } });
+        let invitation: any;
+        try {
+            invitation = await this.prisma.supplierInvitation.findUnique({ where: { token } });
+        } catch {
+            throw new BadRequestException('Invalid invitation token');
+        }
         if (!invitation) throw new BadRequestException('Invalid invitation token');
         if (invitation.usedAt) throw new BadRequestException('Invitation already used');
         if (invitation.expiresAt < new Date()) throw new BadRequestException('Invitation expired');

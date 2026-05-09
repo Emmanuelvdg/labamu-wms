@@ -21,6 +21,24 @@ export class ReplenishmentController {
         });
     }
 
+    @Post('rules')
+    async createRule(@Body() data: {
+        productId: string;
+        locationId: string;
+        minQuantity: number;
+        maxQuantity: number;
+    }) {
+        return this.prisma.reorderingRule.create({
+            data: {
+                productId: data.productId,
+                locationId: data.locationId,
+                minQuantity: data.minQuantity,
+                maxQuantity: data.maxQuantity,
+            },
+            include: { product: true, location: true },
+        });
+    }
+
     @Get('summary')
     async getSummary(@Query('warehouseId') warehouseId?: string) {
         return this.replenishmentService.getSummary(warehouseId);
