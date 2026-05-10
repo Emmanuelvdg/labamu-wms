@@ -1,8 +1,8 @@
 # UI-Driven End-to-End Test Scenarios — Labamu IMS
 
-**Version:** 1.0  
-**Date:** 2026-05-06  
-**Execution method:** Playwright — real browser, all interactions via UI only (no direct API calls in test body)  
+**Version:** 1.1  
+**Date:** 2026-05-11  
+**Execution method:** real browser, all interactions via UI only (no direct API calls in test body)  
 **Base URL:** http://localhost:3000  
 **Auth:** Admin user (`admin@labamu.com` / seeded credentials via `e2e/.auth/admin.json`)
 
@@ -170,6 +170,75 @@
 
 ---
 
+### Scenario A6 — Cross-Docking / Direct Ship
+
+**Business narrative:** An urgent backorder has reserved stock that does not yet exist in the warehouse. When the supplier delivers, goods skip putaway entirely and are routed straight to the shipping dock to fulfil the waiting order.
+
+**Preconditions (UI setup steps — included in `beforeAll`):**
+- Warehouse "A6 Warehouse" configured with 3-step outgoing flow (Receiving → Staging → Shipping Dock)
+- Receiving location "A6-RECV", staging location "A6-STAGE", shipping dock location "A6-SHIP" created
+- Storage location "A6-ZONE-01" created
+- Putaway rule created: product category = "A6 Urgent"; strategy = FIXED; destination = "A6-SHIP" (shipping dock); priority = 100
+- Product "A6 Urgent Widget" (SKU: `URGENT-A6`); category = "A6 Urgent"; unit cost 25.00
+- Customer "A6 Customer"; Sales Order for "A6 Urgent Widget" qty 20 created, confirmed, and reserved (status = RESERVED) — **no stock exists yet**
+- Purchase Order (APPROVED) for "A6 Urgent Widget" qty 20 from supplier
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to the APPROVED PO for "A6 Urgent Widget" | PO detail page loads; status = APPROVED |
+| 2 | Click "Receive"; set received qty = 20; select location "A6-RECV" | Qty and location fields set |
+| 3 | Click "Confirm Receipt" | Toast "Goods received"; PO status = RECEIVED |
+| 4 | Navigate to `/putaway` | Putaway task for "A6 Urgent Widget" visible |
+| 5 | Open the putaway task | Task detail shows: product "A6 Urgent Widget", qty 20, from "A6-RECV", **suggested destination = "A6-SHIP"** (cross-dock rule matched) |
+| 6 | Confirm destination "A6-SHIP"; click "Complete Task" | Task closed; toast "Task completed" |
+| 7 | Navigate to `/inventory` and filter for "A6 Urgent Widget" | On-hand qty shows 20; location = "A6-SHIP" (not any storage zone) |
+| 8 | Navigate to `/picking`; select "A6 Warehouse"; strategy = SINGLE | Picking page ready |
+| 9 | Start picking session | Pick task for the waiting A6 sales order appears; pick location = "A6-SHIP" |
+| 10 | Confirm pick qty 20; complete session | Session completed; order progresses to PACKED queue |
+| 11 | Navigate to `/packing`; start and complete packing for A6 order | Order status = PACKED |
+| 12 | Navigate to order detail; create shipment and mark shipped | Order status = SHIPPED |
+| 13 | Navigate to `/inventory`; filter "A6 Urgent Widget" | On-hand qty = 0; goods were never placed in a storage zone |
+
+**Key assertion:** Inventory audit trail shows two moves — RECV → SHIP (putaway), then SHIP → OUT (pick) — with no intermediate storage location.
+
+---
+
+### Scenario A7 — Lot/Batch & Expiry Tracking (FEFO)
+
+**Business narrative:** Goods are received with lot numbers and expiry dates. The system allocates the nearest-to-expiry lot first (FEFO). Expired lots are blocked from allocation.
+
+**Preconditions (UI setup steps — included in `beforeAll`):**
+- Warehouse "A7 Warehouse" with receiving location "A7-RECV" and storage location "A7-STORE-01"
+- Product "A7 Perishable" (SKU: `PERISHABLE-A7`); tracking = **Lot**; rotation policy = **FEFO**
+- Customer "A7 Customer" and delivery method configured
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/inventory/purchases/new`; create and approve PO for "A7 Perishable" qty 100 from any supplier | PO status = APPROVED |
+| 2 | Click "Receive"; on the receipt line, enter qty 50; enter **Lot Number = "LOT-A"**; set **Expiry Date = today + 30 days**; select location "A7-RECV" | Lot and expiry fields populated |
+| 3 | Click "Add Lot Line"; enter qty 50; Lot Number = "LOT-B"; Expiry Date = **today + 10 days** (sooner expiry) | Second lot line visible |
+| 4 | Click "Confirm Receipt" | Toast "Goods received"; two batch records created for "A7 Perishable" |
+| 5 | Navigate to `/putaway`; complete putaway for both lots to "A7-STORE-01" | Both tasks completed; inventory shows 100 units, 2 batches |
+| 6 | Navigate to `/inventory`; click "A7 Perishable"; open Batches tab | Table shows LOT-A (exp +30d, qty 50) and LOT-B (exp +10d, qty 50) |
+| 7 | Navigate to `/orders/new`; create order for "A7 Customer"; add "A7 Perishable" qty 50; confirm + reserve | Order status = RESERVED |
+| 8 | Navigate to `/picking`; start SINGLE picking session for "A7 Warehouse" | Pick task appears |
+| 9 | Open pick task; check the **Lot/Batch** column on the pick line | **LOT-B** (soonest expiry) is shown as the allocated lot — FEFO applied |
+| 10 | Confirm pick qty 50; complete session | Session completed; LOT-B stock reduced to 0 |
+| 11 | Navigate to `/inventory` → "A7 Perishable" → Batches tab | LOT-B shows qty 0; LOT-A still shows qty 50 |
+| 12 | Create a **second** PO; receive qty 30; Lot = "LOT-C"; Expiry = **yesterday** (already expired); putaway to "A7-STORE-01" | Batch record for LOT-C created |
+| 13 | Navigate to `/orders/new`; create order for qty 20; confirm + click "Reserve Stock" | Warning or error visible: **"Cannot allocate — LOT-C is expired"** or reservation skips LOT-C and shows partial/zero reserved |
+| 14 | Navigate to `/inventory` → "A7 Perishable" → Batches tab | LOT-C batch is flagged or status = EXPIRED / QUARANTINE |
+
+**Edge cases:**
+- Mixed lot pick (order qty 60 pulls remaining 50 from LOT-A + attempts LOT-C) → system skips expired lot; partial reservation shown
+- Near-expiry warning threshold (configurable in product settings) triggers notification badge on inventory row
+
+---
+
 ## Track B — Back-Office Operations
 
 ---
@@ -301,26 +370,41 @@
 
 ---
 
-### Scenario B7 — Inter-Warehouse Transfer (UI-Driven)
+### Scenario B7 — Inter-Warehouse Transfer: Full Cycle (Pick → Transit → Receive → Putaway)
 
-**Business narrative:** Stock is moved from one warehouse to another via the Transfers/Stock Moves UI.
+**Business narrative:** Stock is formally transferred between two warehouses. The full workflow is exercised: the source warehouse picks and ships the goods, the destination warehouse receives them and puts them away, and inventory levels are correct at both ends throughout.
 
-**Preconditions:** Two warehouses with known stock in source; product "B7 Transfer Widget" qty ≥ 30 in source.
+**Preconditions (UI setup steps — included in `beforeAll`):**
+- Warehouse "B7 Source WH" with storage location "B7-SRC-ZONE" containing product "B7 Transfer Widget" qty 30
+- Warehouse "B7 Dest WH" with receiving location "B7-DST-RECV" and storage location "B7-DST-ZONE"
+- Both warehouses configured with 2-step outgoing/incoming flows
 
 **Steps and assertions:**
 
 | # | UI Action | Assertion |
 |---|-----------|-----------|
-| 1 | Navigate to `/inventory/moves` | Stock Moves list loads |
-| 2 | Click "New Transfer" | Transfer form opens |
-| 3 | Select product "B7 Transfer Widget" | Product selected |
-| 4 | Select source location | Source populated |
-| 5 | Select destination location (different warehouse) | Destination populated |
-| 6 | Enter qty 20 | Qty field set |
-| 7 | Click "Create Transfer" | Stock move record appears with status DRAFT |
-| 8 | Click "Validate" | Status changes to DONE; toast "Transfer validated" |
-| 9 | Navigate to `/inventory`; filter by source warehouse | "B7 Transfer Widget" qty reduced by 20 |
-| 10 | Filter by destination warehouse | Qty increased by 20 |
+| 1 | Navigate to `/transfers`; click "New Transfer Request" | Transfer request form opens |
+| 2 | Source warehouse = "B7 Source WH"; destination = "B7 Dest WH" | Warehouses selected |
+| 3 | Click "Add Item"; select product "B7 Transfer Widget"; qty = 20 | Line item appears |
+| 4 | Click "Submit Request" | Transfer request created; status = PENDING |
+| 5 | Click "Approve" (manager action) | Status changes to APPROVED |
+| 6 | Navigate to `/picking`; select "B7 Source WH"; strategy = SINGLE | Picking page ready |
+| 7 | Start picking session; pick task for the transfer request appears with qty 20 | Pick task visible; source location = "B7-SRC-ZONE" |
+| 8 | Confirm pick qty 20; complete session | Session completed |
+| 9 | Navigate to transfer request detail | Status = IN_TRANSIT |
+| 10 | Navigate to `/inventory`; filter by "B7 Source WH"; search "B7 Transfer Widget" | Qty = 10 (reduced from 30 by 20) |
+| 11 | Navigate to `/inventory/moves`; click "New Transfer" to record inbound at destination | Inbound move form |
+| 12 | Select product "B7 Transfer Widget"; source = transit/outbound; destination = "B7-DST-RECV"; qty = 20 | Fields set |
+| 13 | Click "Validate" | Move recorded; goods arrive at "B7-DST-RECV" |
+| 14 | Navigate to `/putaway`; putaway task for "B7 Transfer Widget" at "B7 Dest WH" visible | Task appears with qty 20 |
+| 15 | Select destination "B7-DST-ZONE"; click "Complete Task" | Putaway done; toast shown |
+| 16 | Navigate to `/inventory`; filter by "B7 Dest WH"; search "B7 Transfer Widget" | Qty = 20 in "B7-DST-ZONE" |
+| 17 | Navigate to transfer request detail | Status = COMPLETED |
+
+**Key assertions:**
+- Source warehouse qty: 30 → 10 (net −20)
+- Destination warehouse qty: 0 → 20 (net +20)
+- Transfer request status lifecycle: PENDING → APPROVED → IN_TRANSIT → COMPLETED
 
 ---
 
@@ -341,6 +425,47 @@
 | 5 | Select an alternative from the list | Location selected |
 | 6 | Click "Confirm Alternative" | Task updates with new location; toast shown |
 | 7 | Click "Complete Task" | Task closed; inventory assigned to alternative location |
+
+---
+
+### Scenario B9 — Quality Control & Inspection Workflow
+
+**Business narrative:** A purchase order is received and moved to a QC area. An inspector records pass/fail results per unit. Passing items proceed to storage; failing items are routed to scrap.
+
+**Preconditions (UI setup steps — included in `beforeAll`):**
+- Warehouse "B9 Warehouse" with locations: "B9-RECV" (receiving), "B9-QC" (inspection area), "B9-STORE" (storage)
+- Product "B9 Inspected Widget" (SKU: `INSPECT-B9`); unit cost 40.00
+- Supplier "B9 Supplier"; Purchase Order (APPROVED) for 50 units of "B9 Inspected Widget"
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to the approved PO for "B9 Inspected Widget" | PO detail; status = APPROVED |
+| 2 | Click "Receive"; enter qty 50; select location "B9-RECV"; click "Confirm Receipt" | Toast "Goods received"; PO status = RECEIVED; 50 units in "B9-RECV" |
+| 3 | Navigate to `/putaway`; open the putaway task for "B9 Inspected Widget" | Task detail: from "B9-RECV", qty 50 |
+| 4 | Change destination to "B9-QC" (QC area); click "Complete Task" | Task closed; 50 units now in "B9-QC" |
+| 5 | Navigate to the PO detail → "Inspections" tab (or `/inventory/purchases/:id`) | Inspections tab visible; "Add Inspection" button |
+| 6 | Click "Add Inspection" | Inspection form opens |
+| 7 | Inspected qty = 50; Passed qty = 40; Failed qty = 10; Failure reason = "Damaged packaging"; click "Submit" | Inspection record created: 40 pass / 10 fail |
+| 8 | PO inspection status shows "PARTIALLY_PASSED" or equivalent | Status badge updated |
+| 9 | Navigate to `/inventory/adjustments/new` | Create Adjustment form |
+| 10 | Select product "B9 Inspected Widget"; location "B9-QC"; type = DECREASE; qty = 10; reason = "QC Failure — Damaged packaging" | Form set |
+| 11 | Click "Create Adjustment" → "Apply Adjustment" | Adjustment applied; 10 units removed from "B9-QC" |
+| 12 | Navigate to `/inventory/scrap`; click "New Scrap Order" | Scrap form opens |
+| 13 | Select "B9 Inspected Widget"; location "B9-QC" (or virtual scrap location); qty = 10; reason = "QC Failure" | Form set |
+| 14 | Click "Create" → "Confirm Scrap" | Scrap order created and processed; status = COMPLETED |
+| 15 | Navigate to `/putaway`; create a putaway task (or stock move) to move 40 passing units from "B9-QC" → "B9-STORE" | Task set up with correct qty |
+| 16 | Complete putaway task | Task closed; toast shown |
+| 17 | Navigate to `/inventory`; filter for "B9 Inspected Widget" | On-hand = 40 in "B9-STORE"; 0 in "B9-QC" |
+
+**Key assertions:**
+- 50 received → 10 scrapped (QC fail) → 40 in storage
+- Scrap record references QC failure reason
+- PO inspection record shows pass/fail split
+
+**Edge case:**
+- 100% fail: all 50 units rejected → scrap order for 50 → zero units reach storage; PO marked FAILED_INSPECTION
 
 ---
 
@@ -556,6 +681,47 @@
 
 ---
 
+### Scenario C11 — Carrier Integration & Shipping Labels (Lalamove)
+
+**Business narrative:** An admin configures Lalamove as a delivery method. A dispatcher ships an order via Lalamove, receives a live quotation, confirms the booking, and the tracking reference flows back into the order detail.
+
+**Preconditions (UI setup steps — included in `beforeAll`):**
+- Lalamove API credentials configured (sandbox keys) — visible at `/settings/lalamove`
+- Warehouse "C11 Warehouse" with structured address fields (street, city, country, latitude, longitude) filled in — required for Lalamove geocoding
+- Customer "C11 Customer" with structured address fields filled in (delivery destination)
+- Product "C11 Delivery Widget"; stock qty ≥ 5 in warehouse
+- Sales order for "C11 Customer" — 5 units of "C11 Delivery Widget" — picked and packed (status = PACKED)
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/settings/lalamove` | Lalamove settings page loads; API Key and API Secret fields visible |
+| 2 | Verify credentials are saved (masked values shown) | Fields show masked key; "Test Connection" button visible |
+| 3 | Click "Test Connection" | Toast "Connection successful" (sandbox API responds) |
+| 4 | Navigate to `/configuration/delivery-methods`; click "New Delivery Method" | Create form opens |
+| 5 | Name = "Lalamove Express"; provider = **Lalamove (Live Quote)**; click Save | Method row appears; "Price / Logic" column shows "Live Quote" badge |
+| 6 | Navigate to the PACKED C11 sales order | Order detail; status = PACKED |
+| 7 | Click "Create Shipment" | Shipment form opens; delivery method dropdown visible |
+| 8 | Select "Lalamove Express" from the delivery method dropdown | **Quotation panel appears automatically** showing: service type (MOTORCYCLE/SEDAN/VAN based on order weight), quoted price (e.g. IDR 8,500), and currency |
+| 9 | Verify the quoted price is a non-zero number | Price > 0 displayed |
+| 10 | Click "Confirm & Place Order" (or "Dispatch") | API call to Lalamove sandbox — order placed |
+| 11 | Toast "Shipment created" shown; page redirects to order detail | Order status = SHIPPED |
+| 12 | On order detail — Shipment section | **Lalamove Order ID** field is populated; **Tracking Link** is visible and clickable |
+| 13 | Navigate to `/shipments` | C11 order row shows carrier = "Lalamove Express"; tracking reference visible |
+
+**Key assertions:**
+- Quotation is fetched live (non-zero price from Lalamove sandbox) before confirming
+- Lalamove order ID and tracking share link are persisted on the order/shipment record
+- No manual tracking number entry required — it is returned by the carrier API
+
+**Edge cases:**
+- Missing warehouse coordinates → form validation prevents shipment creation; error message "Warehouse address is incomplete for Lalamove delivery"
+- Missing customer coordinates → same validation error at dispatch time
+- Lalamove sandbox unavailable → graceful error toast; shipment not created; order stays PACKED
+
+---
+
 ## Composite End-to-End Journeys
 
 These journeys run multiple tracks sequentially in a single spec to validate the complete platform lifecycle.
@@ -588,6 +754,40 @@ Runs in sequence: C1 (warehouse) → C2 (product) → C3 (putaway rules) → C4 
 
 ---
 
+### Scenario E3 — Replenishment Chain: Min/Max Rule → Consume Stock → Auto-PO
+
+**Business narrative:** Validates the complete replenishment lifecycle in one stitched sequence: configure a min/max rule, consume stock below the threshold via real sales orders, run the replenishment check, and confirm an auto-generated purchase order is created and routable for approval.
+
+Runs in sequence: C4 (reorder rule) → A2 × N (sell stock below min) → B5 (replenishment check → auto-PO) → A1 (receive auto-PO goods).
+
+**Preconditions:** Supplier "E3 Supplier" and product "E3 Replenish Widget" created. Stock seeded to 25 units in "E3 Warehouse" via a positive adjustment.
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/inventory/reordering-rules`; click "New Rule" | Create form opens |
+| 2 | Product = "E3 Replenish Widget"; location = "E3 Warehouse storage"; min = 20; max = 100 | Fields set |
+| 3 | Click Save | Rule row appears; min = 20, max = 100 |
+| 4 | Navigate to `/inventory/replenishment`; click "Trigger Check" | Dashboard shows **No alerts** (current stock 25 > min 20) |
+| 5 | Navigate to `/orders/new`; create and ship a sales order for "E3 Replenish Widget" qty 10 (stock now = 15) | Order shipped; on-hand decreases to 15 |
+| 6 | Navigate to `/inventory/replenishment`; click "Trigger Check" | **Alert appears** for "E3 Replenish Widget" — status LOW_STOCK; current = 15, threshold = 20 |
+| 7 | Click the alert row | Alert detail shows: current stock 15, min threshold 20, suggested PO qty = 85 (to reach max 100) |
+| 8 | Click "Create Auto PO" → confirm dialog | Toast "Purchase order created"; alert status changes to PO_CREATED |
+| 9 | Click the PO link in the alert | Navigated to new PO detail; supplier = "E3 Supplier"; qty = 85; status = PENDING |
+| 10 | Navigate to `/inventory/purchases` | PO row visible; reference to "E3 Replenish Widget" |
+| 11 | Approve the PO | Status = APPROVED |
+| 12 | Click "Receive"; enter qty 85; select storage location; confirm receipt | PO status = RECEIVED; on-hand increases by 85 → total = 100 |
+| 13 | Navigate to `/inventory/replenishment` | Alert for "E3 Replenish Widget" is dismissed or no longer LOW_STOCK |
+
+**Key assertions:**
+- No alert fires while stock ≥ min (step 4)
+- Alert fires immediately after stock drops below min (step 6)
+- Auto-PO qty targets the max quantity (max − current = 100 − 15 = 85)
+- Receiving the PO clears the alert and restores stock to max
+
+---
+
 ## Playwright Implementation Notes
 
 ### File layout
@@ -598,6 +798,8 @@ apps/web/e2e/
   ui-a3-returns-flow.spec.ts
   ui-a4-wave-picking.spec.ts
   ui-a5-cluster-picking.spec.ts
+  ui-a6-cross-docking.spec.ts
+  ui-a7-lot-batch-expiry.spec.ts
   ui-b1-stocktaking.spec.ts
   ui-b2-cycle-count.spec.ts
   ui-b3-inventory-adjustment.spec.ts
@@ -606,6 +808,7 @@ apps/web/e2e/
   ui-b6-invoice-matching.spec.ts
   ui-b7-inter-warehouse-transfer.spec.ts
   ui-b8-putaway-exception.spec.ts
+  ui-b9-qc-inspection.spec.ts
   ui-c1-warehouse-setup.spec.ts
   ui-c2-product-catalog.spec.ts
   ui-c3-putaway-rules.spec.ts
@@ -616,8 +819,10 @@ apps/web/e2e/
   ui-c8-settings.spec.ts
   ui-c9-supplier-portal.spec.ts
   ui-c10-admin-tenant.spec.ts
+  ui-c11-carrier-shipping-labels.spec.ts
   ui-e1-full-lifecycle.spec.ts
   ui-e2-config-first-order.spec.ts
+  ui-e3-replenishment-chain.spec.ts
 ```
 
 ### Shared helpers (`e2e/helpers/ui-helpers.ts`)
