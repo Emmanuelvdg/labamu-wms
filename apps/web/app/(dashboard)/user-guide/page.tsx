@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Link from 'next/link';
-import { ArrowLeft, Book, Box, MapPin, Truck, ShoppingCart, LayoutGrid, FileText, Users, BarChart, Settings, ClipboardList, Trash2, Globe, Archive, Route, Bell, Package, AlertTriangle, ScanLine, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Box, MapPin, Truck, ShoppingCart, LayoutGrid, FileText, Users, BarChart, Settings, ClipboardList, Trash2, Globe, Archive, Route, Bell, Package, AlertTriangle, ScanLine, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function UserGuidePage() {
@@ -66,6 +66,7 @@ export default function UserGuidePage() {
                                         <h4 className="font-semibold text-foreground mb-1">Inbound Operations</h4>
                                         <div className="flex flex-col space-y-1">
                                             <a onClick={(e) => scrollToSection(e, 'suppliers')} href="#suppliers" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Suppliers</a>
+                                            <a onClick={(e) => scrollToSection(e, 'supplier-portal')} href="#supplier-portal" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Supplier Portal</a>
                                             <a onClick={(e) => scrollToSection(e, 'purchase-orders')} href="#purchase-orders" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Purchase Orders</a>
                                             <a onClick={(e) => scrollToSection(e, 'putaway')} href="#putaway" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Putaway</a>
                                             <a onClick={(e) => scrollToSection(e, 'putaway-rules')} href="#putaway-rules" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Putaway Rules</a>
@@ -596,13 +597,83 @@ export default function UserGuidePage() {
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Users className="h-5 w-5" /> Suppliers</h3>
                                 <Card>
                                     <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> CRM for your vendors.</p>
-                                        <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                                            <li><strong>Payment Terms:</strong> Default terms (e.g., Net 30) for generated POs.</li>
-                                            <li><strong>Lead Time:</strong> Average time to deliver (used for forecasting).</li>
-                                        </ul>
+                                        <p><strong>Purpose:</strong> Vendor master record — contact directory, purchase history, and portal access management.</p>
+                                        <div>
+                                            <h4 className="font-medium mb-2">Supplier Fields:</h4>
+                                            <ul className="list-disc pl-5 text-muted-foreground space-y-1">
+                                                <li><strong>Name:</strong> Company or trading name (required).</li>
+                                                <li><strong>Email:</strong> Primary contact email — also used for portal invitations.</li>
+                                                <li><strong>Phone:</strong> Contact phone number.</li>
+                                                <li><strong>Address:</strong> Physical address for delivery notes and PO headers.</li>
+                                            </ul>
+                                        </div>
+                                        <div className="bg-primary/5 p-4 rounded-md text-sm border border-primary/20">
+                                            <strong className="text-primary block mb-2">✨ Supplier Portal — Invite to Portal</strong>
+                                            <p className="text-muted-foreground mb-2">
+                                                Each supplier detail page has an <strong>Invite to Portal</strong> button. Clicking it opens a dialog to enter (or confirm) the supplier's email. Sending the invite:
+                                            </p>
+                                            <ol className="list-decimal pl-5 text-muted-foreground space-y-1">
+                                                <li>Creates a time-limited invitation token (72-hour expiry).</li>
+                                                <li>Sends an email with a registration link to the supplier.</li>
+                                                <li>Supplier registers, sets a password, and can log in at <code>/portal/login</code> to view their purchase orders.</li>
+                                            </ol>
+                                        </div>
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Order History tab:</h4>
+                                            <p className="text-sm text-muted-foreground">The <strong>Order History</strong> tab on a supplier page shows all purchase orders placed with that supplier, including status, date, item count, and total amount, with a direct link to each PO.</p>
+                                        </div>
                                         <div className="bg-muted p-4 rounded-md text-sm">
-                                            <strong>How to Use:</strong> Go to <strong>Purchasing &rarr; Suppliers</strong>. Keep contact info and addresses up to date for PO generation.
+                                            <strong>How to Use:</strong>
+                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                <li>Go to <strong>Inventory &rarr; Suppliers</strong>.</li>
+                                                <li>Click <strong>Add Supplier</strong> and fill in name, email, phone, and address.</li>
+                                                <li>Open a supplier record and click <strong>Invite to Portal</strong> to grant them self-service PO visibility.</li>
+                                                <li>Use <strong>Edit</strong> to update contact details at any time.</li>
+                                            </ol>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Supplier Portal */}
+                            <div id="supplier-portal" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Globe className="h-5 w-5" /> Supplier Portal</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> A dedicated self-service portal where your suppliers can log in and view purchase orders raised for them, reducing back-and-forth communication.</p>
+
+                                        <div className="bg-blue-50 p-4 rounded-md text-sm border border-blue-200">
+                                            <strong className="text-blue-900 block mb-2">Portal Access Flow:</strong>
+                                            <ol className="list-decimal pl-5 text-muted-foreground space-y-1">
+                                                <li><strong>Invite:</strong> Admin clicks <strong>Invite to Portal</strong> on the supplier's detail page and sends an invite email.</li>
+                                                <li><strong>Register:</strong> Supplier receives the email and follows the link to <code>/portal/register?token=…</code> to set their password.</li>
+                                                <li><strong>Login:</strong> Supplier logs in at <code>/portal/login</code> using their email and password.</li>
+                                                <li><strong>View Orders:</strong> Supplier sees a list of all purchase orders where they are the supplier, with status, dates, and line items.</li>
+                                            </ol>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">What suppliers can see:</h4>
+                                            <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                                                <li>All purchase orders associated with their supplier account.</li>
+                                                <li>PO status (DRAFT, ORDERED, PARTIAL, RECEIVED).</li>
+                                                <li>Line items: products, quantities, unit costs.</li>
+                                                <li>Order dates and reference numbers.</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Security & Access Control:</h4>
+                                            <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                                                <li>Invitation tokens expire after <strong>72 hours</strong>. Re-invite if a supplier misses the window.</li>
+                                                <li>Suppliers are isolated — each supplier account only sees their own POs.</li>
+                                                <li>Portal uses a separate JWT authentication system from the main admin interface.</li>
+                                                <li>Suppliers cannot create orders, edit data, or access any other part of the system.</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>Admin tip:</strong> If a supplier needs to re-register (e.g., lost access or token expired), simply click <strong>Invite to Portal</strong> again from their supplier detail page to issue a fresh token.
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -800,15 +871,39 @@ export default function UserGuidePage() {
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><AlertTriangle className="h-5 w-5" /> Replenishment Engine</h3>
                                 <Card>
                                     <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> Proactively monitor stock levels and generate purchase orders before stockouts occur.</p>
+                                        <p><strong>Purpose:</strong> Proactively monitor stock levels, generate purchase orders before stockouts occur, and optimize order quantities using demand forecasting.</p>
                                         <div className="bg-muted p-4 rounded-md text-sm">
-                                            <strong>Workflow:</strong>
+                                            <strong>Core Workflow:</strong>
                                             <ol className="list-decimal pl-5 mt-1 space-y-1">
                                                 <li><strong>Check Levels:</strong> Scan all products against their <code>reorderPoint</code>.</li>
-                                                <li><strong>View Alerts:</strong> Navigate to Replenishment Dashboard. Products below threshold are listed with severity ranking.</li>
-                                                <li><strong>Auto-Create PO:</strong> Click "Auto-Create PO" to generate a purchase order for the recommended quantity.</li>
+                                                <li><strong>View Alerts:</strong> Navigate to the Replenishment Dashboard. Products below threshold are listed with severity ranking.</li>
+                                                <li><strong>Auto-Create PO:</strong> Click <strong>Auto-Create PO</strong> to generate a purchase order for the recommended quantity.</li>
                                                 <li><strong>Dismiss:</strong> Dismiss irrelevant alerts. They regenerate on next check if still below threshold.</li>
                                             </ol>
+                                        </div>
+
+                                        <div className="bg-primary/5 p-4 rounded-md text-sm border border-primary/20">
+                                            <strong className="text-primary block mb-2">✨ Demand Forecasting</strong>
+                                            <p className="text-muted-foreground mb-2">
+                                                The forecasting engine analyses historical sales velocity to predict future demand and recommend optimal reorder quantities.
+                                            </p>
+                                            <ul className="list-disc pl-5 text-muted-foreground space-y-1">
+                                                <li><strong>Forecast Horizon:</strong> Configure how many days ahead to forecast (e.g., 30, 60, 90 days).</li>
+                                                <li><strong>Safety Stock:</strong> Automatically calculated buffer to protect against demand spikes and supplier lead time variance.</li>
+                                                <li><strong>Recommended Order Qty:</strong> System suggests the quantity that covers forecast demand plus safety stock, minus current on-hand.</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="bg-blue-50 p-4 rounded-md text-sm border border-blue-200">
+                                            <strong className="text-blue-900 block mb-2">Seasonality Profiles</strong>
+                                            <p className="text-muted-foreground mb-2">
+                                                Seasonality Profiles adjust forecast demand up or down based on known seasonal patterns (e.g., higher demand during festive seasons, lower in off-peak months).
+                                            </p>
+                                            <ul className="list-disc pl-5 text-muted-foreground space-y-1">
+                                                <li>Create profiles in <strong>Settings → Seasonality Profiles</strong>.</li>
+                                                <li>Define <strong>periods</strong> within each profile — each period has a date range and a demand multiplier (e.g., 1.5× for December, 0.7× for February).</li>
+                                                <li>Assign a profile to a product or category. The forecasting engine applies multipliers automatically when generating replenishment recommendations.</li>
+                                            </ul>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -837,6 +932,11 @@ export default function UserGuidePage() {
                                                 <li>Click <strong>New Return Request</strong>.</li>
                                                 <li>On arrival, click <strong>Receive</strong> and input condition.</li>
                                             </ul>
+                                        </div>
+
+                                        <div className="bg-yellow-50 p-3 rounded-md text-sm border border-yellow-200">
+                                            <strong className="text-yellow-900">Note — "All Warehouses" orders:</strong>
+                                            <p className="text-muted-foreground mt-1">Returns from orders not tied to a specific warehouse (e.g., orders placed with warehouse scope set to "All") are automatically routed to the company's default warehouse for restocking. Ensure a default warehouse is set in <strong>Settings → General Settings</strong>.</p>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -1607,6 +1707,42 @@ export default function UserGuidePage() {
                                                     </ol>
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Product Categories</h4>
+                                            <p className="text-sm text-muted-foreground mb-2">
+                                                Navigate to <strong>Settings → Categories</strong> to manage the product category hierarchy. Categories can be nested and are used to group products for putaway rules, rotation policies, and reporting filters.
+                                            </p>
+                                            <ul className="list-disc pl-5 text-muted-foreground text-sm space-y-1">
+                                                <li>Create top-level categories (e.g., "Electronics", "Food & Beverage") and sub-categories.</li>
+                                                <li>Assign products to categories from the Product detail page.</li>
+                                                <li>Putaway Rules and Rotation Policies can target entire categories at once.</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Currencies</h4>
+                                            <p className="text-sm text-muted-foreground mb-2">
+                                                Navigate to <strong>Settings → Currencies</strong> to manage supported currencies and exchange rates.
+                                            </p>
+                                            <ul className="list-disc pl-5 text-muted-foreground text-sm space-y-1">
+                                                <li>Define a <strong>base currency</strong> for all inventory valuations (e.g., IDR, USD, SGD).</li>
+                                                <li>Add additional currencies with exchange rates for multi-currency purchase orders.</li>
+                                                <li>Exchange rates can be updated manually or via integration.</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-2">Seasonality Profiles</h4>
+                                            <p className="text-sm text-muted-foreground mb-2">
+                                                Navigate to <strong>Settings → Seasonality Profiles</strong> to define demand multiplier patterns used by the Replenishment forecasting engine.
+                                            </p>
+                                            <ul className="list-disc pl-5 text-muted-foreground text-sm space-y-1">
+                                                <li>Create a profile (e.g., "Festive Season") and add <strong>periods</strong> with date ranges and multipliers.</li>
+                                                <li>A multiplier of <code>1.5</code> means 50% higher demand is expected; <code>0.7</code> means 30% lower.</li>
+                                                <li>Assign profiles to products or categories to tune replenishment recommendations.</li>
+                                            </ul>
                                         </div>
 
                                         <div className="border-t pt-4">
