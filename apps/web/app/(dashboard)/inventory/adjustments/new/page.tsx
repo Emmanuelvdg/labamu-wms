@@ -71,7 +71,7 @@ export default function NewAdjustmentPage() {
                         required
                     >
                         <option value="">Select Location</option>
-                        {locations.map((loc) => (
+                        {locations.filter(loc => loc.type === 'INTERNAL').map((loc) => (
                             <option key={loc.id} value={loc.id}>
                                 {loc.name} ({loc.type})
                             </option>
@@ -97,7 +97,7 @@ export default function NewAdjustmentPage() {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Counted Quantity</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Adjustment Quantity (Delta, + for Increase, - for Decrease)</label>
                     <input
                         type="number"
                         className="w-full border border-gray-300 rounded-md p-2"

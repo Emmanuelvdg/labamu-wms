@@ -97,7 +97,7 @@ export default function MaterialDetailsPage() {
                 ...newBatch,
                 productId: id,
                 quantity: product.tracking === 'serial' ? 1 : newBatch.quantity,
-                warehouseId: newBatch.warehouseId || 'default-warehouse-id',
+                warehouseId: newBatch.warehouseId,
             });
             setShowAddBatch(false);
             const [b, t] = await Promise.all([fetchBatches(id), fetchTransactions(id)]);
