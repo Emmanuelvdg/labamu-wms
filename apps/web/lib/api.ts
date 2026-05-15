@@ -1230,3 +1230,12 @@ export async function inviteUserToTenant(companyId: string, data: { name: string
         body: JSON.stringify(data),
     });
 }
+
+// --- Barcode Validation ---
+export async function validateBarcode(barcode: string, context: { type: string; referenceId?: string }) {
+    return fetchWithRetry(`${API_URL}/barcode/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ barcode, context }),
+    });
+}

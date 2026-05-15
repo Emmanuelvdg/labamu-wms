@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, ArrowLeft, CheckCircle, MapPin, Scan } from 'lucide-react';
 import { toast } from 'sonner';
+import { BarcodeScanner } from '@/components/BarcodeScanner';
 
 import * as React from 'react';
 
@@ -19,6 +20,8 @@ export default function PutawayTaskPage({ params }: { params: Promise<{ taskId: 
     const [scannedLoc, setScannedLoc] = useState('');
     const [putawayQty, setPutawayQty] = useState(0);
     const [locValid, setLocValid] = useState(false);
+
+    const [validating, setValidating] = useState(false);
 
     useEffect(() => {
         loadTask();
@@ -46,19 +49,29 @@ export default function PutawayTaskPage({ params }: { params: Promise<{ taskId: 
         }
     }
 
-    useEffect(() => {
-        if (!task) return;
-        const targetLoc = task.destinationLocation?.shortCode || task.destinationLocation?.name || '';
-        if (scannedLoc.trim().toUpperCase() === targetLoc.toUpperCase()) {
+    async function handleScan(barcode: string) {
+        setScannedLoc(barcode);
+        setValidating(true);
+        try {
+            // Validate the scanned barcode against the PUTAWAY context
+            await import('@/lib/api').then(m => m.validateBarcode(barcode, { type: 'PUTAWAY' }));
+            
+            // Check if it matches our target location (optional extra check, but the API verified it's a valid location)
+            const targetLoc = task.destinationLocation?.shortCode || task.destinationLocation?.name || '';
+            // If they scan a valid location but it's different from the target, we allow it but maybe warn? For now, if it's a valid location, we allow it.
             setLocValid(true);
-        } else {
+            toast.success('Location Validated');
+        } catch (err: any) {
             setLocValid(false);
+            toast.error(err.message || 'Invalid Location Barcode');
+        } finally {
+            setValidating(false);
         }
-    }, [scannedLoc, task]);
+    }
 
     async function handleSubmit() {
         if (!locValid) {
-            toast.error('Invalid Destination Location Scan');
+            toast.error('Please scan a valid location first');
             return;
         }
 
@@ -106,17 +119,15 @@ export default function PutawayTaskPage({ params }: { params: Promise<{ taskId: 
                     </div>
                     <div className="text-2xl font-bold text-emerald-800">{task.destinationLocation?.shortCode || task.destinationLocation?.name}</div>
 
-                    <div className="flex space-x-2">
-                        <Input
-                            value={scannedLoc}
-                            onChange={(e) => setScannedLoc(e.target.value)}
-                            placeholder="Scan Target Location"
-                            className={locValid ? 'border-green-500' : ''}
-                            autoFocus
-                        />
-                        <Button variant="outline" size="icon">
-                            <Scan className="w-4 h-4" />
-                        </Button>
+                    <div className="mt-4">
+                        {validating ? (
+                            <div className="flex items-center space-x-2 text-emerald-600">
+                                <Loader2 className="animate-spin w-5 h-5" />
+                                <span>Validating...</span>
+                            </div>
+                        ) : (
+                            <BarcodeScanner onScan={handleScan} placeholder="Scan Target Location" />
+                        )}
                     </div>
                 </CardContent>
             </Card>

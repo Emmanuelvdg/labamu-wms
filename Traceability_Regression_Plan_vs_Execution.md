@@ -1,11 +1,12 @@
 # Traceability: Regression Plan vs. Execution
 
-**Assessment Date**: 2026-05-05  
-**Assessed Against**: Current Playwright suite (176 passing / 17 skipped / 0 failing)  
-**Previous Assessment**: Dated 2026-05-02, against earlier suite + 13-test smoke runner  
+**Assessment Date**: 2026-05-15  
+**Assessed Against**: Current Playwright suite (176 passing / 17 skipped / 0 failing) + UI Regression via Browser Subagent  
+**Previous Assessment**: Dated 2026-05-05, against earlier suite + 13-test smoke runner  
 **Sources**:
+- `UI_E2E_Test_Scenarios.md` — 39 UI scenarios covering Core, Back-Office, and Setup tracks.
 - `E2E_Test_Plan11.md` — 42-row traceability matrix, 27 phases, 113 plan scenarios
-- `Full_Platform_Regression.md` v2.2 — 39 modules, 190+ API + 39 UI tests (executed 2026-05-05)
+- `Full_Platform_Regression.md` v2.2 — 39 modules, 190+ API + 39 UI tests (executed 2026-05-15)
 - `apps/api/scripts/full-regression.js` — **38-module API regression suite, 161 assertions** (rewritten)
 - `apps/web/e2e/*.spec.ts` — 36 Playwright spec files, 193 tests total
 
@@ -13,11 +14,11 @@
 
 ## 1. Executive Summary
 
-| Metric | Previous (2026-05-02) | Current (2026-05-05) |
+| Metric | Previous (2026-05-05) | Current (2026-05-15) |
 |--------|----------|---------|
 | Playwright tests total | 176 passing, 0 failing | **176 passing, 0 failing** |
 | Playwright spec files | 36 | **36** |
-| Plan rows fully automated | 43% (18/42) | **43% (18/42)** — *stable* |
+| Plan rows fully automated | 43% (18/42) | **43% (18/42)** — *UI test gaps bridged manually* |
 | Plan rows partially automated | 14% (6/42) | **14% (6/42)** |
 | Plan rows not automated | 40% (17/42) | **40% (17/42)** |
 | `full-regression.js` coverage | 13 smoke tests | **161 assertions across 38 modules** ↑ |

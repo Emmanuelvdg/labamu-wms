@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, ArrowLeft, CheckCircle, AlertCircle, Scan } from 'lucide-react';
 import { toast } from 'sonner';
+import { BarcodeScanner } from '@/components/BarcodeScanner';
+import { validateBarcode } from '@/lib/api';
 
 import * as React from 'react';
 
@@ -49,28 +51,29 @@ export default function PickingTaskPage({ params }: { params: Promise<{ taskId: 
         }
     }
 
-    // Simple validation logic
-    useEffect(() => {
-        if (!task) return;
+    async function handleLocationScan(barcode: string) {
+        setScannedLoc(barcode);
         const targetLoc = task.location?.shortCode || task.location?.name || '';
-        if (scannedLoc.trim().toUpperCase() === targetLoc.toUpperCase()) {
+        if (barcode.trim().toUpperCase() === targetLoc.toUpperCase()) {
             setLocValid(true);
+            toast.success('Location confirmed');
         } else {
             setLocValid(false);
+            toast.error('Wrong location. Please go to ' + targetLoc);
         }
-    }, [scannedLoc, task]);
+    }
 
-    useEffect(() => {
-        if (!task) return;
-        const targetSku = task.product?.sku || '';
-        // Also check barcode/id if needed, simplified to SKU or ID match
-        const scan = scannedSku.trim().toUpperCase();
-        if (scan === targetSku.toUpperCase() || scan === task.product?.id) {
+    async function handleProductScan(barcode: string) {
+        setScannedSku(barcode);
+        try {
+            await validateBarcode(barcode, { type: 'PICK_TASK', referenceId: task.id });
             setSkuValid(true);
-        } else {
+            toast.success('Product confirmed');
+        } catch (err: any) {
             setSkuValid(false);
+            toast.error(err.message || 'Wrong product scanned');
         }
-    }, [scannedSku, task]);
+    }
 
     async function handleSubmit() {
         if (!locValid) {
@@ -118,18 +121,8 @@ export default function PickingTaskPage({ params }: { params: Promise<{ taskId: 
                     </div>
                     <div className="text-2xl font-bold">{task.location?.shortCode || task.location?.name}</div>
 
-                    <div className="flex space-x-2">
-                        <Input
-                            value={scannedLoc}
-                            onChange={(e) => setScannedLoc(e.target.value)}
-                            placeholder="Scan Location"
-                            className={locValid ? 'border-green-500' : ''}
-                            // Auto-focus on mount (desktop), user taps on mobile
-                            autoFocus
-                        />
-                        <Button variant="outline" size="icon">
-                            <Scan className="w-4 h-4" />
-                        </Button>
+                    <div className="mt-4">
+                        <BarcodeScanner onScan={handleLocationScan} placeholder="Scan Location Barcode" />
                     </div>
                 </CardContent>
             </Card>
@@ -141,13 +134,8 @@ export default function PickingTaskPage({ params }: { params: Promise<{ taskId: 
                         <span className="text-sm font-semibold uppercase text-gray-500">Verify Product</span>
                         {skuValid && <CheckCircle className="w-5 h-5 text-green-600" />}
                     </div>
-                    <div className="flex space-x-2">
-                        <Input
-                            value={scannedSku}
-                            onChange={(e) => setScannedSku(e.target.value)}
-                            placeholder="Scan SKU/Barcode"
-                            className={skuValid ? 'border-green-500' : ''}
-                        />
+                    <div className="mt-4">
+                        <BarcodeScanner onScan={handleProductScan} placeholder="Scan Product SKU/Barcode" />
                     </div>
                 </CardContent>
             </Card>
