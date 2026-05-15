@@ -1010,12 +1010,24 @@ export class InventoryService {
         }
     }
 
+    private static readonly VALID_STRUCTURAL_TYPES = new Set([
+        'WAREHOUSE', 'ROOM', 'ZONE', 'AISLE', 'ROW', 'BAY', 'SHELF', 'POSITION', 'BIN',
+    ]);
+
+    private assertValidStructuralType(value: string) {
+        if (!InventoryService.VALID_STRUCTURAL_TYPES.has(value)) {
+            throw new BadRequestException(
+                `Invalid structuralType "${value}". Allowed values: ${[...InventoryService.VALID_STRUCTURAL_TYPES].join(', ')}`,
+            );
+        }
+    }
+
     async createLocation(data: {
         name: string;
         warehouseId?: string;
         parentId?: string;
         type?: string; // LocationType
-        structuralType?: string; // WAREHOUSE, ROOM, ROW, BAY, SHELF, POSITION
+        structuralType?: string; // WAREHOUSE, ROOM, ZONE, AISLE, ROW, BAY, SHELF, POSITION, BIN
         attributes?: any;
         removalStrategy?: string;
         x?: number;
@@ -1034,6 +1046,7 @@ export class InventoryService {
     }) {
         try {
             if (data.structuralType) {
+                this.assertValidStructuralType(data.structuralType);
                 if (data.structuralType !== 'WAREHOUSE' && !data.parentId) {
                     // Auto-find the warehouse root location if warehouseId is provided
                     if (data.warehouseId) {
@@ -1229,6 +1242,7 @@ export class InventoryService {
         const current = await this.prisma.location.findUnique({ where: { id } });
         if (!current) throw new AppError('LOCATION_NOT_FOUND', { locationId: id });
 
+        if (data.structuralType) this.assertValidStructuralType(data.structuralType);
         const newStructuralType = data.structuralType !== undefined ? data.structuralType : current.structuralType;
         const newParentId = data.parentId !== undefined ? data.parentId : current.parentId;
 

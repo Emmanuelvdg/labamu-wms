@@ -40,6 +40,9 @@ export default function WarehouseDetailsPage() {
     const [phone, setPhone] = useState('');
     const [incomingSteps, setIncomingSteps] = useState('1_step');
     const [outgoingSteps, setOutgoingSteps] = useState('1_step');
+    const [autoReplenishmentEnabled, setAutoReplenishmentEnabled] = useState(false);
+    const [requireWeightVerification, setRequireWeightVerification] = useState(false);
+    const [savingAdvanced, setSavingAdvanced] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -62,6 +65,8 @@ export default function WarehouseDetailsPage() {
                 setPhone(wh.phone || '');
                 setIncomingSteps(wh.incomingSteps || '1_step');
                 setOutgoingSteps(wh.outgoingSteps || '1_step');
+                setAutoReplenishmentEnabled(wh.autoReplenishmentEnabled ?? false);
+                setRequireWeightVerification(wh.requireWeightVerification ?? false);
             }
 
             // 2. Fetch Strategies
@@ -87,6 +92,19 @@ export default function WarehouseDetailsPage() {
             setLoading(false);
         }
     }
+
+    const handleSaveAdvanced = async () => {
+        setSavingAdvanced(true);
+        try {
+            await updateWarehouse(warehouseId, { autoReplenishmentEnabled, requireWeightVerification });
+            toast.success('Advanced settings saved');
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to save advanced settings');
+        } finally {
+            setSavingAdvanced(false);
+        }
+    };
 
     const handleSaveInfo = async () => {
         setSavingInfo(true);
@@ -454,6 +472,68 @@ export default function WarehouseDetailsPage() {
                     >
                         <Save className="h-4 w-4" />
                         {saving ? 'Saving...' : 'Save Configuration'}
+                    </Button>
+                </div>
+            </div>
+
+            {/* Advanced Settings */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-5xl mx-auto mt-6">
+                <div className="mb-6">
+                    <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                        <SettingsIcon className="h-5 w-5" />
+                        Advanced Settings
+                    </h2>
+                    <p className="text-gray-500 text-sm mt-1">
+                        Automation and verification controls for this warehouse.
+                    </p>
+                </div>
+
+                <div className="space-y-6">
+                    <div className="flex items-start justify-between gap-6 py-4 border-b border-gray-100">
+                        <div>
+                            <p className="font-medium text-gray-900">Automatic Replenishment</p>
+                            <p className="text-sm text-gray-500 mt-0.5">
+                                When enabled, a daily scheduled job (06:00) checks stock levels and auto-creates
+                                draft purchase orders for any products that fall below their reorder point.
+                                Products must have a preferred supplier configured.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            role="switch"
+                            aria-checked={autoReplenishmentEnabled}
+                            onClick={() => setAutoReplenishmentEnabled(v => !v)}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${autoReplenishmentEnabled ? 'bg-blue-600' : 'bg-gray-200'}`}
+                        >
+                            <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${autoReplenishmentEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </button>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-6 py-4">
+                        <div>
+                            <p className="font-medium text-gray-900">Weight Verification at Packing</p>
+                            <p className="text-sm text-gray-500 mt-0.5">
+                                When enabled, the packing station compares the entered parcel weight against
+                                the expected weight calculated from product master data. Packers must confirm
+                                or explain any variance exceeding 5% before completing the session.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            role="switch"
+                            aria-checked={requireWeightVerification}
+                            onClick={() => setRequireWeightVerification(v => !v)}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${requireWeightVerification ? 'bg-blue-600' : 'bg-gray-200'}`}
+                        >
+                            <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${requireWeightVerification ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="mt-6 flex items-center justify-end">
+                    <Button onClick={handleSaveAdvanced} disabled={savingAdvanced} className="flex items-center gap-2">
+                        <Save className="h-4 w-4" />
+                        {savingAdvanced ? 'Saving...' : 'Save Advanced Settings'}
                     </Button>
                 </div>
             </div>

@@ -18,6 +18,7 @@ import { AbcClassificationController } from './abc-classification.controller';
 import { PickAccuracyService } from './pick-accuracy.service';
 import { ReportingController } from './reporting.controller';
 import { CycleCountService } from './cycle-count.service';
+import { ReplenishmentSchedulerService } from './replenishment-scheduler.service';
 
 @Module({
     imports: [CompanyModule],
@@ -41,6 +42,7 @@ import { CycleCountService } from './cycle-count.service';
         PickAccuracyService,
         CycleCountService,
         ForecastService,
+        ReplenishmentSchedulerService,
     ],
     exports: [
         InventoryService,

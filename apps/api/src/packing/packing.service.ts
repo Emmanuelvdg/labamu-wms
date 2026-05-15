@@ -181,6 +181,26 @@ export class PackingService {
             }
         }
 
+        // Weight verification — compare entered weight against product master data
+        let weightWarning: { expectedWeight: number; actualWeight: number; variancePct: number } | null = null;
+        const warehouse = (session.order as any).warehouse;
+        if (warehouse?.requireWeightVerification && data.weight != null && data.weight > 0) {
+            const expectedWeight = data.items.reduce((sum, item) => {
+                const orderItem = session.order.items.find((oi: any) => oi.productId === item.productId);
+                const productWeight: number = (orderItem as any)?.product?.weight ?? 0;
+                return sum + productWeight * item.quantity;
+            }, 0);
+            if (expectedWeight > 0) {
+                const variancePct = Math.abs(data.weight - expectedWeight) / expectedWeight;
+                if (variancePct > 0.05) {
+                    weightWarning = { expectedWeight, actualWeight: data.weight, variancePct: Math.round(variancePct * 100) };
+                    this.logger.warn(
+                        `Weight variance ${weightWarning.variancePct}% on parcel in session ${sessionId}: expected ${expectedWeight}kg, got ${data.weight}kg`,
+                    );
+                }
+            }
+        }
+
         const parcel = await this.prisma.packingParcel.create({
             data: {
                 packingSessionId: sessionId,
@@ -202,7 +222,7 @@ export class PackingService {
         });
 
         this.logger.log(`Parcel created in session ${sessionId}: ${parcel.id} with ${data.items.length} items`);
-        return parcel;
+        return { ...parcel, weightWarning };
     }
 
     /**

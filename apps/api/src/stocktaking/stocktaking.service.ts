@@ -10,11 +10,21 @@ export class StocktakingService {
         private inventoryService: InventoryService,
     ) { }
 
-    async createSession(data: { warehouseId: string; type: string; description?: string }) {
+    async createSession(data: {
+        warehouseId: string;
+        type: string;
+        description?: string;
+        scopeLocationIds?: string[];
+        scopeProductIds?: string[];
+    }) {
         return this.prisma.stocktakeSession.create({
             data: {
-                ...data,
+                warehouseId: data.warehouseId,
+                type: data.type,
+                description: data.description,
                 status: 'PLANNED',
+                scopeLocationIds: data.scopeLocationIds?.length ? JSON.stringify(data.scopeLocationIds) : null,
+                scopeProductIds: data.scopeProductIds?.length ? JSON.stringify(data.scopeProductIds) : null,
             },
         });
     }
@@ -49,12 +59,19 @@ export class StocktakingService {
         const session = await this.prisma.stocktakeSession.findUnique({ where: { id: sessionId } });
         if (!session) throw new NotFoundException('Session not found');
 
-        // Logic: Snapshot all inventory in this warehouse
-        // IMPROVEMENT: Can filter by Location/Zone if we add 'scope' to session later.
+        const scopeLocationIds: string[] | null = session.scopeLocationIds
+            ? JSON.parse(session.scopeLocationIds)
+            : null;
+        const scopeProductIds: string[] | null = session.scopeProductIds
+            ? JSON.parse(session.scopeProductIds)
+            : null;
 
-        // Group by Location + Product
+        const inventoryWhere: any = { warehouseId: session.warehouseId };
+        if (scopeLocationIds?.length) inventoryWhere.locationId = { in: scopeLocationIds };
+        if (scopeProductIds?.length) inventoryWhere.productId = { in: scopeProductIds };
+
         const inventory = await this.prisma.productInventory.findMany({
-            where: { warehouseId: session.warehouseId },
+            where: inventoryWhere,
             include: { location: true, product: true }
         });
 

@@ -114,6 +114,8 @@ export async function updateWarehouse(id: string, data: {
     phone?: string;
     incomingSteps?: string;
     outgoingSteps?: string;
+    autoReplenishmentEnabled?: boolean;
+    requireWeightVerification?: boolean;
 }) {
     return fetchWithRetry(`${API_URL}/inventory/warehouses/${id}`, {
         method: 'PATCH',
@@ -956,7 +958,7 @@ export async function fetchStocktakeSessions(warehouseId?: string) {
     return fetchWithRetry(`${API_URL}/stocktaking/sessions${query}`);
 }
 
-export async function createStocktakeSession(data: { warehouseId: string; type: string; description?: string }) {
+export async function createStocktakeSession(data: { warehouseId: string; type: string; description?: string; scopeLocationIds?: string[]; scopeProductIds?: string[] }) {
     return fetchWithRetry(`${API_URL}/stocktaking/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

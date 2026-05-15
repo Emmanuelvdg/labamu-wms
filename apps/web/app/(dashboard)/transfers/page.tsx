@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Package,
     ArrowRightLeft,
@@ -10,7 +10,9 @@ import {
     X,
     AlertTriangle,
     Clock,
-    Truck
+    Truck,
+    Search,
+    ChevronDown,
 } from 'lucide-react';
 
 import { fetchWarehouses, fetchProducts } from '@/lib/api';
@@ -21,6 +23,84 @@ import {
     type Transfer,
     type CreateTransferRequest
 } from '@/lib/transfer-api';
+
+interface SearchableSelectOption { id: string; label: string; }
+
+function SearchableSelect({
+    options,
+    value,
+    onChange,
+    placeholder,
+    testId,
+}: {
+    options: SearchableSelectOption[];
+    value: string;
+    onChange: (id: string) => void;
+    placeholder: string;
+    testId?: string;
+}) {
+    const [query, setQuery] = useState('');
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    const selected = options.find(o => o.id === value);
+    const filtered = options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()));
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
+    return (
+        <div ref={ref} className="relative" data-testid={testId}>
+            <button
+                type="button"
+                onClick={() => { setOpen(o => !o); setQuery(''); }}
+                className="w-full flex items-center justify-between border border-gray-300 rounded-md px-3 py-2 bg-white text-sm text-left focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+                <span className={selected ? 'text-gray-900' : 'text-gray-400'}>
+                    {selected ? selected.label : placeholder}
+                </span>
+                <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+            </button>
+            {open && (
+                <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg">
+                    <div className="p-2 border-b border-gray-100">
+                        <div className="relative">
+                            <Search className="absolute left-2 top-2 h-4 w-4 text-gray-400 pointer-events-none" />
+                            <input
+                                autoFocus
+                                type="text"
+                                className="w-full pl-7 pr-3 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                placeholder="Search…"
+                                value={query}
+                                onChange={e => setQuery(e.target.value)}
+                                data-testid={testId ? `${testId}-search` : undefined}
+                            />
+                        </div>
+                    </div>
+                    <ul className="max-h-48 overflow-y-auto py-1">
+                        {filtered.length === 0 ? (
+                            <li className="px-3 py-2 text-sm text-gray-400">No results</li>
+                        ) : filtered.map(o => (
+                            <li
+                                key={o.id}
+                                onClick={() => { onChange(o.id); setOpen(false); setQuery(''); }}
+                                className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 ${o.id === value ? 'bg-blue-50 font-medium text-blue-700' : 'text-gray-900'}`}
+                                data-testid={testId ? `${testId}-option-${o.id}` : undefined}
+                            >
+                                {o.label}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function TransferOperationsPage() {
     const [transfers, setTransfers] = useState<Transfer[]>([]);
@@ -397,19 +477,13 @@ export default function TransferOperationsPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Source Warehouse *
                                 </label>
-                                <select
+                                <SearchableSelect
+                                    options={warehouses.map(w => ({ id: w.id, label: w.name }))}
                                     value={sourceWarehouseId}
-                                    onChange={(e) => setSourceWarehouseId(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                    required
-                                >
-                                    <option value="">Select source warehouse</option>
-                                    {warehouses.map((wh) => (
-                                        <option key={wh.id} value={wh.id}>
-                                            {wh.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={setSourceWarehouseId}
+                                    placeholder="Select source warehouse"
+                                    testId="transfer-source-warehouse"
+                                />
                             </div>
 
                             {/* Destination Warehouse */}
@@ -417,19 +491,15 @@ export default function TransferOperationsPage() {
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Destination Warehouse *
                                 </label>
-                                <select
+                                <SearchableSelect
+                                    options={warehouses
+                                        .filter(w => w.id !== sourceWarehouseId)
+                                        .map(w => ({ id: w.id, label: w.name }))}
                                     value={destinationWarehouseId}
-                                    onChange={(e) => setDestinationWarehouseId(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
-                                    required
-                                >
-                                    <option value="">Select destination warehouse</option>
-                                    {warehouses.map((wh) => (
-                                        <option key={wh.id} value={wh.id}>
-                                            {wh.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={setDestinationWarehouseId}
+                                    placeholder="Select destination warehouse"
+                                    testId="transfer-destination-warehouse"
+                                />
                             </div>
 
                             {/* Transfer Items */}
@@ -440,18 +510,15 @@ export default function TransferOperationsPage() {
                                 <div className="space-y-3">
                                     {transferItems.map((item, index) => (
                                         <div key={index} className="flex gap-3 items-start">
-                                            <select
-                                                value={item.productId}
-                                                onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
-                                                className="flex-1 border border-gray-300 rounded-md px-3 py-2"
-                                            >
-                                                <option value="">Select product</option>
-                                                {products.map((product) => (
-                                                    <option key={product.id} value={product.id}>
-                                                        {product.name} ({product.sku})
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <div className="flex-1">
+                                                <SearchableSelect
+                                                    options={products.map(p => ({ id: p.id, label: `${p.name} (${p.sku})` }))}
+                                                    value={item.productId}
+                                                    onChange={id => handleItemChange(index, 'productId', id)}
+                                                    placeholder="Select product"
+                                                    testId={`transfer-product-${index}`}
+                                                />
+                                            </div>
                                             <input
                                                 type="number"
                                                 min="1"

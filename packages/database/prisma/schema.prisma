@@ -222,6 +222,8 @@ model Warehouse {
   gridEnabled            Boolean                   @default(true)
   gridSize               Float                     @default(1.0)
   snapToGrid             Boolean                   @default(true)
+  autoReplenishmentEnabled  Boolean               @default(false)
+  requireWeightVerification Boolean               @default(false)
   createdAt              DateTime                  @default(now())
   updatedAt              DateTime                  @default(now()) @updatedAt
   fulfillmentRules       FulfillmentRule[]
@@ -1164,16 +1166,18 @@ model RotationRule {
 }
 
 model StocktakeSession {
-  id          String          @id @default(uuid())
-  warehouseId String
-  status      String          @default("PLANNED")
-  type        String
-  description String?
-  createdBy   String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  warehouse   Warehouse       @relation(fields: [warehouseId], references: [id])
-  tasks       StocktakeTask[]
+  id                String          @id @default(uuid())
+  warehouseId       String
+  status            String          @default("PLANNED")
+  type              String
+  description       String?
+  createdBy         String?
+  scopeLocationIds  String?         // JSON array of location IDs to restrict count scope
+  scopeProductIds   String?         // JSON array of product IDs to restrict count scope
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  warehouse         Warehouse       @relation(fields: [warehouseId], references: [id])
+  tasks             StocktakeTask[]
 }
 
 model StocktakeTask {
