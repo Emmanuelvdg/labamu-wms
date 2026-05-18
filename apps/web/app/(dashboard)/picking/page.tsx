@@ -1,16 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     ClipboardList,
     CheckCircle2,
     ArrowRight,
     Building,
-    Printer
+    Printer,
+    Wifi,
 } from 'lucide-react';
 
 import { fetchWarehouses } from '@/lib/api';
 import ExceptionModal from './exception-modal';
+import { toast } from 'sonner';
+
+const WAVELESS_POLL_INTERVAL_MS = 8000;
 
 export default function PickingPage() {
     const [warehouses, setWarehouses] = useState<any[]>([]);
@@ -25,6 +29,12 @@ export default function PickingPage() {
     const [strategy, setStrategy] = useState<'SINGLE' | 'BATCH' | 'CLUSTER' | 'WAVE' | 'WAVELESS' | 'ZONE'>('SINGLE');
     const [criteria, setCriteria] = useState<string>('Destination');
     const [maxOrders, setMaxOrders] = useState<number>(10);
+    const [waveSize, setWaveSize] = useState<number>(20);
+    const [waveReleaseCadenceMinutes, setWaveReleaseCadenceMinutes] = useState<number>(30);
+    const [resequencing, setResequencing] = useState(false);
+    const [newTaskCount, setNewTaskCount] = useState(0);
+    const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const lastTaskCountRef = useRef<number>(0);
 
     useEffect(() => {
         loadWarehouses();
@@ -35,6 +45,48 @@ export default function PickingPage() {
             checkActiveSession();
         }
     }, [selectedWarehouseId]);
+
+    // Waveless auto-polling: refresh task list every 8 s while a WAVELESS session is active
+    useEffect(() => {
+        const isWaveless = activeSession?.strategy === 'WAVELESS' && activeSession?.status === 'IN_PROGRESS';
+
+        if (!isWaveless) {
+            if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+            }
+            lastTaskCountRef.current = 0;
+            setNewTaskCount(0);
+            return;
+        }
+
+        const poll = async () => {
+            try {
+                const { pollWavelessTasks } = await import('@/lib/api');
+                const tasks = await pollWavelessTasks(activeSession.id);
+                const incoming = Array.isArray(tasks) ? tasks.length : 0;
+                const prev = lastTaskCountRef.current;
+                if (prev > 0 && incoming > prev) {
+                    const added = incoming - prev;
+                    setNewTaskCount(added);
+                    toast.info(`${added} new task${added > 1 ? 's' : ''} added to the waveless queue`);
+                }
+                lastTaskCountRef.current = incoming;
+                // Refresh the full session so the task table stays current
+                await checkActiveSession();
+            } catch {
+                // silent — don't spam errors on poll failures
+            }
+        };
+
+        lastTaskCountRef.current = (activeSession.tasks ?? []).filter((t: any) => t.status === 'PENDING').length;
+        pollIntervalRef.current = setInterval(poll, WAVELESS_POLL_INTERVAL_MS);
+
+        return () => {
+            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeSession?.id, activeSession?.strategy, activeSession?.status]);
 
     async function loadWarehouses() {
         try {
@@ -76,7 +128,9 @@ export default function PickingPage() {
                 warehouseId: selectedWarehouseId,
                 strategy,
                 criteria: (strategy === 'WAVELESS' || strategy === 'ZONE') ? undefined : criteria,
-                maxOrders: strategy === 'WAVELESS' ? undefined : maxOrders
+                maxOrders: strategy === 'WAVELESS' ? undefined : (strategy === 'WAVE' ? waveSize : maxOrders),
+                waveSize: strategy === 'WAVE' ? waveSize : undefined,
+                waveReleaseCadenceMinutes: strategy === 'WAVE' ? waveReleaseCadenceMinutes : undefined,
             });
             setActiveSession(session);
         } catch (error) {
@@ -157,6 +211,21 @@ export default function PickingPage() {
         }
     };
 
+    const handleResequence = async () => {
+        if (!activeSession) return;
+        setResequencing(true);
+        try {
+            const { reoptimisePickingSession } = await import('@/lib/api');
+            await reoptimisePickingSession(activeSession.id);
+            await checkActiveSession();
+        } catch (error) {
+            console.error('Failed to re-sequence:', error);
+            alert('Failed to re-sequence tasks');
+        } finally {
+            setResequencing(false);
+        }
+    };
+
     const printPicklist = async () => {
         if (!activeSession) return;
         try {
@@ -230,6 +299,14 @@ export default function PickingPage() {
                             <option value="WAVELESS">Waveless (Continuous Flow)</option>
                             <option value="ZONE">Zone Picking</option>
                         </select>
+                        {{
+                            SINGLE:   <p className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">Pick one order at a time. Best for low volumes or urgent single-order fulfilment.</p>,
+                            BATCH:    <p className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">Group multiple orders in one walk. Reduces travel time when orders share similar pick locations.</p>,
+                            CLUSTER:  <p className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">Assign 2–4 orders to a single picker with labelled totes. Good for small-parcel e-commerce.</p>,
+                            WAVE:     <p className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">Release a batch of orders on a schedule or by order count. Aligns picking with packing and shipping cut-offs.</p>,
+                            WAVELESS: <p className="mt-2 text-xs text-blue-50 border border-blue-100 rounded p-2 text-blue-700">Continuous flow — tasks are assigned in real time as orders are reserved. No manual grouping needed. The task list refreshes automatically every 8 s.</p>,
+                            ZONE:     <p className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">Tasks are sorted by warehouse zone so pickers work through one zone at a time, minimising cross-aisle travel.</p>,
+                        }[strategy]}
                         {(strategy === 'BATCH' || strategy === 'CLUSTER') && (
                             <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Grouping Criteria</label>
@@ -244,7 +321,31 @@ export default function PickingPage() {
                                 </select>
                             </div>
                         )}
-                        {(strategy === 'WAVE' || strategy === 'SINGLE' || strategy === 'BATCH' || strategy === 'CLUSTER' || strategy === 'ZONE') && (
+                        {strategy === 'WAVE' && (
+                            <div className="mt-4 space-y-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Wave Size (orders per wave)</label>
+                                    <input
+                                        type="number"
+                                        min="1" max="200"
+                                        value={waveSize}
+                                        onChange={(e) => setWaveSize(parseInt(e.target.value) || 1)}
+                                        className="w-full border border-gray-300 rounded-md py-2 px-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Release Cadence (minutes between waves)</label>
+                                    <input
+                                        type="number"
+                                        min="1" max="1440"
+                                        value={waveReleaseCadenceMinutes}
+                                        onChange={(e) => setWaveReleaseCadenceMinutes(parseInt(e.target.value) || 1)}
+                                        className="w-full border border-gray-300 rounded-md py-2 px-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        {(strategy === 'SINGLE' || strategy === 'BATCH' || strategy === 'CLUSTER' || strategy === 'ZONE') && (
                             <div className="mt-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Max Orders Limit</label>
                                 <input
@@ -286,11 +387,34 @@ export default function PickingPage() {
                     <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                         <div>
                             <h2 className="text-lg font-semibold text-gray-900">Active Session: {activeSession.id.substring(0, 8)}</h2>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
-                                {activeSession.strategy} STRATEGY
-                            </span>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {activeSession.strategy} STRATEGY
+                                </span>
+                                {activeSession.strategy === 'WAVELESS' && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                        <Wifi className="h-3 w-3" /> Live
+                                        {newTaskCount > 0 && (
+                                            <span className="ml-1 bg-green-600 text-white rounded-full px-1.5 py-0 text-[10px] font-bold">
+                                                +{newTaskCount}
+                                            </span>
+                                        )}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleResequence}
+                                disabled={resequencing}
+                                className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors disabled:opacity-50"
+                                title="Re-optimise task order by location zone"
+                            >
+                                {resequencing
+                                    ? <div className="h-4 w-4 rounded-full border-2 border-gray-400 border-t-transparent animate-spin" />
+                                    : <ArrowRight className="h-4 w-4" />}
+                                Re-sequence
+                            </button>
                             <button
                                 onClick={printPicklist}
                                 className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"

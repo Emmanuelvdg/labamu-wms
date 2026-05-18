@@ -8,11 +8,12 @@ import { PrismaService } from '../prisma.service';
 import { InventoryModule } from '../inventory/inventory.module';
 import { CompanyModule } from '../company/company.module';
 import { FeatureFlagGuard } from '../common/guards/feature-flag.guard';
+import { TaskOptimisationService } from '../workflow/task-optimisation.service';
 
 @Module({
     imports: [InventoryModule, CompanyModule],
     controllers: [StrategyController, PickingStrategiesController],
-    providers: [StrategyService, PickingStrategyService, WaveReleaseRuleService, PrismaService, FeatureFlagGuard],
+    providers: [StrategyService, PickingStrategyService, WaveReleaseRuleService, PrismaService, FeatureFlagGuard, TaskOptimisationService],
     exports: [StrategyService, PickingStrategyService],
 })
 export class StrategyModule { }

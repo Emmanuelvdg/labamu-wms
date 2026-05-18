@@ -558,7 +558,20 @@ export async function createPickingWave(criteria: string, warehouseId?: string) 
 
 // --- Picking Session Management ---
 
-export async function createPickingSession(data: { warehouseId: string; strategy?: string; criteria?: string; maxOrders?: number }) {
+export async function getAllPickingSessions(warehouseId?: string) {
+    const params = warehouseId ? `?warehouseId=${warehouseId}` : '';
+    return fetchWithRetry(`${API_URL}/strategy/picking/sessions${params}`);
+}
+
+export async function reoptimisePickingSession(sessionId: string) {
+    return fetchWithRetry(`${API_URL}/strategy/picking/sessions/${sessionId}/reoptimise`, { method: 'POST' });
+}
+
+export async function previewReoptimisePickingSession(sessionId: string) {
+    return fetchWithRetry(`${API_URL}/strategy/picking/sessions/${sessionId}/reoptimise-preview`);
+}
+
+export async function createPickingSession(data: { warehouseId: string; strategy?: string; criteria?: string; maxOrders?: number; waveSize?: number; waveReleaseCadenceMinutes?: number }) {
     return fetchWithRetry(`${API_URL}/strategy/picking/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

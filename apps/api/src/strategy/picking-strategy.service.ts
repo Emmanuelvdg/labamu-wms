@@ -602,6 +602,37 @@ export class PickingStrategyService {
         return allocation;
     }
 
+    async getAllSessions(warehouseId?: string) {
+        const where: any = {};
+        if (warehouseId) where.warehouseId = warehouseId;
+
+        const sessions = await this.prisma.pickingSession.findMany({
+            where,
+            include: {
+                warehouse: { select: { name: true } },
+                tasks: { select: { status: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 100,
+        });
+
+        return sessions.map(s => ({
+            id: s.id,
+            strategy: s.strategy,
+            status: s.status,
+            warehouseName: s.warehouse?.name ?? '',
+            warehouseId: s.warehouseId,
+            createdAt: s.createdAt,
+            taskStats: {
+                total: s.tasks.length,
+                pending: s.tasks.filter(t => t.status === 'PENDING').length,
+                picked: s.tasks.filter(t => t.status === 'PICKED' || t.status === 'COMPLETED').length,
+                partial: s.tasks.filter(t => t.status === 'PARTIALLY_PICKED').length,
+                failed: s.tasks.filter(t => t.status === 'FAILED').length,
+            },
+        }));
+    }
+
     async getActiveSession(warehouseId: string) {
         return this.prisma.pickingSession.findFirst({
             where: {

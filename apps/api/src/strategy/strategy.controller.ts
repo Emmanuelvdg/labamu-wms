@@ -3,6 +3,7 @@ import { Response } from 'express';
 import { StrategyService } from './strategy.service';
 import { PickingStrategyService } from './picking-strategy.service';
 import { WaveReleaseRuleService } from './wave-release-rule.service';
+import { TaskOptimisationService } from '../workflow/task-optimisation.service';
 import { FeatureFlagGuard, RequireFlag } from '../common/guards/feature-flag.guard';
 
 type PickingStrategyType = 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE' | 'WAVELESS' | 'ZONE';
@@ -13,6 +14,7 @@ export class StrategyController {
         private readonly strategyService: StrategyService,
         private readonly pickingStrategyService: PickingStrategyService,
         private readonly waveReleaseRuleService: WaveReleaseRuleService,
+        private readonly taskOptimisationService: TaskOptimisationService,
     ) { }
 
     @Post('picking')
@@ -109,11 +111,32 @@ export class StrategyController {
         return this.pickingStrategyService.pollWavelessTasks(id);
     }
 
+    @Get('picking/sessions')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
+    getAllSessions(@Query('warehouseId') warehouseId?: string) {
+        return this.pickingStrategyService.getAllSessions(warehouseId);
+    }
+
     @Get('picking/sessions/active')
     @UseGuards(FeatureFlagGuard)
     @RequireFlag('ADVANCED_PICKING')
     getActiveSession(@Query('warehouseId') warehouseId: string) {
         return this.pickingStrategyService.getActiveSession(warehouseId);
+    }
+
+    @Get('picking/sessions/:id/reoptimise-preview')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
+    previewReoptimise(@Param('id') id: string) {
+        return this.taskOptimisationService.previewReoptimisePickSequence(id);
+    }
+
+    @Post('picking/sessions/:id/reoptimise')
+    @UseGuards(FeatureFlagGuard)
+    @RequireFlag('ADVANCED_PICKING')
+    reoptimiseSession(@Param('id') id: string) {
+        return this.taskOptimisationService.reoptimisePickSequence(id);
     }
 
     // M3.3 — Picking list PDF

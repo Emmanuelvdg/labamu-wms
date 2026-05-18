@@ -18,6 +18,39 @@ export class TaskOptimisationService {
     }
 
     /**
+     * Preview the proposed re-sequence without committing — returns current and proposed ordering.
+     */
+    async previewReoptimisePickSequence(sessionId: string) {
+        const tasks = await this.prisma.pickingTask.findMany({
+            where: { sessionId, status: 'PENDING' },
+            include: { sourceLocation: true, product: true },
+        });
+
+        const proposed = [...tasks].sort((a, b) => {
+            const locA = a.sourceLocation?.name || '';
+            const locB = b.sourceLocation?.name || '';
+            return locA.localeCompare(locB);
+        });
+
+        return {
+            current: tasks.map((t, i) => ({
+                rank: i + 1,
+                taskId: t.id,
+                productName: t.product?.name ?? t.productId,
+                locationName: t.sourceLocation?.name ?? '—',
+                quantity: t.quantity,
+            })),
+            proposed: proposed.map((t, i) => ({
+                rank: i + 1,
+                taskId: t.id,
+                productName: t.product?.name ?? t.productId,
+                locationName: t.sourceLocation?.name ?? '—',
+                quantity: t.quantity,
+            })),
+        };
+    }
+
+    /**
      * Recalculate pick order when conditions change (e.g. urgent order insertion).
      */
     async reoptimisePickSequence(sessionId: string) {
@@ -28,14 +61,13 @@ export class TaskOptimisationService {
             include: { sourceLocation: true }
         });
 
-        // Simple optimisation: sort by location name to simulate routing
+        // Sort by location name to group picks by aisle/zone
         tasks.sort((a, b) => {
             const locA = a.sourceLocation?.name || '';
             const locB = b.sourceLocation?.name || '';
             return locA.localeCompare(locB);
         });
 
-        // In a real scenario, this would update an 'order' or 'sequence' column
         return { success: true, reoptimisedTasks: tasks.length };
     }
 

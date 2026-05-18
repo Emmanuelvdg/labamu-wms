@@ -56,6 +56,8 @@ const navigation: NavItem[] = [
             { name: 'Customers', href: '/customers', permission: { resource: 'CUSTOMERS', action: 'READ' } },
             { name: 'Orders', href: '/orders', permission: { resource: 'ORDERS', action: 'READ' } },
             { name: 'Picking', href: '/picking', permission: { resource: 'ORDERS', action: 'UPDATE' } },
+            { name: 'Picking Dashboard', href: '/picking/dashboard', permission: { resource: 'ORDERS', action: 'UPDATE' } },
+            { name: 'Wave Rules', href: '/picking/wave-rules', permission: { resource: 'ORDERS', action: 'UPDATE' } },
             { name: 'Packing', href: '/packing', permission: { resource: 'ORDERS', action: 'UPDATE' } },
             { name: 'Returns (RMA)', href: '/returns', permission: { resource: 'ORDERS', action: 'READ' } },
             { name: 'Shipments', href: '/shipments', permission: { resource: 'ORDERS', action: 'READ' } },
