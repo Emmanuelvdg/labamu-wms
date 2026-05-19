@@ -1,7 +1,7 @@
 import { Page, expect } from '@playwright/test';
 
 export const ADMIN_EMAIL = 'admin@labamu.co.id';
-export const ADMIN_PASSWORD = 'admin';
+export const ADMIN_PASSWORD = 'password123';
 
 // Platform admin — has ALL:MANAGE permission (required for /platform/* API endpoints).
 // Run apps/api/scripts/grant_admin.ts to assign ALL:MANAGE to this user.

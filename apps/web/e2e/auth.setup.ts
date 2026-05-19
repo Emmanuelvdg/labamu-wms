@@ -31,7 +31,8 @@ setup('authenticate as admin', async ({ page }) => {
     // the regression suite is run multiple times back-to-back.
     if (fs.existsSync(AUTH_STATE_PATH)) {
         const ageSec = (Date.now() - fs.statSync(AUTH_STATE_PATH).mtimeMs) / 1000;
-        if (ageSec < 1800) {
+        // Reuse auth state for up to 6 days (JWT expires after 7 days)
+        if (ageSec < 518400) {
             return;
         }
     }
