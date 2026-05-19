@@ -185,56 +185,67 @@ export class InventoryService {
     }
 
     async createProduct(data: any): Promise<Product> {
+        if (!data.name || typeof data.name !== 'string' || !data.name.trim()) {
+            throw new BadRequestException('Product name is required');
+        }
+
         // Phase 4: Extract attribute IDs and create relations
         const { attributeIds, packaging, ...productData } = data;
 
-        const product = await this.prisma.product.create({
-            data: {
-                sku: productData.sku,
-                name: productData.name,
-                category: productData.category,
-                expiryDate: productData.expiryDate ? new Date(productData.expiryDate) : null,
-                classification: productData.classification,
-                velocity: productData.velocity,
-                type: productData.type,
-                unitOfMeasure: productData.unitOfMeasure,
-                averageCost: productData.averageCost,
-                price: productData.price,
-                status: productData.status,
-                tracking: productData.tracking || 'none',
-                // Dimensions
-                width: productData.width ? parseFloat(productData.width) : undefined,
-                height: productData.height ? parseFloat(productData.height) : undefined,
-                depth: productData.depth ? parseFloat(productData.depth) : undefined,
-                weight: productData.weight ? parseFloat(productData.weight) : undefined,
-                // Create attribute relations
-                attributes: {
-                    create: attributeIds?.map((attrId: string) => ({
-                        attributeDefinitionId: attrId,
-                        value: 'true'
-                    })) || []
-                }
-            },
-            include: {
-                attributes: {
-                    include: {
-                        attributeDefinition: true
+        try {
+            const product = await this.prisma.product.create({
+                data: {
+                    sku: productData.sku,
+                    name: productData.name,
+                    category: productData.category,
+                    expiryDate: productData.expiryDate ? new Date(productData.expiryDate) : null,
+                    classification: productData.classification,
+                    velocity: productData.velocity,
+                    type: productData.type,
+                    unitOfMeasure: productData.unitOfMeasure,
+                    averageCost: productData.averageCost,
+                    price: productData.price,
+                    status: productData.status,
+                    tracking: productData.tracking || 'none',
+                    // Dimensions
+                    width: productData.width ? parseFloat(productData.width) : undefined,
+                    height: productData.height ? parseFloat(productData.height) : undefined,
+                    depth: productData.depth ? parseFloat(productData.depth) : undefined,
+                    weight: productData.weight ? parseFloat(productData.weight) : undefined,
+                    // Create attribute relations
+                    attributes: {
+                        create: attributeIds?.map((attrId: string) => ({
+                            attributeDefinitionId: attrId,
+                            value: 'true'
+                        })) || []
+                    }
+                },
+                include: {
+                    attributes: {
+                        include: {
+                            attributeDefinition: true
+                        }
                     }
                 }
-            }
-        });
+            });
 
-        // Handle Packaging
-        if (packaging && Array.isArray(packaging)) {
-            for (const pkg of packaging) {
-                await this.packagingService.createPackaging({
-                    ...pkg,
-                    productId: product.id,
-                });
+            // Handle Packaging
+            if (packaging && Array.isArray(packaging)) {
+                for (const pkg of packaging) {
+                    await this.packagingService.createPackaging({
+                        ...pkg,
+                        productId: product.id,
+                    });
+                }
             }
+
+            return product;
+        } catch (e: any) {
+            if (e?.code === 'P2002') {
+                throw new ConflictException(`A product with SKU '${data.sku}' already exists`);
+            }
+            throw e;
         }
-
-        return product;
     }
 
     async updateProduct(id: string, data: any) {
@@ -424,6 +435,16 @@ export class InventoryService {
 
         if (existing) {
             throw new AppError('WAREHOUSE_DUPLICATE', { name: data.name });
+        }
+
+        // Check for duplicate shortName
+        if (data.shortName) {
+            const existingShortName = await this.prisma.warehouse.findFirst({
+                where: { shortName: data.shortName }
+            });
+            if (existingShortName) {
+                throw new ConflictException(`A warehouse with short name '${data.shortName}' already exists`);
+            }
         }
 
         return this.prisma.$transaction(async (tx) => {

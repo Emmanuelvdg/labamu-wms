@@ -38,17 +38,22 @@ export async function loginAsAdmin(page: Page) {
 /**
  * Logs in as the Labamu platform admin (ALL:MANAGE permission).
  * Platform admin uses the same account as tenant admin (admin@labamu.co.id).
- * Reuses storageState if already authenticated — avoids clearing valid cookies
- * and hitting the login rate limiter unnecessarily.
+ *
+ * Checks auth via cookies WITHOUT navigating — this preserves the current page
+ * state in serial test suites where beforeEach calls this but tests depend on
+ * navigation state set by prior tests (e.g. backoffice TC-35.x).
  */
 export async function loginAsPlatformAdmin(page: Page) {
-    await page.goto('/');
-    const currentUrl = page.url();
+    // Check auth cookie without navigating — avoids resetting serial test page state.
+    const cookies = await page.context().cookies();
+    const isAuthenticated = cookies.some(c => c.name === 'auth' && c.value === 'true') ||
+        cookies.some(c => c.name === 'token' && c.value);
 
-    if (!currentUrl.includes('/login')) {
+    if (isAuthenticated) {
         return;
     }
 
+    await page.goto('/login');
     await page.getByLabel('Email').fill(PLATFORM_ADMIN_EMAIL);
     await page.getByLabel('Password').fill(PLATFORM_ADMIN_PASSWORD);
     await page.getByRole('button', { name: 'Sign in' }).click();
