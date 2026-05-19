@@ -115,16 +115,21 @@ test.describe('E2E Flow: Inter-Warehouse Transfer', () => {
     // ── Seed stock in source ──────────────────────────────────────────────────
 
     test('Setup: seed 100 units in source location', async () => {
-        await prisma.productInventory.create({
+        // Transfer API checks InventoryBatch (not the legacy ProductInventory aggregate).
+        await prisma.inventoryBatch.create({
             data: {
+                batchNumber: `IWT-BATCH-${TS}`,
                 productId,
                 warehouseId: sourceWarehouseId,
                 locationId: sourceLocationId,
-                quantity: 100,
-                reserved: 0,
+                initialQuantity: 100,
+                currentQuantity: 100,
+                costPerUnit: 1.0,
+                purchaseDate: new Date(),
+                status: 'Active',
             },
         });
-        console.log('✓ Seeded 100 units in source location');
+        console.log('✓ Seeded 100 units (InventoryBatch) in source location');
     });
 
     // ── Step 1: Transfer stock ────────────────────────────────────────────────
@@ -150,13 +155,13 @@ test.describe('E2E Flow: Inter-Warehouse Transfer', () => {
     test('Step 2: source location quantity decreased by 30', async () => {
         await new Promise(r => setTimeout(r, 300));
 
-        const srcInv = await prisma.productInventory.findFirst({
-            where: { productId, locationId: sourceLocationId },
+        const srcBatch = await prisma.inventoryBatch.findFirst({
+            where: { productId, locationId: sourceLocationId, status: 'Active' },
         });
-        expect(srcInv, 'Source inventory record missing').toBeTruthy();
+        expect(srcBatch, 'Source inventory batch missing').toBeTruthy();
         // 100 - 30 = 70 remaining in source
-        expect(srcInv!.quantity).toBeLessThanOrEqual(70);
-        console.log(`✓ Source quantity after transfer: ${srcInv!.quantity}`);
+        expect(srcBatch!.currentQuantity).toBeLessThanOrEqual(70);
+        console.log(`✓ Source quantity after transfer: ${srcBatch!.currentQuantity}`);
     });
 
     // ── Step 3: Verify transaction recorded ──────────────────────────────────

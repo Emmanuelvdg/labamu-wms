@@ -24,8 +24,9 @@ test.describe('Delivery Methods', () => {
         // Save
         await page.getByRole('button', { name: 'Save Method' }).click();
 
-        // Verify List
-        await expect(page.getByRole('table')).toContainText(methodName);
-        await expect(page.getByRole('table')).toContainText('$15.5');
+        // Wait for modal to close (save succeeded) before checking the refreshed list
+        await expect(page.getByRole('heading', { name: 'New Delivery Method' })).not.toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('table')).toContainText(methodName, { timeout: 10000 });
+        await expect(page.getByRole('table')).toContainText('$15.5', { timeout: 5000 });
     });
 });

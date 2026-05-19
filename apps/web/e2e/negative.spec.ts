@@ -21,7 +21,7 @@ test.describe('Negative & Edge-Case Validation', () => {
 
     test.beforeAll(async ({ request }) => {
         const res = await request.post(`${API}/auth/login`, {
-            data: { email: 'admin@labamu.co.id', password: 'admin' },
+            data: { email: 'admin@labamu.co.id', password: 'password123' },
         });
         const body = await res.json();
         adminId = body.user?.id ?? body.id;

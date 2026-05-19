@@ -48,11 +48,14 @@ test.describe('Inventory Management', () => {
         }
 
         await expect(page.getByText('Add New Inventory Item')).not.toBeVisible({ timeout: 15000 });
-        await page.waitForTimeout(1000);
+
+        // Search for the new product to handle pagination / default sort order
+        await page.getByPlaceholder(/Search inventory by Name or SKU/i).fill(`TEST-SKU-${timestamp}`);
+        await page.waitForTimeout(500);
 
         const table = page.locator('table');
-        await expect(table.getByText('Test Product A').first()).toBeVisible();
-        await expect(table.getByText(`TEST-SKU-${timestamp}`)).toBeVisible();
+        await expect(table.getByText('Test Product A').first()).toBeVisible({ timeout: 10000 });
+        await expect(table.getByText(`TEST-SKU-${timestamp}`)).toBeVisible({ timeout: 10000 });
     });
 
     test('TC-3.2: View Inventory Adjustments Page', async ({ page }) => {

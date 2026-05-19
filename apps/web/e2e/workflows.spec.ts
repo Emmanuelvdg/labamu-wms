@@ -63,10 +63,7 @@ test.describe('Workflow Templates', () => {
             .or(page.getByPlaceholder(/workflow name/i));
         await nameInput.fill(workflowName);
 
-        // Submit using the button with known id
-        const submitBtn = page.locator('#submit-new-workflow-btn')
-            .or(page.getByRole('button', { name: 'Create' }));
-        await submitBtn.click();
+        await page.locator('#submit-new-workflow-btn').click();
 
         // Modal should close
         await expect(page.getByRole('heading', { name: 'Create New Workflow' })).not.toBeVisible({ timeout: 10000 });
@@ -115,8 +112,7 @@ test.describe('Workflow Templates', () => {
             .or(page.getByPlaceholder(/workflow name/i));
         await nameInput.fill(workflowName);
 
-        await page.locator('#submit-new-workflow-btn')
-            .or(page.getByRole('button', { name: 'Create' })).click();
+        await page.locator('#submit-new-workflow-btn').click();
 
         await expect(page.getByText(workflowName)).toBeVisible({ timeout: 10000 });
 
@@ -157,8 +153,7 @@ test.describe('Workflow Templates', () => {
             .or(page.getByPlaceholder(/workflow name/i));
         await nameInput.fill(workflowName);
 
-        await page.locator('#submit-new-workflow-btn')
-            .or(page.getByRole('button', { name: 'Create' })).click();
+        await page.locator('#submit-new-workflow-btn').click();
 
         await expect(page.getByText(workflowName)).toBeVisible({ timeout: 10000 });
 

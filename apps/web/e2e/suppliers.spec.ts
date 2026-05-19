@@ -10,22 +10,19 @@ test.describe('Supplier Management', () => {
     test('TC-9.1: Create Supplier', async ({ page }) => {
         await page.goto('/inventory/suppliers');
 
-        // Open Dialog
+        // Open Modal — rendered as a plain div overlay (no dialog role)
         await page.getByTestId('add-supplier-btn').click();
-        await expect(page.getByRole('dialog')).toBeVisible();
+        await expect(page.getByText('Add New Supplier')).toBeVisible();
 
-        // Fill Form
+        // Fill Form — only 'name' is required; email/phone/address are optional
         const supplierName = `Test Supplier ${Date.now()}`;
         await page.getByTestId('supplier-name-input').fill(supplierName);
-
-        // Use Label text to find sibling input if testid missing
-        await page.getByLabel('Contact Info').fill('contact@test.com');
 
         // Submit
         await page.getByTestId('create-supplier-submit').click();
 
-        // Verify Toast and List Update
-        await expect(page.getByRole('table')).toContainText(supplierName);
-        await expect(page.getByRole('table')).toContainText('contact@test.com');
+        // Verify modal closes and new entry appears in the table
+        await expect(page.getByText('Add New Supplier')).not.toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('table')).toContainText(supplierName, { timeout: 10000 });
     });
 });

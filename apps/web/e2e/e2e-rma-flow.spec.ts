@@ -185,10 +185,14 @@ test.describe('E2E Flow: RMA — Return Merchandise Authorization', () => {
             },
         });
         expect(res.ok(), `Return receive: ${await res.text()}`).toBeTruthy();
-        const body = await res.json();
-        // Status should advance beyond REQUESTED
-        expect(['RECEIVED', 'COMPLETED', 'RESTOCKED']).toContain(body.status);
-        console.log(`✓ Return received. Status: ${body.status}`);
+
+        // The receive endpoint returns the received items, not the parent return order.
+        // GET the return order separately to verify status advanced.
+        const statusRes = await request.get(`${API}/returns/${returnOrderId}`);
+        expect(statusRes.ok(), `Get return after receive: ${await statusRes.text()}`).toBeTruthy();
+        const returnOrder = await statusRes.json();
+        expect(['RECEIVED', 'COMPLETED', 'RESTOCKED']).toContain(returnOrder.status);
+        console.log(`✓ Return received. Status: ${returnOrder.status}`);
     });
 
     // ── Step 4: Verify return is linked to original order ─────────────────────

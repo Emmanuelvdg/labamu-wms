@@ -30,8 +30,9 @@ test.describe('Partner Locations', () => {
         // Submit
         await page.getByRole('button', { name: 'Register', exact: true }).click();
 
-        // Verify List
-        await expect(page.getByRole('table')).toContainText(locName);
-        await expect(page.getByRole('table')).toContainText('RETAIL');
+        // Wait for modal to close (creation succeeded) before checking the refreshed list
+        await expect(page.getByRole('heading', { name: 'Register Partner Location' })).not.toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('table')).toContainText(locName, { timeout: 10000 });
+        await expect(page.getByRole('table')).toContainText('RETAIL', { timeout: 5000 });
     });
 });

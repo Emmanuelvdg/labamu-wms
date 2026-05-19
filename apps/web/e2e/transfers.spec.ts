@@ -72,17 +72,14 @@ test.describe('Transfer Operations', () => {
         await page.getByRole('button', { name: /New Transfer/i }).click();
         await expect(page.getByRole('heading', { name: 'Create New Transfer' })).toBeVisible();
 
-        // Wait for warehouses to load into the selects
+        // Wait for warehouses to load — warehouse selectors are custom SearchableSelect components
         await page.waitForTimeout(1000);
 
-        const selects = page.locator('select');
-        const selectCount = await selects.count();
-        expect(selectCount).toBeGreaterThanOrEqual(2);
-
-        // Source select should have more than just the placeholder
-        const sourceSelect = selects.first();
-        const sourceOptions = await sourceSelect.locator('option').count();
-        expect(sourceOptions).toBeGreaterThan(0);
+        // Verify both custom warehouse dropdowns are rendered
+        const sourceDropdown = page.getByTestId('transfer-source-warehouse');
+        const destDropdown = page.getByTestId('transfer-destination-warehouse');
+        await expect(sourceDropdown).toBeVisible();
+        await expect(destDropdown).toBeVisible();
     });
 
     test('TC-XFER-6: Add Another Product button adds a product row in the modal', async ({ page }) => {

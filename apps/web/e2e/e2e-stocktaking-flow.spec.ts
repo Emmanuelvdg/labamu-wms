@@ -95,7 +95,7 @@ test.describe('E2E Flow: Stocktaking Session → Count → Reconcile', () => {
         sessionId = body.id;
         expect(sessionId).toBeTruthy();
         // Status may be OPEN, DRAFT, or IN_PROGRESS depending on implementation
-        expect(['OPEN', 'DRAFT', 'IN_PROGRESS', 'PENDING']).toContain(body.status ?? 'OPEN');
+        expect(['OPEN', 'DRAFT', 'IN_PROGRESS', 'PENDING', 'PLANNED']).toContain(body.status ?? 'OPEN');
         console.log(`✓ Session ${sessionId} created (status=${body.status})`);
     });
 

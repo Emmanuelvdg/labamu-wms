@@ -7,7 +7,7 @@ export const ADMIN_PASSWORD = 'password123';
 // Run apps/api/scripts/grant_admin.ts to assign ALL:MANAGE to this user.
 // Override via env vars: PLATFORM_ADMIN_EMAIL / PLATFORM_ADMIN_PASSWORD
 export const PLATFORM_ADMIN_EMAIL = process.env.PLATFORM_ADMIN_EMAIL ?? 'admin@labamu.co.id';
-export const PLATFORM_ADMIN_PASSWORD = process.env.PLATFORM_ADMIN_PASSWORD ?? 'admin';
+export const PLATFORM_ADMIN_PASSWORD = process.env.PLATFORM_ADMIN_PASSWORD ?? 'password123';
 
 /**
  * Logs in as the tenant admin and waits for the dashboard to load.
@@ -37,12 +37,18 @@ export async function loginAsAdmin(page: Page) {
 
 /**
  * Logs in as the Labamu platform admin (ALL:MANAGE permission).
- * Always clears cookies first to override any pre-loaded storageState (tenant admin).
- * Required for backoffice /admin pages to successfully call /platform/* API endpoints.
+ * Platform admin uses the same account as tenant admin (admin@labamu.co.id).
+ * Reuses storageState if already authenticated — avoids clearing valid cookies
+ * and hitting the login rate limiter unnecessarily.
  */
 export async function loginAsPlatformAdmin(page: Page) {
-    await page.context().clearCookies();
-    await page.goto('/login');
+    await page.goto('/');
+    const currentUrl = page.url();
+
+    if (!currentUrl.includes('/login')) {
+        return;
+    }
+
     await page.getByLabel('Email').fill(PLATFORM_ADMIN_EMAIL);
     await page.getByLabel('Password').fill(PLATFORM_ADMIN_PASSWORD);
     await page.getByRole('button', { name: 'Sign in' }).click();

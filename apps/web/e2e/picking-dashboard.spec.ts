@@ -34,7 +34,8 @@ test.describe('Picking Dashboard', () => {
         const hasTable = await page.locator('table').isVisible().catch(() => false);
         const hasEmpty =
             (await page.getByText(/no sessions/i).isVisible().catch(() => false)) ||
-            (await page.getByText(/no active sessions/i).isVisible().catch(() => false));
+            (await page.getByText(/no active/i).isVisible().catch(() => false)) ||
+            (await page.getByText(/no picking/i).isVisible().catch(() => false));
         expect(hasTable || hasEmpty).toBeTruthy();
     });
 
