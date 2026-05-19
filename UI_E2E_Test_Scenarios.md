@@ -1,10 +1,11 @@
 # UI-Driven End-to-End Test Scenarios — Labamu IMS
 
-**Version:** 1.1  
-**Date:** 2026-05-11  
+**Version:** 1.2  
+**Date:** 2026-05-19  
 **Execution method:** real browser, all interactions via UI only (no direct API calls in test body)  
 **Base URL:** http://localhost:3000  
-**Auth:** Admin user (`admin@labamu.com` / seeded credentials via `e2e/.auth/admin.json`)
+**Auth:** Admin user (`admin@labamu.co.id` / seeded credentials via `e2e/.auth/admin.json`)  
+**Change log:** v1.2 — added Scenario A8 (WAVELESS), Track D (Picking Dashboard, Wave Release Rules, Route Builder v2 canvas); updated C6 for Route Builder v2; updated file layout
 
 ---
 
@@ -13,10 +14,11 @@
 1. Every scenario drives the UI from start to finish — no `page.evaluate` API shortcuts.  
 2. Each scenario is **independently executable** — setup steps use the UI itself or a dedicated `beforeAll` that creates only the minimum state via the UI.  
 3. Assertions target **visible UI state** (headings, table rows, status badges, toast messages) — not raw API responses.  
-4. Scenarios are grouped into three tracks:
+4. Scenarios are grouped into four tracks:
    - **Track A — Order & Fulfillment** (inbound → storage → outbound → dispatch → returns)
    - **Track B — Back-Office Operations** (stocktaking, replenishment, scrap, transfers, invoices)
    - **Track C — Setup & Configuration** (warehouses, products, rules, RBAC, admin portal)
+   - **Track D — Advanced Picking Operations** (picking dashboard, wave release rules, route builder v2)
 
 ---
 
@@ -129,24 +131,25 @@
 
 ### Scenario A4 — Batch Picking Wave Session
 
-**Business narrative:** Multiple sales orders are grouped into a wave and picked simultaneously to maximise picker efficiency.
+**Business narrative:** Multiple sales orders are grouped into a wave and picked simultaneously to maximise picker efficiency. An optional Wave Release Rule can trigger wave creation automatically.
 
-**Preconditions:** 3 confirmed + reserved sales orders for different customers, all containing "A2 Widget" from the same warehouse zone.
+**Preconditions:** 3 confirmed + reserved sales orders for different customers, all containing "A2 Widget" from the same warehouse zone. `ADVANCED_PICKING` feature flag enabled.
 
 **Steps and assertions:**
 
 | # | UI Action | Assertion |
 |---|-----------|-----------|
-| 1 | Navigate to `/picking` | Picking page loads |
+| 1 | Navigate to `/picking` | Picking page loads; strategy cards visible |
 | 2 | Select warehouse | Warehouse selected |
-| 3 | Select strategy "WAVE" | WAVE option active |
-| 4 | Click "Create Wave" or "Configure Wave" | Wave configuration panel opens |
-| 5 | Set wave criteria: Zone = "A1-ZONE-01"; Max Orders = 3 | Fields set |
-| 6 | Click "Generate Wave" | Wave created; 3 orders assigned to the wave |
-| 7 | Click "Start Wave Session" | Wave session begins; consolidated pick list shown |
-| 8 | For each pick line, confirm location and quantity | Lines checked off one by one |
-| 9 | Click "Complete Wave" | All 3 orders progress to PACKED queue; wave session closed |
-| 10 | Navigate to `/packing` | 3 order cards visible in packing queue |
+| 3 | Select strategy "WAVE" | WAVE option active; max-orders and criteria inputs appear |
+| 4 | Set wave criteria: Criteria = Product; Max Orders = 3 | Fields set |
+| 5 | Click "Start Picking Session" | Wave session begins; consolidated pick list shows orders grouped by product |
+| 6 | For each pick line, confirm location and quantity | Lines checked off one by one |
+| 7 | Click "Complete Session" | All 3 orders progress to PACKED queue; wave session closed |
+| 8 | Navigate to `/packing` | 3 order cards visible in packing queue |
+
+**Alternative path (Wave Release Rule triggers automatically):**
+- Pre-create a TIME_BASED or ORDER_COUNT rule on `/picking/wave-rules`; when the rule fires, a wave session is created automatically and appears on the Picking Dashboard — see Scenario D2.
 
 ---
 
@@ -236,6 +239,31 @@
 **Edge cases:**
 - Mixed lot pick (order qty 60 pulls remaining 50 from LOT-A + attempts LOT-C) → system skips expired lot; partial reservation shown
 - Near-expiry warning threshold (configurable in product settings) triggers notification badge on inventory row
+
+---
+
+### Scenario A8 — WAVELESS Picking: Live Task Feed
+
+**Business narrative:** The WAVELESS strategy assigns pick tasks to workers in real time without pre-batching. As new orders arrive and are reserved, the system immediately surfaces tasks; the worker's session page auto-refreshes to show the current task count.
+
+**Preconditions:** `ADVANCED_PICKING` flag enabled. At least 2 reserved sales orders in the warehouse. Worker is logged in.
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/picking`; select warehouse | Picking page ready |
+| 2 | Select strategy "WAVELESS" | WAVELESS card active; no additional criteria inputs required |
+| 3 | Click "Start Picking Session" | Session created; redirected to session detail page |
+| 4 | Observe the live task badge / counter | Badge shows pending task count ≥ 1; page auto-refreshes every ≤ 10 s (calls `waveless-poll` endpoint) |
+| 5 | Click the first task in the live feed | Pick task detail opens: product, location, qty shown |
+| 6 | Confirm pick quantity; click "Confirm Pick" | Task marked done; badge count decrements |
+| 7 | Open a second browser tab; create and reserve a new sales order for the same warehouse | New order reserved |
+| 8 | Return to session detail tab | **Badge count increments** within the next poll interval — live update confirmed |
+| 9 | Complete all pending pick tasks | Session progress reaches 100% |
+| 10 | Click "End Session" | Session closed; toast shown; redirect to picking page |
+
+**Key assertion:** The task badge updates without a full page reload — proving the live-poll mechanism is active.
 
 ---
 
@@ -571,23 +599,34 @@
 
 ---
 
-### Scenario C6 — Route Builder and Rule Configuration
+### Scenario C6 — Route Builder v2: Canvas, Connect Mode and Step Config
 
-**Business narrative:** A logistics manager creates a route with ordered rules to define where stock flows within the warehouse.
+**Business narrative:** A logistics manager creates a route strategy, uses the visual canvas to define step nodes and transition connections (Connect Mode), configures each step via the config panel, validates the graph, and activates the route.
 
 **Steps and assertions:**
 
 | # | UI Action | Assertion |
 |---|-----------|-----------|
-| 1 | Navigate to `/inventory/routes`; click "New Route" | Create route form |
-| 2 | Name = "Inbound Standard"; description = "Receiving to Zone A"; click Save | Route row in list |
-| 3 | Click route row → detail; click "Add Rule" | Rule form opens |
-| 4 | Action = PUSH_TO; Source = "A1-RECV"; Destination = "Zone A"; Sequence = 1 | Fields set |
-| 5 | Click Save | Rule appears under route |
-| 6 | Add second rule: Action = PUSH_TO; Source = "Zone A"; Destination = "A1-01-S1"; Sequence = 2 | Second rule appears |
-| 7 | Navigate to `/inventory/routes/builder` | Visual route builder renders with route nodes |
-| 8 | Verify nodes "A1-RECV → Zone A → A1-01-S1" connected in correct sequence | Node connections visible |
-| 9 | Click "Delete" on the route; confirm deletion | Route removed from list; 404 on route detail |
+| 1 | Navigate to `/inventory/routes`; click "New Route" | Create route dialog opens with "Route Name" field |
+| 2 | Enter name = "C6 Inbound Standard"; click "Create & Edit Canvas" | URL changes to `/inventory/routes/builder?id=<new-id>` |
+| 3 | Wait for "Loading Route Builder…" spinner to disappear | Step Types palette visible in sidebar; canvas grid rendered |
+| 4 | Observe sidebar step type list | At minimum: RECEIVE, QC_INSPECT, PUTAWAY, CONDITION, END visible |
+| 5 | Drag (or click "Add Step") for step type RECEIVE | RECEIVE node appears on canvas |
+| 6 | Add step type PUTAWAY | PUTAWAY node appears alongside RECEIVE |
+| 7 | Add step type END | END node appears |
+| 8 | Click "Connect" button in builder toolbar | Button becomes active (aria-pressed = true) or instruction text "Click a source step…" appears |
+| 9 | Click the RECEIVE node (source) | Node highlighted in connect-mode colour |
+| 10 | Click the PUTAWAY node (target) | Bézier SVG edge drawn from RECEIVE → PUTAWAY |
+| 11 | Click PUTAWAY (source) → click END (target) | Second edge drawn: PUTAWAY → END |
+| 12 | Press ESC or click "Cancel Connect" | Connect mode deactivated; no partial edge rendered |
+| 13 | Click the RECEIVE node to select it | Right-side step config panel slides in |
+| 14 | Verify panel heading contains "Step Properties" or "Step Config" | Panel visible with at least one editable field |
+| 15 | Toggle "Requires Supervisor Approval" (or any config field) to ON | Field state changes without page error |
+| 16 | Click "Save" in the toolbar | Toast "Route saved" shown |
+| 17 | Click "Validate" in the toolbar | Toast "Graph is valid" or validation modal shows success |
+| 18 | Click "Activate" | Route status changes to ACTIVE; toolbar or breadcrumb shows ACTIVE badge |
+| 19 | Navigate back to `/inventory/routes` | Route row shows status = ACTIVE |
+| 20 | Click the delete / archive button on the route; confirm | Route removed from list |
 
 ---
 
@@ -722,6 +761,99 @@
 
 ---
 
+## Track D — Advanced Picking Operations
+
+> **Feature flag prerequisite:** `ADVANCED_PICKING` must be enabled for the tenant before running any scenario in this track (toggle in `/admin/tenants/:id` → Feature Flags tab).
+
+---
+
+### Scenario D1 — Picking Dashboard: Supervisor Session Monitor and Re-Sequence
+
+**Business narrative:** A warehouse supervisor monitors active picking sessions in real time via the Picking Dashboard. When the system detects a more optimal task ordering for an active session, the supervisor reviews the re-sequence preview and accepts it to update the pick order without interrupting the worker.
+
+**Preconditions:** At least one active picking session exists (created via A2 or A4). `ADVANCED_PICKING` enabled.
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/picking/dashboard` | Page heading "Picking Dashboard" visible; no Application error |
+| 2 | Observe KPI card row | At least one of: "Active Sessions", "Tasks Pending", "Tasks Picked", "Tasks Failed" cards visible with numeric values |
+| 3 | Observe sessions table | Active session row visible with columns: Strategy, Worker, Start Time, Progress |
+| 4 | Verify no "Application error" or "Unhandled error" text on page | Body does not contain error text |
+| 5 | Locate the "Re-sequence" (or "Reoptimise") button on an active session row | Button visible and enabled |
+| 6 | Click "Re-sequence" | Side panel slides in; "Current Order" column lists current task sequence |
+| 7 | Verify "Proposed Order" column is also visible | Both columns side-by-side in the panel |
+| 8 | Click "Accept" | `POST /strategy/picking/sessions/:id/reoptimise` called; toast "Tasks reordered" shown; panel closes |
+| 9 | Observe the session row's pick order has updated | Task sequence on session detail (if navigable) shows new order |
+| 10 | Open a second session's re-sequence panel; click "Reject" (or "Cancel") | Panel closes; no API call to reoptimise; session unchanged |
+
+**Edge cases:**
+- No active sessions: sessions table shows empty state ("No active sessions"); KPI cards still render (may show 0)
+- Re-sequence panel with a single-task session: "Proposed Order" is identical to "Current Order"; Accept still succeeds without error
+
+---
+
+### Scenario D2 — Wave Release Rules: Full CRUD and Manual Trigger
+
+**Business narrative:** A warehouse manager creates wave release rules to automate wave creation on a schedule (TIME_BASED), at an order count threshold (ORDER_COUNT), or on demand (MANUAL). They enable/disable rules and manually trigger a MANUAL rule to release a wave for waiting orders.
+
+**Preconditions:** `ADVANCED_PICKING` feature flag enabled. At least one reserved order exists for the trigger test.
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/picking/wave-rules` | Heading "Wave Release Rules" visible; "New Rule" button present |
+| 2 | Click "New Rule" | Inline form appears with heading "New Wave Release Rule"; "Rule Name" field and "Create rule" button visible |
+| 3 | Enter name "D2 Morning Wave"; select trigger type = TIME_BASED | Rule type selector set |
+| 4 | Select or enter cron preset "Daily at 08:00" (cron: `0 8 * * *`) | Cron field populated |
+| 5 | Click "Create rule" | Inline form closes; rule "D2 Morning Wave" appears in list with TIME_BASED badge |
+| 6 | Click "New Rule" again; name = "D2 Auto-50"; trigger type = ORDER_COUNT; min orders = 50; max orders = 100 | Fields set |
+| 7 | Click "Create rule" | "D2 Auto-50" rule appears in list with ORDER_COUNT badge |
+| 8 | Click "New Rule" again; name = "D2 Manual Release"; trigger type = MANUAL | Fields set |
+| 9 | Click "Create rule" | "D2 Manual Release" appears in list with MANUAL badge and a "Trigger" action button |
+| 10 | Click the enable/disable toggle on "D2 Morning Wave" | Toggle flips to disabled; rule row shows disabled/inactive state |
+| 11 | Click the toggle again | Rule returns to enabled state |
+| 12 | Click "Trigger" on "D2 Manual Release" | `POST /strategy/wave-rules/:id/trigger` called; toast appears: "Wave released — X orders included" or "No RESERVED orders available" |
+| 13 | Click the delete button on "D2 Auto-50"; confirm dialog | Rule removed from list; no longer visible |
+
+**Edge cases:**
+- Trigger with no reserved orders: toast shows informational message ("No RESERVED orders available"); no wave session created; page does not error
+- Trigger with reserved orders: toast shows `sessionId` reference; wave session appears in Picking Dashboard
+
+---
+
+### Scenario D3 — Route Builder v2: Connect Mode, Step Config, and Activate Flow
+
+**Business narrative:** This scenario validates the full advanced Route Builder v2 interaction — building a multi-step flow using the Connect Mode two-click transition system, configuring step properties, validating the graph, and activating the route for live use.
+
+> Note: This is a deeper integration test of C6. Where C6 validates the basic create/connect/save flow, D3 validates edge cases: ESC-cancel during connect, editing a config field, running validation, and the full activate lifecycle.
+
+**Preconditions:** Navigate to `/inventory/routes`; create a new route "D3 Advanced Route" using the "New Route" dialog → "Create & Edit Canvas". Wait for builder canvas to fully load (spinner gone).
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Confirm canvas is ready | "Loading Route Builder…" text not visible; Step Types palette in sidebar |
+| 2 | Add 3 steps from palette: RECEIVE, QC_INSPECT, END | 3 nodes rendered on canvas |
+| 3 | Click "Connect" in toolbar | Connect mode active (button aria-pressed = true or instruction text visible) |
+| 4 | Click RECEIVE node → press ESC before selecting target | Connect mode cancelled; no edge drawn from RECEIVE |
+| 5 | Click "Connect" again; click RECEIVE → click QC_INSPECT | Edge drawn: RECEIVE → QC_INSPECT |
+| 6 | While still in Connect mode, click QC_INSPECT → click END | Edge drawn: QC_INSPECT → END; canvas shows complete flow |
+| 7 | Click somewhere on canvas (not a node) to deselect | No node selected; connect mode may auto-exit |
+| 8 | Click the QC_INSPECT node | Step config panel opens on the right |
+| 9 | In config panel, toggle "Requires Supervisor Approval" to ON | Field state = checked/true |
+| 10 | Click "Save" toolbar button | Toast "Route saved"; no page error |
+| 11 | Click "Validate" | Toast "Graph is valid" OR validation passes with green indicator |
+| 12 | Click "Activate" | Route status → ACTIVE; toast "Route activated"; toolbar shows ACTIVE state |
+| 13 | Navigate to `/inventory/routes` | "D3 Advanced Route" row shows status ACTIVE |
+| 14 | Navigate back to builder for D3 route | Canvas still shows all 3 nodes and 2 edges |
+| 15 | Add a 4th node (NOTIFY) without connecting it; click "Validate" | Validation fails: toast or modal shows error ("All branches must terminate in an END state" or "Unconnected node detected") |
+
+---
+
 ## Composite End-to-End Journeys
 
 These journeys run multiple tracks sequentially in a single spec to validate the complete platform lifecycle.
@@ -793,6 +925,7 @@ Runs in sequence: C4 (reorder rule) → A2 × N (sell stock below min) → B5 (r
 ### File layout
 ```
 apps/web/e2e/
+  # Track A — Order & Fulfillment
   ui-a1-inbound-flow.spec.ts
   ui-a2-outbound-flow.spec.ts
   ui-a3-returns-flow.spec.ts
@@ -800,6 +933,9 @@ apps/web/e2e/
   ui-a5-cluster-picking.spec.ts
   ui-a6-cross-docking.spec.ts
   ui-a7-lot-batch-expiry.spec.ts
+  ui-a8-waveless-picking.spec.ts          # NEW v1.2
+
+  # Track B — Back-Office Operations
   ui-b1-stocktaking.spec.ts
   ui-b2-cycle-count.spec.ts
   ui-b3-inventory-adjustment.spec.ts
@@ -809,17 +945,26 @@ apps/web/e2e/
   ui-b7-inter-warehouse-transfer.spec.ts
   ui-b8-putaway-exception.spec.ts
   ui-b9-qc-inspection.spec.ts
+
+  # Track C — Setup & Configuration
   ui-c1-warehouse-setup.spec.ts
   ui-c2-product-catalog.spec.ts
   ui-c3-putaway-rules.spec.ts
   ui-c4-reordering-rules.spec.ts
   ui-c5-delivery-methods.spec.ts
-  ui-c6-route-builder.spec.ts
+  ui-c6-route-builder-v2.spec.ts          # updated v1.2 (Connect Mode, Step Config, Validate/Activate)
   ui-c7-rbac.spec.ts
   ui-c8-settings.spec.ts
   ui-c9-supplier-portal.spec.ts
   ui-c10-admin-tenant.spec.ts
   ui-c11-carrier-shipping-labels.spec.ts
+
+  # Track D — Advanced Picking Operations (NEW v1.2)
+  ui-d1-picking-dashboard.spec.ts         # KPI cards, sessions table, re-sequence
+  ui-d2-wave-release-rules.spec.ts        # create TIME_BASED/ORDER_COUNT/MANUAL, toggle, trigger, delete
+  ui-d3-route-builder-advanced.spec.ts    # Connect Mode edge cases, step config, validate/activate lifecycle
+
+  # Composite Journeys
   ui-e1-full-lifecycle.spec.ts
   ui-e2-config-first-order.spec.ts
   ui-e3-replenishment-chain.spec.ts
@@ -837,6 +982,15 @@ export async function approvePO(page, poId)
 export async function receivePO(page, poId, locationName, quantities[])
 export async function createSalesOrder(page, customerId, lines[])
 export async function reserveOrder(page, orderId)
+
+// Advanced Picking helpers (NEW v1.2)
+export async function startPickingSession(page, warehouse, strategy, opts?)
+export async function waitForRouteBuilderCanvas(page)          // waits for spinner to hide
+export async function enableConnectMode(page)
+export async function connectNodes(page, sourceLabel, targetLabel)
+export async function openStepConfigPanel(page, nodeLabel)
+export async function createWaveRule(page, name, triggerType, opts?)
+export async function triggerWaveRule(page, ruleName)
 ```
 
 ### Selector conventions
