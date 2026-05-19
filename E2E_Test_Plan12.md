@@ -3,8 +3,8 @@
 This test plan extends Plan 8.0 by adding test cases for **Phases 15–20** covering the WMS Gap Remediation features: Packing Station, Shipping Documents, Replenishment Engine, Notifications & Alerts, Barcode/Mobile Workflows, and Analytics & Integrations.
 
 ## Executive Summary
-**Date**: 2026-03-07
-**Status**: Completed
+**Date**: 2026-05-19 (updated — Phases 28–31 added for Advanced Picking)
+**Status**: Phases 0–27 Completed; Phases 28–31 Added
 **Execution Summary**:
 - **Phase 0 (Environment Reset)**: Passed. Database flushed gracefully.
 - **Phase 1 (Infrastructure & Security)**: Passed. Locations, Warehouses, and Auth limits functioning correctly.
@@ -20,6 +20,10 @@ This test plan extends Plan 8.0 by adding test cases for **Phases 15–20** cove
 - **Phase 18: Notifications**: ✅ **Passed** (4/4 Scenarios Verified)
 - **Phase 19: Barcode & Mobile Workflows**: ✅ **Passed** (6/6 Scenarios Verified)
 - **Phase 20: Analytics & Integrations**: ✅ **Passed** (5/5 Scenarios Verified)
+- **Phase 28: Advanced Picking Sessions**: 🆕 **Added** (2026-05-19)
+- **Phase 29: Picking Dashboard**: 🆕 **Added** (2026-05-19)
+- **Phase 30: Wave Release Rules**: 🆕 **Added** (2026-05-19)
+- **Phase 31: Route Builder v2**: 🆕 **Added** (2026-05-19)
 
 **Prerequisites**: Dev servers running on ports 3000 (web) and 3001 (api)
 
@@ -71,6 +75,10 @@ This test plan extends Plan 8.0 by adding test cases for **Phases 15–20** cove
 | 40 | **Execution Engine: Admin** | **25.1–25.3: Pause, Resume, Override** | **25** |
 | 41 | **Dashboard & Monitoring** | **26.1–26.2: Monitor display, Visual Trace** | **26** |
 | 42 | **Telemetry & Analytics** | **27.1–27.2: Throughput metrics, Bottleneck Time** | **27** |
+| 43 | **Advanced Picking (6 Strategies)** | **28.1–28.8: SINGLE/BATCH/CLUSTER/WAVE/WAVELESS/ZONE sessions, live badge** | **28** |
+| 44 | **Picking Dashboard** | **29.1–29.4: KPI cards, sessions table, re-sequence preview, accept/reject** | **29** |
+| 45 | **Wave Release Rules** | **30.1–30.8: Create TIME_BASED/ORDER_COUNT/MANUAL, toggle, trigger, delete** | **30** |
+| 46 | **Route Builder v2** | **31.1–31.6: Canvas loads, Connect Mode, step config panel, validate, activate** | **31** |
 
 ---
 
@@ -844,9 +852,158 @@ This test plan extends Plan 8.0 by adding test cases for **Phases 15–20** cove
 
 ---
 
+## Phase 28: Advanced Picking Sessions
+**Spec:** `apps/web/e2e/picking.spec.ts` · **Persona:** Warehouse Picker / Supervisor
+
+> **Prerequisite:** `ADVANCED_PICKING` feature flag enabled for the Labamu tenant.
+
+- [ ] **Scenario 28.1: Picking page loads and strategy selector is visible**
+    - **Action**: Navigate to `/picking`. Wait for `networkidle`.
+    - **Expected**: Page heading or strategy cards visible. No Application error.
+    - **Spec TC**: TC-PICK-1
+
+- [ ] **Scenario 28.2: SINGLE strategy — start session navigates to session detail**
+    - **Action**: Select SINGLE strategy → click "Start Session".
+    - **Expected**: URL changes to `/picking/session/:id`. Session status card visible.
+    - **Spec TC**: TC-PICK-2, TC-PICK-5
+
+- [ ] **Scenario 28.3: BATCH strategy — criteria dropdown visible**
+    - **Action**: Select BATCH strategy.
+    - **Expected**: Criteria dropdown (carrier / product / destination) appears before session is started.
+    - **Spec TC**: TC-PICK-3
+
+- [ ] **Scenario 28.4: CLUSTER strategy — cart-size input visible**
+    - **Action**: Select CLUSTER strategy.
+    - **Expected**: Numeric "cart size" input appears (default 4).
+    - **Spec TC**: TC-PICK-4
+
+- [ ] **Scenario 28.5: WAVE strategy — max-orders + criteria inputs visible**
+    - **Action**: Select WAVE strategy.
+    - **Expected**: Both max-orders integer input and criteria dropdown visible.
+    - **Spec TC**: TC-PICK-7
+
+- [ ] **Scenario 28.6: WAVELESS strategy — live-poll badge updates**
+    - **Action**: Select WAVELESS → start session → observe session detail.
+    - **Expected**: A task count badge or indicator auto-refreshes (calls `GET .../waveless-poll`). No page crash within 30 s.
+    - **Spec TC**: TC-PICK-8
+
+- [ ] **Scenario 28.7: ZONE strategy — session created successfully**
+    - **Action**: Select ZONE strategy → start session.
+    - **Expected**: Session navigates to `/picking/session/:id`. No 403/500 error.
+
+- [ ] **Scenario 28.8: Inline help callout present for each strategy**
+    - **Action**: Select each strategy card in turn.
+    - **Expected**: Each card shows a short description or info callout explaining the strategy.
+    - **Spec TC**: TC-PICK-6
+
+---
+
+## Phase 29: Picking Dashboard
+**Spec:** `apps/web/e2e/picking-dashboard.spec.ts` · **Persona:** Warehouse Supervisor
+
+- [ ] **Scenario 29.1: Dashboard page loads with KPI cards**
+    - **Action**: Navigate to `/picking/dashboard`. Wait for `networkidle`.
+    - **Expected**: Heading "Picking Dashboard" visible. At least one of: Active Sessions, Tasks Pending, Tasks Picked, Tasks Failed cards rendered.
+    - **Spec TC**: TC-PICK-DASH-1
+
+- [ ] **Scenario 29.2: Sessions table renders without unhandled error**
+    - **Action**: Dashboard loaded.
+    - **Expected**: Either a `<table>` element or an empty-state message ("No active sessions") is visible. No "Application error" or "Unhandled error" text on page.
+    - **Spec TC**: TC-PICK-DASH-2
+
+- [ ] **Scenario 29.3: Re-sequence button visible and enabled on active sessions**
+    - **Action**: Dashboard with an active session in the sessions table.
+    - **Expected**: "Re-sequence" or "Reoptimise" button in session row is visible and not disabled.
+    - **Spec TC**: TC-PICK-DASH-3
+
+- [ ] **Scenario 29.4: Re-sequence preview shows Current vs Proposed columns**
+    - **Action**: Click the re-sequence button on a session row.
+    - **Expected**: Side panel appears with headings "Current Order" and "Proposed Order". "Accept" and "Reject/Cancel" buttons visible.
+    - **Spec TC**: TC-PICK-DASH-4
+
+---
+
+## Phase 30: Wave Release Rules
+**Spec:** `apps/web/e2e/wave-rules.spec.ts` · **Persona:** Warehouse Manager
+
+> **Prerequisite:** `ADVANCED_PICKING` feature flag enabled for the Labamu tenant.
+
+- [ ] **Scenario 30.1: Wave rules page loads**
+    - **Action**: Navigate to `/picking/wave-rules`. Wait for `networkidle`.
+    - **Expected**: Heading "Wave Release Rules" visible. No Application error.
+    - **Spec TC**: TC-WAVE-1
+
+- [ ] **Scenario 30.2: New Rule button opens inline creation form**
+    - **Action**: Click "New Rule" (or "Add Rule").
+    - **Expected**: Inline form with heading "New Wave Release Rule" appears. "Rule Name" field and "Create rule" button visible.
+    - **Spec TC**: TC-WAVE-2
+
+- [ ] **Scenario 30.3: Create TIME_BASED rule**
+    - **Action**: Open creation form → fill rule name → select TIME_BASED type → optionally set cron preset → click "Create rule".
+    - **Expected**: Rule name appears in the rules list. Form closes.
+    - **Spec TC**: TC-WAVE-3
+
+- [ ] **Scenario 30.4: Create ORDER_COUNT rule**
+    - **Action**: Open creation form → fill rule name → select ORDER_COUNT type → set min/max orders → click "Create rule".
+    - **Expected**: Rule appears in list with ORDER_COUNT badge.
+
+- [ ] **Scenario 30.5: Create MANUAL rule with trigger button**
+    - **Action**: Open creation form → fill rule name → select MANUAL type → click "Create rule".
+    - **Expected**: Rule appears in list. A "Trigger" action button is visible on the MANUAL rule row.
+    - **Spec TC**: TC-WAVE-5
+
+- [ ] **Scenario 30.6: Enable/disable toggle updates rule state**
+    - **Action**: Click enable/disable toggle on an existing rule.
+    - **Expected**: Toggle state flips. `PUT /strategy/wave-rules/:id` called with `{ enabled: <new-state> }`.
+    - **Spec TC**: TC-WAVE-4
+
+- [ ] **Scenario 30.7: Manual trigger executes wave release**
+    - **Action**: Click "Trigger" button on a MANUAL rule.
+    - **Expected**: `POST /strategy/wave-rules/:id/trigger` called. Toast confirms success ("Wave released") or informs "No RESERVED orders available". No page crash.
+
+- [ ] **Scenario 30.8: Delete wave rule**
+    - **Action**: Click delete on a rule → confirm.
+    - **Expected**: `DELETE /strategy/wave-rules/:id` returns 200. Rule removed from list.
+
+---
+
+## Phase 31: Route Builder v2
+**Spec:** `apps/web/e2e/routes.spec.ts` · **Persona:** Warehouse Manager / System Architect
+
+- [ ] **Scenario 31.1: Create route and navigate to builder canvas**
+    - **Action**: Inventory > Routes → click "New Route" → fill "Route Name" → click "Create & Edit Canvas".
+    - **Expected**: URL matches `/inventory/routes/builder`. Canvas container renders.
+    - **Spec TC**: TC-13.1
+
+- [ ] **Scenario 31.2: Route builder canvas loads with Step Types palette**
+    - **Action**: Navigate to route builder. Wait for "Loading Route Builder…" spinner to disappear (up to 10 s).
+    - **Expected**: Step Types sidebar heading visible OR Save/Connect toolbar buttons visible.
+    - **Spec TC**: TC-13.2
+
+- [ ] **Scenario 31.3: Step palette contains expected step types**
+    - **Action**: Observe sidebar after canvas loads.
+    - **Expected**: At minimum, step type labels for RECEIVE, PUTAWAY, CONDITION, SHIP visible in palette.
+
+- [ ] **Scenario 31.4: Connect Mode toggle**
+    - **Action**: Click "Connect" button in builder toolbar.
+    - **Expected**: Button aria-pressed transitions to "true", or connect-mode instruction text appears. No page crash or Application error.
+    - **Spec TC**: TC-13.3
+
+- [ ] **Scenario 31.5: Step config panel opens on node click**
+    - **Action**: Click an existing step node on the canvas.
+    - **Expected**: Properties/config panel appears (heading "Step Properties", "Step Config", or similar). No page crash.
+    - **Spec TC**: TC-13.4
+
+- [ ] **Scenario 31.6: Validate and activate route**
+    - **Action**: With a valid graph (start → ≥1 step → end), click "Validate" then "Activate".
+    - **Expected**: Validate returns success toast. Activate changes route status to ACTIVE. Toolbar reflects activated state.
+
+---
+
 ## Execution Summary
 
-**Execution Date**: March 11, 2026 | **Executed By**: Automated E2E via Browser Extension + API
+**Execution Date**: March 11, 2026 (Phases 0–27) | May 19, 2026 (Phases 28–31 added)  
+**Executed By**: Automated E2E via Browser Extension + API + Playwright
 
 | Phase | Title | Scenarios | Status |
 |-------|-------|-----------|--------|
@@ -878,4 +1035,8 @@ This test plan extends Plan 8.0 by adding test cases for **Phases 15–20** cove
 | **25** | **Incident Mgmt** | **3** | ✅ |
 | **26** | **Monitoring Board** | **2** | ✅ |
 | **27** | **WF Analytics** | **2** | ✅ |
-| **Total** | | **113** | **✅ 110/113** |
+| **28** | **Advanced Picking Sessions** | **8** | 🆕 Pending |
+| **29** | **Picking Dashboard** | **4** | 🆕 Pending |
+| **30** | **Wave Release Rules** | **8** | 🆕 Pending |
+| **31** | **Route Builder v2** | **6** | 🆕 Pending |
+| **Total** | | **139** | **✅ 110/113 legacy; 26 new pending** |
