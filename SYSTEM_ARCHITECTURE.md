@@ -1,7 +1,7 @@
 # Labamu WMS - System Architecture
 
-**Version:** 5.0  
-**Last Updated:** May 9, 2026  
+**Version:** 5.1  
+**Last Updated:** May 19, 2026  
 **Status:** Production-Ready
 
 ---
@@ -172,7 +172,7 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 | **OrderModule** | Sales orders, fulfillment, reservations | `OrderService`, `FulfillmentService` |
 | **PurchaseOrderModule** | Purchase orders, receipts, vendor management, **QA inspections, document attachments, 3-way match** | `PurchaseOrderService` |
 | **PickingModule** | Order picking, picking sessions, task management | `PickingService` (integrated in Inventory) |
-| **StrategyModule** | Reservation strategies, rotation rules | `StrategyService` |
+| **StrategyModule** | Reservation and picking strategies, advanced picking sessions (Batch/Cluster/Wave/Waveless/Zone), wave release rules, pick-sequence reoptimisation, picklist PDF | `StrategyService`, `PickingStrategyService`, `WaveReleaseRuleService`, `TaskOptimisationService` |
 | **WarehouseModule** | Warehouse configuration, locations, functional areas | `WarehouseService` |
 | **FloorPlanModule** | Visual warehouse layout editor, drag-and-drop placement, spatial coordinates | `WarehouseService` (floor plan endpoints) |
 | **SettingsModule** | Attributes, custom fields, system configuration | `AttributeService` |
@@ -241,6 +241,9 @@ apps/web/
 │   │   │   └── replenishment/   # Replenishment alerts + forecasting
 │   │   ├── orders/              # Sales order management (list, detail, new)
 │   │   ├── customers/           # Customer management
+│   │   ├── picking/             # Advanced picking operations
+│   │   │   ├── dashboard/       # Supervisor dashboard — KPI cards, session table, re-sequence panel
+│   │   │   └── wave-rules/      # Wave release rules CRUD (TIME_BASED / ORDER_COUNT / MANUAL)
 │   │   ├── packing/             # Packing station + session detail
 │   │   ├── shipments/           # Shipments list
 │   │   ├── returns/             # Returns / RMA (list, new, receive flow)
@@ -460,12 +463,18 @@ PATCH  /inventory/putaway-rules/:id         Update rule
 DELETE /inventory/putaway-rules/:id         Delete rule
 ```
 
-#### Picking Operations
+#### Picking Operations (ADVANCED_PICKING feature flag required)
 ```
-POST   /strategy/picking/sessions                     Create picking session (SINGLE, ZONE, BATCH, WAVE)
-GET    /strategy/picking/sessions/:id/picklist         Get session picklist
-PATCH  /strategy/picking/tasks/:id                     Update picking task status
+GET    /strategy/picking/sessions                      List all sessions (with task stats)
+POST   /strategy/picking/sessions                      Create picking session (SINGLE, BATCH, CLUSTER, WAVE, WAVELESS, ZONE)
+GET    /strategy/picking/sessions/active               Get active session for a warehouse
+GET    /strategy/picking/sessions/:id/waveless-poll    Poll for new tasks in a WAVELESS session
+GET    /strategy/picking/sessions/:id/picklist         Download picklist PDF
+GET    /strategy/picking/sessions/:id/reoptimise-preview  Preview re-sequenced pick order (dry-run)
+POST   /strategy/picking/sessions/:id/reoptimise       Commit optimised pick sequence
 POST   /strategy/picking/sessions/:id/complete         Complete session
+PATCH  /strategy/picking/tasks/:id                     Update picking task (status, picked qty, exception)
+POST   /strategy/picking/tasks/:id/scan-pick           Scan-to-pick — validate barcode and complete task
 ```
 
 #### Returns Management
@@ -569,12 +578,13 @@ GET    /currencies/rates                    List exchange rates
 POST   /currencies/rates                    Set exchange rate
 ```
 
-#### Wave Release Rules
+#### Wave Release Rules (ADVANCED_PICKING feature flag required)
 ```
-GET    /picking-strategies/wave-rules       List wave release rules
-POST   /picking-strategies/wave-rules       Create wave rule
-PUT    /picking-strategies/wave-rules/:id   Update wave rule
-DELETE /picking-strategies/wave-rules/:id   Delete wave rule
+GET    /strategy/wave-rules                 List wave release rules for a warehouse
+POST   /strategy/wave-rules                 Create wave rule (TIME_BASED / ORDER_COUNT / MANUAL)
+PUT    /strategy/wave-rules/:id             Update wave rule
+DELETE /strategy/wave-rules/:id             Delete wave rule
+POST   /strategy/wave-rules/:id/trigger     Manually trigger a MANUAL-type wave rule
 ```
 
 #### Workflow Engine
@@ -2188,12 +2198,18 @@ The repository includes comprehensive E2E test plans:
 
 ---
 
-### Dynamic Routing & Workflow Engine (Phase 3+)
-The new Workflow Engine replaces static multi-step flows with dynamic, customizable workflow templates.
-- **WorkflowTemplate:** Defines the logical graph of steps (e.g., Receive -> QC -> Putaway).
-- **WorkflowTask / Transition:** Steps dictate actions and transitions determine routing based on rules.
-- **Waveless Picking:** Continuous flow picking rather than strict batches.
-- **Dynamic Task Optimisation:** Re-evaluates picking sequences and workloads in real-time.
+### Dynamic Routing, Route Builder & Advanced Picking (Phase 3+)
+The Route Builder (`/inventory/routes/builder`) provides a visual canvas for defining custom inventory routes:
+- **10 Step Types:** Receive/Inbound, Put-Away, QC Inspect, Staging, Consolidation, Pick, Wave Pick, Pack, Ship, Cross-Dock — each with type-specific configuration fields (e.g., QC sampling rate & block-on-fail, Staging area name & max hold time).
+- **Connect Mode:** Click-to-connect UX draws curved Bézier transitions between steps; ESC cancels. Saved transitions render as SVG arcs with arrowheads.
+- **Activate Flow:** Draft routes can be Validated then Activated directly from the builder toolbar.
+
+Advanced Picking enhancements (gated by `ADVANCED_PICKING` feature flag):
+- **Waveless Picking:** Continuous-flow session that polls for new tasks every 8 s; workers see a live "+N" badge when the queue grows.
+- **Wave Release Rules:** Configurable rules (TIME_BASED cron, ORDER_COUNT threshold, or MANUAL trigger) that release waves automatically.
+- **Supervisor Dashboard (`/picking/dashboard`):** KPI cards (Active Sessions, Tasks Pending/Picked/Failed), session progress table, and a re-sequence preview panel.
+- **Re-sequence Preview/Commit:** `GET .../reoptimise-preview` returns sorted order without persisting; supervisor can Accept (commit) or Reject.
+- **WorkflowTemplate:** Defines the logical graph of steps (e.g., Receive → QC → Putaway); transitions determine routing based on rules.
 
 ---
 

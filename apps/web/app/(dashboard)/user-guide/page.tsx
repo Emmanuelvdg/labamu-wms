@@ -78,6 +78,8 @@ export default function UserGuidePage() {
                                         <div className="flex flex-col space-y-1">
                                             <a onClick={(e) => scrollToSection(e, 'orders')} href="#orders" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Creating & Managing Orders</a>
                                             <a onClick={(e) => scrollToSection(e, 'picking-strategies')} href="#picking-strategies" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Picking Strategies</a>
+                                            <a onClick={(e) => scrollToSection(e, 'picking-dashboard')} href="#picking-dashboard" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Picking Dashboard</a>
+                                            <a onClick={(e) => scrollToSection(e, 'wave-release-rules')} href="#wave-release-rules" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Wave Release Rules</a>
                                             <a onClick={(e) => scrollToSection(e, 'rotation-policies')} href="#rotation-policies" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Rotation Policies</a>
                                             <a onClick={(e) => scrollToSection(e, 'worker-interface')} href="#worker-interface" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Worker Interface</a>
                                             <a onClick={(e) => scrollToSection(e, 'packing-station')} href="#packing-station" className="block text-muted-foreground hover:text-primary py-1 transition-colors pl-2 border-l-2 border-transparent hover:border-primary">Packing Station</a>
@@ -539,17 +541,35 @@ export default function UserGuidePage() {
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Route className="h-5 w-5" /> Routes</h3>
                                 <Card>
                                     <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> Defining the lifecycle and movement path of inventory.</p>
+                                        <p><strong>Purpose:</strong> Define the lifecycle and movement path of inventory through a visual canvas builder.</p>
                                         <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                                            <li><strong>Push Rules:</strong> "When detailed product arrives at Receiving, automatic move &rarr; Quality Control."</li>
-                                            <li><strong>Pull Rules:</strong> "When Order confirms, reserve from Stock; if empty, trigger Resupply from Bulk Storage."</li>
+                                            <li><strong>Push Rules:</strong> "When goods arrive at Receiving, automatically move → Quality Control."</li>
+                                            <li><strong>Pull Rules:</strong> "When an order confirms, reserve from Stock; if empty, trigger Resupply from Bulk Storage."</li>
                                         </ul>
+                                        <div>
+                                            <h4 className="font-medium mb-1">Route Builder Canvas</h4>
+                                            <p className="text-sm text-muted-foreground mb-2">Create routes using a drag-and-drop step canvas. Ten step types are available:</p>
+                                            <div className="grid grid-cols-2 gap-1 text-sm text-muted-foreground mb-2">
+                                                <span>• Receive / Inbound</span><span>• Put-Away</span>
+                                                <span>• QC Inspect</span><span>• Staging</span>
+                                                <span>• Consolidation</span><span>• Pick</span>
+                                                <span>• Wave Pick</span><span>• Pack</span>
+                                                <span>• Ship</span><span>• Cross-Dock</span>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">Each step has a <strong>configuration panel</strong> — e.g., QC Inspect lets you set sampling rate, require supervisor sign-off, and choose whether to block on failure. Staging lets you name the staging area and set a max hold time.</p>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-medium mb-1">Connecting Steps</h4>
+                                            <p className="text-sm text-muted-foreground">Click <strong>Connect</strong> in the toolbar to enter Connect Mode. Click a source step, then a target step to draw a transition. Press <strong>Escape</strong> to cancel. Saved transitions appear as curved arrows.</p>
+                                        </div>
                                         <div className="bg-muted p-4 rounded-md text-sm">
                                             <strong>How to Use:</strong>
                                             <ol className="list-decimal pl-5 mt-1 space-y-1">
-                                                <li>Navigate to <strong>Inventory &rarr; Routes</strong>.</li>
-                                                <li>Define a sequence of steps (Source &rarr; Destination).</li>
-                                                <li>Apply the route to a <strong>Warehouse</strong> (global) or a <strong>Product Category</strong>.</li>
+                                                <li>Navigate to <strong>Inventory → Routes</strong> and click <strong>New Route</strong>.</li>
+                                                <li>Add steps from the Step Types panel on the left.</li>
+                                                <li>Use <strong>Connect Mode</strong> to draw transitions between steps.</li>
+                                                <li>Click a step to open its config panel and set type-specific fields.</li>
+                                                <li>Click <strong>Validate</strong> then <strong>Activate</strong> to publish the route.</li>
                                             </ol>
                                         </div>
                                     </CardContent>
@@ -1197,20 +1217,102 @@ export default function UserGuidePage() {
                                 <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Settings className="h-5 w-5" /> Picking Strategies</h3>
                                 <Card>
                                     <CardContent className="pt-6 space-y-4">
-                                        <p><strong>Purpose:</strong> Optimizing how physical labor is utilized.</p>
-                                        <div className="space-y-4">
-                                            <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                                                <li><strong>Single Order:</strong> Picker grabs a cart, picks one order A to Z. Simple, good for low volume.</li>
-                                                <li><strong>Batch Picking:</strong> System combines 5 orders. Picker goes to Shelf A, grabs 5 widgets (1 for each order). Reduces walking.</li>
-                                                <li><strong>Wave Picking:</strong> Orders are grouped by carrier/time. Released in "waves" to balance hourly workload.</li>
-                                            </ul>
-                                            <strong>Configuration:</strong> Set the active strategy in <strong>Warehouse Settings</strong>.
+                                        <p><strong>Purpose:</strong> Optimise physical labor and reduce travel time during order fulfillment. Requires the <strong>ADVANCED_PICKING</strong> feature flag.</p>
+                                        <div className="space-y-3">
+                                            <div className="bg-muted p-3 rounded-md text-sm">
+                                                <strong>SINGLE</strong> — One picker, one order, A to Z. Simple; best for low volume or large, complex orders.
+                                            </div>
+                                            <div className="bg-muted p-3 rounded-md text-sm">
+                                                <strong>BATCH</strong> — Combine multiple orders by contact, carrier, or location. Picker collects items for several orders in one trip, sorting at packing.
+                                            </div>
+                                            <div className="bg-muted p-3 rounded-md text-sm">
+                                                <strong>CLUSTER</strong> — Group a fixed number of orders (e.g., 5). Similar to Batch but cluster size is the key parameter.
+                                            </div>
+                                            <div className="bg-muted p-3 rounded-md text-sm">
+                                                <strong>WAVE</strong> — Orders released in scheduled waves. Set <em>wave size</em> (max orders per wave) and <em>release cadence</em> (minutes between waves) to balance hourly workload.
+                                            </div>
+                                            <div className="bg-muted p-3 rounded-md text-sm">
+                                                <strong>WAVELESS</strong> — Continuous-flow picking. New tasks stream in automatically; a <em>Live +N</em> badge appears in the session header when new tasks arrive (refreshes every 8 seconds).
+                                            </div>
+                                            <div className="bg-muted p-3 rounded-md text-sm">
+                                                <strong>ZONE</strong> — Each picker covers a specific warehouse zone; items are consolidated at a merge point before packing.
+                                            </div>
+                                        </div>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>How to Start a Session:</strong>
+                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                <li>Navigate to <strong>Picking</strong> and select a warehouse.</li>
+                                                <li>Choose a strategy — a contextual help description appears below the selector.</li>
+                                                <li>For WAVE: set <em>Wave Size</em> and <em>Release Cadence (min)</em>.</li>
+                                                <li>Click <strong>Start Session</strong>. Tasks are generated automatically.</li>
+                                                <li>Use the <strong>Re-sequence</strong> button to preview an optimised pick order and Accept or Reject it.</li>
+                                            </ol>
                                         </div>
                                         <div className="mt-2">
                                             <h4 className="font-medium text-sm">Stock Rotation Policies:</h4>
                                             <p className="text-xs text-muted-foreground mt-1">The system supports FIFO, FEFO, and LIFO policies. See the dedicated section below for comprehensive configuration details.</p>
                                         </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
 
+                            {/* Picking Dashboard */}
+                            <div id="picking-dashboard" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><BarChart className="h-5 w-5" /> Picking Dashboard</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Supervisor-level overview of all active and recent picking sessions across the warehouse.</p>
+                                        <div>
+                                            <h4 className="font-medium mb-1">KPI Cards</h4>
+                                            <ul className="list-disc pl-5 text-muted-foreground space-y-1 text-sm">
+                                                <li><strong>Active Sessions:</strong> Sessions currently IN_PROGRESS.</li>
+                                                <li><strong>Tasks Pending:</strong> Total tasks not yet picked across active sessions.</li>
+                                                <li><strong>Tasks Picked:</strong> Completed or partially-picked tasks.</li>
+                                                <li><strong>Tasks Failed:</strong> Tasks marked as exceptions or failures.</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-medium mb-1">Re-sequence Preview</h4>
+                                            <p className="text-sm text-muted-foreground">Click <strong>Re-sequence</strong> on any active session to open a side-by-side panel comparing the <em>Current Order</em> and the system-proposed <em>Optimised Order</em> (sorted by location name for minimum travel). Rows are highlighted to show which tasks would move position. Click <strong>Accept</strong> to commit the new order, or <strong>Reject</strong> to keep the current sequence.</p>
+                                        </div>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>Access:</strong> Navigate to <strong>Picking → Picking Dashboard</strong> or go directly to <code>/picking/dashboard</code>. The page auto-refreshes every 30 seconds. Filter by warehouse using the selector at the top.
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Wave Release Rules */}
+                            <div id="wave-release-rules" className="scroll-mt-24 gap-4">
+                                <h3 className="text-xl font-semibold flex items-center gap-2 mb-2"><Settings className="h-5 w-5" /> Wave Release Rules</h3>
+                                <Card>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <p><strong>Purpose:</strong> Automate wave creation based on time schedules or order volume thresholds, reducing manual supervisor intervention.</p>
+                                        <div className="space-y-3">
+                                            <div className="bg-blue-50 p-3 rounded-md text-sm">
+                                                <strong className="text-blue-900">TIME_BASED</strong>
+                                                <p className="text-muted-foreground mt-1">Releases a wave on a cron schedule. Choose from presets (Every 30 min, Every hour, Every 2 h, Every 4 h, Daily 6 AM) or enter a custom cron expression.</p>
+                                            </div>
+                                            <div className="bg-green-50 p-3 rounded-md text-sm">
+                                                <strong className="text-green-900">ORDER_COUNT</strong>
+                                                <p className="text-muted-foreground mt-1">Fires when the number of queued orders reaches a minimum threshold (e.g., "release a wave when ≥ 20 orders are ready").</p>
+                                            </div>
+                                            <div className="bg-orange-50 p-3 rounded-md text-sm">
+                                                <strong className="text-orange-900">MANUAL</strong>
+                                                <p className="text-muted-foreground mt-1">Supervisor clicks <strong>Trigger</strong> to release a wave on demand. Useful for ad-hoc or emergency releases.</p>
+                                            </div>
+                                        </div>
+                                        <div className="bg-muted p-4 rounded-md text-sm">
+                                            <strong>How to Use:</strong>
+                                            <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                                <li>Navigate to <strong>Picking → Wave Release Rules</strong>.</li>
+                                                <li>Click <strong>New Rule</strong> and enter a name and trigger type.</li>
+                                                <li>For TIME_BASED: choose a cron preset or enter a custom expression.</li>
+                                                <li>For ORDER_COUNT: set min and max order thresholds.</li>
+                                                <li>Use the toggle to enable or disable a rule without deleting it.</li>
+                                                <li>For MANUAL rules, click <strong>Trigger</strong> to fire immediately.</li>
+                                            </ol>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </div>
