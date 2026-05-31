@@ -10,6 +10,8 @@ export async function GET(
     const params = await props.params;
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
+    const allCookies = cookieStore.getAll();
+    const cookieHeader = allCookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
 
     if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -19,6 +21,7 @@ export async function GET(
         `${API_BASE_URL}/lalamove/config/${params.warehouseId}`,
         {
             headers: {
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
         }

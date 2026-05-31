@@ -41,7 +41,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    const { userId } = await getUserId();
+    const { userId, cookieHeader } = await getUserId();
 
     try {
         const body = await request.json();
@@ -50,6 +50,7 @@ export async function POST(request: Request) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
             body: JSON.stringify(body),

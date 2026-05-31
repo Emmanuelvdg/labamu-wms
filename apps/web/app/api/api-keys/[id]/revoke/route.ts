@@ -18,6 +18,7 @@ export async function DELETE(
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookies,
                 'x-user-id': userId,
             },
         });

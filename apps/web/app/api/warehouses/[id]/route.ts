@@ -9,6 +9,8 @@ export async function GET(
 ) {
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
+    const allCookies = cookieStore.getAll();
+    const cookieHeader = allCookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
     const { id } = await params;
 
     console.log(`[API Proxy] GET /api/warehouses/${id} - userId:`, userId);
@@ -25,6 +27,7 @@ export async function GET(
         const response = await fetch(backendUrl, {
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
         });

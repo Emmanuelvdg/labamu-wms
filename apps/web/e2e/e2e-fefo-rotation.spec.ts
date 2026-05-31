@@ -16,7 +16,7 @@ import { test, expect } from '@playwright/test';
 import { PrismaClient } from '@labamu/database';
 import { loginAsAdmin } from './helpers/auth';
 
-const API = 'http://localhost:3001';
+const API = 'http://127.0.0.1:3001';
 const prisma = new PrismaClient();
 
 test.describe.configure({ mode: 'serial' });

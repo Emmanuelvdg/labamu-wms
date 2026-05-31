@@ -1,7 +1,7 @@
 /** @planRef E2E_Test_Plan11.md §Phase3 — Scenario 3.3 (Putaway Process); §Phase11 — Scenarios 11.1–11.4 (Putaway Rules FIXED/ZONE) */
 import { test, expect, APIRequestContext } from '@playwright/test';
 
-const API = 'http://localhost:3001';
+const API = 'http://127.0.0.1:3001';
 const TIMESTAMP = Date.now();
 const WAREHOUSE_NAME = `Putaway WH ${TIMESTAMP}`;
 const PRODUCT_SKU = `PUT-${TIMESTAMP}`;
@@ -37,25 +37,12 @@ test.describe('Putaway Operations E2E Tests', () => {
     // ==================== AUTH ====================
 
     test('Setup: Discover Admin User', async ({ request }) => {
-        const knownAdminId = 'c9b6ad61-ce5c-47e0-939c-e6c2b5ac4502';
-        const meRes = await request.get(`${API}/auth/me`, {
-            headers: { 'x-user-id': knownAdminId },
+        const res = await request.post(`${API}/auth/login`, {
+            data: { email: 'admin@labamu.co.id', password: 'password123' },
         });
-        if (meRes.ok()) {
-            const body = await meRes.json();
-            adminUserId = body.id;
-        } else {
-            const loginRes = await request.post(`${API}/auth/login`, {
-                data: { email: 'admin@labamu.co.id', password: 'admin' },
-            });
-            if (loginRes.ok()) {
-                const body = await loginRes.json();
-                adminUserId = body.user?.id || body.id;
-            } else {
-                adminUserId = knownAdminId;
-            }
-        }
-        expect(adminUserId).toBeTruthy();
+        const body = await res.json();
+        adminUserId = body.user?.id ?? body.id;
+        expect(adminUserId, 'Could not get admin user ID from login').toBeTruthy();
         console.log('✓ Admin user:', adminUserId);
     });
 
@@ -319,8 +306,14 @@ test.describe('Putaway Edge Cases', () => {
     test('Edge Case: Empty Putaway Session', async ({ request, page }) => {
         // Create a warehouse with no receiving locations or items
         const ts = Date.now();
+        const loginRes = await request.post(`${API}/auth/login`, {
+            data: { email: 'admin@labamu.co.id', password: 'password123' },
+        });
+        const loginBody = loginRes.ok() ? await loginRes.json() : {};
+        const userId = loginBody.user?.id ?? loginBody.id ?? '';
+        const headers = { 'Content-Type': 'application/json', 'x-user-id': userId };
         const warehouse = await request.post(`${API}/inventory/warehouses`, {
-            headers: { 'Content-Type': 'application/json', 'x-user-id': 'c9b6ad61-ce5c-47e0-939c-e6c2b5ac4502' },
+            headers,
             data: { name: `Empty WH ${ts}`, shortName: `EW${ts.toString().slice(-4)}`, address: 'Test', city: 'Test', country: 'Test' },
         });
         if (!warehouse.ok()) {

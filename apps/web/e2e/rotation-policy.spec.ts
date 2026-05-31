@@ -141,7 +141,7 @@ test.describe('Stock Rotation Policies', () => {
         // No rules exist. Order creation triggers reserveStock which uses ProductInventory records.
         // createBatch() now creates both InventoryBatch AND ProductInventory records.
 
-        const response = await request.post('http://localhost:3001/orders', {
+        const response = await request.post('http://127.0.0.1:3001/orders', {
             headers: { 'x-user-id': userId },
             data: {
                 customerId,
@@ -177,7 +177,7 @@ test.describe('Stock Rotation Policies', () => {
         });
 
         // Create Order (Qty 10)
-        const response = await request.post('http://localhost:3001/orders', {
+        const response = await request.post('http://127.0.0.1:3001/orders', {
             headers: { 'x-user-id': userId },
             data: {
                 customerId,
@@ -212,7 +212,7 @@ test.describe('Stock Rotation Policies', () => {
         // B3 expires Tomorrow (shelf life ~1 day). B4 expires in 30 days.
         // Requirement > 15 days. B3 should be skipped. B4 selected.
 
-        const response = await request.post('http://localhost:3001/orders', {
+        const response = await request.post('http://127.0.0.1:3001/orders', {
             headers: { 'x-user-id': userId },
             data: {
                 customerId,

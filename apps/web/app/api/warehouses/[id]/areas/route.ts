@@ -10,6 +10,8 @@ export async function GET(
 ) {
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
+    const allCookiesGet = cookieStore.getAll();
+    const cookieHeaderGet = allCookiesGet.map((c: any) => `${c.name}=${c.value}`).join('; ');
     const { id } = await params;
 
     if (!userId) {
@@ -19,6 +21,7 @@ export async function GET(
     try {
         const response = await fetch(`${API_BASE_URL}/warehouses/${id}/areas`, {
             headers: {
+                'Cookie': cookieHeaderGet,
                 'x-user-id': userId,
             },
         });
@@ -49,6 +52,8 @@ export async function POST(
 ) {
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
+    const allCookiesPost = cookieStore.getAll();
+    const cookieHeaderPost = allCookiesPost.map((c: any) => `${c.name}=${c.value}`).join('; ');
     const { id } = await params;
 
     if (!userId) {
@@ -62,6 +67,7 @@ export async function POST(
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeaderPost,
                 'x-user-id': userId,
             },
             body: JSON.stringify(body),

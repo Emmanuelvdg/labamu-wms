@@ -5,14 +5,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const queryString = searchParams.toString();
 
-    // Forward the x-user-id header from the client request
-    const userId = request.headers.get('x-user-id') || '';
+    // Forward cookie and x-user-id from the client request
+    const cookieHeader = request.headers.get('cookie') || '';
+    const userIdMatch = cookieHeader.match(/user_id=([^;]+)/);
+    const userId = userIdMatch?.[1] || request.headers.get('x-user-id') || '';
 
     const url = `${INTERNAL_API_URL}/inventory/locations${queryString ? `?${queryString}` : ''}`;
 
     try {
         const res = await fetch(url, {
             headers: {
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
         });
@@ -34,7 +37,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const userId = request.headers.get('x-user-id') || '';
+    const cookieHeader = request.headers.get('cookie') || '';
+    const userIdMatch = cookieHeader.match(/user_id=([^;]+)/);
+    const userId = userIdMatch?.[1] || request.headers.get('x-user-id') || '';
 
     try {
         const body = await request.json();
@@ -43,6 +48,7 @@ export async function POST(request: NextRequest) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
             body: JSON.stringify(body),

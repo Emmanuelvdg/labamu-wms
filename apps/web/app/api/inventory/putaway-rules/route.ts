@@ -5,14 +5,15 @@ const API_BASE = 'http://127.0.0.1:3001';
 export async function GET(request: Request) {
     try {
         // Get user ID from cookie or localStorage fallback
-        const cookies = request.headers.get('cookie') || '';
-        const userIdMatch = cookies.match(/user_id=([^;]+)/);
+        const cookieHeader = request.headers.get('cookie') || '';
+        const userIdMatch = cookieHeader.match(/user_id=([^;]+)/);
         const userId = userIdMatch?.[1] || request.headers.get('x-user-id') || '';
 
         const response = await fetch(`${API_BASE}/inventory/putaway-rules`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
         });
@@ -30,14 +31,15 @@ export async function POST(request: Request) {
         const body = await request.json();
 
         // Get user ID from cookie
-        const cookies = request.headers.get('cookie') || '';
-        const userIdMatch = cookies.match(/user_id=([^;]+)/);
+        const cookieHeader = request.headers.get('cookie') || '';
+        const userIdMatch = cookieHeader.match(/user_id=([^;]+)/);
         const userId = userIdMatch?.[1] || request.headers.get('x-user-id') || '';
 
         const response = await fetch(`${API_BASE}/inventory/putaway-rules`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
             body: JSON.stringify(body),

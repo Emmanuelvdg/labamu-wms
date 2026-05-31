@@ -18,6 +18,7 @@ export async function GET(
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookies,
                 'x-user-id': userId,
             },
         });

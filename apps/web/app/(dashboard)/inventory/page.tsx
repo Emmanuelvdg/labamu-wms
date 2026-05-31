@@ -407,7 +407,6 @@ export default function InventoryPage() {
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">Category</label>
                                         <select
-                                            required
                                             data-testid="product-category-input"
                                             className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
                                             value={newProduct.category}

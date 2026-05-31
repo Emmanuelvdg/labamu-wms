@@ -19,6 +19,7 @@ export async function PATCH(
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookies,
                 'x-user-id': userId,
             },
             body: JSON.stringify(body),

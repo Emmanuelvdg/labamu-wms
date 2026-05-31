@@ -14,7 +14,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 
-const API = 'http://localhost:3001';
+const API = 'http://127.0.0.1:3001';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -44,12 +44,12 @@ test.describe('E2E Flow: RMA — Return Merchandise Authorization', () => {
     // ── Auth ──────────────────────────────────────────────────────────────────
 
     test('Setup: authenticate as admin', async ({ request }) => {
-        const knownAdminId = 'c9b6ad61-ce5c-47e0-939c-e6c2b5ac4502';
-        const res = await request.get(`${API}/auth/me`, {
-            headers: { 'x-user-id': knownAdminId },
+        const res = await request.post(`${API}/auth/login`, {
+            data: { email: 'admin@labamu.co.id', password: 'password123' },
         });
-        adminUserId = res.ok() ? (await res.json()).id : knownAdminId;
-        expect(adminUserId).toBeTruthy();
+        const body = await res.json();
+        adminUserId = body.user?.id ?? body.id;
+        expect(adminUserId, 'Could not get admin user ID from login').toBeTruthy();
         console.log('✓ Admin:', adminUserId);
     });
 

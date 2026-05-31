@@ -13,7 +13,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const API = 'http://localhost:3001';
+const API = 'http://127.0.0.1:3001';
 const TS = Date.now().toString().slice(-8);
 
 test.describe('Negative & Edge-Case Validation', () => {
@@ -45,19 +45,20 @@ test.describe('Negative & Edge-Case Validation', () => {
     });
 
     // ── NEG-2: Unauthenticated API access ────────────────────────────────────
+    // Use Node.js fetch (no Playwright storageState cookies) to test truly unauthenticated access.
 
-    test('NEG-2: GET /inventory/products without auth header → 401', async ({ request }) => {
-        const res = await request.get(`${API}/inventory/products`, {
+    test('NEG-2: GET /inventory/products without auth header → 401', async () => {
+        const res = await fetch(`${API}/inventory/products`, {
             headers: { 'Content-Type': 'application/json' },
         });
-        expect(res.status()).toBe(401);
+        expect(res.status).toBe(401);
     });
 
-    test('NEG-2b: GET /orders without auth header → 401', async ({ request }) => {
-        const res = await request.get(`${API}/orders`, {
+    test('NEG-2b: GET /orders without auth header → 401', async () => {
+        const res = await fetch(`${API}/orders`, {
             headers: { 'Content-Type': 'application/json' },
         });
-        expect(res.status()).toBe(401);
+        expect(res.status).toBe(401);
     });
 
     // ── NEG-3: Duplicate product SKU ─────────────────────────────────────────

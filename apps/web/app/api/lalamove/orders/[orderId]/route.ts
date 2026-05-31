@@ -10,6 +10,8 @@ export async function POST(
     const params = await props.params;
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
+    const allCookies = cookieStore.getAll();
+    const cookieHeader = allCookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
 
     if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -21,6 +23,7 @@ export async function POST(
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'Cookie': cookieHeader,
             'x-user-id': userId,
         },
         body: JSON.stringify(body),
@@ -37,6 +40,8 @@ export async function GET(
     const params = await props.params;
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
+    const allCookies = cookieStore.getAll();
+    const cookieHeader = allCookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
 
     if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -44,6 +49,7 @@ export async function GET(
 
     const response = await fetch(`${API_BASE_URL}/lalamove/orders/${params.orderId}`, {
         headers: {
+            'Cookie': cookieHeader,
             'x-user-id': userId,
         },
     });

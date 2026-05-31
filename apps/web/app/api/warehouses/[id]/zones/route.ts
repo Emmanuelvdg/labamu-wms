@@ -7,10 +7,15 @@ export async function GET(
 ) {
     try {
         const { id: warehouseId } = await params;
+        const cookieHeader = request.headers.get('cookie') || '';
+        const userIdMatch = cookieHeader.match(/user_id=([^;]+)/);
+        const userId = userIdMatch?.[1] || request.headers.get('x-user-id') || '';
         // Call the NestJS backend API
         const response = await fetch(`${process.env.API_URL || 'http://localhost:3001'}/warehouses/${warehouseId}/zones`, {
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
+                'x-user-id': userId,
             },
             cache: 'no-store'
         });

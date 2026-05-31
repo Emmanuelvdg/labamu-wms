@@ -11,14 +11,15 @@ export async function PUT(
         const body = await request.json();
 
         // Get user ID from cookie
-        const cookies = request.headers.get('cookie') || '';
-        const userIdMatch = cookies.match(/user_id=([^;]+)/);
+        const cookieHeader = request.headers.get('cookie') || '';
+        const userIdMatch = cookieHeader.match(/user_id=([^;]+)/);
         const userId = userIdMatch?.[1] || request.headers.get('x-user-id') || '';
 
         const response = await fetch(`${API_BASE}/inventory/putaway-rules/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
             body: JSON.stringify(body),
@@ -40,14 +41,15 @@ export async function DELETE(
         const { id } = await params;
 
         // Get user ID from cookie
-        const cookies = request.headers.get('cookie') || '';
-        const userIdMatch = cookies.match(/user_id=([^;]+)/);
+        const cookieHeader = request.headers.get('cookie') || '';
+        const userIdMatch = cookieHeader.match(/user_id=([^;]+)/);
         const userId = userIdMatch?.[1] || request.headers.get('x-user-id') || '';
 
         const response = await fetch(`${API_BASE}/inventory/putaway-rules/${id}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
         });

@@ -7,6 +7,7 @@ import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/da
 import { PackagingService } from './packaging.service';
 import { PutawayService } from './putaway.service';
 import { UtilisationService } from './utilisation.service';
+import { RotationRuleResolverService } from './rotation-rule-resolver.service';
 import { getRequiredAreaTypes, AREA_TYPE_LABELS } from '../warehouse/area-types';
 
 @Injectable()
@@ -23,7 +24,8 @@ export class InventoryService {
         private prisma: PrismaService,
         private packagingService: PackagingService,
         private putawayService: PutawayService,
-        private utilisationService: UtilisationService
+        private utilisationService: UtilisationService,
+        private ruleResolver: RotationRuleResolverService,
     ) { }
 
     /**
@@ -904,22 +906,71 @@ export class InventoryService {
         // Simple transaction to ensure atomicity
         await this.prisma.$transaction(async (tx) => {
             for (const item of data.items) {
-                // Fetch available inventory
-                const whereClause: any = { productId: item.productId };
-                if (data.warehouseId) {
-                    whereClause.warehouseId = data.warehouseId;
-                }
-
-                const inventory = await tx.productInventory.findMany({
-                    where: whereClause,
-                    include: { product: true, warehouse: true },
-                    orderBy: data.strategy === 'FEFO'
-                        ? { product: { expiryDate: 'asc' } }
-                        : { warehouse: { id: 'asc' } } // Default to location/FIFO (mock logic for now)
+                // Resolve rotation rule for this product (reads outside tx — rotation rules are stable)
+                const product = await tx.product.findUnique({ where: { id: item.productId } });
+                const rule = await this.ruleResolver.resolveRule({
+                    productId: item.productId,
+                    warehouseId: data.warehouseId,
+                    categoryId: product?.category || undefined,
                 });
 
-                this.log(`[ReserveStock] Product: ${item.productId}, Qty: ${item.quantity}, Found Inventory Records: ${inventory.length}`);
-                inventory.forEach(i => this.log(` - ID: ${i.id}, Qty: ${i.quantity}, Reserved: ${i.reserved}, Warehouse: ${i.warehouseId}`));
+                const policy = rule.policy || data.strategy || 'FIFO';
+                const minShelfLifeDays: number = (rule as any).minShelfLifeDays || 0;
+
+                // Fetch InventoryBatch records to determine location eligibility and FEFO order
+                const batchWhere: any = { productId: item.productId, status: 'Active', currentQuantity: { gt: 0 } };
+                if (data.warehouseId) batchWhere.warehouseId = data.warehouseId;
+                const batches = await tx.inventoryBatch.findMany({ where: batchWhere });
+
+                // Filter batches by minShelfLifeDays
+                const minExpiry = new Date();
+                minExpiry.setDate(minExpiry.getDate() + minShelfLifeDays);
+                const eligibleBatches = minShelfLifeDays > 0
+                    ? batches.filter(b => !b.expiryDate || b.expiryDate >= minExpiry)
+                    : batches;
+
+                // Build location → earliest eligible batch expiry map
+                const locationExpiryMap = new Map<string, Date | null>();
+                for (const b of eligibleBatches) {
+                    if (!b.locationId) continue;
+                    const existing = locationExpiryMap.get(b.locationId);
+                    if (existing === undefined || (b.expiryDate && (!existing || b.expiryDate < existing))) {
+                        locationExpiryMap.set(b.locationId, b.expiryDate ?? null);
+                    }
+                }
+                const eligibleLocationIds = new Set(locationExpiryMap.keys());
+
+                // Fetch productInventory records
+                const whereClause: any = { productId: item.productId };
+                if (data.warehouseId) whereClause.warehouseId = data.warehouseId;
+
+                let inventory = await tx.productInventory.findMany({
+                    where: whereClause,
+                    include: { product: true, warehouse: true },
+                });
+
+                // Filter to eligible locations when minShelfLifeDays is active
+                if (minShelfLifeDays > 0 && eligibleLocationIds.size > 0) {
+                    inventory = inventory.filter(inv => !inv.locationId || eligibleLocationIds.has(inv.locationId));
+                } else if (minShelfLifeDays > 0 && eligibleBatches.length === 0) {
+                    // No eligible batches at all — will throw insufficient stock below
+                    inventory = [];
+                }
+
+                // Sort by policy
+                if (policy === 'FEFO') {
+                    inventory.sort((a, b) => {
+                        const exA = a.locationId ? (locationExpiryMap.get(a.locationId) ?? null) : null;
+                        const exB = b.locationId ? (locationExpiryMap.get(b.locationId) ?? null) : null;
+                        if (exA && exB) return exA.getTime() - exB.getTime();
+                        if (exA && !exB) return -1;
+                        if (!exA && exB) return 1;
+                        return 0;
+                    });
+                }
+
+                this.log(`[ReserveStock] Product: ${item.productId}, Policy: ${policy}, MinShelfLife: ${minShelfLifeDays}, Found Inventory Records: ${inventory.length}`);
+                inventory.forEach(i => this.log(` - ID: ${i.id}, LocationId: ${i.locationId}, Qty: ${i.quantity}, Reserved: ${i.reserved}`));
 
                 let remainingQty = item.quantity;
 
@@ -942,7 +993,7 @@ export class InventoryService {
                                 orderId: data.orderId,
                                 productId: item.productId,
                                 quantity: take,
-                                reservationStrategy: data.strategy,
+                                reservationStrategy: policy,
                             }
                         });
 

@@ -35,8 +35,37 @@ const AuthContext = createContext<AuthContextType>({
     refreshUser: async () => { },
 });
 
+/**
+ * Reads the `user_data` cookie (set at login) to build an initial User object.
+ * This allows `hasPermission` to work immediately on page load without waiting
+ * for the `/api/auth/me` round-trip, preventing intermittent button-not-found
+ * failures when the network request is slow or retried.
+ */
+function getUserFromCookie(): User | null {
+    try {
+        const raw = Cookies.get('user_data');
+        if (!raw) return null;
+        const parsed = JSON.parse(decodeURIComponent(raw));
+        if (!parsed?.id) return null;
+        // permissions is stored as ["ALL:MANAGE", ...] flat strings
+        const permissions: Permission[] = (parsed.permissions ?? []).map((p: string) => {
+            const [resource, action] = p.split(':');
+            return { resource: resource ?? '*', action: action ?? '*' };
+        });
+        return {
+            id: parsed.id,
+            name: parsed.name ?? '',
+            email: parsed.email ?? '',
+            roles: [{ name: 'cached', permissions }],
+        };
+    } catch {
+        return null;
+    }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
+    // Initialise synchronously from cookie so hasPermission works on first render
+    const [user, setUser] = useState<User | null>(() => getUserFromCookie());
     const [loading, setLoading] = useState(true);
 
     const refreshUser = async () => {
@@ -48,24 +77,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 return;
             }
 
-            // We can't use fetchWithRetry here if it depends on this hook, but fetchWithRetry uses cookies directly so it's fine.
-            // Actually, fetchWithRetry uses API_URL. We should probably just use fetchWithRetry.
-            // But wait, fetchWithRetry might throw if 401.
-
             // Uses the proxied /api URL (same origin)
             const res = await fetch(`${API_URL}/auth/me`, {
-                headers: { 'x-user-id': userId }
+                headers: { 'x-user-id': userId },
+                cache: 'no-store',
             });
 
             if (res.ok) {
                 const userData = await res.json();
                 setUser(userData);
             } else {
-                setUser(null);
+                // Keep cookie-hydrated user on non-401 failures; clear on 401
+                if (res.status === 401) setUser(null);
             }
         } catch (error) {
             console.error('Failed to fetch user:', error);
-            setUser(null);
+            // Keep the cookie-hydrated user so the UI remains functional
         } finally {
             setLoading(false);
         }

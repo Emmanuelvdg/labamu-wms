@@ -13,7 +13,7 @@ import { loginAsAdmin } from './helpers/auth';
  * Open controllers (no guard): putaway, strategy, packing, shipping
  */
 
-const API = 'http://localhost:3001';
+const API = 'http://127.0.0.1:3001';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -59,31 +59,12 @@ test.describe('Full IMS Lifecycle: Purchase to Ship', () => {
     // ==================== AUTH ====================
 
     test('Auth: Discover Admin User', async ({ request }) => {
-        // Strategy 1: Try GET /auth/me with known admin ID (no per-endpoint throttle)
-        const knownAdminId = 'c9b6ad61-ce5c-47e0-939c-e6c2b5ac4502';
-        const meRes = await request.get(`${API}/auth/me`, {
-            headers: { 'x-user-id': knownAdminId },
+        const loginRes = await request.post(`${API}/auth/login`, {
+            data: { email: 'admin@labamu.co.id', password: 'password123' },
         });
-        if (meRes.ok()) {
-            const meBody = await meRes.json();
-            adminUserId = meBody.id;
-            console.log('✓ Admin user verified via /auth/me');
-        } else {
-            // Strategy 2: Fallback to login (may be rate-limited)
-            console.log(`  ⚠ /auth/me returned ${meRes.status()}, trying login...`);
-            const loginRes = await request.post(`${API}/auth/login`, {
-                data: { email: 'admin@labamu.co.id', password: 'admin' },
-            });
-            if (loginRes.ok()) {
-                const body = await loginRes.json();
-                adminUserId = body.user?.id || body.id;
-            } else {
-                // Strategy 3: Use known admin ID directly (last resort)
-                console.log(`  ⚠ Login returned ${loginRes.status()}, using known admin ID`);
-                adminUserId = knownAdminId;
-            }
-        }
-        expect(adminUserId).toBeTruthy();
+        const body = await loginRes.json();
+        adminUserId = body.user?.id ?? body.id;
+        expect(adminUserId, 'Could not get admin user ID from login').toBeTruthy();
         console.log('✓ Logged in as admin:', adminUserId);
     });
 

@@ -10,6 +10,8 @@ export async function PATCH(
 ) {
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
+    const allCookies = cookieStore.getAll();
+    const cookieHeader = allCookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
     const { id } = await params;
 
     console.log(`[API Proxy] PATCH /api/warehouses/${id}/floor-plan - userId:`, userId);
@@ -29,6 +31,7 @@ export async function PATCH(
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
             body: JSON.stringify(body),

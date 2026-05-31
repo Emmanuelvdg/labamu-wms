@@ -5,11 +5,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
 
 export async function GET() {
     const cookieStore = await cookies();
-    const userId = cookieStore.get('user_id')?.value || '';
+    const allCookies = cookieStore.getAll();
+    const userId = allCookies.find((c: any) => c.name === 'user_id')?.value || '';
+    const cookieHeader = allCookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
 
     try {
         const response = await fetch(`${API_BASE_URL}/inventory/warehouses`, {
             headers: {
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
         });
@@ -29,7 +32,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
-    const userId = cookieStore.get('user_id')?.value || '';
+    const allCookiesPOST = cookieStore.getAll();
+    const userId = allCookiesPOST.find((c: any) => c.name === 'user_id')?.value || '';
+    const cookieHeaderPOST = allCookiesPOST.map((c: any) => `${c.name}=${c.value}`).join('; ');
 
     try {
         const body = await request.json();
@@ -37,6 +42,7 @@ export async function POST(request: NextRequest) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeaderPOST,
                 'x-user-id': userId,
             },
             body: JSON.stringify(body),

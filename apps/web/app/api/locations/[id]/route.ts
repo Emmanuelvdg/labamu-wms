@@ -11,14 +11,17 @@ export async function PATCH(
         const { id } = await params;
         const body = await request.json();
 
-        // Forward x-user-id from the client request
-        const userId = request.headers.get('x-user-id') || '';
+        // Forward cookie and x-user-id from the client request
+        const cookieHeader = request.headers.get('cookie') || '';
+        const userIdMatch = cookieHeader.match(/user_id=([^;]+)/);
+        const userId = userIdMatch?.[1] || request.headers.get('x-user-id') || '';
 
         // Backend uses PUT for updates on /inventory/locations/:id
         const response = await fetch(`${API_BASE}/inventory/locations/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
             body: JSON.stringify(body),
@@ -51,14 +54,17 @@ export async function DELETE(
     try {
         const { id } = await params;
 
-        // Forward x-user-id from the client request
-        const userId = request.headers.get('x-user-id') || '';
+        // Forward cookie and x-user-id from the client request
+        const cookieHeader = request.headers.get('cookie') || '';
+        const userIdMatch = cookieHeader.match(/user_id=([^;]+)/);
+        const userId = userIdMatch?.[1] || request.headers.get('x-user-id') || '';
 
         // Backend uses DELETE on /inventory/locations/:id
         const response = await fetch(`${API_BASE}/inventory/locations/${id}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
             cache: 'no-store'

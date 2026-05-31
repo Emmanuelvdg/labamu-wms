@@ -6,6 +6,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
 export async function GET() {
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
+    const allCookies = cookieStore.getAll();
+    const cookieHeader = allCookies.map((c: any) => `${c.name}=${c.value}`).join('; ');
 
     if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -17,6 +19,7 @@ export async function GET() {
     try {
         const response = await fetch(url, {
             headers: {
+                'Cookie': cookieHeader,
                 'x-user-id': userId,
             },
         });

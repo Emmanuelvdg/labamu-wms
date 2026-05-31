@@ -11,6 +11,8 @@ export async function PUT(
     const { id, areaId } = await params;
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
+    const allCookiesPut = cookieStore.getAll();
+    const cookieHeaderPut = allCookiesPut.map((c: any) => `${c.name}=${c.value}`).join('; ');
 
     if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -25,6 +27,7 @@ export async function PUT(
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Cookie': cookieHeaderPut,
                     'x-user-id': userId,
                 },
                 body: JSON.stringify(body),
@@ -58,6 +61,8 @@ export async function DELETE(
     const { id, areaId } = await params;
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
+    const allCookiesDel = cookieStore.getAll();
+    const cookieHeaderDel = allCookiesDel.map((c: any) => `${c.name}=${c.value}`).join('; ');
 
     if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -69,6 +74,7 @@ export async function DELETE(
             {
                 method: 'DELETE',
                 headers: {
+                    'Cookie': cookieHeaderDel,
                     'x-user-id': userId,
                 },
             }

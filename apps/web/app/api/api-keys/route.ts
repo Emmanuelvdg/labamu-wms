@@ -16,6 +16,7 @@ export async function POST(request: Request) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookies,
                 'x-user-id': userId,
             },
             body: JSON.stringify(body),
@@ -40,6 +41,7 @@ export async function GET(request: Request) {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'Cookie': cookies,
                 'x-user-id': userId,
             },
         });
