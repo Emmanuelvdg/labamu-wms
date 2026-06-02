@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Patch, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Patch, Delete, Query } from '@nestjs/common';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { CustomerService } from './customer.service';
+import { parsePagination } from '../common/pagination';
 
 @Controller('customers')
 @UseGuards(PermissionsGuard)
@@ -16,8 +17,12 @@ export class CustomerController {
 
     @Get()
     @RequirePermission('CUSTOMERS', 'READ')
-    getCustomers() {
-        return this.customerService.getCustomers();
+    getCustomers(
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
+    ) {
+        const { take, skip } = parsePagination(limit, offset);
+        return this.customerService.getCustomers(take, skip);
     }
 
     @Get(':id')

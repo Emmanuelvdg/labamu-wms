@@ -17,18 +17,23 @@ export class CustomerService {
         });
     }
 
-    async getCustomers(): Promise<any[]> {
-        const customers = await this.prisma.customer.findMany({
-            orderBy: { createdAt: 'desc' },
-            include: {
-                _count: {
-                    select: { orders: true }
+    async getCustomers(take = 50, skip = 0): Promise<any> {
+        const [customers, total] = await Promise.all([
+            this.prisma.customer.findMany({
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    _count: {
+                        select: { orders: true }
+                    },
                 },
-            }
-        });
+                take,
+                skip,
+            }),
+            this.prisma.customer.count(),
+        ]);
 
-        // Calculate lifetime value (LTV) per customer
-        return Promise.all(customers.map(async (c) => {
+        // Calculate lifetime value (LTV) per customer in this page
+        const data = await Promise.all(customers.map(async (c) => {
             const agg = await this.prisma.order.aggregate({
                 where: { customerId: c.id, status: { notIn: ['CANCELLED'] } },
                 _sum: { totalAmount: true }
@@ -39,6 +44,8 @@ export class CustomerService {
                 lifetimeValue: agg._sum.totalAmount || 0,
             };
         }));
+
+        return { data, total, limit: take, offset: skip };
     }
 
     async getCustomer(id: string): Promise<any | null> {

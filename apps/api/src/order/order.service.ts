@@ -196,11 +196,19 @@ export class OrderService {
         return order;
     }
 
-    async getOrders(): Promise<Order[]> {
-        return this.prisma.order.findMany({
-            orderBy: { createdAt: 'desc' },
-            include: { items: true, reservations: true, shipment: true, destinationWarehouse: true, warehouse: true },
-        });
+    async getOrders(status?: string, take = 50, skip = 0): Promise<any> {
+        const where = status ? { status } : {};
+        const [data, total] = await Promise.all([
+            this.prisma.order.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                include: { items: true, reservations: true, shipment: true, destinationWarehouse: true, warehouse: true },
+                take,
+                skip,
+            }),
+            this.prisma.order.count({ where }),
+        ]);
+        return { data, total, limit: take, offset: skip };
     }
 
     async getOrder(id: string): Promise<Order | null> {

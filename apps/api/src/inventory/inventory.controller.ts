@@ -6,6 +6,7 @@ import { InventoryService } from './inventory.service';
 import { PackagingService } from './packaging.service';
 import { UtilisationService } from './utilisation.service';
 import { Product, Warehouse, ProductInventory } from '@labamu/database';
+import { parsePagination } from '../common/pagination';
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -60,8 +61,11 @@ export class InventoryController {
         @Query('category') category?: string,
         @Query('classification') classification?: string,
         @Query('warehouseId') warehouseId?: string,
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
     ) {
-        return this.inventoryService.getProducts({ search, category, classification, warehouseId });
+        const { take, skip } = parsePagination(limit, offset);
+        return this.inventoryService.getProducts({ search, category, classification, warehouseId, take, skip });
     }
 
     @Get('products/:id')
@@ -105,8 +109,13 @@ export class InventoryController {
     }
 
     @Get('batches')
-    getAllBatches(@Query('warehouseId') warehouseId?: string) {
-        return this.inventoryService.getAllBatches(warehouseId);
+    getAllBatches(
+        @Query('warehouseId') warehouseId?: string,
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
+    ) {
+        const { take, skip } = parsePagination(limit, offset);
+        return this.inventoryService.getAllBatches(warehouseId, take, skip);
     }
 
     @Get('batch/:productId')
@@ -144,8 +153,13 @@ export class InventoryController {
     }
 
     @Get('adjustments')
-    getAdjustments() {
-        return this.inventoryService.getAdjustments();
+    getAdjustments(
+        @Query('status') status?: string,
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
+    ) {
+        const { take, skip } = parsePagination(limit, offset);
+        return this.inventoryService.getAdjustments(status, take, skip);
     }
 
     @Post('scrap')
@@ -184,8 +198,12 @@ export class InventoryController {
     }
 
     @Get('transactions')
-    getStockTransactions() {
-        return this.inventoryService.getStockTransactions();
+    getStockTransactions(
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
+    ) {
+        const { take, skip } = parsePagination(limit, offset);
+        return this.inventoryService.getStockTransactions(take, skip);
     }
 
     @Post('moves')
@@ -194,8 +212,13 @@ export class InventoryController {
     }
 
     @Get('moves')
-    getStockMoves(@Query('status') status?: string) {
-        return this.inventoryService.getStockMoves(status);
+    getStockMoves(
+        @Query('status') status?: string,
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
+    ) {
+        const { take, skip } = parsePagination(limit, offset);
+        return this.inventoryService.getStockMoves(status, take, skip);
     }
 
     @Post('moves/:id/validate')
@@ -231,9 +254,12 @@ export class InventoryController {
     @Get('locations')
     getLocations(
         @Query('warehouseId') warehouseId?: string,
-        @Query('structuralType') structuralType?: string
+        @Query('structuralType') structuralType?: string,
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
     ) {
-        return this.inventoryService.getLocations(warehouseId, structuralType);
+        const { take, skip } = parsePagination(limit, offset);
+        return this.inventoryService.getLocations(warehouseId, structuralType, take, skip);
     }
 
     @Get('locations/export')

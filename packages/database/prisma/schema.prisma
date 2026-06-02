@@ -324,6 +324,9 @@ model Location {
   warehouseView           Warehouse?                @relation("WarehouseView")
   functionalAreas         WarehouseFunctionalArea[]
   functionalArea          WarehouseFunctionalArea?  @relation("AreaLocations", fields: [functionalAreaId], references: [id])
+
+  @@index([parentId])
+  @@index([warehouseId])
 }
 
 model ProductPackaging {

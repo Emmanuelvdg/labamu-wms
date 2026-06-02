@@ -116,10 +116,17 @@ export class PurchaseOrderService {
         });
     }
 
-    async getPurchaseOrders() {
-        return this.prisma.purchaseOrder.findMany({
-            include: { items: true, supplier: true, receipts: true },
-        });
+    async getPurchaseOrders(take = 50, skip = 0) {
+        const [data, total] = await Promise.all([
+            this.prisma.purchaseOrder.findMany({
+                include: { items: true, supplier: true, receipts: true },
+                orderBy: { createdAt: 'desc' },
+                take,
+                skip,
+            }),
+            this.prisma.purchaseOrder.count(),
+        ]);
+        return { data, total, limit: take, offset: skip };
     }
 
     async getPurchaseOrder(id: string) {

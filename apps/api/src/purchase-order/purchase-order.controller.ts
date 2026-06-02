@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, UseGuards, UseInterceptors, UploadedFile, Req, Res, StreamableFile, NotFoundException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, UseInterceptors, UploadedFile, Req, Res, StreamableFile, NotFoundException, Query } from '@nestjs/common';
 import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
@@ -8,6 +8,7 @@ import { ReceiveGoodsDto } from './dto/receive-goods.dto';
 import { PurchaseOrderService } from './purchase-order.service';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
+import { parsePagination } from '../common/pagination';
 import { randomUUID } from 'crypto';
 
 const uploadDir = join(process.cwd(), 'uploads', 'po-documents');
@@ -25,8 +26,12 @@ export class PurchaseOrderController {
 
     @Get()
     @RequirePermission('PURCHASE_ORDERS', 'READ')
-    findAll() {
-        return this.purchaseOrderService.getPurchaseOrders();
+    findAll(
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
+    ) {
+        const { take, skip } = parsePagination(limit, offset);
+        return this.purchaseOrderService.getPurchaseOrders(take, skip);
     }
 
     @Get('suppliers')

@@ -5,8 +5,10 @@ import { fetchPurchaseOrders } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { SearchX } from 'lucide-react';
+import { SearchX, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+const PAGE_SIZE = 50;
 
 const PO_TABS = [
     { label: 'All', value: 'ALL' },
@@ -23,6 +25,7 @@ export default function PurchaseOrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [statusTab, setStatusTab] = useState('ALL');
+    const [page, setPage] = useState(0);
     const [colFilters, setColFilters] = useState({
         poId: '',
         supplier: '',
@@ -45,11 +48,15 @@ export default function PurchaseOrdersPage() {
         }
     }
 
-    const setCF = (key: string, val: string) =>
+    const setCF = (key: string, val: string) => {
+        setPage(0);
         setColFilters(prev => ({ ...prev, [key]: val }));
+    };
 
-    const clearColFilters = () =>
+    const clearColFilters = () => {
+        setPage(0);
         setColFilters({ poId: '', supplier: '', date: '', approvalStatus: '', totalQty: '', totalAmount: '' });
+    };
 
     const getCount = (status: string) => {
         if (status === 'ALL') return orders.length;
@@ -73,6 +80,11 @@ export default function PurchaseOrdersPage() {
         return true;
     });
 
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+    const from = filtered.length === 0 ? 0 : page * PAGE_SIZE + 1;
+    const to = Math.min((page + 1) * PAGE_SIZE, filtered.length);
+
     return (
         <div className="p-8 bg-gray-50 min-h-screen">
             {/* Page Header */}
@@ -91,7 +103,7 @@ export default function PurchaseOrdersPage() {
                 {PO_TABS.map(tab => (
                     <button
                         key={tab.value}
-                        onClick={() => setStatusTab(tab.value)}
+                        onClick={() => { setStatusTab(tab.value); setPage(0); }}
                         className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                             statusTab === tab.value
                                 ? 'border-blue-600 text-blue-600'
@@ -192,7 +204,7 @@ export default function PurchaseOrdersPage() {
                                 </td>
                             </tr>
                         ) : (
-                            filtered.map(po => (
+                            paged.map(po => (
                                 <tr
                                     key={po.id}
                                     className="hover:bg-gray-50 transition-colors cursor-pointer"
@@ -248,10 +260,24 @@ export default function PurchaseOrdersPage() {
                 </table>
             </div>
 
+            {/* Pagination bar */}
             {!loading && (
-                <p className="mt-3 text-xs text-gray-500">
-                    Showing {filtered.length} of {orders.length} purchase orders
-                </p>
+                <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+                    <p className="text-sm text-gray-500">
+                        {filtered.length === 0 ? 'No purchase orders' : `Showing ${from}–${to} of ${filtered.length} purchase orders`}
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+                            className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Previous page">
+                            <ChevronLeft className="h-5 w-5 text-gray-600" />
+                        </button>
+                        <span className="text-sm text-gray-700">Page {page + 1} of {totalPages}</span>
+                        <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+                            className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Next page">
+                            <ChevronRight className="h-5 w-5 text-gray-600" />
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );

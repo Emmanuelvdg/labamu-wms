@@ -10,14 +10,21 @@ export class SupplierService {
         return this.prisma.supplier.create({ data });
     }
 
-    async findAll() {
-        return this.prisma.supplier.findMany({
-            include: {
-                _count: {
-                    select: { purchaseOrders: true },
+    async findAll(take = 50, skip = 0) {
+        const [data, total] = await Promise.all([
+            this.prisma.supplier.findMany({
+                include: {
+                    _count: {
+                        select: { purchaseOrders: true },
+                    },
                 },
-            },
-        });
+                orderBy: { createdAt: 'desc' },
+                take,
+                skip,
+            }),
+            this.prisma.supplier.count(),
+        ]);
+        return { data, total, limit: take, offset: skip };
     }
 
     async findOne(id: string) {

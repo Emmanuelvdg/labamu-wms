@@ -49,14 +49,19 @@ export async function fetchInventory(filters?: {
     category?: string;
     classification?: string;
     warehouseId?: string;
+    limit?: number;
+    offset?: number;
 }) {
     const params = new URLSearchParams();
     if (filters?.search) params.append('search', filters.search);
     if (filters?.category) params.append('category', filters.category);
     if (filters?.classification) params.append('classification', filters.classification);
     if (filters?.warehouseId) params.append('warehouseId', filters.warehouseId);
+    params.append('limit', String(filters?.limit ?? 500));
+    params.append('offset', String(filters?.offset ?? 0));
 
-    return fetchWithRetry(`${API_URL}/inventory/products?${params.toString()}`);
+    const res = await fetchWithRetry(`${API_URL}/inventory/products?${params.toString()}`);
+    return res?.data ?? res;
 }
 
 export async function fetchLocationInventory(locationId: string) {
@@ -128,11 +133,11 @@ export async function fetchBatches(productId: string) {
     return fetchWithRetry(`${API_URL}/inventory/batch/${productId}`);
 }
 
-export async function fetchAllBatches(warehouseId?: string) {
-    const url = warehouseId
-        ? `${API_URL}/inventory/batches?warehouseId=${warehouseId}`
-        : `${API_URL}/inventory/batches`;
-    return fetchWithRetry(url);
+export async function fetchAllBatches(warehouseId?: string, limit = 500, offset = 0) {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (warehouseId) params.append('warehouseId', warehouseId);
+    const res = await fetchWithRetry(`${API_URL}/inventory/batches?${params.toString()}`);
+    return res?.data ?? res;
 }
 
 export async function fetchTransactions(productId: string) {
@@ -151,8 +156,9 @@ export async function fetchValuation() {
     return fetchWithRetry(`${API_URL}/inventory/valuation`);
 }
 
-export async function fetchStockMoves() {
-    return fetchWithRetry(`${API_URL}/inventory/moves`);
+export async function fetchStockMoves(limit = 500, offset = 0) {
+    const res = await fetchWithRetry(`${API_URL}/inventory/moves?limit=${limit}&offset=${offset}`);
+    return res?.data ?? res;
 }
 
 // --- Locations ---
@@ -185,11 +191,11 @@ export async function deleteLocation(id: string) {
     });
 }
 
-export async function fetchLocations(warehouseId?: string) {
-    const url = warehouseId
-        ? `${API_URL}/inventory/locations?warehouseId=${warehouseId}`
-        : `${API_URL}/inventory/locations`;
-    return fetchWithRetry(url);
+export async function fetchLocations(warehouseId?: string, limit = 500, offset = 0) {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (warehouseId) params.append('warehouseId', warehouseId);
+    const res = await fetchWithRetry(`${API_URL}/inventory/locations?${params.toString()}`);
+    return res?.data ?? res;
 }
 
 export async function fetchLocationsTree(warehouseId?: string) {
@@ -233,8 +239,9 @@ export async function applyAdjustment(id: string) {
     });
 }
 
-export async function fetchAdjustments() {
-    return fetchWithRetry(`${API_URL}/inventory/adjustments`);
+export async function fetchAdjustments(limit = 500, offset = 0) {
+    const res = await fetchWithRetry(`${API_URL}/inventory/adjustments?limit=${limit}&offset=${offset}`);
+    return res?.data ?? res;
 }
 
 export async function createScrapOrder(data: any) {
@@ -285,8 +292,9 @@ export async function fetchPackaging(productId: string) {
 
 // --- Customers ---
 
-export async function fetchCustomers() {
-    return fetchWithRetry(`${API_URL}/customers`);
+export async function fetchCustomers(limit = 500, offset = 0) {
+    const res = await fetchWithRetry(`${API_URL}/customers?limit=${limit}&offset=${offset}`);
+    return res?.data ?? res;
 }
 
 export async function getCustomer(id: string) {
@@ -353,8 +361,20 @@ export async function reassignOrderWarehouse(id: string, warehouseId: string) {
     });
 }
 
-export async function fetchOrders() {
-    return fetchWithRetry(`${API_URL}/orders`);
+export async function fetchOrders(limit = 500, offset = 0) {
+    const res = await fetchWithRetry(`${API_URL}/orders?limit=${limit}&offset=${offset}`);
+    return res?.data ?? res;
+}
+
+export async function fetchOrdersPaginated(status?: string, limit = 50, offset = 0) {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (status && status !== 'ALL') params.set('status', status);
+    const res = await fetchWithRetry(`${API_URL}/orders?${params}`);
+    // Handle both paginated { data, total } shape and legacy raw array
+    if (Array.isArray(res)) {
+        return { data: res as any[], total: (res as any[]).length, limit, offset };
+    }
+    return res as { data: any[]; total: number; limit: number; offset: number };
 }
 
 export async function fetchOrder(id: string) {
@@ -377,8 +397,9 @@ export async function checkAvailability(id: string) {
 
 // --- Purchase Orders ---
 
-export async function fetchPurchaseOrders() {
-    return fetchWithRetry(`${API_URL}/purchase-orders`);
+export async function fetchPurchaseOrders(limit = 500, offset = 0) {
+    const res = await fetchWithRetry(`${API_URL}/purchase-orders?limit=${limit}&offset=${offset}`);
+    return res?.data ?? res;
 }
 
 export async function getPurchaseOrder(id: string) {
@@ -749,8 +770,9 @@ export async function fetchCycleTimeTrend(params: {
 
 // --- Supplier Management ---
 
-export const fetchSuppliers = async () => {
-    return fetchWithRetry(`${API_URL}/suppliers`);
+export const fetchSuppliers = async (limit = 500, offset = 0) => {
+    const res = await fetchWithRetry(`${API_URL}/suppliers?limit=${limit}&offset=${offset}`);
+    return res?.data ?? res;
 };
 
 export const getSupplier = async (id: string) => {
@@ -787,8 +809,9 @@ export const fetchProductPriceHistory = async (productId: string) => {
     return fetchWithRetry(`${API_URL}/suppliers/reports/price-history?productId=${productId}`);
 };
 
-export async function fetchProducts() {
-    return fetchWithRetry(`${API_URL}/inventory/products`);
+export async function fetchProducts(limit = 500, offset = 0) {
+    const res = await fetchWithRetry(`${API_URL}/inventory/products?limit=${limit}&offset=${offset}`);
+    return res?.data ?? res;
 }
 
 

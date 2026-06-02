@@ -81,6 +81,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
                     category: { type: 'string', description: 'Filter by category ID' },
                     classification: { type: 'string', enum: ['A', 'B', 'C'], description: 'ABC classification filter' },
                     warehouseId: { type: 'string', description: 'Filter by warehouse ID' },
+                    limit: { type: 'number', description: 'Max records to return (default: 50, max: 500)' },
+                    offset: { type: 'number', description: 'Number of records to skip (default: 0)' },
                 },
             },
         },
@@ -249,7 +251,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         {
             name: 'list_purchase_orders',
             description: 'List all purchase orders.',
-            inputSchema: { type: 'object', properties: {} },
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    limit: { type: 'number', description: 'Max records to return (default: 50, max: 500)' },
+                    offset: { type: 'number', description: 'Number of records to skip (default: 0)' },
+                },
+            },
         },
         {
             name: 'get_purchase_order',
@@ -332,6 +340,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
                 type: 'object',
                 properties: {
                     status: { type: 'string', description: 'Filter by status (e.g. PENDING, PICKING, PACKED, SHIPPED)' },
+                    limit: { type: 'number', description: 'Max records to return (default: 50, max: 500)' },
+                    offset: { type: 'number', description: 'Number of records to skip (default: 0)' },
                 },
             },
         },
@@ -774,8 +784,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 if (a.category) params.set('category', String(a.category));
                 if (a.classification) params.set('classification', String(a.classification));
                 if (a.warehouseId) params.set('warehouseId', String(a.warehouseId));
-                const q = params.toString() ? `?${params}` : '';
-                return ok(await callWmsApi(`/inventory/products${q}`));
+                params.set('limit', String(a.limit ?? 50));
+                params.set('offset', String(a.offset ?? 0));
+                return ok(await callWmsApi(`/inventory/products?${params}`));
             }
 
             case 'get_product':
@@ -844,8 +855,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 }));
 
             // ── Purchase Orders ───────────────────────────────────────────────
-            case 'list_purchase_orders':
-                return ok(await callWmsApi('/purchase-orders'));
+            case 'list_purchase_orders': {
+                const params = new URLSearchParams();
+                params.set('limit', String(a.limit ?? 50));
+                params.set('offset', String(a.offset ?? 0));
+                return ok(await callWmsApi(`/purchase-orders?${params}`));
+            }
 
             case 'get_purchase_order': {
                 const [po, receipts] = await Promise.all([
@@ -876,8 +891,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
             // ── Outbound Orders ───────────────────────────────────────────────
             case 'list_orders': {
-                const q = a.status ? `?status=${encodeURIComponent(String(a.status))}` : '';
-                return ok(await callWmsApi(`/orders${q}`));
+                const params = new URLSearchParams();
+                if (a.status) params.set('status', String(a.status));
+                params.set('limit', String(a.limit ?? 50));
+                params.set('offset', String(a.offset ?? 0));
+                return ok(await callWmsApi(`/orders?${params}`));
             }
 
             case 'get_order':

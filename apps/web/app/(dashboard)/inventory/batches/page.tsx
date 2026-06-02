@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { fetchAllBatches } from '@/lib/api';
 import { format } from 'date-fns';
-import { SearchX } from 'lucide-react';
+import { SearchX, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE = 50;
 
 const STATUS_TABS = [
     { label: 'All', value: 'ALL' },
@@ -18,6 +20,7 @@ export default function BatchesPage() {
     const [batches, setBatches] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [statusTab, setStatusTab] = useState('ALL');
+    const [page, setPage] = useState(0);
     const [colFilters, setColFilters] = useState({
         batchNumber: '',
         product: '',
@@ -39,10 +42,10 @@ export default function BatchesPage() {
         }
     }
 
-    const setCF = (key: string, val: string) =>
-        setColFilters(prev => ({ ...prev, [key]: val }));
+    const setCF = (key: string, val: string) => { setPage(0); setColFilters(prev => ({ ...prev, [key]: val })); };
 
     const clearAll = () => {
+        setPage(0);
         setStatusTab('ALL');
         setColFilters({ batchNumber: '', product: '', status: '', location: '', expiry: '' });
     };
@@ -67,6 +70,11 @@ export default function BatchesPage() {
         return true;
     });
 
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+    const from = filtered.length === 0 ? 0 : page * PAGE_SIZE + 1;
+    const to = Math.min((page + 1) * PAGE_SIZE, filtered.length);
+
     if (loading) return <div className="p-8">Loading batches...</div>;
 
     return (
@@ -83,7 +91,7 @@ export default function BatchesPage() {
                 {STATUS_TABS.map(tab => (
                     <button
                         key={tab.value}
-                        onClick={() => setStatusTab(tab.value)}
+                        onClick={() => { setStatusTab(tab.value); setPage(0); }}
                         className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                             statusTab === tab.value
                                 ? 'border-blue-600 text-blue-600'
@@ -169,7 +177,7 @@ export default function BatchesPage() {
                                 </td>
                             </tr>
                         ) : (
-                            filtered.map(batch => (
+                            paged.map(batch => (
                                 <tr key={batch.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {batch.batchNumber}
@@ -208,9 +216,22 @@ export default function BatchesPage() {
                 </table>
             </div>
 
-            <p className="mt-3 text-xs text-gray-500">
-                Showing {filtered.length} of {batches.length} batches
-            </p>
+            <div className="flex items-center justify-between px-6 py-3 border border-gray-200 border-t-0 bg-gray-50 rounded-b-lg">
+                <p className="text-sm text-gray-500">
+                    {filtered.length === 0 ? 'No batches' : `Showing ${from}–${to} of ${filtered.length} batches`}
+                </p>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+                        className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Previous page">
+                        <ChevronLeft className="h-5 w-5 text-gray-600" />
+                    </button>
+                    <span className="text-sm text-gray-700">Page {page + 1} of {totalPages}</span>
+                    <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+                        className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Next page">
+                        <ChevronRight className="h-5 w-5 text-gray-600" />
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }

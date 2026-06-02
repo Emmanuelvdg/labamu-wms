@@ -5,7 +5,9 @@ import { fetchSuppliers, createSupplier } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { SearchX } from 'lucide-react';
+import { SearchX, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE = 50;
 
 const inputCls = 'w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400';
 
@@ -14,6 +16,7 @@ const EMPTY_FORM = { name: '', email: '', phone: '', address: '', contactInfo: '
 export default function SuppliersPage() {
     const [suppliers, setSuppliers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(0);
 
     const [colFilters, setColFilters] = useState({ name: '', email: '', phone: '', minOrders: '' });
 
@@ -50,11 +53,8 @@ export default function SuppliersPage() {
         }
     };
 
-    const setCF = (key: string, val: string) =>
-        setColFilters(prev => ({ ...prev, [key]: val }));
-
-    const clearColFilters = () =>
-        setColFilters({ name: '', email: '', phone: '', minOrders: '' });
+    const setCF = (key: string, val: string) => { setPage(0); setColFilters(prev => ({ ...prev, [key]: val })); };
+    const clearColFilters = () => { setPage(0); setColFilters({ name: '', email: '', phone: '', minOrders: '' }); };
 
     const filtered = useMemo(() => suppliers.filter(s => {
         if (colFilters.name && !s.name?.toLowerCase().includes(colFilters.name.toLowerCase())) return false;
@@ -63,6 +63,11 @@ export default function SuppliersPage() {
         if (colFilters.minOrders && (s._count?.purchaseOrders ?? 0) < parseInt(colFilters.minOrders)) return false;
         return true;
     }), [suppliers, colFilters]);
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+    const from = filtered.length === 0 ? 0 : page * PAGE_SIZE + 1;
+    const to = Math.min((page + 1) * PAGE_SIZE, filtered.length);
 
     if (loading) return <div className="p-8">Loading suppliers...</div>;
 
@@ -133,7 +138,7 @@ export default function SuppliersPage() {
                                 </td>
                             </tr>
                         ) : (
-                            filtered.map(s => (
+                            paged.map(s => (
                                 <tr key={s.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">
                                         <Link href={`/inventory/suppliers/${s.id}`}
@@ -161,9 +166,22 @@ export default function SuppliersPage() {
                 </table>
             </div>
 
-            <p className="mt-3 text-xs text-gray-500">
-                Showing {filtered.length} of {suppliers.length} suppliers
-            </p>
+            <div className="flex items-center justify-between px-6 py-3 border border-gray-200 border-t-0 bg-gray-50 rounded-b-lg">
+                <p className="text-sm text-gray-500">
+                    {filtered.length === 0 ? 'No suppliers' : `Showing ${from}–${to} of ${filtered.length} suppliers`}
+                </p>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+                        className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Previous page">
+                        <ChevronLeft className="h-5 w-5 text-gray-600" />
+                    </button>
+                    <span className="text-sm text-gray-700">Page {page + 1} of {totalPages}</span>
+                    <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+                        className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Next page">
+                        <ChevronRight className="h-5 w-5 text-gray-600" />
+                    </button>
+                </div>
+            </div>
 
             {/* Create modal */}
             {showModal && (

@@ -306,7 +306,11 @@ export class InventoryService {
         category?: string;
         classification?: string;
         warehouseId?: string;
-    }): Promise<any[]> {
+        take?: number;
+        skip?: number;
+    }): Promise<any> {
+        const take = filters?.take ?? 50;
+        const skip = filters?.skip ?? 0;
         const where: any = {};
 
         if (filters?.search) {
@@ -332,50 +336,45 @@ export class InventoryService {
             };
         }
 
-        const products = await this.prisma.product.findMany({
-            where,
-            include: {
-                inventory: {
-                    where: filters?.warehouseId ? { warehouseId: filters.warehouseId } : undefined
-                },
-                purchaseOrderItems: {
-                    where: {
-                        purchaseOrder: {
-                            status: { in: ['ORDERED', 'APPROVED', 'PARTIAL_RECEIVED'] }
-                        }
+        const [products, total] = await Promise.all([
+            this.prisma.product.findMany({
+                where,
+                take,
+                skip,
+                include: {
+                    inventory: {
+                        where: filters?.warehouseId ? { warehouseId: filters.warehouseId } : undefined
                     },
-                    select: { quantity: true }
-                },
-                orderItems: {
-                    where: {
-                        order: {
-                            status: { in: ['RESERVED', 'PICKING', 'PACKING', 'PARTIAL'] }
-                        }
+                    purchaseOrderItems: {
+                        where: {
+                            purchaseOrder: {
+                                status: { in: ['ORDERED', 'APPROVED', 'PARTIAL_RECEIVED'] }
+                            }
+                        },
+                        select: { quantity: true }
                     },
-                    select: { quantity: true }
+                    orderItems: {
+                        where: {
+                            order: {
+                                status: { in: ['RESERVED', 'PICKING', 'PACKING', 'PARTIAL'] }
+                            }
+                        },
+                        select: { quantity: true }
+                    }
                 }
-            }
-        });
+            }),
+            this.prisma.product.count({ where }),
+        ]);
 
-        return products.map(p => {
+        const data = products.map(p => {
             const onHand = p.inventory.reduce((sum, inv) => sum + inv.quantity, 0);
             const reserved = p.inventory.reduce((sum, inv) => sum + (inv.reserved || 0), 0);
-
-            // Incoming: Sum of active PO quantities
             const incoming = p.purchaseOrderItems.reduce((sum, item) => sum + item.quantity, 0);
-
-            // Outgoing: Sum of active Order allocated quantities
             const outgoing = p.orderItems.reduce((sum, item) => sum + item.quantity, 0);
-
-            return {
-                ...p,
-                onHand,
-                free: onHand - reserved, // Available for new orders
-                incoming,
-                outgoing,
-                reserved
-            };
+            return { ...p, onHand, free: onHand - reserved, incoming, outgoing, reserved };
         });
+
+        return { data, total, limit: take, offset: skip };
     }
 
     async getProduct(id: string): Promise<Product | null> {
@@ -836,27 +835,19 @@ export class InventoryService {
         });
     }
 
-    async getAllBatches(warehouseId?: string) {
-        return this.prisma.inventoryBatch.findMany({
-            where: warehouseId ? { warehouseId } : undefined,
-            include: {
-                product: {
-                    select: { name: true, sku: true, category: true }
-                },
-                location: {
-                    select: { name: true, fullAddress: true }
-                },
-                warehouse: {
-                    select: { name: true }
-                },
-                package: {
-                    select: { name: true }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
-            }
-        });
+    async getAllBatches(warehouseId?: string, take = 50, skip = 0) {
+        const where = warehouseId ? { warehouseId } : undefined;
+        const include = {
+            product: { select: { name: true, sku: true, category: true } },
+            location: { select: { name: true, fullAddress: true } },
+            warehouse: { select: { name: true } },
+            package: { select: { name: true } },
+        };
+        const [data, total] = await Promise.all([
+            this.prisma.inventoryBatch.findMany({ where, include, orderBy: { createdAt: 'desc' }, take, skip }),
+            this.prisma.inventoryBatch.count({ where }),
+        ]);
+        return { data, total, limit: take, offset: skip };
     }
 
     async getTransactions(productId: string) {
@@ -1066,16 +1057,17 @@ export class InventoryService {
         return roots;
     }
 
-    async getLocations(warehouseId?: string, structuralType?: string) {
+    async getLocations(warehouseId?: string, structuralType?: string, take = 50, skip = 0) {
         try {
             const where: any = {};
             if (warehouseId) where.warehouseId = warehouseId;
             if (structuralType) where.structuralType = structuralType;
 
-            return await this.prisma.location.findMany({
-                where,
-                include: { warehouseView: true },
-            });
+            const [data, total] = await Promise.all([
+                this.prisma.location.findMany({ where, include: { warehouseView: true }, take, skip }),
+                this.prisma.location.count({ where }),
+            ]);
+            return { data, total, limit: take, offset: skip };
         } catch (error: any) {
             console.error('[InventoryService] Error in getLocations:', error.message, error.stack);
             throw error;
@@ -1630,13 +1622,19 @@ export class InventoryService {
         }
     }
 
-    async getAdjustments(status?: string) {
+    async getAdjustments(status?: string, take = 50, skip = 0) {
         const where = status ? { status } : {};
-        return this.prisma.inventoryAdjustment.findMany({
-            where,
-            include: { product: true, location: true, batch: true },
-            orderBy: { createdAt: 'desc' },
-        });
+        const [data, total] = await Promise.all([
+            this.prisma.inventoryAdjustment.findMany({
+                where,
+                include: { product: true, location: true, batch: true },
+                orderBy: { createdAt: 'desc' },
+                take,
+                skip,
+            }),
+            this.prisma.inventoryAdjustment.count({ where }),
+        ]);
+        return { data, total, limit: take, offset: skip };
     }
 
     async createScrapOrder(data: {
@@ -2279,14 +2277,17 @@ export class InventoryService {
         };
     }
 
-    async getStockTransactions() {
-        return this.prisma.stockTransaction.findMany({
-            orderBy: { date: 'desc' },
-            include: {
-                product: true,
-            },
-            take: 100, // Limit to last 100 moves for now
-        });
+    async getStockTransactions(take = 50, skip = 0) {
+        const [data, total] = await Promise.all([
+            this.prisma.stockTransaction.findMany({
+                orderBy: { date: 'desc' },
+                include: { product: true },
+                take,
+                skip,
+            }),
+            this.prisma.stockTransaction.count(),
+        ]);
+        return { data, total, limit: take, offset: skip };
     }
 
     async checkCycleCounts() {
@@ -2430,13 +2431,19 @@ export class InventoryService {
         return move;
     }
 
-    async getStockMoves(status?: string) {
+    async getStockMoves(status?: string, take = 50, skip = 0) {
         const where = status ? { status } : {};
-        return this.prisma.stockMove.findMany({
-            where,
-            include: { product: true, sourceLocation: true, destinationLocation: true, rule: true },
-            orderBy: { createdAt: 'desc' },
-        });
+        const [data, total] = await Promise.all([
+            this.prisma.stockMove.findMany({
+                where,
+                include: { product: true, sourceLocation: true, destinationLocation: true, rule: true },
+                orderBy: { createdAt: 'desc' },
+                take,
+                skip,
+            }),
+            this.prisma.stockMove.count({ where }),
+        ]);
+        return { data, total, limit: take, offset: skip };
     }
 
     async validateStockMove(id: string) {

@@ -1,8 +1,9 @@
-import { Controller, Post, Body, Get, Param, Put, Patch, UseGuards, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Put, Patch, UseGuards, Delete, Query } from '@nestjs/common';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { OrderService } from './order.service';
+import { parsePagination } from '../common/pagination';
 
 @Controller('orders')
 @UseGuards(PermissionsGuard)
@@ -17,8 +18,13 @@ export class OrderController {
 
     @Get()
     @RequirePermission('ORDERS', 'READ')
-    getOrders() {
-        return this.orderService.getOrders();
+    getOrders(
+        @Query('status') status?: string,
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
+    ) {
+        const { take, skip } = parsePagination(limit, offset);
+        return this.orderService.getOrders(status, take, skip);
     }
 
     @Get(':id')

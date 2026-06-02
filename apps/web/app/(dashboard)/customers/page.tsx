@@ -4,13 +4,15 @@ import { useEffect, useState } from 'react';
 import { fetchCustomers, createCustomer } from '@/lib/api';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { SearchX } from 'lucide-react';
+import { SearchX, ChevronLeft, ChevronRight } from 'lucide-react';
 
+const PAGE_SIZE = 50;
 const inputCls = 'w-full text-xs border border-gray-200 rounded px-2 py-1 font-normal focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white placeholder-gray-400';
 
 export default function CustomersPage() {
     const [customers, setCustomers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(0);
 
     // Column filter state
     const [colFilters, setColFilters] = useState({
@@ -72,11 +74,8 @@ export default function CustomersPage() {
         }
     };
 
-    const setCF = (key: string, val: string) =>
-        setColFilters(prev => ({ ...prev, [key]: val }));
-
-    const clearColFilters = () =>
-        setColFilters({ name: '', registered: '', minOrders: '', minLtv: '' });
+    const setCF = (key: string, val: string) => { setPage(0); setColFilters(prev => ({ ...prev, [key]: val })); };
+    const clearColFilters = () => { setPage(0); setColFilters({ name: '', registered: '', minOrders: '', minLtv: '' }); };
 
     const filtered = customers.filter(c => {
         const nameStr = `${c.name || ''} ${c.address || ''}`.toLowerCase();
@@ -89,6 +88,11 @@ export default function CustomersPage() {
         if (colFilters.minLtv && (c.lifetimeValue || 0) < parseFloat(colFilters.minLtv)) return false;
         return true;
     });
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+    const from = filtered.length === 0 ? 0 : page * PAGE_SIZE + 1;
+    const to = Math.min((page + 1) * PAGE_SIZE, filtered.length);
 
     if (loading) return <div className="p-8">Loading CRM...</div>;
 
@@ -159,7 +163,7 @@ export default function CustomersPage() {
                                 </td>
                             </tr>
                         ) : (
-                            filtered.map((c) => (
+                            paged.map((c) => (
                                 <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="font-medium text-gray-900">{c.name}</div>
@@ -188,9 +192,22 @@ export default function CustomersPage() {
                 </table>
             </div>
 
-            <p className="mt-3 text-xs text-gray-500">
-                Showing {filtered.length} of {customers.length} customers
-            </p>
+            <div className="flex items-center justify-between px-6 py-3 border border-gray-200 border-t-0 bg-gray-50 rounded-b-lg">
+                <p className="text-sm text-gray-500">
+                    {filtered.length === 0 ? 'No customers' : `Showing ${from}–${to} of ${filtered.length} customers`}
+                </p>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+                        className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Previous page">
+                        <ChevronLeft className="h-5 w-5 text-gray-600" />
+                    </button>
+                    <span className="text-sm text-gray-700">Page {page + 1} of {totalPages}</span>
+                    <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+                        className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Next page">
+                        <ChevronRight className="h-5 w-5 text-gray-600" />
+                    </button>
+                </div>
+            </div>
 
             {/* Customer Modal */}
             {showModal && (

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } f
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { SupplierService } from './supplier.service';
+import { parsePagination } from '../common/pagination';
 
 @Controller('suppliers')
 @UseGuards(PermissionsGuard)
@@ -16,8 +17,12 @@ export class SupplierController {
 
     @Get()
     @RequirePermission('SUPPLIERS', 'READ')
-    findAll() {
-        return this.supplierService.findAll();
+    findAll(
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
+    ) {
+        const { take, skip } = parsePagination(limit, offset);
+        return this.supplierService.findAll(take, skip);
     }
 
     @Get('reports/price-history')

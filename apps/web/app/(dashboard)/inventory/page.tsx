@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { fetchInventory, createProduct, fetchWarehouses, fetchAttributeDefinitions, fetchCategories } from '@/lib/api';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { PackageSearch } from 'lucide-react';
+import { PackageSearch, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE = 50;
 
 export default function InventoryPage() {
     const { hasPermission } = useAuth();
@@ -26,6 +28,7 @@ export default function InventoryPage() {
     // Client-side status tab + numeric column filters
     const [statusTab, setStatusTab] = useState('ALL');
     const [colFilters, setColFilters] = useState({ onHandMin: '', freeMin: '' });
+    const [page, setPage] = useState(0);
 
     // New Product Form State
     const [newProduct, setNewProduct] = useState({
@@ -48,16 +51,16 @@ export default function InventoryPage() {
         fetchCategories().then(setCategories).catch(console.error);
     }, []);
 
-    // Debounce search or just load on effect?
-    // For simplicity, let's load when filters change, but maybe debounce search input.
-    // Or just add a "Search" button or "Apply Filters".
-    // Let's use useEffect on filters with a small debounce for search if possible, or just simple effect.
     useEffect(() => {
         const timer = setTimeout(() => {
+            setPage(0);
             load();
         }, 300);
         return () => clearTimeout(timer);
     }, [filters]);
+
+    // Reset page when status tab or col filters change
+    useEffect(() => { setPage(0); }, [statusTab, colFilters]);
 
     async function load() {
         setLoading(true);
@@ -130,6 +133,11 @@ export default function InventoryPage() {
         if (colFilters.freeMin && (p.free || 0) < parseInt(colFilters.freeMin)) return false;
         return true;
     });
+
+    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+    const pagedProducts = filteredProducts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+    const from = filteredProducts.length === 0 ? 0 : page * PAGE_SIZE + 1;
+    const to = Math.min((page + 1) * PAGE_SIZE, filteredProducts.length);
 
     return (
         <div className="min-h-screen bg-gray-50 p-8">
@@ -230,7 +238,7 @@ export default function InventoryPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-b-lg shadow overflow-hidden border border-gray-200 border-t-0">
+            <div className="bg-white rounded-b-lg shadow overflow-hidden border border-gray-200 border-t-0" data-testid="inventory-table">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
@@ -299,7 +307,7 @@ export default function InventoryPage() {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredProducts.length === 0 ? (
+                        {pagedProducts.length === 0 ? (
                             <tr>
                                 <td colSpan={9} className="px-6 py-16 text-center">
                                     <div className="flex flex-col items-center justify-center space-y-3">
@@ -320,7 +328,7 @@ export default function InventoryPage() {
                                 </td>
                             </tr>
                         ) : (
-                            filteredProducts.map((product) => (
+                            pagedProducts.map((product) => (
                                 <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
@@ -372,6 +380,24 @@ export default function InventoryPage() {
                         )}
                     </tbody>
                 </table>
+
+                {/* Pagination bar */}
+                <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50">
+                    <p className="text-sm text-gray-500">
+                        {filteredProducts.length === 0 ? 'No items' : `Showing ${from}–${to} of ${filteredProducts.length} items`}
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+                            className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Previous page">
+                            <ChevronLeft className="h-5 w-5 text-gray-600" />
+                        </button>
+                        <span className="text-sm text-gray-700">Page {page + 1} of {totalPages}</span>
+                        <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+                            className="p-1 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors" aria-label="Next page">
+                            <ChevronRight className="h-5 w-5 text-gray-600" />
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* Create Product Modal */}
