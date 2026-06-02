@@ -46,7 +46,7 @@ async function bootstrap() {
     app.enableCors({
         origin: corsOrigins,
         credentials: true,
-        allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'x-user-id'],
+        allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
     });
 
     const errorCatalog = new ErrorCatalogService();
@@ -54,7 +54,7 @@ async function bootstrap() {
 
     app.useGlobalPipes(new ValidationPipe({
         whitelist: true,
-        forbidNonWhitelisted: false,
+        forbidNonWhitelisted: true,
         transform: true,
     }));
 

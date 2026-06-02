@@ -1,5 +1,3 @@
-import Cookies from 'js-cookie';
-
 // Use the Next.js rewrite proxy so all requests go through the same origin
 // (avoids cross-origin / CORS issues between localhost and 127.0.0.1)
 export const API_URL = '/api';
@@ -9,18 +7,9 @@ export const INTERNAL_API_URL = process.env.API_URL ?? 'http://127.0.0.1:3001';
 
 export async function fetchWithRetry(url: string, options?: RequestInit) {
     try {
-        const userId = Cookies.get('user_id');
-
-        // Build auth headers: prefer JWT (via server cookie read) but keep
-        // the legacy x-user-id for E2E/dev backward compat.
-        // Note: the httpOnly `token` cookie is sent automatically by the browser
-        // to same-origin Next.js API routes, which then proxy it to the backend.
-        // For direct /api (Next.js rewrites to backend) requests, the browser
-        // sends the httpOnly cookie automatically — no manual header needed.
-        const headers = {
-            ...options?.headers,
-            ...(userId ? { 'x-user-id': userId } : {}),
-        };
+        // The httpOnly `token` JWT cookie is sent automatically by the browser
+        // to same-origin requests. No manual auth header needed.
+        const headers = { ...options?.headers };
 
         const res = await fetch(url, { ...options, headers, cache: 'no-store' });
         if (!res.ok) {

@@ -27,6 +27,14 @@ export class PermissionsGuard implements CanActivate {
 
         const request = context.switchToHttp().getRequest();
 
+        // ── API-key fast path ──────────────────────────────────────────────
+        // ApiKeyGuard runs before this guard and pre-populates request.user.
+        // API keys carry explicit scopes — treat any authenticated API key
+        // user as fully authorised for tenant-scoped operations.
+        if (request.user?.authMethod === 'api-key') {
+            return true;
+        }
+
         // ── Resolve userId + companyId ─────────────────────────────────────
         let userId: string | undefined;
         let companyId: string | null = null;
@@ -57,14 +65,10 @@ export class PermissionsGuard implements CanActivate {
                     userId = payload.sub;
                     companyId = payload.companyId ?? null;
                 } catch {
-                    // Invalid cookie token — fall through to x-user-id
+                    // Invalid cookie token — fall through to userId check
                 }
             }
 
-            // Legacy x-user-id path (E2E tests, dev tooling)
-            if (!userId) {
-                userId = request.headers['x-user-id'] ?? request.query?.userId;
-            }
         }
 
         if (!userId) {

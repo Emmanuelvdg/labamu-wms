@@ -37,13 +37,12 @@ export class ApiKeyGuard implements CanActivate {
         // Enforce per-key rate limit.
         this.rateLimiter.check(validation.keyId);
 
-        // Attach user context so downstream controllers work normally.
+        // Attach user context so downstream controllers and PermissionsGuard work normally.
         request.user = {
             id: validation.userId,
             scopes: validation.scopes,
             authMethod: 'api-key',
         };
-        request.headers['x-user-id'] = validation.userId;
 
         // Scope check — only applies when the request used an API key.
         const requiredScope = this.reflector.getAllAndOverride<string>(SCOPE_KEY, [
