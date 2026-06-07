@@ -41,6 +41,12 @@ export class InventoryController {
         return this.packagingService.deletePackaging(id);
     }
 
+    @Post('products/bulk')
+    @RequirePermission('INVENTORY', 'CREATE')
+    bulkCreateProducts(@Body() data: { items: any[] }) {
+        return this.inventoryService.bulkCreateProducts(data.items);
+    }
+
     @Post('products')
     @RequirePermission('INVENTORY', 'CREATE')
     createProduct(@Body() data: any) {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Customer } from '@labamu/database';
 
@@ -15,6 +15,30 @@ export class CustomerService {
                 longitude: data.longitude,
             },
         });
+    }
+
+    async bulkCreateCustomers(items: { name: string; address?: string; latitude?: number; longitude?: number }[]): Promise<{ created: any[]; errors: { index: number; item: any; error: string }[] }> {
+        if (!Array.isArray(items) || items.length === 0) {
+            throw new BadRequestException('items must be a non-empty array');
+        }
+        if (items.length > 500) {
+            throw new BadRequestException('Bulk create is limited to 500 items per request');
+        }
+        const created: any[] = [];
+        const errors: { index: number; item: any; error: string }[] = [];
+        const BATCH = 50;
+        for (let i = 0; i < items.length; i += BATCH) {
+            const batch = items.slice(i, i + BATCH);
+            const results = await Promise.allSettled(batch.map((item) => this.createCustomer(item)));
+            results.forEach((r, j) => {
+                if (r.status === 'fulfilled') {
+                    created.push(r.value);
+                } else {
+                    errors.push({ index: i + j, item: batch[j], error: r.reason?.message ?? String(r.reason) });
+                }
+            });
+        }
+        return { created, errors };
     }
 
     async getCustomers(take = 50, skip = 0): Promise<any> {

@@ -98,6 +98,83 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             },
         },
         {
+            name: 'bulk_create_products',
+            description: 'Create up to 500 products in a single request. Returns per-record success/failure results.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    items: {
+                        type: 'array',
+                        maxItems: 500,
+                        items: {
+                            type: 'object',
+                            properties: {
+                                name: { type: 'string' },
+                                sku: { type: 'string' },
+                                category: { type: 'string' },
+                                unitCost: { type: 'number' },
+                                price: { type: 'number' },
+                                weight: { type: 'number' },
+                                barcode: { type: 'string' },
+                                status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'DISCONTINUED'] },
+                            },
+                            required: ['name', 'sku'],
+                        },
+                    },
+                },
+                required: ['items'],
+            },
+        },
+        {
+            name: 'bulk_create_suppliers',
+            description: 'Create up to 500 suppliers in a single request. Returns per-record success/failure results.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    items: {
+                        type: 'array',
+                        maxItems: 500,
+                        items: {
+                            type: 'object',
+                            properties: {
+                                name: { type: 'string' },
+                                contactInfo: { type: 'string' },
+                                email: { type: 'string' },
+                                phone: { type: 'string' },
+                                address: { type: 'string' },
+                            },
+                            required: ['name'],
+                        },
+                    },
+                },
+                required: ['items'],
+            },
+        },
+        {
+            name: 'bulk_create_customers',
+            description: 'Create up to 500 customers in a single request. Returns per-record success/failure results.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    items: {
+                        type: 'array',
+                        maxItems: 500,
+                        items: {
+                            type: 'object',
+                            properties: {
+                                name: { type: 'string' },
+                                address: { type: 'string' },
+                                latitude: { type: 'number' },
+                                longitude: { type: 'number' },
+                            },
+                            required: ['name'],
+                        },
+                    },
+                },
+                required: ['items'],
+            },
+        },
+        {
             name: 'create_product',
             description: 'Create a new product in the WMS.',
             inputSchema: {
@@ -809,6 +886,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
             case 'get_product':
                 return ok(await callWmsApi(`/inventory/products/${a.productId}`));
+
+            case 'bulk_create_products':
+                return ok(await callWmsApi('/inventory/products/bulk', { method: 'POST', body: JSON.stringify({ items: a.items }) }));
+
+            case 'bulk_create_suppliers':
+                return ok(await callWmsApi('/suppliers/bulk', { method: 'POST', body: JSON.stringify({ items: a.items }) }));
+
+            case 'bulk_create_customers':
+                return ok(await callWmsApi('/customers/bulk', { method: 'POST', body: JSON.stringify({ items: a.items }) }));
 
             case 'create_product': {
                 const { productId: _id, ...body } = a;

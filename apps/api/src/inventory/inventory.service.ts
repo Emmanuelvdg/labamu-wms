@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
+import { parse as csvParse } from 'csv-parse/sync';
 import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
@@ -82,14 +83,16 @@ export class InventoryService {
      * Expected format: Name, Code, StructuralType, ParentCode, X, Y, Width, Height, Attributes
      */
     async importLocations(csvContent: string, warehouseId: string) {
-        const lines = csvContent.split(/\r?\n/).filter(line => line.trim() !== '');
-        const headers = lines[0].split(',').map(h => h.trim());
-        // Simple validation
-        if (!headers.includes('Name') || !headers.includes('StructuralType')) {
+        let records: Record<string, string>[];
+        try {
+            records = csvParse(csvContent, { columns: true, skip_empty_lines: true, trim: true });
+        } catch {
+            throw new BadRequestException('Invalid CSV format — could not parse file');
+        }
+        if (!records.length || !('Name' in records[0]) || !('StructuralType' in records[0])) {
             throw new BadRequestException('Invalid CSV format. Required columns: Name, StructuralType');
         }
 
-        const dataRows = lines.slice(1);
         const results = { created: 0, updated: 0, errors: [] as string[] };
 
         // Cache existing locations for parent lookups
@@ -101,16 +104,9 @@ export class InventoryService {
             if (l.code) codeMap.set(l.code, l.id);
         });
 
-        for (const line of dataRows) {
+        for (const record of records) {
             try {
-                // Naive CSV split (won't handle commas in quotes perfectly, but sufficient for MVP internally)
-                // For valid production import, use a robust parser library.
-                const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-
-                const getVal = (header: string) => {
-                    const idx = headers.findIndex(h => h === header);
-                    return idx !== -1 ? cols[idx] : undefined;
-                };
+                const getVal = (header: string) => record[header] || undefined;
 
                 const name = getVal('Name');
                 const code = getVal('Code') || name?.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 10);
@@ -301,6 +297,60 @@ export class InventoryService {
                 contactInfo: data.contactInfo,
             },
         });
+    }
+
+    async bulkCreateProducts(items: any[]): Promise<{ created: any[]; errors: { index: number; item: any; error: string }[] }> {
+        if (!Array.isArray(items) || items.length === 0) {
+            throw new BadRequestException('items must be a non-empty array');
+        }
+        if (items.length > 500) {
+            throw new BadRequestException('Bulk create is limited to 500 items per request');
+        }
+        const created: any[] = [];
+        const errors: { index: number; item: any; error: string }[] = [];
+        const BATCH = 50;
+        for (let i = 0; i < items.length; i += BATCH) {
+            const batch = items.slice(i, i + BATCH);
+            const results = await Promise.allSettled(batch.map((item) => this.createProduct({
+                ...item,
+                price: item.price ?? item.sellingPrice,
+                averageCost: item.averageCost ?? item.unitCost,
+                velocity: item.velocity ?? item.velocityClass,
+                category: item.category ?? item.categoryId,
+            })));
+            results.forEach((r, j) => {
+                if (r.status === 'fulfilled') {
+                    created.push(r.value);
+                } else {
+                    errors.push({ index: i + j, item: batch[j], error: r.reason?.message ?? String(r.reason) });
+                }
+            });
+        }
+        return { created, errors };
+    }
+
+    async bulkCreateSuppliers(items: { name: string; contactInfo?: string }[]): Promise<{ created: any[]; errors: { index: number; item: any; error: string }[] }> {
+        if (!Array.isArray(items) || items.length === 0) {
+            throw new BadRequestException('items must be a non-empty array');
+        }
+        if (items.length > 500) {
+            throw new BadRequestException('Bulk create is limited to 500 items per request');
+        }
+        const created: any[] = [];
+        const errors: { index: number; item: any; error: string }[] = [];
+        const BATCH = 50;
+        for (let i = 0; i < items.length; i += BATCH) {
+            const batch = items.slice(i, i + BATCH);
+            const results = await Promise.allSettled(batch.map((item) => this.createSupplier(item)));
+            results.forEach((r, j) => {
+                if (r.status === 'fulfilled') {
+                    created.push(r.value);
+                } else {
+                    errors.push({ index: i + j, item: batch[j], error: r.reason?.message ?? String(r.reason) });
+                }
+            });
+        }
+        return { created, errors };
     }
 
     async getProducts(filters?: {

@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma.service';
 
@@ -8,6 +8,30 @@ export class SupplierService {
 
     async create(data: { name: string; contactInfo?: string; email?: string; phone?: string; address?: string }) {
         return this.prisma.supplier.create({ data });
+    }
+
+    async bulkCreate(items: { name: string; contactInfo?: string; email?: string; phone?: string; address?: string }[]): Promise<{ created: any[]; errors: { index: number; item: any; error: string }[] }> {
+        if (!Array.isArray(items) || items.length === 0) {
+            throw new BadRequestException('items must be a non-empty array');
+        }
+        if (items.length > 500) {
+            throw new BadRequestException('Bulk create is limited to 500 items per request');
+        }
+        const created: any[] = [];
+        const errors: { index: number; item: any; error: string }[] = [];
+        const BATCH = 50;
+        for (let i = 0; i < items.length; i += BATCH) {
+            const batch = items.slice(i, i + BATCH);
+            const results = await Promise.allSettled(batch.map((item) => this.create(item)));
+            results.forEach((r, j) => {
+                if (r.status === 'fulfilled') {
+                    created.push(r.value);
+                } else {
+                    errors.push({ index: i + j, item: batch[j], error: r.reason?.message ?? String(r.reason) });
+                }
+            });
+        }
+        return { created, errors };
     }
 
     async findAll(take = 50, skip = 0) {

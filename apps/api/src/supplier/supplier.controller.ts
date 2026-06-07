@@ -9,6 +9,12 @@ import { parsePagination } from '../common/pagination';
 export class SupplierController {
     constructor(private readonly supplierService: SupplierService) { }
 
+    @Post('bulk')
+    @RequirePermission('SUPPLIERS', 'CREATE')
+    bulkCreate(@Body() data: { items: { name: string; contactInfo?: string; email?: string; phone?: string; address?: string }[] }) {
+        return this.supplierService.bulkCreate(data.items);
+    }
+
     @Post()
     @RequirePermission('SUPPLIERS', 'CREATE')
     create(@Body() data: { name: string; contactInfo?: string; email?: string; phone?: string; address?: string }) {

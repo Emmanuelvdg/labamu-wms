@@ -9,6 +9,12 @@ import { parsePagination } from '../common/pagination';
 export class CustomerController {
     constructor(private readonly customerService: CustomerService) { }
 
+    @Post('bulk')
+    @RequirePermission('CUSTOMERS', 'CREATE')
+    bulkCreateCustomers(@Body() data: { items: { name: string; address?: string; latitude?: number; longitude?: number }[] }) {
+        return this.customerService.bulkCreateCustomers(data.items);
+    }
+
     @Post()
     @RequirePermission('CUSTOMERS', 'CREATE')
     createCustomer(@Body() data: { name: string; address?: string; latitude?: number; longitude?: number }) {
