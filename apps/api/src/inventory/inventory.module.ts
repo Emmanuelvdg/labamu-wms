@@ -4,6 +4,7 @@ import { InventoryService } from './inventory.service';
 import { PrismaService } from '../prisma.service';
 import { ForecastService } from './forecast.service';
 import { CompanyModule } from '../company/company.module';
+import { NotificationModule } from '../notifications/notification.module';
 
 import { PackagingService } from './packaging.service';
 import { PutawayService } from './putaway.service';
@@ -21,7 +22,7 @@ import { CycleCountService } from './cycle-count.service';
 import { ReplenishmentSchedulerService } from './replenishment-scheduler.service';
 
 @Module({
-    imports: [CompanyModule],
+    imports: [CompanyModule, NotificationModule],
     controllers: [
         InventoryController,
         PutawayController,

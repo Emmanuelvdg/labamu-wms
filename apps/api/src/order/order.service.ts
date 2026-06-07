@@ -8,6 +8,7 @@ import { Order } from '@labamu/database';
 import { FulfillmentService } from '../fulfillment/fulfillment.service';
 import { ShippingService } from '../shipping/shipping.service';
 import { PickingStrategyService } from '../strategy/picking-strategy.service';
+import { NotificationService } from '../notifications/notification.service';
 
 @Injectable()
 export class OrderService {
@@ -24,6 +25,7 @@ export class OrderService {
         private fulfillmentService: FulfillmentService,
         private shippingService: ShippingService,
         private pickingStrategyService: PickingStrategyService,
+        private notifications: NotificationService,
     ) { }
 
     async createOrder(data: {
@@ -232,7 +234,7 @@ export class OrderService {
     }
 
     async createShipment(data: { orderId: string; carrier: string; trackingId: string }) {
-        return this.prisma.$transaction(async (tx) => {
+        const shipment = await this.prisma.$transaction(async (tx) => {
             // Guard: Ensure the order exists and has at least one line item
             const orderCheck = await tx.order.findUnique({
                 where: { id: data.orderId },
@@ -342,6 +344,30 @@ export class OrderService {
 
             return shipment;
         });
+
+        // Notify company users that the order has shipped (outside transaction — best-effort)
+        try {
+            const orderWithCustomer = await this.prisma.order.findUnique({
+                where: { id: data.orderId },
+                include: { customer: true },
+            });
+            const companyId = (orderWithCustomer?.customer as any)?.companyId;
+            const emailTo = companyId
+                ? (await this.prisma.user.findMany({ where: { companyId }, select: { email: true } })).map(u => u.email)
+                : [];
+            await this.notifications.createNotification({
+                type: 'ORDER_SHIPPED',
+                title: `Order shipped`,
+                body: `Order has been dispatched via ${data.carrier}. Tracking ID: ${data.trackingId}.`,
+                link: `/orders/${data.orderId}`,
+                metadata: { orderId: data.orderId, carrier: data.carrier, trackingId: data.trackingId },
+                emailTo,
+            });
+        } catch (e: any) {
+            this.logger.warn(`ORDER_SHIPPED notification failed: ${e?.message ?? e}`);
+        }
+
+        return shipment;
     }
     async checkAvailability(id: string): Promise<Order> {
         let order = await this.getOrder(id) as any;

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { FeatureFlagService } from '../company/feature-flag.service';
+import { NotificationService } from '../notifications/notification.service';
 
 const LEAD_TIME_DAYS = 7;
 const SAFETY_DAYS = 3;
@@ -10,7 +11,11 @@ const REORDER_CYCLE_DAYS = 14;
 export class ReplenishmentService {
     private readonly logger = new Logger(ReplenishmentService.name);
 
-    constructor(private prisma: PrismaService, private featureFlags: FeatureFlagService) { }
+    constructor(
+        private prisma: PrismaService,
+        private featureFlags: FeatureFlagService,
+        private notifications: NotificationService,
+    ) { }
 
     /**
      * Check stock levels for all products and generate alerts for those below reorder point.
@@ -70,6 +75,23 @@ export class ReplenishmentService {
                     include: { product: true, warehouse: true },
                 });
                 alerts.push(alert);
+
+                // Fire in-app + email notification for new alerts
+                const isCritical = alertData.type === 'CRITICAL_LOW';
+                const companyUsers = product.companyId
+                    ? await this.prisma.user.findMany({ where: { companyId: product.companyId }, select: { email: true, id: true } })
+                    : [];
+                const emailTo = companyUsers.map(u => u.email);
+                await this.notifications.createNotification({
+                    type: isCritical ? 'CRITICAL_STOCK' : 'LOW_STOCK',
+                    title: isCritical
+                        ? `Critical stock: ${product.name}`
+                        : `Low stock: ${product.name}`,
+                    body: `${product.name} (SKU: ${product.sku}) has ${totalQty} units remaining, below the reorder point of ${product.reorderPoint}.`,
+                    link: `/inventory/replenishment`,
+                    metadata: { alertId: alert.id, productId: product.id, currentQty: totalQty },
+                    emailTo,
+                });
             } else {
                 await this.prisma.replenishmentAlert.update({ where: { id: existing.id }, data: alertData });
             }

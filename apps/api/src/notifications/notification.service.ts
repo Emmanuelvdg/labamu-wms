@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { EmailService } from '../common/email/email.service';
 
 @Injectable()
 export class NotificationService {
     private readonly logger = new Logger(NotificationService.name);
 
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService, private email: EmailService) { }
 
     async createNotification(data: {
         type: string;
@@ -14,6 +15,7 @@ export class NotificationService {
         link?: string;
         metadata?: any;
         userId?: string;
+        emailTo?: string[];
     }) {
         const notification = await this.prisma.notification.create({
             data: {
@@ -26,6 +28,12 @@ export class NotificationService {
             },
         });
         this.logger.log(`Notification created: [${data.type}] ${data.title}`);
+
+        if (data.emailTo?.length) {
+            const html = buildEmailHtml(data.title, data.body, data.link);
+            await this.email.send(data.emailTo, data.title, html);
+        }
+
         return notification;
     }
 
@@ -62,4 +70,23 @@ export class NotificationService {
             data: { read: true },
         });
     }
+}
+
+function buildEmailHtml(title: string, body: string, link?: string): string {
+    const actionButton = link
+        ? `<p style="margin-top:24px"><a href="${link}" style="background:#1d4ed8;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600">View in Labamu IMS</a></p>`
+        : '';
+    return `
+<!DOCTYPE html>
+<html>
+<body style="font-family:sans-serif;background:#f3f4f6;padding:32px">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;padding:32px;border:1px solid #e5e7eb">
+    <h2 style="margin:0 0 8px;color:#111827">${title}</h2>
+    <p style="color:#374151;line-height:1.6">${body}</p>
+    ${actionButton}
+    <hr style="margin-top:32px;border:none;border-top:1px solid #e5e7eb">
+    <p style="color:#9ca3af;font-size:12px;margin:8px 0 0">Labamu IMS — automated notification</p>
+  </div>
+</body>
+</html>`;
 }

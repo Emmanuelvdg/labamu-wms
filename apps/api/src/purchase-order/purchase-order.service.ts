@@ -7,6 +7,7 @@ import { StockMoveService } from '../inventory/stock-move.service';
 import { PutawayService } from '../inventory/putaway.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ReceiptCompletedEvent } from '../inventory/events/inbound.events';
+import { NotificationService } from '../notifications/notification.service';
 
 @Injectable()
 export class PurchaseOrderService {
@@ -17,6 +18,7 @@ export class PurchaseOrderService {
         private stockMoveService: StockMoveService,
         private putawayService: PutawayService,
         private eventEmitter: EventEmitter2,
+        private notifications: NotificationService,
     ) { }
 
     async createPurchaseOrder(data: {
@@ -398,15 +400,34 @@ export class PurchaseOrderService {
     }
 
     async submitForApproval(id: string) {
-        const po = await this.prisma.purchaseOrder.findUnique({ where: { id } });
+        const po = await this.prisma.purchaseOrder.findUnique({
+            where: { id },
+            include: { supplier: true },
+        });
         if (!po) throw new NotFoundException(`Purchase order ${id} not found`);
         if (po.approvalStatus !== 'DRAFT' && po.approvalStatus !== 'REJECTED') {
             throw new BadRequestException(`PO is already ${po.approvalStatus} — cannot re-submit.`);
         }
-        return this.prisma.purchaseOrder.update({
+        const updated = await this.prisma.purchaseOrder.update({
             where: { id },
             data: { approvalStatus: 'PENDING_APPROVAL' },
         });
+
+        // Notify company users that a PO needs approval
+        const companyId = (po.supplier as any)?.companyId;
+        const emailTo = companyId
+            ? (await this.prisma.user.findMany({ where: { companyId }, select: { email: true } })).map(u => u.email)
+            : [];
+        await this.notifications.createNotification({
+            type: 'PO_APPROVAL_REQUIRED',
+            title: `PO ${po.poNumber} requires approval`,
+            body: `Purchase order ${po.poNumber} from ${(po.supplier as any)?.name ?? 'supplier'} has been submitted and is awaiting approval.`,
+            link: `/purchase-orders/${id}`,
+            metadata: { poId: id, poNumber: po.poNumber },
+            emailTo,
+        });
+
+        return updated;
     }
 
     async approvePurchaseOrder(id: string, userId: string) {
