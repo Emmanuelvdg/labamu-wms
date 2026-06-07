@@ -126,6 +126,12 @@ export default function SettingsPage() {
                             >
                                 Seasonality
                             </a>
+                            <a
+                                href="/settings/notifications"
+                                className="px-4 py-3 text-left text-sm font-medium border-l-4 border-transparent text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                Notifications
+                            </a>
                         </nav>
                     </div>
                 </div>

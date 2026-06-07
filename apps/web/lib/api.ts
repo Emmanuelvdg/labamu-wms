@@ -1264,3 +1264,20 @@ export async function validateBarcode(barcode: string, context: { type: string; 
         body: JSON.stringify({ barcode, context }),
     });
 }
+
+// --- Notification Configuration ---
+export async function fetchNotificationConfigs(companyId: string) {
+    return fetchWithRetry(`${API_URL}/companies/${companyId}/notification-config`);
+}
+
+export async function updateNotificationConfig(
+    companyId: string,
+    notificationType: string,
+    data: { emailEnabled: boolean; recipients: string[] | null },
+) {
+    return fetchWithRetry(`${API_URL}/companies/${companyId}/notification-config/${notificationType}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}

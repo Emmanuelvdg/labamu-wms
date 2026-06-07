@@ -18,6 +18,7 @@ interface User {
     id: string;
     name: string;
     email: string;
+    companyId: string | null;
     roles: Role[];
 }
 
