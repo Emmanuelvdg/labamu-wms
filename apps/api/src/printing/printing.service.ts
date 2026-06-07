@@ -192,4 +192,78 @@ export class PrintingService {
         }
         return labels.join('\n');
     }
+
+    // ── Lot (InventoryBatch) labels ───────────────────────────────────────────
+
+    async generateLotLabel(batchId: string): Promise<Buffer> {
+        const batch = await this.prisma.inventoryBatch.findUnique({
+            where: { id: batchId },
+            include: { product: { select: { name: true, sku: true } }, warehouse: { select: { name: true } } },
+        });
+        if (!batch) throw new NotFoundException('Batch not found');
+
+        const barcodeDataURL = await this.generateBarcodeImage(batch.batchNumber);
+
+        return this.renderPdf({
+            pageSize: { width: 288, height: 144 },
+            pageMargins: [10, 10, 10, 10],
+            content: [
+                { text: 'LOT LABEL', style: 'header', alignment: 'center' },
+                { text: batch.batchNumber, style: 'locationName', alignment: 'center', margin: [0, 5, 0, 5] },
+                { image: barcodeDataURL, width: 200, alignment: 'center' },
+                { text: batch.product.name, style: 'productName', alignment: 'center', margin: [0, 4, 0, 0] },
+                { text: `SKU: ${batch.product.sku ?? ''} · Qty: ${batch.currentQuantity}`, style: 'small', alignment: 'center' },
+                batch.expiryDate ? { text: `Exp: ${batch.expiryDate.toISOString().split('T')[0]}`, style: 'small', alignment: 'center' } : {},
+            ],
+            styles: this.labelStyles,
+            defaultStyle: { font: 'Roboto' },
+        });
+    }
+
+    async generateLotZpl(batchId: string): Promise<string> {
+        const batch = await this.prisma.inventoryBatch.findUnique({
+            where: { id: batchId },
+            include: { product: { select: { name: true, sku: true } } },
+        });
+        if (!batch) throw new NotFoundException('Batch not found');
+
+        return [
+            '^XA',
+            '^FO20,20^ADN,18,10^FDLot Label^FS',
+            `^FO20,45^ADN,28,16^FD${batch.batchNumber}^FS`,
+            `^FO20,80^ADN,14,8^FD${batch.product.name.substring(0, 30)}^FS`,
+            batch.expiryDate ? `^FO20,98^ADN,12,7^FDExp: ${batch.expiryDate.toISOString().split('T')[0]}^FS` : '',
+            '^FO20,115^BCN,50,Y,N,N',
+            `^FD${batch.batchNumber}^FS`,
+            '^XZ',
+        ].filter(Boolean).join('\n');
+    }
+
+    // ── Print queue ───────────────────────────────────────────────────────────
+
+    async processQueueJob(job: {
+        entityType: 'product' | 'location' | 'lot';
+        entityId: string;
+        format?: 'pdf' | 'zpl' | 'png';
+        printerId?: string;
+        copies?: number;
+    }): Promise<{ jobId: string; status: 'processed'; entityType: string; entityId: string; format: string; copies: number }> {
+        const format = job.format ?? 'pdf';
+        const copies = job.copies ?? 1;
+
+        // Validate the entity exists by generating the label (throws NotFoundException if not found)
+        if (job.entityType === 'product') {
+            if (format === 'zpl') await this.generateProductZpl(job.entityId);
+            else await this.generateItemLabel(job.entityId);
+        } else if (job.entityType === 'location') {
+            if (format === 'zpl') await this.generateLocationZpl(job.entityId);
+            else await this.generateLocationLabel(job.entityId);
+        } else {
+            if (format === 'zpl') await this.generateLotZpl(job.entityId);
+            else await this.generateLotLabel(job.entityId);
+        }
+
+        const jobId = `pj-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        return { jobId, status: 'processed', entityType: job.entityType, entityId: job.entityId, format, copies };
+    }
 }

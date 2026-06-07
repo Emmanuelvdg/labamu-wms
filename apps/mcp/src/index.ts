@@ -98,6 +98,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             },
         },
         {
+            name: 'generate_barcode',
+            description: 'Generate a Code128 barcode PNG for a product, location, or lot/batch. Returns the image as a base64-encoded string.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    entityType: { type: 'string', enum: ['product', 'location', 'lot'], description: 'Type of entity to generate barcode for' },
+                    entityId: { type: 'string', description: 'ID of the entity' },
+                },
+                required: ['entityType', 'entityId'],
+            },
+        },
+        {
             name: 'bulk_create_products',
             description: 'Create up to 500 products in a single request. Returns per-record success/failure results.',
             inputSchema: {
@@ -886,6 +898,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
             case 'get_product':
                 return ok(await callWmsApi(`/inventory/products/${a.productId}`));
+
+            case 'generate_barcode': {
+                const entityType = String(a.entityType);
+                const entityId = String(a.entityId);
+                let endpoint: string;
+                if (entityType === 'product') endpoint = `/inventory/products/${entityId}/barcode`;
+                else if (entityType === 'location') endpoint = `/inventory/locations/${entityId}/barcode`;
+                else endpoint = `/inventory/batches/${entityId}/barcode`;
+                const raw = await callWmsApiRaw(endpoint);
+                const b64 = Buffer.from(raw, 'binary').toString('base64');
+                return ok({ entityType, entityId, format: 'png', data: `data:image/png;base64,${b64}` });
+            }
 
             case 'bulk_create_products':
                 return ok(await callWmsApi('/inventory/products/bulk', { method: 'POST', body: JSON.stringify({ items: a.items }) }));

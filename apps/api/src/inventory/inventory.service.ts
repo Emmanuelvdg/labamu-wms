@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { parse as csvParse } from 'csv-parse/sync';
+import * as bwipjs from 'bwip-js';
 import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
@@ -900,6 +901,46 @@ export class InventoryService {
             this.prisma.inventoryBatch.count({ where }),
         ]);
         return { data, total, limit: take, offset: skip };
+    }
+
+    async getBatch(id: string) {
+        const batch = await this.prisma.inventoryBatch.findUnique({
+            where: { id },
+            include: {
+                product: { select: { id: true, name: true, sku: true, category: true } },
+                location: { select: { id: true, name: true, fullAddress: true } },
+                warehouse: { select: { id: true, name: true } },
+            },
+        });
+        if (!batch) throw new NotFoundException('Batch not found');
+        return batch;
+    }
+
+    private generateBarcodePngBuffer(text: string): Promise<Buffer> {
+        return new Promise((resolve, reject) => {
+            bwipjs.toBuffer(
+                { bcid: 'code128', text, scale: 3, height: 10, includetext: true, textxalign: 'center' },
+                (err, png) => (err ? reject(err) : resolve(png)),
+            );
+        });
+    }
+
+    async getProductBarcode(id: string): Promise<Buffer> {
+        const product = await this.prisma.product.findUnique({ where: { id } });
+        if (!product) throw new NotFoundException('Product not found');
+        return this.generateBarcodePngBuffer(product.sku || product.id);
+    }
+
+    async getLocationBarcode(id: string): Promise<Buffer> {
+        const location = await this.prisma.location.findUnique({ where: { id } });
+        if (!location) throw new NotFoundException('Location not found');
+        return this.generateBarcodePngBuffer(location.code || location.id);
+    }
+
+    async getBatchBarcode(id: string): Promise<Buffer> {
+        const batch = await this.prisma.inventoryBatch.findUnique({ where: { id } });
+        if (!batch) throw new NotFoundException('Batch not found');
+        return this.generateBarcodePngBuffer(batch.batchNumber);
     }
 
     async getTransactions(productId: string) {

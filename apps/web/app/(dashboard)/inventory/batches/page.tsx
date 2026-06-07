@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { fetchAllBatches } from '@/lib/api';
 import { format } from 'date-fns';
 import { SearchX, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -180,7 +181,9 @@ export default function BatchesPage() {
                             paged.map(batch => (
                                 <tr key={batch.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {batch.batchNumber}
+                                        <Link href={`/inventory/batches/${batch.id}`} className="text-blue-600 hover:underline">
+                                            {batch.batchNumber}
+                                        </Link>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-medium text-gray-900">{batch.product?.name || 'Unknown'}</div>

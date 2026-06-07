@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Put, Query, Delete, UseGuards, NotFoundException, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Query, Delete, UseGuards, NotFoundException, Req, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { CreateAdjustmentDto } from './dto/create-adjustment.dto';
@@ -74,6 +75,14 @@ export class InventoryController {
         return this.inventoryService.getProducts({ search, category, classification, warehouseId, take, skip });
     }
 
+    @Get('products/:id/barcode')
+    @RequirePermission('INVENTORY', 'READ')
+    async getProductBarcode(@Param('id') id: string, @Res() res: Response) {
+        const png = await this.inventoryService.getProductBarcode(id);
+        res.set({ 'Content-Type': 'image/png', 'Content-Disposition': `inline; filename=product-${id}.png`, 'Content-Length': png.length });
+        res.end(png);
+    }
+
     @Get('products/:id')
     @RequirePermission('INVENTORY', 'READ')
     async getProduct(@Param('id') id: string) {
@@ -122,6 +131,20 @@ export class InventoryController {
     ) {
         const { take, skip } = parsePagination(limit, offset);
         return this.inventoryService.getAllBatches(warehouseId, take, skip);
+    }
+
+    @Get('batches/:id/barcode')
+    @RequirePermission('INVENTORY', 'READ')
+    async getBatchBarcode(@Param('id') id: string, @Res() res: Response) {
+        const png = await this.inventoryService.getBatchBarcode(id);
+        res.set({ 'Content-Type': 'image/png', 'Content-Disposition': `inline; filename=batch-${id}.png`, 'Content-Length': png.length });
+        res.end(png);
+    }
+
+    @Get('batches/:id')
+    @RequirePermission('INVENTORY', 'READ')
+    getBatch(@Param('id') id: string) {
+        return this.inventoryService.getBatch(id);
     }
 
     @Get('batch/:productId')
@@ -286,6 +309,14 @@ export class InventoryController {
     @RequirePermission('LOCATIONS', 'CREATE')
     createLocation(@Body() data: any) {
         return this.inventoryService.createLocation(data);
+    }
+
+    @Get('locations/:id/barcode')
+    @RequirePermission('INVENTORY', 'READ')
+    async getLocationBarcode(@Param('id') id: string, @Res() res: Response) {
+        const png = await this.inventoryService.getLocationBarcode(id);
+        res.set({ 'Content-Type': 'image/png', 'Content-Disposition': `inline; filename=location-${id}.png`, 'Content-Length': png.length });
+        res.end(png);
     }
 
     @Get('locations/:id')

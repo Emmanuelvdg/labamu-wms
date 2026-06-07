@@ -41,6 +41,29 @@ export class PrintingController {
         res.send(zpl);
     }
 
+    // ── Lot (InventoryBatch) labels ───────────────────────────────────────────
+
+    @Get('lot/:id/pdf')
+    async lotPdf(@Param('id') id: string, @Res() res: Response) {
+        const buffer = await this.printingService.generateLotLabel(id);
+        res.set({ 'Content-Type': 'application/pdf', 'Content-Disposition': `inline; filename=lot-${id}.pdf`, 'Content-Length': buffer.length });
+        res.end(buffer);
+    }
+
+    @Get('lot/:id/zpl')
+    async lotZpl(@Param('id') id: string, @Res() res: Response) {
+        const zpl = await this.printingService.generateLotZpl(id);
+        res.set({ 'Content-Type': 'application/x-zpl', 'Content-Disposition': `attachment; filename=lot-${id}.zpl` });
+        res.send(zpl);
+    }
+
+    // ── Print queue ───────────────────────────────────────────────────────────
+
+    @Post('queue')
+    queue(@Body() body: { entityType: 'product' | 'location' | 'lot'; entityId: string; format?: 'pdf' | 'zpl' | 'png'; printerId?: string; copies?: number }) {
+        return this.printingService.processQueueJob(body);
+    }
+
     // ── Batch printing ────────────────────────────────────────────────────────
 
     @Post('batch')
