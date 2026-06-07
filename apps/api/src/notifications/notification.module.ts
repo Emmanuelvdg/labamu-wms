@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common';
 import { NotificationController } from './notification.controller';
 import { NotificationService } from './notification.service';
+import { NotificationConfigService } from './notification-config.service';
+import { NotificationConfigController } from './notification-config.controller';
 import { ExpiryCheckerService } from './expiry-checker.service';
 import { PrismaService } from '../prisma.service';
 import { EmailModule } from '../common/email/email.module';
 
 @Module({
     imports: [EmailModule],
-    controllers: [NotificationController],
-    providers: [NotificationService, ExpiryCheckerService, PrismaService],
-    exports: [NotificationService, ExpiryCheckerService],
+    controllers: [NotificationController, NotificationConfigController],
+    providers: [NotificationService, NotificationConfigService, ExpiryCheckerService, PrismaService],
+    exports: [NotificationService, NotificationConfigService, ExpiryCheckerService],
 })
 export class NotificationModule { }

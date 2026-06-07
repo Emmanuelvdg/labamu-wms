@@ -415,16 +415,13 @@ export class PurchaseOrderService {
 
         // Notify company users that a PO needs approval
         const companyId = (po.supplier as any)?.companyId;
-        const emailTo = companyId
-            ? (await this.prisma.user.findMany({ where: { companyId }, select: { email: true } })).map(u => u.email)
-            : [];
         await this.notifications.createNotification({
             type: 'PO_APPROVAL_REQUIRED',
             title: `PO ${po.poNumber} requires approval`,
             body: `Purchase order ${po.poNumber} from ${(po.supplier as any)?.name ?? 'supplier'} has been submitted and is awaiting approval.`,
             link: `/purchase-orders/${id}`,
             metadata: { poId: id, poNumber: po.poNumber },
-            emailTo,
+            companyId: companyId ?? undefined,
         });
 
         return updated;

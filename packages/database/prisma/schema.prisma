@@ -20,15 +20,16 @@ model Company {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  users         User[]
-  warehouses    Warehouse[]
-  products      Product[]
-  suppliers     Supplier[]
-  customers     Customer[]
-  roles         Role[]
-  tenantPlan    TenantPlan?
-  featureFlags  FeatureFlag[]
-  auditLogs     AuditLog[]
+  users                 User[]
+  warehouses            Warehouse[]
+  products              Product[]
+  suppliers             Supplier[]
+  customers             Customer[]
+  roles                 Role[]
+  tenantPlan            TenantPlan?
+  featureFlags          FeatureFlag[]
+  auditLogs             AuditLog[]
+  notificationConfigs   CompanyNotificationConfig[]
 }
 
 // ── Platform admin models ─────────────────────────────────────────────────────
@@ -1521,4 +1522,22 @@ model ExchangeRate {
 
   @@unique([fromCode, toCode])
   @@index([fromCode])
+}
+
+// Per-tenant control over which notification types trigger emails and who receives them.
+// recipients is a JSON array of email strings (e.g. ["mgr@acme.com","ops@acme.com"]).
+// When recipients is empty/null, email is sent to all users of the company instead.
+model CompanyNotificationConfig {
+  id               String   @id @default(uuid())
+  companyId        String
+  notificationType String   // e.g. LOW_STOCK, CRITICAL_STOCK, PO_APPROVAL_REQUIRED, ORDER_SHIPPED
+  emailEnabled     Boolean  @default(true)
+  recipients       String?  // JSON: string[] — null means "all company users"
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  company          Company  @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, notificationType])
+  @@index([companyId])
 }

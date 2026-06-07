@@ -1,12 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { EmailService } from '../common/email/email.service';
+import { NotificationConfigService } from './notification-config.service';
 
 @Injectable()
 export class NotificationService {
     private readonly logger = new Logger(NotificationService.name);
 
-    constructor(private prisma: PrismaService, private email: EmailService) { }
+    constructor(
+        private prisma: PrismaService,
+        private email: EmailService,
+        private notificationConfig: NotificationConfigService,
+    ) { }
 
     async createNotification(data: {
         type: string;
@@ -15,7 +20,8 @@ export class NotificationService {
         link?: string;
         metadata?: any;
         userId?: string;
-        emailTo?: string[];
+        /** Pass companyId to enable per-tenant email dispatch based on that tenant's notification config. */
+        companyId?: string;
     }) {
         const notification = await this.prisma.notification.create({
             data: {
@@ -29,9 +35,16 @@ export class NotificationService {
         });
         this.logger.log(`Notification created: [${data.type}] ${data.title}`);
 
-        if (data.emailTo?.length) {
-            const html = buildEmailHtml(data.title, data.body, data.link);
-            await this.email.send(data.emailTo, data.title, html);
+        if (data.companyId && this.email.isConfigured()) {
+            try {
+                const recipients = await this.notificationConfig.resolveRecipients(data.companyId, data.type);
+                if (recipients && recipients.length > 0) {
+                    const html = buildEmailHtml(data.title, data.body, data.link);
+                    await this.email.send(recipients, data.title, html);
+                }
+            } catch (e: any) {
+                this.logger.warn(`Email dispatch failed for [${data.type}]: ${e?.message ?? e}`);
+            }
         }
 
         return notification;

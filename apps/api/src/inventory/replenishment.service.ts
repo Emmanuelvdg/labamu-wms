@@ -78,10 +78,6 @@ export class ReplenishmentService {
 
                 // Fire in-app + email notification for new alerts
                 const isCritical = alertData.type === 'CRITICAL_LOW';
-                const companyUsers = product.companyId
-                    ? await this.prisma.user.findMany({ where: { companyId: product.companyId }, select: { email: true, id: true } })
-                    : [];
-                const emailTo = companyUsers.map(u => u.email);
                 await this.notifications.createNotification({
                     type: isCritical ? 'CRITICAL_STOCK' : 'LOW_STOCK',
                     title: isCritical
@@ -90,7 +86,7 @@ export class ReplenishmentService {
                     body: `${product.name} (SKU: ${product.sku}) has ${totalQty} units remaining, below the reorder point of ${product.reorderPoint}.`,
                     link: `/inventory/replenishment`,
                     metadata: { alertId: alert.id, productId: product.id, currentQty: totalQty },
-                    emailTo,
+                    companyId: product.companyId ?? undefined,
                 });
             } else {
                 await this.prisma.replenishmentAlert.update({ where: { id: existing.id }, data: alertData });

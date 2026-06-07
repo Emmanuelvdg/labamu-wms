@@ -352,16 +352,13 @@ export class OrderService {
                 include: { customer: true },
             });
             const companyId = (orderWithCustomer?.customer as any)?.companyId;
-            const emailTo = companyId
-                ? (await this.prisma.user.findMany({ where: { companyId }, select: { email: true } })).map(u => u.email)
-                : [];
             await this.notifications.createNotification({
                 type: 'ORDER_SHIPPED',
                 title: `Order shipped`,
                 body: `Order has been dispatched via ${data.carrier}. Tracking ID: ${data.trackingId}.`,
                 link: `/orders/${data.orderId}`,
                 metadata: { orderId: data.orderId, carrier: data.carrier, trackingId: data.trackingId },
-                emailTo,
+                companyId: companyId ?? undefined,
             });
         } catch (e: any) {
             this.logger.warn(`ORDER_SHIPPED notification failed: ${e?.message ?? e}`);
