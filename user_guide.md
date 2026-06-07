@@ -641,6 +641,91 @@ The Mobile Dashboard provides quick access to core workflows:
 - Batches expiring within 30 days generate `EXPIRY_WARNING` notifications.
 - Already expired batches with remaining stock generate `EXPIRED_STOCK` notifications.
 
+### Email Notifications
+
+**Overview:**
+In addition to in-app alerts, the system can send emails when key warehouse events occur. Each organisation controls which notification types send emails and which addresses receive them. Email delivery is independent of the in-app notification bell — both can be active simultaneously.
+
+**How Email Notifications Work:**
+When a triggering event occurs (e.g., stock drops below the reorder point), the system fires the corresponding notification type. If email is enabled for that type on the tenant's configuration, an email is dispatched to the configured recipients via the platform SMTP relay.
+
+**Available Notification Types:**
+
+| Type | Trigger Condition |
+|------|-------------------|
+| `LOW_STOCK` | A product's available quantity drops below its reorder point |
+| `CRITICAL_STOCK` | A product's available quantity drops below its safety stock level |
+| `PO_APPROVAL_REQUIRED` | A purchase order is submitted and is awaiting manager approval |
+| `ORDER_SHIPPED` | An order is dispatched to a carrier and marked `SHIPPED` |
+| `EXPIRY_WARNING` | A batch is within the configured expiry warning threshold (default: 30 days) |
+| `EXPIRED_STOCK` | A batch has passed its expiry date and still has remaining stock |
+
+**Per-Tenant Configuration:**
+Each organisation independently configures which notification types send emails and who receives them. Settings are stored per company and per notification type.
+
+**Reading Current Configuration:**
+```
+GET /companies/:id/notification-config/:type
+```
+Returns the current email settings for the specified notification type:
+```json
+{
+  "type": "LOW_STOCK",
+  "emailEnabled": true,
+  "recipients": ["warehouse@example.com", "ops@example.com"]
+}
+```
+
+**Updating Configuration:**
+```
+PUT /companies/:id/notification-config/:type
+```
+Request body:
+```json
+{
+  "emailEnabled": true,
+  "recipients": ["warehouse@example.com", "ops@example.com"]
+}
+```
+- Set `"emailEnabled": false` to disable email for that notification type without removing recipient settings.
+- Set `"emailEnabled": true` to re-enable it.
+- The `recipients` field accepts an array of valid email addresses.
+
+**Recipient Behaviour:**
+- If `recipients` is `null` or an empty array (`[]`), emails are sent to **all active users** in the company.
+- If `recipients` contains one or more addresses, **only those addresses** receive the email, regardless of who is a system user.
+
+**Example — Enable Low Stock Alerts for Two Addresses:**
+```
+PUT /companies/42/notification-config/LOW_STOCK
+{
+  "emailEnabled": true,
+  "recipients": ["warehouse-manager@acme.com", "procurement@acme.com"]
+}
+```
+
+**Example — Broadcast Critical Stock to All Users:**
+```
+PUT /companies/42/notification-config/CRITICAL_STOCK
+{
+  "emailEnabled": true,
+  "recipients": []
+}
+```
+
+**SMTP Setup (Platform Admins Only):**
+Email delivery requires SMTP credentials configured at the server level. Individual tenants cannot change the sending address or mail server. Platform administrators must set the following environment variables on the API server before email notifications will function:
+
+| Variable | Description |
+|----------|-------------|
+| `SMTP_HOST` | Outbound mail server hostname (e.g., `smtp.sendgrid.net`) |
+| `SMTP_PORT` | SMTP port (typically `587` for TLS or `465` for SSL) |
+| `SMTP_USER` | SMTP authentication username |
+| `SMTP_PASS` | SMTP authentication password |
+| `SMTP_FROM` | The "From" address shown to recipients (e.g., `noreply@labamu.com`) |
+
+Once these variables are set and the server is restarted, all enabled per-tenant email configurations will use this relay. Tenants see email arrive from the configured `SMTP_FROM` address and cannot override it.
+
 ---
 
 ## Barcode Validation

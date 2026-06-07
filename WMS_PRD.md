@@ -173,6 +173,40 @@ The backoffice is an internal operations portal accessible only to Labamu platfo
 - **Bulk Plan Change:** Set plan tier for all selected companies in one API call.
 - **Audit:** Each company in a bulk operation generates a separate `AuditLog` entry.
 
+### 4.14 Email Notification System
+
+Per-tenant, configurable email alerts delivered via SMTP. Tenant admins control which notification types are active and who receives them; the platform provides the SMTP transport layer.
+
+#### 4.14.1 Supported Notification Types
+
+| Notification Type | Trigger Condition | Default Recipients |
+| :--- | :--- | :--- |
+| `LOW_STOCK_ALERT` | Product stock falls at or below the `reorderPoint` threshold | All company users |
+| `CRITICAL_STOCK_ALERT` | Product stock reaches zero or falls below a critical floor | All company users |
+| `PO_APPROVAL_REQUEST` | A Purchase Order is submitted and requires approval | Configured approver list |
+| `ORDER_DISPATCH_CONFIRMATION` | A Sales Order status transitions to `SHIPPED` | Configured recipient list |
+
+#### 4.14.2 Per-Tenant Configuration
+
+- Tenant admins can independently enable or disable each notification type via the Settings UI.
+- Each notification type has its own configurable recipient email list.
+- When no custom recipient list is defined, the system defaults to all active users of that company.
+- Configuration is stored per company and isolated by `companyId` (multi-tenancy applies).
+
+#### 4.14.3 API Endpoints
+
+| Method | Path | Description |
+| :--- | :--- | :--- |
+| `GET` | `/companies/:id/notification-config/:type` | Retrieve the current configuration for a specific notification type for a tenant. |
+| `PUT` | `/companies/:id/notification-config/:type` | Create or update the configuration (enabled flag, recipient list) for a notification type. |
+
+#### 4.14.4 Technical Delivery
+
+- **Transport:** SMTP via `nodemailer`. Platform admins configure a single platform-level SMTP connection (host, port, credentials).
+- **Graceful Degradation:** If no SMTP configuration is present, email dispatch is a no-op — no errors are thrown, and operations continue normally.
+- **Tenant Isolation:** Emails are scoped per tenant; one tenant's configuration does not affect another's delivery.
+- **Trigger Points:** Email dispatch is invoked within the relevant service layer (inventory service for stock alerts, PO service for approval requests, order service for dispatch confirmations).
+
 ## 5. Non-Functional Requirements
 
 ### 5.1 Performance
@@ -199,7 +233,8 @@ The backoffice is an internal operations portal accessible only to Labamu platfo
   - Multi-tenancy: AsyncLocalStorage + Prisma middleware for row-level isolation.
   - Admin guard: `PermissionsGuard` with strict `ALL` resource literal matching.
 - **Database:** PostgreSQL for robust relational data integrity using Prisma ORM.
-  - Tenant models: `Company`, `TenantPlan`, `FeatureFlag`, `AuditLog`, `Announcement`.
+  - Tenant models: `Company`, `TenantPlan`, `FeatureFlag`, `AuditLog`, `Announcement`, `NotificationConfig`.
+- **Email:** `nodemailer` for SMTP-based transactional email delivery. Platform-level SMTP credentials; graceful no-op when unconfigured.
 - **Hosting:** Dockerized container deployment compatible with AWS ECS or Kubernetes.
 
 ## 7. Future Roadmap (Post-MVP)
@@ -210,6 +245,7 @@ The backoffice is an internal operations portal accessible only to Labamu platfo
 - **Tenant Impersonation:** 15-minute scoped JWT flow with banner + audit trail.
 - **Feature Flags:** 8 system flags toggleable per tenant.
 - **Platform Analytics:** Growth charts, plan/status distribution, KPI cards.
+- **Email Notification System:** Per-tenant configurable SMTP-based email alerts for low/critical stock, PO approvals, and order dispatch confirmations.
 
 ### Planned
 - **Mobile App:** Native iOS/Android app for barcode scanning using device camera.

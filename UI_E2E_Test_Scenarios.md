@@ -1,11 +1,12 @@
 # UI-Driven End-to-End Test Scenarios — Labamu IMS
 
-**Version:** 1.2  
-**Date:** 2026-05-19  
+**Version:** 1.3  
+**Date:** 2026-06-07  
 **Execution method:** real browser, all interactions via UI only (no direct API calls in test body)  
 **Base URL:** http://localhost:3000  
 **Auth:** Admin user (`admin@labamu.co.id` / seeded credentials via `e2e/.auth/admin.json`)  
-**Change log:** v1.2 — added Scenario A8 (WAVELESS), Track D (Picking Dashboard, Wave Release Rules, Route Builder v2 canvas); updated C6 for Route Builder v2; updated file layout
+**Change log:** v1.3 — added Track F (Notification Configuration): scenarios F1–F8 covering view config, enable/disable email, custom recipients, reset to all users, and event-triggered notifications (LOW_STOCK, PO_APPROVAL_REQUIRED, ORDER_SHIPPED); added 8 spec files and 4 notification helpers  
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;v1.2 — added Scenario A8 (WAVELESS), Track D (Picking Dashboard, Wave Release Rules, Route Builder v2 canvas); updated C6 for Route Builder v2; updated file layout
 
 ---
 
@@ -19,6 +20,7 @@
    - **Track B — Back-Office Operations** (stocktaking, replenishment, scrap, transfers, invoices)
    - **Track C — Setup & Configuration** (warehouses, products, rules, RBAC, admin portal)
    - **Track D — Advanced Picking Operations** (picking dashboard, wave release rules, route builder v2)
+   - **Track F — Notification Configuration** (view config, enable/disable email, custom recipients, event-triggered emails)
 
 ---
 
@@ -854,6 +856,187 @@
 
 ---
 
+## Track F — Notification Configuration
+
+---
+
+### Scenario F1 (TC-NOTIF-01) — View Notification Configuration
+
+**Business narrative:** An admin opens the notification settings page and verifies that all eight notification types are listed with their default configuration (email enabled, no custom recipients).
+
+**Preconditions:** Logged in as admin. Company record exists.
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/settings/notifications` | Notification Configuration page loads; heading visible |
+| 2 | Observe the notification types table | Exactly 8 rows visible: `LOW_STOCK`, `PO_APPROVAL_REQUIRED`, `ORDER_SHIPPED`, `ORDER_PLACED`, `RETURN_REQUESTED`, `STOCKTAKE_COMPLETED`, `TRANSFER_APPROVED`, `INVOICE_DUE` (or the 8 types defined in the API) |
+| 3 | For each row, check the "Email Enabled" column | All 8 rows show the email toggle in the **ON** (enabled) state |
+| 4 | For each row, check the "Recipients" column | All 8 rows show an empty / "All users" value — no custom recipients configured |
+| 5 | Verify the page does not show an error toast or 404 state | Page body contains the notification table; no error banner visible |
+
+**Key assertion:** Default state is `emailEnabled = true` and `recipients = null` (displayed as "All users") for every notification type — matching the API response from `GET /companies/:id/notification-config`.
+
+---
+
+### Scenario F2 (TC-NOTIF-02) — Disable Email for a Notification Type
+
+**Business narrative:** An admin disables email delivery for the `ORDER_SHIPPED` notification type, then dispatches an order and confirms that no email is sent (only an in-app notification is created).
+
+**Preconditions:** At least one sales order exists in PACKED status. Email delivery is currently enabled for `ORDER_SHIPPED`.
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/settings/notifications` | Notification config table visible |
+| 2 | Locate the `ORDER_SHIPPED` row | Row present with email toggle = ON |
+| 3 | Click the email toggle for `ORDER_SHIPPED` | Toggle flips to OFF; toast "Notification settings updated" appears |
+| 4 | Reload the page and navigate back to `/settings/notifications` | `ORDER_SHIPPED` row still shows email toggle = OFF (persisted) |
+| 5 | Navigate to the PACKED sales order; click "Create Shipment" then "Dispatch" | Order status changes to SHIPPED |
+| 6 | Navigate to `/notifications` (in-app notification centre) | In-app notification for `ORDER_SHIPPED` event is visible in the list |
+| 7 | Open the notification detail | Notification type = `ORDER_SHIPPED`; delivery channel = in-app only |
+| 8 | Verify no email delivery indicator is shown on the notification record | Email sent badge / timestamp is absent; only in-app delivery confirmed |
+| 9 | Navigate back to `/settings/notifications`; re-enable email for `ORDER_SHIPPED` | Toggle returns to ON; toast "Notification settings updated" |
+
+**Key assertion:** Disabling email on a notification type via `PUT /companies/:id/notification-config` prevents email delivery on subsequent triggers while preserving in-app notification creation.
+
+---
+
+### Scenario F3 (TC-NOTIF-03) — Set Custom Recipients for a Notification Type
+
+**Business narrative:** An admin restricts the `LOW_STOCK` notification to a specific operations email address. When a low-stock event fires, the email goes only to that address and not to all company users.
+
+**Preconditions:** Product "F3 Widget" has a reorder point configured; current stock is above the threshold.
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/settings/notifications` | Notification config table visible |
+| 2 | Locate the `LOW_STOCK` row; click "Edit" or the recipients field | Recipient configuration form/modal opens |
+| 3 | Enter email address `ops@acme.com` in the recipients field; click "Save" | Toast "Notification settings updated"; recipients field now shows `ops@acme.com` |
+| 4 | Reload the page | `LOW_STOCK` row displays `ops@acme.com` in the Recipients column; email toggle remains ON |
+| 5 | Navigate to `/inventory/adjustments/new`; apply a negative adjustment to "F3 Widget" to drop stock below its reorder point | Adjustment applied; on-hand qty < reorder point |
+| 6 | Navigate to `/inventory/replenishment` or wait for the replenishment check to run | LOW_STOCK alert visible for "F3 Widget" |
+| 7 | Navigate to `/notifications` | In-app notification for `LOW_STOCK` — "F3 Widget" is visible |
+| 8 | Open the notification detail; inspect the "Email Recipients" field | Recipients listed as `ops@acme.com` only — no other addresses |
+
+**Key assertion:** Custom recipients in the notification config restrict email delivery to the specified address(es) only; all company users do not receive the email.
+
+---
+
+### Scenario F4 (TC-NOTIF-04) — Clear Custom Recipients (Reset to All Users)
+
+**Business narrative:** An admin removes the custom recipient list from the `LOW_STOCK` notification (previously set in F3), resetting it so emails go to all company users again.
+
+**Preconditions:** `LOW_STOCK` notification type has `recipients = ["ops@acme.com"]` (as set in F3 or equivalent setup).
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/settings/notifications` | `LOW_STOCK` row shows `ops@acme.com` in Recipients column |
+| 2 | Click "Edit" on the `LOW_STOCK` row | Recipient configuration form opens; current value shows `ops@acme.com` |
+| 3 | Clear / delete the recipient email address; click "Save" | Toast "Notification settings updated"; recipients field returns to empty / "All users" |
+| 4 | Reload the page | `LOW_STOCK` row Recipients column shows "All users" (no custom addresses) |
+| 5 | Trigger another LOW_STOCK event (reduce "F3 Widget" stock further below reorder point) | LOW_STOCK alert and in-app notification created |
+| 6 | Open the notification detail; inspect the "Email Recipients" field | Recipients show all active company user email addresses — no restriction to `ops@acme.com` |
+
+**Key assertion:** Setting `recipients = null` via `PUT /companies/:id/notification-config` restores the default behaviour of emailing all company users.
+
+---
+
+### Scenario F5 (TC-NOTIF-05) — LOW_STOCK Event Triggers Email Notification
+
+**Business narrative:** Stock for a product falls below its reorder point; the system creates a `LOW_STOCK` notification and sends an email to the configured recipients.
+
+**Preconditions:** Product "F5 Widget" with reorder point = 20 and current stock = 25. `LOW_STOCK` email is enabled with default recipients (all users). Warehouse and reorder rule configured.
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/inventory`; verify "F5 Widget" on-hand = 25 | Quantity confirmed |
+| 2 | Navigate to `/inventory/adjustments/new`; select "F5 Widget"; type = DECREASE; qty = 10; click "Create Adjustment" → "Apply Adjustment" | Adjustment applied; on-hand now = 15 (below reorder point 20) |
+| 3 | Navigate to `/inventory/replenishment`; click "Trigger Check" (or wait for automatic check) | LOW_STOCK alert appears for "F5 Widget" with current = 15, threshold = 20 |
+| 4 | Navigate to `/notifications` | Notification entry visible: type = `LOW_STOCK`, product = "F5 Widget", status = unread |
+| 5 | Click the notification row | Detail view shows: event type `LOW_STOCK`, product name, current qty, reorder point |
+| 6 | Check the "Email Sent" indicator on the notification detail | Email sent timestamp or "Email delivered" badge is present |
+| 7 | Verify the email recipient list on the detail | Recipients = all company user email addresses (default config) |
+
+**Key assertion:** A stock level drop below the reorder point creates both an in-app notification and an email delivery record, confirming end-to-end notification flow for `LOW_STOCK`.
+
+---
+
+### Scenario F6 (TC-NOTIF-06) — PO_APPROVAL_REQUIRED Event Triggers Email Notification
+
+**Business narrative:** A purchase order is submitted for approval; the system creates a `PO_APPROVAL_REQUIRED` notification and sends an email to all users with approval permissions.
+
+**Preconditions:** Supplier "F6 Supplier" and product "F6 Widget" exist. `PO_APPROVAL_REQUIRED` email is enabled. A PO approver user exists in the company.
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/inventory/purchases/new` | Create Purchase Order page |
+| 2 | Select supplier "F6 Supplier"; add line: "F6 Widget" qty 10; click "Create Purchase Order" | PO created; status = DRAFT |
+| 3 | Click "Submit for Approval" | PO status changes to PENDING |
+| 4 | Navigate to `/notifications` | Notification entry visible: type = `PO_APPROVAL_REQUIRED`; links to the new PO |
+| 5 | Click the notification row | Detail shows PO number, supplier name, total value, submitted-by user |
+| 6 | Check the "Email Sent" indicator | Email sent timestamp or "Email delivered" badge is present |
+| 7 | Verify recipients shown match users with approval permissions | At minimum the admin user email is listed |
+
+**Key assertion:** Submitting a PO for approval triggers a `PO_APPROVAL_REQUIRED` notification with email delivery — confirming the approval workflow is connected to the notification system.
+
+---
+
+### Scenario F7 (TC-NOTIF-07) — ORDER_SHIPPED Event Triggers Email Notification
+
+**Business narrative:** A sales order is dispatched and marked as shipped; the system creates an `ORDER_SHIPPED` notification and sends a confirmation email to configured recipients.
+
+**Preconditions:** A sales order exists in PACKED status. `ORDER_SHIPPED` email is enabled (re-enabled after F2 if run in sequence).
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to the PACKED sales order detail | Order status = PACKED |
+| 2 | Click "Create Shipment"; select carrier; enter tracking number (or select Lalamove); click "Create" | Shipment record created |
+| 3 | Click "Dispatch" / "Mark as Shipped" | Order status changes to SHIPPED |
+| 4 | Navigate to `/notifications` | Notification entry visible: type = `ORDER_SHIPPED`; references the order number |
+| 5 | Click the notification row | Detail shows order number, customer name, shipment tracking reference, dispatch timestamp |
+| 6 | Check the "Email Sent" indicator | Email sent timestamp or "Email delivered" badge is present |
+| 7 | Verify recipient list | Recipients = company user email addresses (or custom recipients if configured for `ORDER_SHIPPED`) |
+
+**Key assertion:** Dispatching an order creates an `ORDER_SHIPPED` notification with email delivery — confirming dispatch events are wired to the notification pipeline.
+
+---
+
+### Scenario F8 (TC-NOTIF-08) — Email Disabled = In-App Notification Only
+
+**Business narrative:** When email is disabled for a notification type, triggering the corresponding event still creates an in-app notification but does not generate an email delivery. This verifies the two channels are independently controlled.
+
+**Preconditions:** A sales order in PACKED status. `ORDER_SHIPPED` email is currently enabled.
+
+**Steps and assertions:**
+
+| # | UI Action | Assertion |
+|---|-----------|-----------|
+| 1 | Navigate to `/settings/notifications`; locate `ORDER_SHIPPED` row | Email toggle = ON |
+| 2 | Click the email toggle to disable email for `ORDER_SHIPPED` | Toggle flips to OFF; toast "Notification settings updated" |
+| 3 | Navigate to the PACKED sales order; click "Create Shipment" → "Dispatch" | Order status = SHIPPED |
+| 4 | Navigate to `/notifications` | In-app notification for `ORDER_SHIPPED` is visible in the list |
+| 5 | Click the notification row | Notification detail opens; type = `ORDER_SHIPPED`; in-app delivery shown |
+| 6 | Verify the "Email Sent" field or email delivery section | Field is absent, empty, or shows "Email disabled" — no email timestamp present |
+| 7 | Verify the notification record does **not** show an email recipient list | Recipients column / field is empty or hidden |
+| 8 | Navigate to `/settings/notifications`; re-enable email for `ORDER_SHIPPED` | Toggle returns to ON; toast "Notification settings updated" |
+
+**Key assertion:** Disabling email for a notification type suppresses email delivery entirely while the in-app notification is still created — the two channels operate independently.
+
+---
+
 ## Composite End-to-End Journeys
 
 These journeys run multiple tracks sequentially in a single spec to validate the complete platform lifecycle.
@@ -964,6 +1147,16 @@ apps/web/e2e/
   ui-d2-wave-release-rules.spec.ts        # create TIME_BASED/ORDER_COUNT/MANUAL, toggle, trigger, delete
   ui-d3-route-builder-advanced.spec.ts    # Connect Mode edge cases, step config, validate/activate lifecycle
 
+  # Track F — Notification Configuration (NEW v1.3)
+  ui-f1-notif-view-config.spec.ts             # TC-NOTIF-01: view all 8 types with defaults
+  ui-f2-notif-disable-email.spec.ts           # TC-NOTIF-02: disable email; verify in-app only
+  ui-f3-notif-custom-recipients.spec.ts       # TC-NOTIF-03: set custom recipients
+  ui-f4-notif-clear-recipients.spec.ts        # TC-NOTIF-04: clear recipients; reset to all users
+  ui-f5-notif-low-stock.spec.ts               # TC-NOTIF-05: LOW_STOCK event → email
+  ui-f6-notif-po-approval.spec.ts             # TC-NOTIF-06: PO_APPROVAL_REQUIRED event → email
+  ui-f7-notif-order-shipped.spec.ts           # TC-NOTIF-07: ORDER_SHIPPED event → email
+  ui-f8-notif-email-disabled.spec.ts          # TC-NOTIF-08: email disabled = in-app only
+
   # Composite Journeys
   ui-e1-full-lifecycle.spec.ts
   ui-e2-config-first-order.spec.ts
@@ -991,6 +1184,12 @@ export async function connectNodes(page, sourceLabel, targetLabel)
 export async function openStepConfigPanel(page, nodeLabel)
 export async function createWaveRule(page, name, triggerType, opts?)
 export async function triggerWaveRule(page, ruleName)
+
+// Notification Configuration helpers (NEW v1.3)
+export async function setNotificationEmailEnabled(page, notifType, enabled: boolean)
+export async function setNotificationRecipients(page, notifType, recipients: string[] | null)
+export async function getNotificationConfig(page, notifType)     // reads row from /settings/notifications
+export async function waitForInAppNotification(page, notifType)  // polls /notifications until entry visible
 ```
 
 ### Selector conventions

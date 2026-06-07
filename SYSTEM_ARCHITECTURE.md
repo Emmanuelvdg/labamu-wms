@@ -1,7 +1,7 @@
 # Labamu WMS - System Architecture
 
-**Version:** 5.1  
-**Last Updated:** May 19, 2026  
+**Version:** 5.2  
+**Last Updated:** June 7, 2026  
 **Status:** Production-Ready
 
 ---
@@ -19,6 +19,7 @@
 9. [Backoffice Admin Portal](#backoffice-admin-portal)
 10. [Supplier Portal](#supplier-portal)
 11. [Integration Points](#integration-points)
+12. [Email Notification System](#email-notification-system)
 
 ---
 
@@ -186,7 +187,8 @@ Labamu WMS is a comprehensive warehouse management system built on a modern, sca
 | **SupplierModule** | Supplier catalog, partner management | `SupplierService` |
 | **ReturnsModule** | Returns Management (RMA), receiving, restocking conditions | `ReturnsService`, `ReturnsController` |
 | **StocktakingModule** | Cycle counts, full stocktakes, reconciliation | `StocktakingService`, `StocktakingController` |
-| **NotificationModule** | In-app notifications, expiry alerts, notification bell | `NotificationService`, `ExpiryCheckerService` |
+| **NotificationModule** | In-app notifications, expiry alerts, notification bell, **per-tenant email dispatch** | `NotificationService`, `ExpiryCheckerService`, `NotificationConfigService` |
+| **EmailModule** | Global transactional email delivery via nodemailer; graceful no-op when SMTP unconfigured | `EmailService` |
 | **PackingModule** | Packing queue, parcel management, packing sessions | `PackingService`, `PackingController` |
 | **ReplenishmentModule** | Reorder point monitoring, auto-PO generation, alerts | `ReplenishmentService`, `ReplenishmentController` |
 | **BarcodeModule** | Universal barcode lookup, context-aware validation | `BarcodeValidatorService` |
@@ -512,6 +514,12 @@ POST   /notifications                       Create notification
 PATCH  /notifications/:id/read              Mark as read
 POST   /notifications/mark-all-read         Mark all as read
 POST   /notifications/check-expiry          Run expiry checker
+```
+
+#### Notification Configuration
+```
+GET    /companies/:id/notification-config           List all notification config entries for a company
+PUT    /companies/:id/notification-config/:type     Create or update config for a specific notification type
 ```
 
 #### Packing Station
@@ -1332,6 +1340,29 @@ Announcement {
 }
 ```
 
+#### CompanyNotificationConfig
+```typescript
+CompanyNotificationConfig {
+  id: string (UUID)
+  companyId: string
+  company: Company
+
+  // Identifies the notification category (see Supported Notification Types)
+  notificationType: string  // LOW_STOCK | CRITICAL_STOCK | PO_APPROVAL_REQUIRED | ...
+
+  emailEnabled: boolean     // Master on/off switch for email delivery
+
+  // JSON string array of recipient email addresses.
+  // null = fall back to ALL active users in the company.
+  recipients: string?       // e.g. '["ops@acme.com","mgr@acme.com"]'
+
+  createdAt: DateTime
+  updatedAt: DateTime
+
+  @@unique([companyId, notificationType])
+}
+```
+
 ### Entity Relationships Diagram
 
 ```mermaid
@@ -2074,6 +2105,108 @@ Common errors and resolutions:
 2. **HMAC Signatures**: All requests cryptographically signed
 3. **Webhook Validation**: Verify webhook sources (TODO)
 4. **PII Protection**: Customer data encrypted in transit
+
+---
+
+## Email Notification System
+
+### Overview
+
+The email notification system delivers transactional alerts to warehouse operators and managers when key inventory or order events occur. It is layered on top of the existing in-app `NotificationModule` and is controlled per tenant via `CompanyNotificationConfig` records.
+
+### Architecture
+
+```
+Trigger (service method)
+        │
+        ▼
+NotificationService.create()       ← always creates in-app notification
+        │
+        ▼
+NotificationConfigService.getConfig(companyId, type)
+        │  reads CompanyNotificationConfig
+        │  falls back to all company users when recipients = null
+        ▼
+EmailService.sendMail(to[], subject, html)
+        │
+        ▼
+nodemailer transport (SMTP)        ← no-op when SMTP_HOST not configured
+```
+
+### EmailService
+
+**File**: `apps/api/src/common/email/email.service.ts`
+
+- Registered as a `@Global()` NestJS module so it is injectable anywhere in the API without explicit imports.
+- Wraps a single **nodemailer** `Transporter` configured at startup from environment variables.
+- Exposes a single public method: `sendMail({ to, subject, html })`.
+- **Graceful degradation**: if `SMTP_HOST` is not set, the service skips sending and logs a warning. No exception is thrown, so callers are never broken by a missing SMTP configuration.
+
+#### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SMTP_HOST` | SMTP server hostname | _(unset — disables email)_ |
+| `SMTP_PORT` | SMTP server port | `587` |
+| `SMTP_USER` | SMTP login username | — |
+| `SMTP_PASS` | SMTP login password | — |
+| `SMTP_FROM` | Sender address shown in `From:` header | `noreply@labamu.com` |
+
+### NotificationConfigService
+
+**File**: `apps/api/src/notifications/notification-config.service.ts`
+
+Resolves the recipient list and email-enabled flag for a given `(companyId, notificationType)` pair.
+
+**Resolution logic:**
+
+1. Look up `CompanyNotificationConfig` by `companyId + notificationType`.
+2. If no record exists, or `emailEnabled = false`, skip email dispatch.
+3. If a record exists with `recipients` set, parse the JSON array and use those addresses.
+4. If `recipients` is `null`, query all active `User` records for the company and use their email addresses.
+
+### Supported Notification Types
+
+| Type | Description |
+|------|-------------|
+| `LOW_STOCK` | Product stock has fallen below its reorder point |
+| `CRITICAL_STOCK` | Product stock has reached a critical (near-zero) threshold |
+| `PO_APPROVAL_REQUIRED` | A purchase order has been submitted and is awaiting manager approval |
+| `ORDER_SHIPPED` | A sales order shipment has been created |
+| `EXPIRY_WARNING` | One or more inventory batches are approaching their expiry date |
+| `EXPIRED_STOCK` | One or more inventory batches have passed their expiry date |
+| `WORKFLOW_TASK_SLA_BREACH` | A workflow task has exceeded its SLA deadline |
+| `SUPPLIER_INVOICE_UPLOADED` | A supplier has uploaded an invoice document against a purchase order |
+
+### Trigger Points
+
+| Trigger | Service Method | Notification Type |
+|---------|---------------|-------------------|
+| Stock falls below reorder point | `ReplenishmentService.checkStock()` | `LOW_STOCK` |
+| Stock falls below critical threshold | `ReplenishmentService.checkStock()` | `CRITICAL_STOCK` |
+| PO submitted for approval | `PurchaseOrderService.submitForApproval()` | `PO_APPROVAL_REQUIRED` |
+| Shipment created for sales order | `OrderService.createShipment()` | `ORDER_SHIPPED` |
+
+### Notification Configuration API
+
+Tenant admins can manage email notification preferences per type via the following endpoints (requires `*:MANAGE` permission):
+
+```
+GET  /companies/:id/notification-config
+```
+Returns an array of all `CompanyNotificationConfig` records for the company. Types not yet configured are absent from the response; the client should treat them as `emailEnabled: false` with system-default recipients.
+
+```
+PUT  /companies/:id/notification-config/:type
+```
+Creates or updates (upsert) the config for the given `notificationType`. Request body:
+```json
+{
+  "emailEnabled": true,
+  "recipients": ["ops@example.com", "manager@example.com"]
+}
+```
+Pass `"recipients": null` to revert to the company-wide default (all users).
 
 ---
 
