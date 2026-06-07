@@ -100,6 +100,7 @@ const navigation: NavItem[] = [
             { name: 'Analytics', href: '/workflows/analytics', permission: { resource: 'REPORTS', action: 'READ' } },
         ]
     },
+    { name: 'Audit Log', href: '/audit', icon: ClipboardList, permission: { resource: 'SETTINGS', action: 'READ' } },
     { name: 'Settings', href: '/settings', icon: Settings, permission: { resource: 'SETTINGS', action: 'READ' } },
     { name: 'Backoffice', href: '/admin', icon: Building2, permission: { resource: 'ALL', action: 'MANAGE' } },
     { name: 'User Guide', href: '/user-guide', icon: BookOpen },

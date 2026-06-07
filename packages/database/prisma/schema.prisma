@@ -1527,6 +1527,27 @@ model ExchangeRate {
 // Per-tenant control over which notification types trigger emails and who receives them.
 // recipients is a JSON array of email strings (e.g. ["mgr@acme.com","ops@acme.com"]).
 // When recipients is empty/null, email is sent to all users of the company instead.
+// Operational audit — who did what to which stock entity and when.
+// Separate from the platform-level AuditLog which covers tenant/user management.
+model OperationalAuditLog {
+  id         String   @id @default(uuid())
+  companyId  String?
+  actorId    String?
+  actorEmail String?
+  action     String   // ADJUSTMENT_APPLIED | PO_APPROVED | PO_REJECTED | GOODS_RECEIVED | ORDER_STATUS_CHANGED | ORDER_SHIPPED
+  entity     String   // Adjustment | PurchaseOrder | Order
+  entityId   String
+  before     String?  // JSON snapshot of relevant fields before the change
+  after      String?  // JSON snapshot after the change
+  metadata   String?  // JSON — extra context (e.g. carrier, reason)
+  createdAt  DateTime @default(now())
+
+  @@index([companyId])
+  @@index([entity, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+}
+
 model CompanyNotificationConfig {
   id               String   @id @default(uuid())
   companyId        String

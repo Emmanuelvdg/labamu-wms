@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Put, Patch, UseGuards, Delete, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Put, Patch, UseGuards, Delete, Query, Req } from '@nestjs/common';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { RequirePermission } from '../common/auth/permissions.decorator';
@@ -35,8 +35,8 @@ export class OrderController {
 
     @Post('ship')
     @RequirePermission('ORDERS', 'UPDATE')
-    createShipment(@Body() data: { orderId: string; carrier: string; trackingId: string }) {
-        return this.orderService.createShipment(data);
+    createShipment(@Body() data: { orderId: string; carrier: string; trackingId: string }, @Req() req: any) {
+        return this.orderService.createShipment({ ...data, actor: { id: req.user?.id, email: req.user?.email, companyId: req.user?.companyId } });
     }
 
     @Post(':id/check-availability')
@@ -53,14 +53,14 @@ export class OrderController {
 
     @Put(':id')
     @RequirePermission('ORDERS', 'UPDATE')
-    updateOrder(@Param('id') id: string, @Body() data: any) {
-        return this.orderService.updateOrder(id, data);
+    updateOrder(@Param('id') id: string, @Body() data: any, @Req() req: any) {
+        return this.orderService.updateOrder(id, data, { id: req.user?.id, email: req.user?.email, companyId: req.user?.companyId });
     }
 
     @Patch(':id')
     @RequirePermission('ORDERS', 'UPDATE')
-    patchOrder(@Param('id') id: string, @Body() data: any) {
-        return this.orderService.updateOrder(id, data);
+    patchOrder(@Param('id') id: string, @Body() data: any, @Req() req: any) {
+        return this.orderService.updateOrder(id, data, { id: req.user?.id, email: req.user?.email, companyId: req.user?.companyId });
     }
 
     @Delete(':id')

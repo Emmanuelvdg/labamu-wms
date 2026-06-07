@@ -747,6 +747,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             },
         },
         {
+            name: 'get_audit_log',
+            description: 'Retrieve the operational audit log — who changed what and when. Covers inventory adjustments, PO approvals/rejections, goods receipts, and order status changes.',
+            inputSchema: {
+                type: 'object',
+                properties: {
+                    companyId: { type: 'string', description: 'Filter by tenant company ID' },
+                    entity: { type: 'string', description: 'Filter by entity type: Adjustment | PurchaseOrder | Order' },
+                    entityId: { type: 'string', description: 'Filter by specific entity ID' },
+                    actorId: { type: 'string', description: 'Filter by user who performed the action' },
+                    action: { type: 'string', description: 'Filter by action: ADJUSTMENT_APPLIED | PO_APPROVED | PO_REJECTED | GOODS_RECEIVED | ORDER_STATUS_CHANGED | ORDER_SHIPPED' },
+                    dateFrom: { type: 'string', description: 'ISO date string — start of range' },
+                    dateTo: { type: 'string', description: 'ISO date string — end of range' },
+                    limit: { type: 'number', description: 'Max results (default 50, max 500)' },
+                    offset: { type: 'number', description: 'Pagination offset' },
+                },
+            },
+        },
+        {
             name: 'list_workflow_templates',
             description: 'List available workflow templates that can be triggered for warehouse operations.',
             inputSchema: { type: 'object', properties: {} },
@@ -1046,6 +1064,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 if (a.limit) params.set('limit', String(a.limit));
                 const q = params.toString() ? `?${params}` : '';
                 return ok(await callWmsApi(`/notifications${q}`));
+            }
+
+            case 'get_audit_log': {
+                const params = new URLSearchParams();
+                if (a.companyId) params.set('companyId', String(a.companyId));
+                if (a.entity) params.set('entity', String(a.entity));
+                if (a.entityId) params.set('entityId', String(a.entityId));
+                if (a.actorId) params.set('actorId', String(a.actorId));
+                if (a.action) params.set('action', String(a.action));
+                if (a.dateFrom) params.set('dateFrom', String(a.dateFrom));
+                if (a.dateTo) params.set('dateTo', String(a.dateTo));
+                if (a.limit) params.set('take', String(a.limit));
+                if (a.offset) params.set('skip', String(a.offset));
+                const q = params.toString() ? `?${params}` : '';
+                return ok(await callWmsApi(`/audit/operations${q}`));
             }
 
             case 'list_workflow_templates':

@@ -8,6 +8,7 @@ import { PutawayService } from '../inventory/putaway.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ReceiptCompletedEvent } from '../inventory/events/inbound.events';
 import { NotificationService } from '../notifications/notification.service';
+import { OperationalAuditService } from '../audit/operational-audit.service';
 
 @Injectable()
 export class PurchaseOrderService {
@@ -19,6 +20,7 @@ export class PurchaseOrderService {
         private putawayService: PutawayService,
         private eventEmitter: EventEmitter2,
         private notifications: NotificationService,
+        private auditLog: OperationalAuditService,
     ) { }
 
     async createPurchaseOrder(data: {
@@ -153,7 +155,7 @@ export class PurchaseOrderService {
         });
     }
 
-    async receiveGoods(purchaseOrderId: string, destinationLocationId: string, itemsToReceive?: { poItemId: string; quantity: number }[]) {
+    async receiveGoods(purchaseOrderId: string, destinationLocationId: string, itemsToReceive?: { poItemId: string; quantity: number }[], actor?: { id?: string; email?: string; companyId?: string }) {
         console.log(`[PurchaseOrderService] Receiving goods for PO: ${purchaseOrderId} to ${destinationLocationId}`);
 
         let capturedWarehouseId: string;
@@ -396,6 +398,17 @@ export class PurchaseOrderService {
             );
         }
 
+        await this.auditLog.log({
+            companyId: actor?.companyId,
+            actorId: actor?.id,
+            actorEmail: actor?.email,
+            action: 'GOODS_RECEIVED',
+            entity: 'PurchaseOrder',
+            entityId: purchaseOrderId,
+            after: { receiptId: (result as any)?.id },
+            metadata: { destinationLocationId, itemCount: itemsToReceive?.length },
+        });
+
         return result;
     }
 
@@ -428,25 +441,55 @@ export class PurchaseOrderService {
     }
 
     async approvePurchaseOrder(id: string, userId: string) {
-        return this.prisma.purchaseOrder.update({
+        const po = await this.prisma.purchaseOrder.findUnique({
+            where: { id },
+            include: { supplier: true },
+        });
+        const updated = await this.prisma.purchaseOrder.update({
             where: { id },
             data: {
                 approvalStatus: 'APPROVED',
-                status: 'ORDERED', // Auto-issue for now
+                status: 'ORDERED',
                 approvedBy: userId,
                 approvedAt: new Date(),
             },
         });
+        const actor = await this.prisma.user.findUnique({ where: { id: userId }, select: { email: true, companyId: true } });
+        await this.auditLog.log({
+            companyId: actor?.companyId ?? undefined,
+            actorId: userId,
+            actorEmail: actor?.email,
+            action: 'PO_APPROVED',
+            entity: 'PurchaseOrder',
+            entityId: id,
+            before: { approvalStatus: po?.approvalStatus },
+            after: { approvalStatus: 'APPROVED', status: 'ORDERED' },
+        });
+        return updated;
     }
 
     async rejectPurchaseOrder(id: string, userId: string, reason: string) {
-        return this.prisma.purchaseOrder.update({
+        const po = await this.prisma.purchaseOrder.findUnique({ where: { id } });
+        const updated = await this.prisma.purchaseOrder.update({
             where: { id },
             data: {
                 approvalStatus: 'REJECTED',
                 rejectionReason: reason,
             },
         });
+        const actor = await this.prisma.user.findUnique({ where: { id: userId }, select: { email: true, companyId: true } });
+        await this.auditLog.log({
+            companyId: actor?.companyId ?? undefined,
+            actorId: userId,
+            actorEmail: actor?.email,
+            action: 'PO_REJECTED',
+            entity: 'PurchaseOrder',
+            entityId: id,
+            before: { approvalStatus: po?.approvalStatus },
+            after: { approvalStatus: 'REJECTED' },
+            metadata: { reason },
+        });
+        return updated;
     }
 
     private async getReceivingLocation(warehouseId: string, tx: any): Promise<string> {

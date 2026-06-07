@@ -3,6 +3,7 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException, 
 import { AppError } from '../common/errors/app-error';
 import { PrismaService } from '../prisma.service';
 import { Product, Warehouse, ProductInventory, InventoryBatch } from '@labamu/database';
+import { OperationalAuditService } from '../audit/operational-audit.service';
 
 import { PackagingService } from './packaging.service';
 import { PutawayService } from './putaway.service';
@@ -26,6 +27,7 @@ export class InventoryService {
         private putawayService: PutawayService,
         private utilisationService: UtilisationService,
         private ruleResolver: RotationRuleResolverService,
+        private auditLog: OperationalAuditService,
     ) { }
 
     /**
@@ -1530,13 +1532,12 @@ export class InventoryService {
         });
     }
 
-    async applyAdjustment(id: string) {
-        return this.prisma.$transaction(async (tx) => {
+    async applyAdjustment(id: string, actor?: { id?: string; email?: string; companyId?: string }) {
+        const result = await this.prisma.$transaction(async (tx) => {
             const adjustment = await tx.inventoryAdjustment.findUnique({ where: { id } });
             if (!adjustment) throw new AppError('ADJUSTMENT_NOT_FOUND', { adjustmentId: id });
             if (adjustment.status === 'APPLIED') throw new AppError('ADJUSTMENT_ALREADY_APPLIED', { adjustmentId: id });
 
-            // Update status
             await tx.inventoryAdjustment.update({
                 where: { id },
                 data: { status: 'APPLIED' },
@@ -1545,6 +1546,20 @@ export class InventoryService {
             await this._applyAdjustmentLogic(tx, adjustment);
             return adjustment;
         });
+
+        await this.auditLog.log({
+            companyId: actor?.companyId,
+            actorId: actor?.id,
+            actorEmail: actor?.email,
+            action: 'ADJUSTMENT_APPLIED',
+            entity: 'Adjustment',
+            entityId: id,
+            before: { status: 'PENDING' },
+            after: { status: 'APPLIED' },
+            metadata: { productId: result.productId, quantity: result.quantity, reason: result.reason },
+        });
+
+        return result;
     }
 
     private async _applyAdjustmentLogic(tx: any, adjustment: any) {

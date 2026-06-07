@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Query, Delete, UseGuards, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Query, Delete, UseGuards, NotFoundException, Req } from '@nestjs/common';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { CreateAdjustmentDto } from './dto/create-adjustment.dto';
@@ -148,8 +148,12 @@ export class InventoryController {
 
     @Post('adjustments/:id/apply')
     @RequirePermission('ADJUSTMENTS', 'APPLY')
-    applyAdjustment(@Param('id') id: string) {
-        return this.inventoryService.applyAdjustment(id);
+    applyAdjustment(@Param('id') id: string, @Req() req: any) {
+        return this.inventoryService.applyAdjustment(id, {
+            id: req.user?.id,
+            email: req.user?.email,
+            companyId: req.user?.companyId,
+        });
     }
 
     @Get('adjustments')

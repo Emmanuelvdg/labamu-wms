@@ -56,8 +56,12 @@ export class PurchaseOrderController {
 
     @Post(':id/receive')
     @RequirePermission('PURCHASE_ORDERS', 'UPDATE')
-    receive(@Param('id') id: string, @Body() data: ReceiveGoodsDto) {
-        return this.purchaseOrderService.receiveGoods(id, data.locationId!, data.items || []);
+    receive(@Param('id') id: string, @Body() data: ReceiveGoodsDto, @Req() req: any) {
+        return this.purchaseOrderService.receiveGoods(id, data.locationId!, data.items || [], {
+            id: req.user?.id,
+            email: req.user?.email,
+            companyId: req.user?.companyId,
+        });
     }
 
     @Post(':id/submit')

@@ -9,6 +9,7 @@ import { FulfillmentService } from '../fulfillment/fulfillment.service';
 import { ShippingService } from '../shipping/shipping.service';
 import { PickingStrategyService } from '../strategy/picking-strategy.service';
 import { NotificationService } from '../notifications/notification.service';
+import { OperationalAuditService } from '../audit/operational-audit.service';
 
 @Injectable()
 export class OrderService {
@@ -26,6 +27,7 @@ export class OrderService {
         private shippingService: ShippingService,
         private pickingStrategyService: PickingStrategyService,
         private notifications: NotificationService,
+        private auditLog: OperationalAuditService,
     ) { }
 
     async createOrder(data: {
@@ -233,7 +235,7 @@ export class OrderService {
         });
     }
 
-    async createShipment(data: { orderId: string; carrier: string; trackingId: string }) {
+    async createShipment(data: { orderId: string; carrier: string; trackingId: string; actor?: { id?: string; email?: string; companyId?: string } }) {
         const shipment = await this.prisma.$transaction(async (tx) => {
             // Guard: Ensure the order exists and has at least one line item
             const orderCheck = await tx.order.findUnique({
@@ -364,6 +366,18 @@ export class OrderService {
             this.logger.warn(`ORDER_SHIPPED notification failed: ${e?.message ?? e}`);
         }
 
+        // Audit the shipment
+        await this.auditLog.log({
+            companyId: data.actor?.companyId,
+            actorId: data.actor?.id,
+            actorEmail: data.actor?.email,
+            action: 'ORDER_SHIPPED',
+            entity: 'Order',
+            entityId: data.orderId,
+            after: { status: 'SHIPPED' },
+            metadata: { carrier: data.carrier, trackingId: data.trackingId },
+        });
+
         return shipment;
     }
     async checkAvailability(id: string): Promise<Order> {
@@ -480,7 +494,7 @@ export class OrderService {
         return this.prisma.order.delete({ where: { id } });
     }
 
-    async updateOrder(id: string, data: any): Promise<Order> {
+    async updateOrder(id: string, data: any, actor?: { id?: string; email?: string; companyId?: string }): Promise<Order> {
         const updateData: any = {};
 
         if (data.priority !== undefined) {
@@ -548,7 +562,11 @@ export class OrderService {
             }
         }
 
-        return this.prisma.order.update({
+        const prevOrder = data.status
+            ? await this.prisma.order.findUnique({ where: { id }, select: { status: true } })
+            : null;
+
+        const updated = await this.prisma.order.update({
             where: { id },
             data: updateData,
             include: {
@@ -556,5 +574,20 @@ export class OrderService {
                 deliveryMethod: true,
             },
         });
+
+        if (data.status && prevOrder?.status !== data.status) {
+            await this.auditLog.log({
+                companyId: actor?.companyId,
+                actorId: actor?.id,
+                actorEmail: actor?.email,
+                action: 'ORDER_STATUS_CHANGED',
+                entity: 'Order',
+                entityId: id,
+                before: { status: prevOrder?.status },
+                after: { status: data.status },
+            });
+        }
+
+        return updated;
     }
 }
