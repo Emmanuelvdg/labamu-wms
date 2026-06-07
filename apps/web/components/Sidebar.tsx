@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import {
     LayoutDashboard,
@@ -20,7 +21,6 @@ import {
     GitBranch,
     Building2,
 } from 'lucide-react';
-import { useState } from 'react';
 
 type NavItem = {
     name: string;
@@ -108,6 +108,11 @@ const navigation: NavItem[] = [
 export default function Sidebar() {
     const pathname = usePathname();
     const { hasPermission } = useAuth();
+    // Defer permission-gated items until after hydration to avoid server/client mismatch.
+    // The server renders without cookie access, so hasPermission returns false; the client
+    // reads from the user_data cookie and returns true. Using mounted prevents the diff.
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
     const [openSections, setOpenSections] = useState<Record<string, boolean>>({
         'Inbound': true,
         'Outbound': true,
@@ -122,6 +127,8 @@ export default function Sidebar() {
 
     const isVisible = (item: NavItem | { permission?: { resource: string, action: string } }) => {
         if (!item.permission) return true;
+        // Before hydration, hide permission-gated items to match SSR output
+        if (!mounted) return false;
         return hasPermission(item.permission.resource as any, item.permission.action as any);
     };
 

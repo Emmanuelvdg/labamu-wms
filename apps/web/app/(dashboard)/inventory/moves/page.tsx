@@ -30,8 +30,8 @@ export default function StockMovesPage() {
                 url += `?status=${activeTab.toUpperCase()}`;
             }
             const res = await fetch(url);
-            const data = await res.json();
-            setMoves(data);
+            const result = await res.json();
+            setMoves(Array.isArray(result) ? result : (result?.data ?? []));
         } catch (err) {
             console.error(err);
         } finally {

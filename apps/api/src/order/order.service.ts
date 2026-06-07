@@ -38,6 +38,7 @@ export class OrderService {
         // Shipping
         deliveryMethodId?: string;
         shippingCostInCOGS?: boolean;
+        currencyCode?: string;
     }): Promise<Order> {
         let shippingCost = 0;
 
@@ -84,6 +85,7 @@ export class OrderService {
                 shippingCost: shippingCost,
                 shippingCostInCOGS: data.shippingCostInCOGS || false,
                 totalAmount: totalAmount, // Save Total Amount
+                currencyCode: data.currencyCode || 'IDR',
                 items: {
                     create: data.items.map(item => ({
                         productId: item.productId,
@@ -197,7 +199,7 @@ export class OrderService {
     }
 
     async getOrders(status?: string, take = 50, skip = 0): Promise<any> {
-        const where = status ? { status } : {};
+        const where = (status && status !== 'ALL') ? { status } : {};
         const [data, total] = await Promise.all([
             this.prisma.order.findMany({
                 where,

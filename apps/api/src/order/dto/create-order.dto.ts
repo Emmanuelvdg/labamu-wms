@@ -48,6 +48,10 @@ export class CreateOrderDto {
     @IsBoolean()
     shippingCostInCOGS?: boolean;
 
+    @IsOptional()
+    @IsString()
+    currencyCode?: string;
+
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => OrderItemDto)
