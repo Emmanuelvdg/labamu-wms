@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { SearchX, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SearchX, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 
 const PAGE_SIZE = 50;
 
@@ -102,7 +102,13 @@ function OrdersPageContent() {
                 <div className="flex items-center gap-4">
                     <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
                 </div>
-                <div className="space-x-4">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => window.open('/api/orders?format=xlsx', '_blank')}
+                        className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"
+                    >
+                        <Download className="h-4 w-4" /> Export Excel
+                    </button>
                     <Link href="/orders/new">
                         <Button data-testid="create-order-btn" className="bg-blue-600 hover:bg-blue-700 text-white">
                             + New Order

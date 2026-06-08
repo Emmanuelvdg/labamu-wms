@@ -6,6 +6,7 @@ import { RequirePermission } from '../common/auth/permissions.decorator';
 import { CreatePurchaseOrderDto } from './dto/create-purchase-order.dto';
 import { ReceiveGoodsDto } from './dto/receive-goods.dto';
 import { PurchaseOrderService } from './purchase-order.service';
+import { ExcelService } from '../common/excel/excel.service';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { parsePagination } from '../common/pagination';
@@ -16,7 +17,7 @@ const uploadDir = join(process.cwd(), 'uploads', 'po-documents');
 @Controller('purchase-orders')
 @UseGuards(PermissionsGuard)
 export class PurchaseOrderController {
-    constructor(private readonly purchaseOrderService: PurchaseOrderService) { }
+    constructor(private readonly purchaseOrderService: PurchaseOrderService, private readonly excelService: ExcelService) { }
 
     @Post()
     @RequirePermission('PURCHASE_ORDERS', 'CREATE')
@@ -26,10 +27,36 @@ export class PurchaseOrderController {
 
     @Get()
     @RequirePermission('PURCHASE_ORDERS', 'READ')
-    findAll(
+    async findAll(
         @Query('limit') limit?: string,
         @Query('offset') offset?: string,
+        @Query('format') format?: string,
+        @Res({ passthrough: true }) res?: Response,
     ) {
+        if (format === 'xlsx') {
+            const result = await this.purchaseOrderService.getPurchaseOrders(10000, 0) as any;
+            const rows = (result.data ?? []).map((po: any) => ({
+                id:           po.id,
+                createdAt:    new Date(po.createdAt).toLocaleString(),
+                status:       po.status,
+                supplier:     po.supplier?.name ?? '',
+                itemCount:    po.items?.length ?? 0,
+                totalQty:     po.items?.reduce((s: number, i: any) => s + (i.quantity ?? 0), 0) ?? 0,
+                totalCost:    po.items?.reduce((s: number, i: any) => s + (i.quantity ?? 0) * (i.unitCost ?? 0), 0).toFixed(2) ?? '',
+            }));
+            const buffer = await this.excelService.buildBuffer('Purchase Orders', [
+                { header: 'PO ID',        key: 'id',        width: 36 },
+                { header: 'Created At',   key: 'createdAt', width: 22 },
+                { header: 'Status',       key: 'status',    width: 18 },
+                { header: 'Supplier',     key: 'supplier',  width: 24 },
+                { header: 'Line Items',   key: 'itemCount', width: 12 },
+                { header: 'Total Qty',    key: 'totalQty',  width: 12 },
+                { header: 'Total Cost',   key: 'totalCost', width: 14 },
+            ], rows);
+            res!.set({ 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': 'attachment; filename="purchase-orders.xlsx"', 'Content-Length': buffer.length });
+            res!.end(buffer);
+            return;
+        }
         const { take, skip } = parsePagination(limit, offset);
         return this.purchaseOrderService.getPurchaseOrders(take, skip);
     }

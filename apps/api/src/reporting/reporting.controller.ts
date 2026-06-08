@@ -7,6 +7,7 @@ import { ReportingService } from './reporting.service';
 import { DrillDownService } from './drilldown.service';
 import { InventoryLedgerService } from './inventory-ledger.service';
 import { InventoryLedgerQueryDto } from './inventory-ledger-query.dto';
+import { ExcelService } from '../common/excel/excel.service';
 import { IsOptional, IsEnum, IsISO8601 } from 'class-validator';
 
 export class AnalyticsQueryDto {
@@ -36,6 +37,7 @@ export class ReportingController {
         private readonly reportingService: ReportingService,
         private readonly drillDownService: DrillDownService,
         private readonly inventoryLedgerService: InventoryLedgerService,
+        private readonly excelService: ExcelService,
     ) { }
 
     @Post('compliance')
@@ -121,6 +123,35 @@ export class ReportingController {
     @Get('inventory-ledger')
     @RequirePermission('REPORTS', 'READ')
     async getInventoryLedger(@Query() query: InventoryLedgerQueryDto, @Res({ passthrough: true }) res: Response) {
+        if (query.format === 'xlsx') {
+            const jsonResult = await this.inventoryLedgerService.getLedgerEntries({ ...query, format: undefined } as any) as any;
+            const rows = (jsonResult.data ?? []).map((e: any) => ({
+                date: e.date ? new Date(e.date).toLocaleString() : '',
+                type: e.type,
+                productSku: e.productSku ?? '',
+                productName: e.productName ?? '',
+                quantity: e.quantity,
+                warehouseName: e.warehouseName ?? '',
+                locationName: e.locationName ?? '',
+                orderIds: Array.isArray(e.orderIds) ? e.orderIds.filter(Boolean).join('; ') : '',
+                notes: e.notes ?? '',
+            }));
+            const buffer = await this.excelService.buildBuffer('Inventory Ledger', [
+                { header: 'Date',         key: 'date',         width: 22 },
+                { header: 'Type',         key: 'type',         width: 14 },
+                { header: 'Product SKU',  key: 'productSku',   width: 16 },
+                { header: 'Product Name', key: 'productName',  width: 28 },
+                { header: 'Quantity',     key: 'quantity',     width: 12 },
+                { header: 'Warehouse',    key: 'warehouseName',width: 20 },
+                { header: 'Location',     key: 'locationName', width: 20 },
+                { header: 'Order IDs',    key: 'orderIds',     width: 24 },
+                { header: 'Notes',        key: 'notes',        width: 30 },
+            ], rows);
+            res.set({ 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': 'attachment; filename="inventory-ledger.xlsx"', 'Content-Length': buffer.length });
+            res.end(buffer);
+            return;
+        }
+
         const result = await this.inventoryLedgerService.getLedgerEntries(query);
         if (typeof result === 'string') {
             res.header('Content-Type', 'text/csv');

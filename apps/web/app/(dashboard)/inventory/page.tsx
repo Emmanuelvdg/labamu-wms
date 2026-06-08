@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { fetchInventory, createProduct, fetchWarehouses, fetchAttributeDefinitions, fetchCategories } from '@/lib/api';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { PackageSearch, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PackageSearch, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 
 const PAGE_SIZE = 50;
 
@@ -156,6 +156,12 @@ export default function InventoryPage() {
                             + New Item
                         </button>
                     )}
+                    <button
+                        onClick={() => window.open('/api/inventory/products?format=xlsx', '_blank')}
+                        className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+                    >
+                        <Download className="h-4 w-4" /> Export Excel
+                    </button>
                     <button className="bg-white border text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50">
                         Upload
                     </button>

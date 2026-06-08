@@ -69,8 +69,8 @@ export default function InventoryLedgerPage() {
         }
     }
 
-    function handleExport() {
-        const params = new URLSearchParams({ period, format: 'csv' });
+    function handleExport(format: 'csv' | 'xlsx') {
+        const params = new URLSearchParams({ period, format });
         if (statusFilter) params.set('status', statusFilter);
         window.open(`/api/reporting/inventory-ledger?${params}`, '_blank');
     }
@@ -87,12 +87,20 @@ export default function InventoryLedgerPage() {
                     <h1 className="text-2xl font-bold text-gray-900">Inventory Ledger</h1>
                     <p className="text-gray-600 mt-1">Full movement history — putaway, picking, shipments, adjustments</p>
                 </div>
-                <button
-                    onClick={handleExport}
-                    className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md text-sm"
-                >
-                    <Download className="h-4 w-4" /> Export CSV
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => handleExport('csv')}
+                        className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md text-sm"
+                    >
+                        <Download className="h-4 w-4" /> Export CSV
+                    </button>
+                    <button
+                        onClick={() => handleExport('xlsx')}
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm"
+                    >
+                        <Download className="h-4 w-4" /> Export Excel
+                    </button>
+                </div>
             </div>
 
             {/* M5.5 — ADVANCED_ANALYTICS flag banner */}

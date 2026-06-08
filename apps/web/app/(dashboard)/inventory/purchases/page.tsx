@@ -5,7 +5,7 @@ import { fetchPurchaseOrders } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { SearchX, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SearchX, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const PAGE_SIZE = 50;
@@ -93,9 +93,17 @@ export default function PurchaseOrdersPage() {
                     <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
                     <p className="text-sm text-gray-500">Manage supplier purchase orders</p>
                 </div>
-                <Link href="/inventory/purchases/new">
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white">+ Create Purchase Order</Button>
-                </Link>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => window.open('/api/purchase-orders?format=xlsx', '_blank')}
+                        className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"
+                    >
+                        <Download className="h-4 w-4" /> Export Excel
+                    </button>
+                    <Link href="/inventory/purchases/new">
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white">+ Create Purchase Order</Button>
+                    </Link>
+                </div>
             </div>
 
             {/* Status Tabs */}

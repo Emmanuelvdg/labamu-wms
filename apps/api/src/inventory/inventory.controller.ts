@@ -6,6 +6,7 @@ import { CreateAdjustmentDto } from './dto/create-adjustment.dto';
 import { InventoryService } from './inventory.service';
 import { PackagingService } from './packaging.service';
 import { UtilisationService } from './utilisation.service';
+import { ExcelService } from '../common/excel/excel.service';
 import { Product, Warehouse, ProductInventory } from '@labamu/database';
 import { parsePagination } from '../common/pagination';
 
@@ -23,7 +24,8 @@ export class InventoryController {
     constructor(
         private readonly inventoryService: InventoryService,
         private readonly packagingService: PackagingService,
-        private readonly utilisationService: UtilisationService
+        private readonly utilisationService: UtilisationService,
+        private readonly excelService: ExcelService
     ) { }
 
     @Post('packaging')
@@ -63,14 +65,44 @@ export class InventoryController {
 
     @Get('products')
     @RequirePermission('INVENTORY', 'READ')
-    getProducts(
+    async getProducts(
         @Query('search') search?: string,
         @Query('category') category?: string,
         @Query('classification') classification?: string,
         @Query('warehouseId') warehouseId?: string,
         @Query('limit') limit?: string,
         @Query('offset') offset?: string,
+        @Query('format') format?: string,
+        @Res({ passthrough: true }) res?: Response,
     ) {
+        if (format === 'xlsx') {
+            const result = await this.inventoryService.getProducts({ search, category, classification, warehouseId, take: 10000, skip: 0 }) as any;
+            const rows = (result.data ?? result ?? []).map((p: any) => ({
+                sku:            p.sku ?? '',
+                name:           p.name ?? '',
+                category:       p.category ?? '',
+                classification: p.classification ?? '',
+                price:          p.price ?? '',
+                averageCost:    p.averageCost ?? '',
+                onHand:         p.onHand ?? (p.inventory?.reduce((s: number, i: any) => s + (i.quantity ?? 0), 0) ?? ''),
+                reserved:       p.reserved ?? '',
+                status:         p.status ?? '',
+            }));
+            const buffer = await this.excelService.buildBuffer('Products', [
+                { header: 'SKU',            key: 'sku',            width: 16 },
+                { header: 'Name',           key: 'name',           width: 30 },
+                { header: 'Category',       key: 'category',       width: 18 },
+                { header: 'Classification', key: 'classification', width: 16 },
+                { header: 'Price',          key: 'price',          width: 12 },
+                { header: 'Avg Cost',       key: 'averageCost',    width: 12 },
+                { header: 'On Hand',        key: 'onHand',         width: 12 },
+                { header: 'Reserved',       key: 'reserved',       width: 12 },
+                { header: 'Status',         key: 'status',         width: 14 },
+            ], rows);
+            res!.set({ 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': 'attachment; filename="products.xlsx"', 'Content-Length': buffer.length });
+            res!.end(buffer);
+            return;
+        }
         const { take, skip } = parsePagination(limit, offset);
         return this.inventoryService.getProducts({ search, category, classification, warehouseId, take, skip });
     }

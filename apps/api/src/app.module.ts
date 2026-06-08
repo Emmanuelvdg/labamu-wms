@@ -31,6 +31,7 @@ import { PrintingModule } from './printing/printing.module';
 import { PackingModule } from './packing/packing.module';
 import { NotificationModule } from './notifications/notification.module';
 import { OperationalAuditModule } from './audit/operational-audit.module';
+import { ExcelModule } from './common/excel/excel.module';
 import { CommonFeaturesModule } from './common/common.module';
 import { WorkflowModule } from './workflow/workflow.module';
 import { BarcodeModule } from './barcode/barcode.module';
@@ -77,6 +78,7 @@ import { PrismaService } from './prisma.service';
         PackingModule,
         NotificationModule,
         OperationalAuditModule,
+        ExcelModule,
         CommonFeaturesModule,
         WorkflowModule,
         BarcodeModule,
