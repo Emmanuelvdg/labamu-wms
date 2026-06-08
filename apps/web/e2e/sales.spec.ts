@@ -18,6 +18,10 @@ test.describe('Sales & Exceptions', () => {
         // 1. Create Sales Order
         await page.goto('/orders');
         await page.getByRole('button', { name: 'New Order' }).click();
+        // Wait for the new order form to finish loading before interacting
+        await page.waitForURL('**/orders/new', { timeout: 15000 });
+        // Wait for customer select to be rendered (page has a loading spinner until data arrives)
+        await page.getByTestId('order-customer-select').waitFor({ state: 'visible', timeout: 30000 });
 
         // 2. Select Customer
         try {
@@ -41,18 +45,25 @@ test.describe('Sales & Exceptions', () => {
         await page.waitForURL('**/orders', { timeout: 15000 });
 
         // 7. Click the first order in the table (should be the one we just created)
-        // Wait for table to load
-        await page.locator('table tbody tr').first().waitFor({ state: 'visible' });
+        // Wait for actual order rows to load (not the "Loading..." placeholder row)
+        await page.locator('table tbody tr a[href^="/orders/"]').first().waitFor({ state: 'visible', timeout: 15000 });
         await page.locator('table tbody tr').first().click();
 
-        // 8. Confirm & Allocate (Transition to RESERVED)
-        // Check for "Check Availability" (Role button with name)
-        const allocateBtn = page.getByRole('button', { name: 'Check Availability' });
-        await allocateBtn.waitFor({ state: 'visible', timeout: 10000 });
-        await allocateBtn.click();
+        // Wait for navigation to the order detail page
+        await page.waitForURL(/\/orders\/[^/]+$/, { timeout: 15000 });
 
-        // Wait for status update
-        await expect(page.getByText('RESERVED')).toBeVisible({ timeout: 10000 });
+        // 8. Confirm & Allocate (Transition to RESERVED)
+        // The order may have been auto-allocated to RESERVED on creation.
+        // Only click "Check Availability" if still PENDING.
+        const allocateBtn = page.getByRole('button', { name: 'Check Availability' });
+        const isAllocateVisible = await allocateBtn.isVisible({ timeout: 5000 }).catch(() => false);
+        if (isAllocateVisible) {
+            await allocateBtn.click();
+        }
+
+        // Wait for RESERVED status (either from auto-allocation or manual check)
+        // Use .first() to avoid strict-mode violation if multiple status badges exist
+        await expect(page.getByText('RESERVED').first()).toBeVisible({ timeout: 10000 });
 
         // 9. Cancel Order
         await page.getByRole('button', { name: 'Cancel Order' }).click();

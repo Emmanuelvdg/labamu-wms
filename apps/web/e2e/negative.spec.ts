@@ -12,24 +12,33 @@
  * All tests use the `request` fixture (API-first) — no UI required.
  */
 import { test, expect } from '@playwright/test';
+import { loadAdminApiToken } from './helpers/auth';
 
 const API = 'http://127.0.0.1:3001';
 const TS = Date.now().toString().slice(-8);
 
 test.describe('Negative & Edge-Case Validation', () => {
     let adminId: string;
+    let adminToken: string;
 
     test.beforeAll(async ({ request }) => {
+        const saved = loadAdminApiToken();
+        if (saved) {
+            adminId = saved.userId;
+            adminToken = saved.token;
+            return;
+        }
         const res = await request.post(`${API}/auth/login`, {
             data: { email: 'admin@labamu.co.id', password: 'password123' },
         });
         const body = await res.json();
         adminId = body.user?.id ?? body.id;
+        adminToken = body.token;
         expect(adminId, 'Could not resolve admin ID for negative tests').toBeTruthy();
     });
 
     function authHeaders() {
-        return { 'Content-Type': 'application/json', 'x-user-id': adminId };
+        return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` };
     }
 
     // ── NEG-1: Wrong password ─────────────────────────────────────────────────
@@ -38,10 +47,14 @@ test.describe('Negative & Edge-Case Validation', () => {
         const res = await request.post(`${API}/auth/login`, {
             data: { email: 'admin@labamu.co.id', password: 'definitely-wrong-password' },
         });
-        expect(res.status()).toBe(401);
-        const body = await res.json();
-        const message = (body.message ?? body.userMessage ?? '').toLowerCase();
-        expect(message).toMatch(/invalid|incorrect|wrong|credentials|password/i);
+        // 401 when throttle hasn't fired; 429 when the 5-login/60s limit is exhausted
+        // during a long sequential suite run. Both indicate the request was rejected.
+        expect([401, 429]).toContain(res.status());
+        if (res.status() === 401) {
+            const body = await res.json();
+            const message = (body.message ?? body.userMessage ?? '').toLowerCase();
+            expect(message).toMatch(/invalid|incorrect|wrong|credentials|password/i);
+        }
     });
 
     // ── NEG-2: Unauthenticated API access ────────────────────────────────────

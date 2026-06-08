@@ -1,6 +1,7 @@
 /** @planRef E2E_Test_Plan11.md §Phase11 — Scenario 11.6 (Verify FEFO Rotation Policy); covers FIFO, LIFO, FEFO+shelf-life */
 import { test, expect } from '@playwright/test';
 import { PrismaClient } from '@labamu/database';
+import { loadAdminApiToken } from './helpers/auth';
 
 const prisma = new PrismaClient();
 
@@ -12,8 +13,9 @@ test.describe('Stock Rotation Policies', () => {
     let productIdPerishable: string;
     let customerId: string;
     let userId: string;
+    let token: string;
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({ request }) => {
         // Clean up previous runs if any
         await prisma.rotationRule.deleteMany();
 
@@ -39,6 +41,18 @@ test.describe('Stock Rotation Policies', () => {
             }
         });
         userId = user.id;
+
+        // Get JWT token — prefer stored state to avoid throttle
+        const saved = loadAdminApiToken();
+        if (saved) {
+            token = saved.token;
+        } else {
+            const loginRes = await request.post('http://127.0.0.1:3001/auth/login', {
+                data: { email: 'admin@labamu.co.id', password: 'password123' },
+            });
+            const loginBody = await loginRes.json();
+            token = loginBody.token;
+        }
 
         // 1. Setup Warehouse
         const wh = await prisma.warehouse.create({
@@ -142,7 +156,7 @@ test.describe('Stock Rotation Policies', () => {
         // createBatch() now creates both InventoryBatch AND ProductInventory records.
 
         const response = await request.post('http://127.0.0.1:3001/orders', {
-            headers: { 'x-user-id': userId },
+            headers: { 'Authorization': `Bearer ${token}` },
             data: {
                 customerId,
                 warehouseId,
@@ -178,7 +192,7 @@ test.describe('Stock Rotation Policies', () => {
 
         // Create Order (Qty 10)
         const response = await request.post('http://127.0.0.1:3001/orders', {
-            headers: { 'x-user-id': userId },
+            headers: { 'Authorization': `Bearer ${token}` },
             data: {
                 customerId,
                 warehouseId,
@@ -213,7 +227,7 @@ test.describe('Stock Rotation Policies', () => {
         // Requirement > 15 days. B3 should be skipped. B4 selected.
 
         const response = await request.post('http://127.0.0.1:3001/orders', {
-            headers: { 'x-user-id': userId },
+            headers: { 'Authorization': `Bearer ${token}` },
             data: {
                 customerId,
                 warehouseId,

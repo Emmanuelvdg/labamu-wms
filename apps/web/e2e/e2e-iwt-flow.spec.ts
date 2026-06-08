@@ -15,7 +15,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { PrismaClient } from '@labamu/database';
-import { loginAsAdmin } from './helpers/auth';
+import { loginAsAdmin, loadAdminApiToken } from './helpers/auth';
 
 const API = 'http://127.0.0.1:3001';
 const prisma = new PrismaClient();
@@ -26,6 +26,7 @@ test.describe('E2E Flow: Inter-Warehouse Transfer', () => {
     const TS = Date.now();
 
     let adminUserId: string;
+    let adminToken: string;
     let sourceWarehouseId: string;
     let destWarehouseId: string;
     let sourceLocationId: string;
@@ -33,17 +34,26 @@ test.describe('E2E Flow: Inter-Warehouse Transfer', () => {
     let productId: string;
 
     function authHeaders() {
-        return { 'Content-Type': 'application/json', 'x-user-id': adminUserId };
+        return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` };
     }
 
     // ── Auth ──────────────────────────────────────────────────────────────────
 
     test('Setup: authenticate as admin', async ({ request }) => {
+        // Prefer the saved auth state to avoid hitting the 5-logins/60s throttle
+        const saved = loadAdminApiToken();
+        if (saved) {
+            adminToken = saved.token;
+            adminUserId = saved.userId;
+            console.log('✓ Admin (from storageState):', adminUserId);
+            return;
+        }
         const res = await request.post(`${API}/auth/login`, {
             data: { email: 'admin@labamu.co.id', password: 'password123' },
         });
         const body = await res.json();
         adminUserId = body.user?.id ?? body.id;
+        adminToken = body.token;
         expect(adminUserId, 'Could not get admin user ID from login').toBeTruthy();
         console.log('✓ Admin:', adminUserId);
     });

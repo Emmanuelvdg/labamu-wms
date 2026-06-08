@@ -14,9 +14,11 @@ test.describe('Location Attribute Inheritance', () => {
         const childOverrideName = `Child Override ${uniqueId}`;
 
         await page.goto('/inventory/locations');
+        await page.waitForLoadState('networkidle');
 
         // 1. Create Parent with Attributes (Generic, no structure)
         await page.getByTestId('create-location-btn').click();
+        await expect(page.getByTestId('location-name-input')).toBeVisible({ timeout: 5000 });
         await page.getByTestId('location-name-input').fill(parentName);
         // Skip Structure selection -> Generic
         // Skip Parent selection -> Root
@@ -27,6 +29,7 @@ test.describe('Location Attribute Inheritance', () => {
 
         // 2. Create Child (Inherit)
         await page.getByTestId('create-location-btn').click();
+        await expect(page.getByTestId('location-name-input')).toBeVisible({ timeout: 5000 });
         await page.getByTestId('location-name-input').fill(childInheritName);
         // Skip Structure (generic, no structural filter on parent)
 
@@ -69,7 +72,9 @@ test.describe('Location Attribute Inheritance', () => {
 
         // 4. Create Child (Override)
         await page.goto('/inventory/locations');
+        await page.waitForLoadState('networkidle');
         await page.getByTestId('create-location-btn').click();
+        await expect(page.getByTestId('location-name-input')).toBeVisible({ timeout: 5000 });
         await page.getByTestId('location-name-input').fill(childOverrideName);
         // Skip Structure
 

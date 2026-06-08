@@ -1,5 +1,6 @@
 /** @planRef E2E_Test_Plan11.md §Phase3 — Scenario 3.3 (Putaway Process); §Phase11 — Scenarios 11.1–11.4 (Putaway Rules FIXED/ZONE) */
 import { test, expect, APIRequestContext } from '@playwright/test';
+import { loadAdminApiToken } from './helpers/auth';
 
 const API = 'http://127.0.0.1:3001';
 const TIMESTAMP = Date.now();
@@ -19,6 +20,7 @@ test.describe.configure({ mode: 'serial' });
 
 test.describe('Putaway Operations E2E Tests', () => {
     let adminUserId: string;
+    let adminToken: string;
     let warehouseId: string;
     let receivingLocationId: string;
     let storageLocationId: string;
@@ -27,7 +29,7 @@ test.describe('Putaway Operations E2E Tests', () => {
     let purchaseOrderId: string;
 
     function authHeaders() {
-        return { 'Content-Type': 'application/json', 'x-user-id': adminUserId };
+        return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` };
     }
 
     async function authPost(request: APIRequestContext, url: string, data?: any) {
@@ -37,11 +39,19 @@ test.describe('Putaway Operations E2E Tests', () => {
     // ==================== AUTH ====================
 
     test('Setup: Discover Admin User', async ({ request }) => {
+        const saved = loadAdminApiToken();
+        if (saved) {
+            adminToken = saved.token;
+            adminUserId = saved.userId;
+            console.log('✓ Admin user (from storageState):', adminUserId);
+            return;
+        }
         const res = await request.post(`${API}/auth/login`, {
             data: { email: 'admin@labamu.co.id', password: 'password123' },
         });
         const body = await res.json();
         adminUserId = body.user?.id ?? body.id;
+        adminToken = body.token;
         expect(adminUserId, 'Could not get admin user ID from login').toBeTruthy();
         console.log('✓ Admin user:', adminUserId);
     });
@@ -310,8 +320,8 @@ test.describe('Putaway Edge Cases', () => {
             data: { email: 'admin@labamu.co.id', password: 'password123' },
         });
         const loginBody = loginRes.ok() ? await loginRes.json() : {};
-        const userId = loginBody.user?.id ?? loginBody.id ?? '';
-        const headers = { 'Content-Type': 'application/json', 'x-user-id': userId };
+        const token = loginBody.token ?? '';
+        const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
         const warehouse = await request.post(`${API}/inventory/warehouses`, {
             headers,
             data: { name: `Empty WH ${ts}`, shortName: `EW${ts.toString().slice(-4)}`, address: 'Test', city: 'Test', country: 'Test' },

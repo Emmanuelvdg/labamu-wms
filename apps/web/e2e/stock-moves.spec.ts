@@ -11,6 +11,9 @@ test.describe('Stock Moves', () => {
         await page.goto('/inventory/moves');
         await expect(page.getByRole('heading', { name: 'Stock Moves' })).toBeVisible();
 
+        // Wait for initial data load before switching tabs (prevents re-render race on click)
+        await expect(page.getByText('Loading...')).not.toBeVisible({ timeout: 15000 });
+
         // Switch to Done tab
         await page.getByRole('tab', { name: 'Done' }).click();
 

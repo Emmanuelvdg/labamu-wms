@@ -1,4 +1,6 @@
 import { Page, expect } from '@playwright/test';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export const ADMIN_EMAIL = 'admin@labamu.co.id';
 export const ADMIN_PASSWORD = 'password123';
@@ -8,6 +10,27 @@ export const ADMIN_PASSWORD = 'password123';
 // Override via env vars: PLATFORM_ADMIN_EMAIL / PLATFORM_ADMIN_PASSWORD
 export const PLATFORM_ADMIN_EMAIL = process.env.PLATFORM_ADMIN_EMAIL ?? 'admin@labamu.co.id';
 export const PLATFORM_ADMIN_PASSWORD = process.env.PLATFORM_ADMIN_PASSWORD ?? 'password123';
+
+/**
+ * Reads the saved admin JWT token and user ID from the Playwright auth state file.
+ * This avoids calling POST /auth/login repeatedly during the full suite, which
+ * would hit the API's 5-logins-per-60s rate limiter.
+ *
+ * Returns null if the state file doesn't exist or lacks the token cookie.
+ */
+export function loadAdminApiToken(): { token: string; userId: string } | null {
+    try {
+        const statePath = path.join('e2e', '.auth', 'admin.json');
+        if (!fs.existsSync(statePath)) return null;
+        const state = JSON.parse(fs.readFileSync(statePath, 'utf-8'));
+        const tokenCookie = (state.cookies ?? []).find((c: any) => c.name === 'token');
+        const userIdCookie = (state.cookies ?? []).find((c: any) => c.name === 'user_id');
+        if (tokenCookie?.value && userIdCookie?.value) {
+            return { token: tokenCookie.value, userId: userIdCookie.value };
+        }
+    } catch { /* fall through */ }
+    return null;
+}
 
 /**
  * Logs in as the tenant admin and waits for the dashboard to load.

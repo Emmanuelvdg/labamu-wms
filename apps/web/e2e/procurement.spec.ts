@@ -12,7 +12,7 @@ test.describe('Procurement', () => {
         await page.goto('/inventory/purchases');
         await page.waitForLoadState('networkidle');
 
-        await expect(page.getByRole('heading', { name: 'Purchase Orders' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Purchase Orders', exact: true })).toBeVisible();
 
         // "Create Purchase Order" is a Link that navigates to /inventory/purchases/new
         const createLink = page.getByRole('link', { name: 'Create Purchase Order' });

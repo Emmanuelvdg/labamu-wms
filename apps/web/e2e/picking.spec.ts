@@ -46,9 +46,19 @@ test.describe('Picking', () => {
         await page.goto('/picking');
         await page.waitForLoadState('networkidle');
 
-        // The page fetches warehouses on load; the select should have options
+        // The page fetches warehouses on load; the select should have options.
+        // useEffect fires AFTER hydration, so networkidle may fire before the fetch
+        // completes — wait explicitly for at least one option to appear.
         const warehouseSelect = page.locator('select').first();
         await expect(warehouseSelect).toBeVisible({ timeout: 10000 });
+
+        await page.waitForFunction(
+            () => {
+                const sel = document.querySelector('select');
+                return sel && sel.options.length > 0;
+            },
+            { timeout: 15000 }
+        );
 
         const optionCount = await warehouseSelect.locator('option').count();
         expect(optionCount).toBeGreaterThan(0);

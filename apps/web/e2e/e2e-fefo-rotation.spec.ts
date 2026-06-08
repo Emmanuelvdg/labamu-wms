@@ -14,7 +14,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { PrismaClient } from '@labamu/database';
-import { loginAsAdmin } from './helpers/auth';
+import { loginAsAdmin, loadAdminApiToken } from './helpers/auth';
 
 const API = 'http://127.0.0.1:3001';
 const prisma = new PrismaClient();
@@ -25,6 +25,7 @@ test.describe('E2E Flow: FEFO Rotation with Shelf-Life Constraint', () => {
     const TS = Date.now();
 
     let userId: string;
+    let token: string;
     let warehouseId: string;
     let productId: string;
     let customerId: string;
@@ -34,7 +35,7 @@ test.describe('E2E Flow: FEFO Rotation with Shelf-Life Constraint', () => {
 
     // ── Prisma setup ──────────────────────────────────────────────────────────
 
-    test.beforeAll(async () => {
+    test.beforeAll(async ({ request }) => {
         const company = await prisma.company.findFirst();
         if (!company) throw new Error('No company found — run seed first');
 
@@ -53,6 +54,18 @@ test.describe('E2E Flow: FEFO Rotation with Shelf-Life Constraint', () => {
             },
         });
         userId = user.id;
+
+        // Get JWT token — prefer stored state to avoid throttle
+        const saved = loadAdminApiToken();
+        if (saved) {
+            token = saved.token;
+        } else {
+            const loginRes = await request.post(`${API}/auth/login`, {
+                data: { email: 'admin@labamu.co.id', password: 'password123' },
+            });
+            const loginBody = await loginRes.json();
+            token = loginBody.token;
+        }
 
         // Warehouse
         const wh = await prisma.warehouse.create({
@@ -164,7 +177,7 @@ test.describe('E2E Flow: FEFO Rotation with Shelf-Life Constraint', () => {
 
     test('TC-FEFO-1: Sales order is RESERVED using the far-expiry batch', async ({ request }) => {
         const res = await request.post(`${API}/orders`, {
-            headers: { 'x-user-id': userId, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             data: {
                 customerId,
                 warehouseId,

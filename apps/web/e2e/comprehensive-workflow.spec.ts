@@ -7,7 +7,7 @@ import { loginAsAdmin } from './helpers/auth';
  *   Purchase → Receive → Putaway → Sales → Pick → Pack → Ship → Validate
  *
  * Uses Playwright's `request` fixture for reliability.
- * Authenticates via POST /auth/login and passes x-user-id on permission-guarded endpoints.
+ * Authenticates via POST /auth/login and passes Authorization: Bearer <token> on permission-guarded endpoints.
  *
  * Auth-required controllers: inventory, purchase-orders, orders, suppliers, customers
  * Open controllers (no guard): putaway, strategy, packing, shipping
@@ -20,6 +20,7 @@ test.describe.configure({ mode: 'serial' });
 test.describe('Full IMS Lifecycle: Purchase to Ship', () => {
     // Shared state across serial tests
     let adminUserId: string;
+    let adminToken: string;
     let warehouseId: string;
     let receivingLocationId: string;
     let storageLocationId: string;
@@ -42,7 +43,7 @@ test.describe('Full IMS Lifecycle: Purchase to Ship', () => {
     function authHeaders() {
         return {
             'Content-Type': 'application/json',
-            'x-user-id': adminUserId,
+            'Authorization': `Bearer ${adminToken}`,
         };
     }
 
@@ -64,6 +65,7 @@ test.describe('Full IMS Lifecycle: Purchase to Ship', () => {
         });
         const body = await loginRes.json();
         adminUserId = body.user?.id ?? body.id;
+        adminToken = body.token;
         expect(adminUserId, 'Could not get admin user ID from login').toBeTruthy();
         console.log('✓ Logged in as admin:', adminUserId);
     });
