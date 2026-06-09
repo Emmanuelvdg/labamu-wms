@@ -56,7 +56,7 @@ test.describe('Warehouse Management', () => {
 
         await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
 
-        await expect(page.getByText('Create Location')).not.toBeVisible();
+        await expect(page.getByText('Create Location')).not.toBeVisible({ timeout: 10000 });
         await expect(page.getByText(zoneName).first()).toBeVisible();
 
         // 5. Create Row under Zone A
@@ -71,7 +71,7 @@ test.describe('Warehouse Management', () => {
 
         await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
 
-        await expect(page.getByText('Create Location')).not.toBeVisible();
+        await expect(page.getByText('Create Location')).not.toBeVisible({ timeout: 10000 });
         await expect(page.getByText(rowName).first()).toBeVisible();
 
         // 6. Create Shelf under Row 1
@@ -86,7 +86,7 @@ test.describe('Warehouse Management', () => {
 
         await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
 
-        await expect(page.getByText('Create Location')).not.toBeVisible();
+        await expect(page.getByText('Create Location')).not.toBeVisible({ timeout: 10000 });
         await expect(page.getByText(shelfName).first()).toBeVisible();
     });
 

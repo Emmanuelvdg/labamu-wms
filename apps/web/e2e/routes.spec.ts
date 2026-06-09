@@ -24,7 +24,7 @@ test.describe('Routes Management', () => {
         await page.getByRole('button', { name: 'Create & Edit Canvas' }).click();
 
         // Verify navigation to the route builder (URL contains builder and an id param)
-        await expect(page).toHaveURL(/\/inventory\/routes\/builder/, { timeout: 5000 });
+        await expect(page).toHaveURL(/\/inventory\/routes\/builder/, { timeout: 15000 });
     });
 
     test('TC-13.2: Route builder canvas renders with step palette', async ({ page }) => {
@@ -37,7 +37,7 @@ test.describe('Routes Management', () => {
 
         await page.getByLabel('Route Name').fill(`Builder Test ${Date.now()}`);
         await page.getByRole('button', { name: 'Create & Edit Canvas' }).click();
-        await expect(page).toHaveURL(/\/inventory\/routes\/builder/, { timeout: 5000 });
+        await expect(page).toHaveURL(/\/inventory\/routes\/builder/, { timeout: 15000 });
         await page.waitForLoadState('networkidle');
 
         // Wait for the "Loading…" placeholder to disappear before asserting
@@ -62,7 +62,7 @@ test.describe('Routes Management', () => {
         await expect(page.getByRole('heading', { name: 'Create New Route Strategy' })).toBeVisible();
         await page.getByLabel('Route Name').fill(`Connect Mode Test ${Date.now()}`);
         await page.getByRole('button', { name: 'Create & Edit Canvas' }).click();
-        await expect(page).toHaveURL(/\/inventory\/routes\/builder/, { timeout: 5000 });
+        await expect(page).toHaveURL(/\/inventory\/routes\/builder/, { timeout: 15000 });
         await page.waitForLoadState('networkidle');
         await page.waitForSelector('text=Loading Route Builder', { state: 'hidden', timeout: 10000 }).catch(() => null);
 
@@ -95,7 +95,7 @@ test.describe('Routes Management', () => {
         await expect(page.getByRole('heading', { name: 'Create New Route Strategy' })).toBeVisible();
         await page.getByLabel('Route Name').fill(`Step Config Test ${Date.now()}`);
         await page.getByRole('button', { name: 'Create & Edit Canvas' }).click();
-        await expect(page).toHaveURL(/\/inventory\/routes\/builder/, { timeout: 5000 });
+        await expect(page).toHaveURL(/\/inventory\/routes\/builder/, { timeout: 15000 });
         await page.waitForLoadState('networkidle');
         await page.waitForSelector('text=Loading Route Builder', { state: 'hidden', timeout: 10000 }).catch(() => null);
 

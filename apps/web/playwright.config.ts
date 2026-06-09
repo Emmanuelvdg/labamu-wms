@@ -1,4 +1,18 @@
 import { defineConfig, devices } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
+
+// Make DATABASE_URL available to specs that use Prisma directly for test setup.
+// Parse the api .env manually — dotenv is not a declared dependency here.
+const apiEnvPath = path.join(__dirname, '../api/.env');
+if (fs.existsSync(apiEnvPath)) {
+    for (const line of fs.readFileSync(apiEnvPath, 'utf-8').split('\n')) {
+        const [key, ...rest] = line.split('=');
+        if (key && rest.length && !process.env[key.trim()]) {
+            process.env[key.trim()] = rest.join('=').trim();
+        }
+    }
+}
 
 /**
  * Auth state written by auth.setup.ts — consumed by tests that want to start
