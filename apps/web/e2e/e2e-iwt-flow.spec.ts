@@ -32,6 +32,7 @@ test.describe('E2E Flow: Inter-Warehouse Transfer', () => {
     let sourceLocationId: string;
     let destLocationId: string;
     let productId: string;
+    let companyId: string; // captured for stamping on directly-created tenant-scoped records
 
     function authHeaders() {
         return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${adminToken}` };
@@ -40,6 +41,11 @@ test.describe('E2E Flow: Inter-Warehouse Transfer', () => {
     // ── Auth ──────────────────────────────────────────────────────────────────
 
     test('Setup: authenticate as admin', async ({ request }) => {
+        // Capture companyId for use when seeding data directly via Prisma
+        const company = await prisma.company.findFirst();
+        if (!company) throw new Error('No company found — run seed first');
+        companyId = company.id;
+
         // Prefer the saved auth state to avoid hitting the 5-logins/60s throttle
         const saved = loadAdminApiToken();
         if (saved) {
@@ -137,6 +143,7 @@ test.describe('E2E Flow: Inter-Warehouse Transfer', () => {
                 costPerUnit: 1.0,
                 purchaseDate: new Date(),
                 status: 'Active',
+                companyId, // stamp tenant — InventoryBatch is now in TENANT_SCOPED_MODELS
             },
         });
         console.log('✓ Seeded 100 units (InventoryBatch) in source location');

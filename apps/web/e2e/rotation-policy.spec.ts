@@ -14,6 +14,7 @@ test.describe('Stock Rotation Policies', () => {
     let customerId: string;
     let userId: string;
     let token: string;
+    let companyId: string; // captured in beforeAll for use in createBatch helper
 
     test.beforeAll(async ({ request }) => {
         // Clean up previous runs if any
@@ -22,7 +23,7 @@ test.describe('Stock Rotation Policies', () => {
         // 0. Use the existing default company (seeded by migrations)
         const company = await prisma.company.findFirst();
         if (!company) throw new Error('No company found in DB — run seed first');
-        const companyId = company.id;
+        companyId = company.id;
 
         // 0b. Setup Auth (Admin User)
         const role = await prisma.role.create({
@@ -73,7 +74,8 @@ test.describe('Stock Rotation Policies', () => {
                 name: `Standard_${Date.now()}_${Math.random()}`,
                 sku: `STD_${Date.now()}_${Math.random()}`,
                 velocity: 'B',
-                category: 'Standard'
+                category: 'Standard',
+                companyId,
             }
         });
         productIdStandard = p1.id;
@@ -83,7 +85,8 @@ test.describe('Stock Rotation Policies', () => {
                 name: `Perishable_${Date.now()}_${Math.random()}`,
                 sku: `PER_${Date.now()}_${Math.random()}`,
                 velocity: 'B',
-                category: 'cat_perishable'
+                category: 'cat_perishable',
+                companyId,
             }
         });
         productIdPerishable = p2.id;
@@ -91,9 +94,8 @@ test.describe('Stock Rotation Policies', () => {
         // 3. Setup Customer
         const cust = await prisma.customer.create({
             data: {
-                name: `Cust_${Date.now()}_${Math.random()}`
-                // code: ... not in schema apparently?
-                // companyId: ... let's remove it to be safe if it's not required/existing
+                name: `Cust_${Date.now()}_${Math.random()}`,
+                companyId,
             }
         });
         customerId = cust.id;
@@ -118,7 +120,8 @@ test.describe('Stock Rotation Policies', () => {
             data: {
                 name: `Loc_${Date.now()}_${Math.random()}`,
                 warehouseId: whId,
-                type: 'INTERNAL'
+                type: 'INTERNAL',
+                companyId, // stamp tenant — Location is now in TENANT_SCOPED_MODELS
             }
         });
 
@@ -135,7 +138,8 @@ test.describe('Stock Rotation Policies', () => {
                 purchaseDate: created,
                 createdAt: created, // Use createdAt for FIFO sorting in our logic
                 expiryDate: exp,
-                locationId: loc.id
+                locationId: loc.id,
+                companyId, // stamp tenant — InventoryBatch is now in TENANT_SCOPED_MODELS
             }
         });
 
@@ -186,7 +190,8 @@ test.describe('Stock Rotation Policies', () => {
             data: {
                 productId: productIdStandard,
                 policy: 'LIFO',
-                priority: 10
+                priority: 10,
+                companyId, // stamp tenant — RotationRule is now in TENANT_SCOPED_MODELS
             }
         });
 
@@ -219,7 +224,8 @@ test.describe('Stock Rotation Policies', () => {
             data: {
                 categoryId: 'cat_perishable',
                 policy: 'FEFO',
-                minShelfLifeDays: 15
+                minShelfLifeDays: 15,
+                companyId, // stamp tenant — RotationRule is now in TENANT_SCOPED_MODELS
             }
         });
 

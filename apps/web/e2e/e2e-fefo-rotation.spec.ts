@@ -32,12 +32,14 @@ test.describe('E2E Flow: FEFO Rotation with Shelf-Life Constraint', () => {
     let nearExpiryLocationId: string;
     let farExpiryLocationId: string;
     let orderId: string;
+    let companyId: string; // captured for stamping on tenant-scoped records
 
     // ── Prisma setup ──────────────────────────────────────────────────────────
 
     test.beforeAll(async ({ request }) => {
         const company = await prisma.company.findFirst();
         if (!company) throw new Error('No company found — run seed first');
+        companyId = company.id;
 
         // Auth user with ALL:MANAGE
         const role = await prisma.role.create({
@@ -87,13 +89,14 @@ test.describe('E2E Flow: FEFO Rotation with Shelf-Life Constraint', () => {
                 sku: `FEFO-${TS}`,
                 velocity: 'A',
                 category: 'cat_perishable_fefo',
+                companyId, // stamp tenant
             },
         });
         productId = product.id;
 
         // Customer
         const cust = await prisma.customer.create({
-            data: { name: `FEFO Customer ${TS}` },
+            data: { name: `FEFO Customer ${TS}`, companyId }, // stamp tenant
         });
         customerId = cust.id;
 
@@ -102,7 +105,7 @@ test.describe('E2E Flow: FEFO Rotation with Shelf-Life Constraint', () => {
         soon.setDate(soon.getDate() + 3);
 
         const locA = await prisma.location.create({
-            data: { name: `NearExp-Loc-${TS}`, warehouseId, type: 'INTERNAL' },
+            data: { name: `NearExp-Loc-${TS}`, warehouseId, type: 'INTERNAL', companyId }, // stamp tenant
         });
         nearExpiryLocationId = locA.id;
 
@@ -119,6 +122,7 @@ test.describe('E2E Flow: FEFO Rotation with Shelf-Life Constraint', () => {
                 status: 'Active',
                 purchaseDate: new Date(),
                 expiryDate: soon,
+                companyId, // stamp tenant
             },
         });
         await prisma.productInventory.create({
@@ -133,7 +137,7 @@ test.describe('E2E Flow: FEFO Rotation with Shelf-Life Constraint', () => {
         later.setDate(later.getDate() + 45);
 
         const locB = await prisma.location.create({
-            data: { name: `FarExp-Loc-${TS}`, warehouseId, type: 'INTERNAL' },
+            data: { name: `FarExp-Loc-${TS}`, warehouseId, type: 'INTERNAL', companyId }, // stamp tenant
         });
         farExpiryLocationId = locB.id;
 
@@ -150,6 +154,7 @@ test.describe('E2E Flow: FEFO Rotation with Shelf-Life Constraint', () => {
                 status: 'Active',
                 purchaseDate: new Date(),
                 expiryDate: later,
+                companyId, // stamp tenant
             },
         });
         await prisma.productInventory.create({
@@ -165,6 +170,7 @@ test.describe('E2E Flow: FEFO Rotation with Shelf-Life Constraint', () => {
                 categoryId: 'cat_perishable_fefo',
                 policy: 'FEFO',
                 minShelfLifeDays: 15,
+                companyId, // stamp tenant — RotationRule is now in TENANT_SCOPED_MODELS
             },
         });
 
