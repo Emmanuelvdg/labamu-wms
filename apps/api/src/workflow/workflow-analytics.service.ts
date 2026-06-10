@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Prisma } from '@prisma/client';
+import { getCurrentCompanyId } from '../common/tenant/tenant-storage';
 
 export interface WorkflowAnalyticsQuery {
     warehouseId?: string;
@@ -24,6 +25,9 @@ export class WorkflowAnalyticsService {
 
     async getKpis(query: WorkflowAnalyticsQuery) {
         const since = this.sinceDate(query.period);
+        const companyId = getCurrentCompanyId();
+        const companyFilter = companyId ? Prisma.sql`AND companyId = ${companyId}` : Prisma.empty;
+        const wiCompanyFilter = companyId ? Prisma.sql`AND wi.companyId = ${companyId}` : Prisma.empty;
         const warehouseFilter = query.warehouseId ? Prisma.sql`AND warehouseId = ${query.warehouseId}` : Prisma.empty;
         const templateFilter = query.templateId ? Prisma.sql`AND templateId = ${query.templateId}` : Prisma.empty;
         const wiWarehouseFilter = query.warehouseId ? Prisma.sql`AND wi.warehouseId = ${query.warehouseId}` : Prisma.empty;
@@ -32,8 +36,9 @@ export class WorkflowAnalyticsService {
         const [statusCounts, cycleTimeRow, slaRow] = await Promise.all([
             this.prisma.$queryRaw<{ status: string; count: number }[]>`
                 SELECT status, COUNT(*) as count
-                FROM WorkflowInstance
-                WHERE startedAt >= ${since}
+                FROM "WorkflowInstance"
+                WHERE "startedAt" >= ${since}
+                  ${companyFilter}
                   ${warehouseFilter}
                   ${templateFilter}
                 GROUP BY status
@@ -42,25 +47,27 @@ export class WorkflowAnalyticsService {
             // julianday difference gives fractional days; ×24×60 = minutes
             this.prisma.$queryRaw<{ avgMinutes: number | null }[]>`
                 SELECT ROUND(
-                    AVG((julianday(completedAt) - julianday(startedAt)) * 24 * 60),
+                    AVG(EXTRACT(EPOCH FROM ("completedAt" - "startedAt")) / 60),
                     1
-                ) AS avgMinutes
-                FROM WorkflowInstance
-                WHERE status      = 'COMPLETED'
-                  AND startedAt   >= ${since}
-                  AND completedAt IS NOT NULL
+                ) AS "avgMinutes"
+                FROM "WorkflowInstance"
+                WHERE status        = 'COMPLETED'
+                  AND "startedAt"   >= ${since}
+                  AND "completedAt" IS NOT NULL
+                  ${companyFilter}
                   ${warehouseFilter}
                   ${templateFilter}
             `,
 
             // SLA breach: task completed after its dueAt deadline
             this.prisma.$queryRaw<{ breachCount: number }[]>`
-                SELECT COUNT(*) AS breachCount
-                FROM WorkflowTaskInstance wt
-                INNER JOIN WorkflowInstance wi ON wt.instanceId = wi.id
-                WHERE wt.dueAt        IS NOT NULL
-                  AND wt.completedAt  >  wt.dueAt
-                  AND wi.startedAt    >= ${since}
+                SELECT COUNT(*) AS "breachCount"
+                FROM "WorkflowTaskInstance" wt
+                INNER JOIN "WorkflowInstance" wi ON wt."instanceId" = wi.id
+                WHERE wt."dueAt"       IS NOT NULL
+                  AND wt."completedAt" >  wt."dueAt"
+                  AND wi."startedAt"   >= ${since}
+                  ${wiCompanyFilter}
                   ${wiWarehouseFilter}
                   ${wiTemplateFilter}
             `,
@@ -85,31 +92,34 @@ export class WorkflowAnalyticsService {
 
     async getStepExecutionTimes(query: WorkflowAnalyticsQuery) {
         const since = this.sinceDate(query.period);
-        const wiWarehouseFilter = query.warehouseId ? Prisma.sql`AND wi.warehouseId = ${query.warehouseId}` : Prisma.empty;
-        const wiTemplateFilter = query.templateId ? Prisma.sql`AND wi.templateId = ${query.templateId}` : Prisma.empty;
+        const companyId = getCurrentCompanyId();
+        const wiCompanyFilter = companyId ? Prisma.sql`AND wi."companyId" = ${companyId}` : Prisma.empty;
+        const wiWarehouseFilter = query.warehouseId ? Prisma.sql`AND wi."warehouseId" = ${query.warehouseId}` : Prisma.empty;
+        const wiTemplateFilter = query.templateId ? Prisma.sql`AND wi."templateId" = ${query.templateId}` : Prisma.empty;
 
         const rows = await this.prisma.$queryRaw<
             { stepName: string; stepType: string; avgMinutes: number; taskCount: number }[]
         >`
             SELECT
-                ws.name    AS stepName,
-                ws.type    AS stepType,
+                ws.name    AS "stepName",
+                ws.type    AS "stepType",
                 ROUND(
-                    AVG((julianday(wt.completedAt) - julianday(wt.startedAt)) * 24 * 60),
+                    AVG(EXTRACT(EPOCH FROM (wt."completedAt" - wt."startedAt")) / 60),
                     1
-                )          AS avgMinutes,
-                COUNT(*)   AS taskCount
-            FROM WorkflowTaskInstance wt
-            INNER JOIN WorkflowStep    ws ON wt.stepId     = ws.id
-            INNER JOIN WorkflowInstance wi ON wt.instanceId = wi.id
-            WHERE wt.status      = 'COMPLETED'
-              AND wt.startedAt   IS NOT NULL
-              AND wt.completedAt IS NOT NULL
-              AND wi.startedAt   >= ${since}
+                )          AS "avgMinutes",
+                COUNT(*)   AS "taskCount"
+            FROM "WorkflowTaskInstance" wt
+            INNER JOIN "WorkflowStep"    ws ON wt."stepId"     = ws.id
+            INNER JOIN "WorkflowInstance" wi ON wt."instanceId" = wi.id
+            WHERE wt.status        = 'COMPLETED'
+              AND wt."startedAt"   IS NOT NULL
+              AND wt."completedAt" IS NOT NULL
+              AND wi."startedAt"   >= ${since}
+              ${wiCompanyFilter}
               ${wiWarehouseFilter}
               ${wiTemplateFilter}
             GROUP BY ws.id, ws.name, ws.type
-            ORDER BY avgMinutes DESC
+            ORDER BY "avgMinutes" DESC
         `;
 
         // Flag steps >2× the median as HIGH severity, >1.5× as MEDIUM
@@ -132,19 +142,22 @@ export class WorkflowAnalyticsService {
 
     async getCompletionVolume(query: WorkflowAnalyticsQuery) {
         const since = this.sinceDate(query.period);
-        const warehouseFilter = query.warehouseId ? Prisma.sql`AND warehouseId = ${query.warehouseId}` : Prisma.empty;
-        const templateFilter = query.templateId ? Prisma.sql`AND templateId = ${query.templateId}` : Prisma.empty;
+        const companyId = getCurrentCompanyId();
+        const companyFilter = companyId ? Prisma.sql`AND "companyId" = ${companyId}` : Prisma.empty;
+        const warehouseFilter = query.warehouseId ? Prisma.sql`AND "warehouseId" = ${query.warehouseId}` : Prisma.empty;
+        const templateFilter = query.templateId ? Prisma.sql`AND "templateId" = ${query.templateId}` : Prisma.empty;
 
         const rows = await this.prisma.$queryRaw<{ date: string; count: number }[]>`
             SELECT
-                DATE(completedAt) AS date,
-                COUNT(*)           AS count
-            FROM WorkflowInstance
-            WHERE status      = 'COMPLETED'
-              AND completedAt >= ${since}
+                DATE("completedAt") AS date,
+                COUNT(*)             AS count
+            FROM "WorkflowInstance"
+            WHERE status        = 'COMPLETED'
+              AND "completedAt" >= ${since}
+              ${companyFilter}
               ${warehouseFilter}
               ${templateFilter}
-            GROUP BY DATE(completedAt)
+            GROUP BY DATE("completedAt")
             ORDER BY date ASC
         `;
 
@@ -196,28 +209,31 @@ export class WorkflowAnalyticsService {
 
     async getTemplateList(query: WorkflowAnalyticsQuery) {
         const since = this.sinceDate(query.period);
-        const warehouseFilter = query.warehouseId ? Prisma.sql`AND wi.warehouseId = ${query.warehouseId}` : Prisma.empty;
+        const companyId = getCurrentCompanyId();
+        const wiCompanyFilter = companyId ? Prisma.sql`AND wi."companyId" = ${companyId}` : Prisma.empty;
+        const warehouseFilter = query.warehouseId ? Prisma.sql`AND wi."warehouseId" = ${query.warehouseId}` : Prisma.empty;
 
         const rows = await this.prisma.$queryRaw<
             { templateId: string; templateName: string; totalRuns: number; completedRuns: number; avgMinutes: number | null }[]
         >`
             SELECT
-                wt2.id          AS templateId,
-                wt2.name        AS templateName,
-                COUNT(wi.id)    AS totalRuns,
-                SUM(CASE WHEN wi.status = 'COMPLETED' THEN 1 ELSE 0 END) AS completedRuns,
+                wt2.id          AS "templateId",
+                wt2.name        AS "templateName",
+                COUNT(wi.id)    AS "totalRuns",
+                SUM(CASE WHEN wi.status = 'COMPLETED' THEN 1 ELSE 0 END) AS "completedRuns",
                 ROUND(
                     AVG(CASE
-                        WHEN wi.status = 'COMPLETED' AND wi.completedAt IS NOT NULL
-                        THEN (julianday(wi.completedAt) - julianday(wi.startedAt)) * 24 * 60
+                        WHEN wi.status = 'COMPLETED' AND wi."completedAt" IS NOT NULL
+                        THEN EXTRACT(EPOCH FROM (wi."completedAt" - wi."startedAt")) / 60
                     END), 1
-                ) AS avgMinutes
-            FROM WorkflowInstance wi
-            INNER JOIN WorkflowTemplate wt2 ON wi.templateId = wt2.id
-            WHERE wi.startedAt >= ${since}
+                ) AS "avgMinutes"
+            FROM "WorkflowInstance" wi
+            INNER JOIN "WorkflowTemplate" wt2 ON wi."templateId" = wt2.id
+            WHERE wi."startedAt" >= ${since}
+              ${wiCompanyFilter}
               ${warehouseFilter}
             GROUP BY wt2.id, wt2.name
-            ORDER BY totalRuns DESC
+            ORDER BY "totalRuns" DESC
         `;
 
         return rows.map(r => ({
@@ -233,10 +249,12 @@ export class WorkflowAnalyticsService {
 
     async getTemplateDrilldown(templateId: string, query: WorkflowAnalyticsQuery) {
         const since = this.sinceDate(query.period);
-        const wiWarehouseFilter = query.warehouseId ? Prisma.sql`AND wi.warehouseId = ${query.warehouseId}` : Prisma.empty;
+        const companyId = getCurrentCompanyId();
+        const wiCompanyFilter = companyId ? Prisma.sql`AND wi."companyId" = ${companyId}` : Prisma.empty;
+        const wiWarehouseFilter = query.warehouseId ? Prisma.sql`AND wi."warehouseId" = ${query.warehouseId}` : Prisma.empty;
 
         const [template, cycleTimeRows, stepRows, statusRows] = await Promise.all([
-            // Template metadata
+            // Template metadata — Prisma middleware handles companyId scoping automatically
             this.prisma.workflowTemplate.findUnique({
                 where: { id: templateId },
                 select: { id: true, name: true, description: true, triggerType: true }
@@ -245,47 +263,50 @@ export class WorkflowAnalyticsService {
             // Cycle-time distribution per day
             this.prisma.$queryRaw<{ date: string; avgMinutes: number; runCount: number }[]>`
                 SELECT
-                    DATE(wi.completedAt)  AS date,
-                    ROUND(AVG((julianday(wi.completedAt) - julianday(wi.startedAt)) * 24 * 60), 1) AS avgMinutes,
-                    COUNT(*)              AS runCount
-                FROM WorkflowInstance wi
-                WHERE wi.templateId  = ${templateId}
-                  AND wi.status       = 'COMPLETED'
-                  AND wi.startedAt    >= ${since}
-                  AND wi.completedAt  IS NOT NULL
+                    DATE(wi."completedAt")  AS date,
+                    ROUND(AVG(EXTRACT(EPOCH FROM (wi."completedAt" - wi."startedAt")) / 60), 1) AS "avgMinutes",
+                    COUNT(*)                AS "runCount"
+                FROM "WorkflowInstance" wi
+                WHERE wi."templateId"  = ${templateId}
+                  AND wi.status        = 'COMPLETED'
+                  AND wi."startedAt"   >= ${since}
+                  AND wi."completedAt" IS NOT NULL
+                  ${wiCompanyFilter}
                   ${wiWarehouseFilter}
-                GROUP BY DATE(wi.completedAt)
+                GROUP BY DATE(wi."completedAt")
                 ORDER BY date ASC
             `,
 
             // Step-level breakdown
             this.prisma.$queryRaw<{ stepName: string; stepType: string; avgMinutes: number; minMinutes: number; maxMinutes: number; taskCount: number }[]>`
                 SELECT
-                    ws.name    AS stepName,
-                    ws.type    AS stepType,
-                    ROUND(AVG((julianday(wti.completedAt) - julianday(wti.startedAt)) * 24 * 60), 1)  AS avgMinutes,
-                    ROUND(MIN((julianday(wti.completedAt) - julianday(wti.startedAt)) * 24 * 60), 1)  AS minMinutes,
-                    ROUND(MAX((julianday(wti.completedAt) - julianday(wti.startedAt)) * 24 * 60), 1)  AS maxMinutes,
-                    COUNT(*)  AS taskCount
-                FROM WorkflowTaskInstance wti
-                INNER JOIN WorkflowStep ws ON wti.stepId = ws.id
-                INNER JOIN WorkflowInstance wi ON wti.instanceId = wi.id
-                WHERE wi.templateId   = ${templateId}
-                  AND wti.status      = 'COMPLETED'
-                  AND wti.startedAt   IS NOT NULL
-                  AND wti.completedAt IS NOT NULL
-                  AND wi.startedAt    >= ${since}
+                    ws.name    AS "stepName",
+                    ws.type    AS "stepType",
+                    ROUND(AVG(EXTRACT(EPOCH FROM (wti."completedAt" - wti."startedAt")) / 60), 1) AS "avgMinutes",
+                    ROUND(MIN(EXTRACT(EPOCH FROM (wti."completedAt" - wti."startedAt")) / 60), 1) AS "minMinutes",
+                    ROUND(MAX(EXTRACT(EPOCH FROM (wti."completedAt" - wti."startedAt")) / 60), 1) AS "maxMinutes",
+                    COUNT(*) AS "taskCount"
+                FROM "WorkflowTaskInstance" wti
+                INNER JOIN "WorkflowStep" ws ON wti."stepId" = ws.id
+                INNER JOIN "WorkflowInstance" wi ON wti."instanceId" = wi.id
+                WHERE wi."templateId"   = ${templateId}
+                  AND wti.status        = 'COMPLETED'
+                  AND wti."startedAt"   IS NOT NULL
+                  AND wti."completedAt" IS NOT NULL
+                  AND wi."startedAt"    >= ${since}
+                  ${wiCompanyFilter}
                   ${wiWarehouseFilter}
                 GROUP BY ws.id, ws.name, ws.type
-                ORDER BY avgMinutes DESC
+                ORDER BY "avgMinutes" DESC
             `,
 
             // Status breakdown
             this.prisma.$queryRaw<{ status: string; count: number }[]>`
                 SELECT status, COUNT(*) AS count
-                FROM WorkflowInstance wi
-                WHERE wi.templateId = ${templateId}
-                  AND wi.startedAt  >= ${since}
+                FROM "WorkflowInstance" wi
+                WHERE wi."templateId" = ${templateId}
+                  AND wi."startedAt"  >= ${since}
+                  ${wiCompanyFilter}
                   ${wiWarehouseFilter}
                 GROUP BY status
             `,

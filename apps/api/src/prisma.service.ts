@@ -8,12 +8,35 @@ import { getCurrentCompanyId } from './common/tenant/tenant-storage';
  * Legacy x-user-id requests have companyId=null and are unscoped (dev/E2E).
  */
 const TENANT_SCOPED_MODELS = new Set([
+    // Core catalogue & configuration
     'Product',
     'Warehouse',
     'Supplier',
     'Customer',
     'User',
     'Role',
+    // Inventory & locations
+    'Location',
+    'InventoryBatch',
+    'StockTransaction',
+    // Orders & fulfilment
+    'Order',
+    'PurchaseOrder',
+    'Shipment',
+    'TransferOrder',
+    'Receipt',
+    // Operational sessions
+    'PickingSession',
+    'PutawaySession',
+    'PackingSession',
+    'StocktakeSession',
+    // Rules engines
+    'WaveReleaseRule',
+    'ReorderingRule',
+    'RotationRule',
+    // Workflows
+    'WorkflowTemplate',
+    'WorkflowInstance',
 ]);
 
 @Injectable()

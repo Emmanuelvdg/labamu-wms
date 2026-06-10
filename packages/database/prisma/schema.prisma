@@ -295,6 +295,7 @@ model Location {
   parentId                String?
   warehouseId             String?
   functionalAreaId        String?
+  companyId               String?
   code                    String?
   fullAddress             String?                   @unique
   innerHeight             Float?                    @default(0)
@@ -328,6 +329,7 @@ model Location {
 
   @@index([parentId])
   @@index([warehouseId])
+  @@index([companyId])
 }
 
 model ProductPackaging {
@@ -373,6 +375,7 @@ model InventoryBatch {
   warehouseId     String
   locationId      String?
   packageId       String?
+  companyId       String?
   initialQuantity Int
   currentQuantity Int
   reserved        Int                   @default(0)
@@ -391,6 +394,7 @@ model InventoryBatch {
   stockMoves      StockMove[]
 
   @@index([productId, warehouseId])
+  @@index([companyId])
   @@index([status])
   @@index([expiryDate])
 }
@@ -421,11 +425,13 @@ model StockTransaction {
   quantity    Int
   date        DateTime @default(now())
   referenceId String?
+  companyId   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   product     Product  @relation(fields: [productId], references: [id])
 
   @@index([productId, date])
+  @@index([companyId])
 }
 
 model Order {
@@ -437,6 +443,7 @@ model Order {
   shippingCarrier        String?
   expectedDate           DateTime?
   warehouseId            String?
+  companyId              String?
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
   totalAmount            Float              @default(0)
@@ -464,6 +471,7 @@ model Order {
   @@index([status])
   @@index([customerId])
   @@index([warehouseId])
+  @@index([companyId])
   @@index([createdAt])
 }
 
@@ -506,11 +514,14 @@ model PickingSession {
   strategy    String
   status      String        @default("PLANNED")
   pickerId    String?
+  companyId   String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   picker      User?         @relation(fields: [pickerId], references: [id])
   warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
   tasks       PickingTask[]
+
+  @@index([companyId])
 }
 
 model Category {
@@ -557,11 +568,14 @@ model PutawaySession {
   warehouseId String
   status      String        @default("PLANNED")
   workerId    String?
+  companyId   String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   worker      User?         @relation(fields: [workerId], references: [id])
   warehouse   Warehouse     @relation(fields: [warehouseId], references: [id])
   tasks       PutawayTask[]
+
+  @@index([companyId])
 }
 
 model PutawayTask {
@@ -599,12 +613,15 @@ model ReservationStrategy {
 }
 
 model Shipment {
-  id         String @id @default(uuid())
-  orderId    String @unique
+  id         String  @id @default(uuid())
+  orderId    String  @unique
   carrier    String
   trackingId String
   status     String
-  order      Order  @relation(fields: [orderId], references: [id])
+  companyId  String?
+  order      Order   @relation(fields: [orderId], references: [id])
+
+  @@index([companyId])
 }
 
 model ComplianceReport {
@@ -662,8 +679,11 @@ model ReorderingRule {
   minQuantity Int
   maxQuantity Int
   active      Boolean  @default(true)
+  companyId   String?
   location    Location @relation(fields: [locationId], references: [id])
   product     Product  @relation(fields: [productId], references: [id])
+
+  @@index([companyId])
 }
 
 model PutawayRule {
@@ -756,6 +776,7 @@ model PurchaseOrder {
   id              String               @id @default(uuid())
   poNumber        String               @unique @default(cuid())
   supplierId      String
+  companyId       String?
   status          String               @default("DRAFT")
   approvalStatus  String               @default("DRAFT")
   approvedBy      String?
@@ -788,6 +809,8 @@ model PurchaseOrder {
   receipts        Receipt[]
   transfers       TransferOrder[]
   asns            AdvancedShippingNotice[]
+
+  @@index([companyId])
 }
 
 model PurchaseOrderItem {
@@ -810,6 +833,7 @@ model Receipt {
   receivedAt            DateTime      @default(now())
   destinationLocationId String
   invoiceId             String?
+  companyId             String?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
   grnNumber             String?       @unique
@@ -818,6 +842,8 @@ model Receipt {
   destinationLocation   Location      @relation(fields: [destinationLocationId], references: [id])
   purchaseOrder         PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
   items                 ReceiptItem[]
+
+  @@index([companyId])
 }
 
 model ReceiptItem {
@@ -942,11 +968,13 @@ model WaveReleaseRule {
   minOrders      Int       @default(1)
   maxOrders      Int       @default(50)
   enabled        Boolean   @default(true)
+  companyId      String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   warehouse      Warehouse @relation(fields: [warehouseId], references: [id])
 
   @@index([warehouseId])
+  @@index([companyId])
 }
 
 model Customer {
@@ -995,6 +1023,7 @@ model TransferOrder {
   activeMoveId           String?
   relatedOrderId         String?
   purchaseOrderId        String?
+  companyId              String?
   createdAt              DateTime            @default(now())
   updatedAt              DateTime            @updatedAt
   moves                  StockMove[]
@@ -1005,6 +1034,8 @@ model TransferOrder {
   destinationWarehouse   Warehouse           @relation("TransferDest", fields: [destinationWarehouseId], references: [id])
   sourceWarehouse        Warehouse           @relation("TransferSource", fields: [sourceWarehouseId], references: [id])
   items                  TransferOrderItem[]
+
+  @@index([companyId])
 }
 
 model TransferOrderItem {
@@ -1162,11 +1193,14 @@ model RotationRule {
   minShelfLifeDays    Int?
   missingExpiryAction String?
   active              Boolean    @default(true)
+  companyId           String?
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
   warehouse           Warehouse? @relation(fields: [warehouseId], references: [id])
   product             Product?   @relation(fields: [productId], references: [id])
   customer            Customer?  @relation(fields: [customerId], references: [id])
+
+  @@index([companyId])
 }
 
 model StocktakeSession {
@@ -1178,10 +1212,13 @@ model StocktakeSession {
   createdBy         String?
   scopeLocationIds  String?         // JSON array of location IDs to restrict count scope
   scopeProductIds   String?         // JSON array of product IDs to restrict count scope
+  companyId         String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   warehouse         Warehouse       @relation(fields: [warehouseId], references: [id])
   tasks             StocktakeTask[]
+
+  @@index([companyId])
 }
 
 model StocktakeTask {
@@ -1206,12 +1243,15 @@ model PackingSession {
   orderId     String          @unique
   status      String          @default("IN_PROGRESS")
   workerId    String?
+  companyId   String?
   startedAt   DateTime        @default(now())
   completedAt DateTime?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   order       Order           @relation(fields: [orderId], references: [id])
   parcels     PackingParcel[]
+
+  @@index([companyId])
 }
 
 model PackingParcel {
@@ -1293,6 +1333,7 @@ model WorkflowTemplate {
   triggerType String   @default("MANUAL") // MANUAL | INBOUND | OUTBOUND | REPLENISHMENT | RETURN
   warehouseId String?
   config      String   @default("{}") // Canvas layout, UI metadata, using String for SQLite JSON fallback if needed. Let's use String since SQLite JSON support in Prisma expects String if provider is sqlite
+  companyId   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   createdBy   String?
@@ -1303,6 +1344,7 @@ model WorkflowTemplate {
   instances   WorkflowInstance[]
 
   @@unique([name, version])
+  @@index([companyId])
 }
 
 model WorkflowStep {
@@ -1354,6 +1396,7 @@ model WorkflowInstance {
   status        String    @default("RUNNING") // RUNNING | PAUSED | COMPLETED | FAILED | CANCELLED
   currentStepId String?
   context       String    @default("{}") // Runtime data bag encoded as JSON string
+  companyId     String?
   startedAt     DateTime  @default(now())
   completedAt   DateTime?
   pausedBy      String?
@@ -1362,6 +1405,8 @@ model WorkflowInstance {
   warehouse Warehouse              @relation(fields: [warehouseId], references: [id])
   tasks     WorkflowTaskInstance[]
   auditLogs WorkflowAuditLog[]
+
+  @@index([companyId])
 }
 
 model WorkflowTaskInstance {
