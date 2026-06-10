@@ -142,6 +142,7 @@ export class InventoryController {
     }
 
     @Get('warehouses')
+    @RequirePermission('WAREHOUSES', 'READ')
     getWarehouses() {
         return this.inventoryService.getWarehouses();
     }
@@ -352,8 +353,10 @@ export class InventoryController {
     }
 
     @Get('locations/:id')
-    getLocationDetails(@Param('id') id: string) {
-        return this.inventoryService.getLocationDetails(id);
+    async getLocationDetails(@Param('id') id: string) {
+        const location = await this.inventoryService.getLocationDetails(id);
+        if (!location) throw new NotFoundException(`Location ${id} not found`);
+        return location;
     }
 
     @Get('locations/:id/dependencies')

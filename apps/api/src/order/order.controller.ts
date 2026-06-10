@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Put, Patch, UseGuards, Delete, Query, Req, Res } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Put, Patch, UseGuards, Delete, Query, Req, Res, NotFoundException } from '@nestjs/common';
 import { Response } from 'express';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -59,8 +59,10 @@ export class OrderController {
 
     @Get(':id')
     @RequirePermission('ORDERS', 'READ')
-    getOrder(@Param('id') id: string) {
-        return this.orderService.getOrder(id);
+    async getOrder(@Param('id') id: string) {
+        const order = await this.orderService.getOrder(id);
+        if (!order) throw new NotFoundException(`Order ${id} not found`);
+        return order;
     }
 
     @Post('ship')

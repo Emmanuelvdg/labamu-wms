@@ -57,6 +57,17 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             const writeOps = ['create', 'createMany'];
             const mutateOps = ['update', 'updateMany', 'upsert'];
 
+            // findUnique / findUniqueOrThrow only allow filtering on declared @unique
+            // constraints, so we cannot inject companyId into their WHERE clause directly.
+            // Instead, downgrade them to findFirst / findFirstOrThrow, which accept any
+            // filter combination, and apply the tenant constraint there.
+            if (params.action === 'findUnique' || params.action === 'findUniqueOrThrow') {
+                params.action = params.action === 'findUnique' ? 'findFirst' : 'findFirstOrThrow';
+                params.args ??= {};
+                params.args.where ??= {};
+                params.args.where.companyId = companyId;
+            }
+
             if (readOps.includes(params.action)) {
                 params.args ??= {};
                 params.args.where ??= {};

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, NotFoundException } from '@nestjs/common';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { SupplierService } from './supplier.service';
@@ -41,6 +41,7 @@ export class SupplierController {
     @RequirePermission('SUPPLIERS', 'READ')
     async findOne(@Param('id') id: string) {
         const supplier = await this.supplierService.findOne(id);
+        if (!supplier) throw new NotFoundException(`Supplier ${id} not found`);
         const stats = await this.supplierService.getSupplierStats(id);
         return { ...supplier, stats };
     }

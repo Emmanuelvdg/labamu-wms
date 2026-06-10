@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Patch, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Patch, Delete, Query, NotFoundException } from '@nestjs/common';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { CustomerService } from './customer.service';
@@ -33,8 +33,10 @@ export class CustomerController {
 
     @Get(':id')
     @RequirePermission('CUSTOMERS', 'READ')
-    getCustomer(@Param('id') id: string) {
-        return this.customerService.getCustomer(id);
+    async getCustomer(@Param('id') id: string) {
+        const customer = await this.customerService.getCustomer(id);
+        if (!customer) throw new NotFoundException(`Customer ${id} not found`);
+        return customer;
     }
 
     @Patch(':id')

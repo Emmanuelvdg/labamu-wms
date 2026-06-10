@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Patch, Param, Body, UseGuards, NotFoundException } from '@nestjs/common';
 import { WarehouseAreaService, CreateAreaDto, UpdateAreaDto, UpdateFloorPlanDto } from './warehouse-area.service';
 import { PrismaService } from '../prisma.service';
 import { FeatureFlagGuard, RequireFlag } from '../common/guards/feature-flag.guard';
@@ -34,7 +34,7 @@ export class WarehouseAreaController {
 
     @Get(':id')
     async getWarehouse(@Param('id') id: string) {
-        return this.prisma.warehouse.findUnique({
+        const warehouse = await this.prisma.warehouse.findUnique({
             where: { id },
             select: {
                 id: true,
@@ -58,6 +58,8 @@ export class WarehouseAreaController {
                 snapToGrid: true,
             },
         });
+        if (!warehouse) throw new NotFoundException(`Warehouse ${id} not found`);
+        return warehouse;
     }
 
     @Patch(':id')
