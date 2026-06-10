@@ -1,12 +1,16 @@
 
-import { Controller, Post, Body, Get, Param, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
+import { RequirePermission } from '../common/auth/permissions.decorator';
 import { ReturnsService } from './returns.service';
 
 @Controller('returns')
+@UseGuards(PermissionsGuard)
 export class ReturnsController {
     constructor(private readonly returnsService: ReturnsService) { }
 
     @Get()
+    @RequirePermission('RETURNS', 'READ')
     async listReturns(@Query('orderId') orderId?: string) {
         return this.returnsService.listReturns(orderId);
     }

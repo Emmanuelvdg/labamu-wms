@@ -55,7 +55,6 @@ test.describe('Harness: Settings (Categories, Attributes, API Keys)', () => {
             data: {
                 name: `Harness Category ${TS}`,
                 description: 'E2E test category',
-                color: '#3b82f6',
             },
         });
         expect(res.status(), await res.text()).toBeGreaterThanOrEqual(200);

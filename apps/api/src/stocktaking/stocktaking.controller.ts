@@ -1,12 +1,16 @@
 
-import { Controller, Post, Body, Get, Param, Patch, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
+import { RequirePermission } from '../common/auth/permissions.decorator';
 import { StocktakingService } from './stocktaking.service';
 
 @Controller('stocktaking')
+@UseGuards(PermissionsGuard)
 export class StocktakingController {
     constructor(private readonly service: StocktakingService) { }
 
     @Post('sessions')
+    @RequirePermission('STOCKTAKING', 'CREATE')
     createSession(@Body() body: { warehouseId: string; type?: string; name?: string; description?: string }) {
         return this.service.createSession({
             warehouseId: body.warehouseId,
@@ -16,6 +20,7 @@ export class StocktakingController {
     }
 
     @Get('sessions')
+    @RequirePermission('STOCKTAKING', 'READ')
     getSessions(@Query('warehouseId') warehouseId?: string) {
         return this.service.getSessions(warehouseId);
     }

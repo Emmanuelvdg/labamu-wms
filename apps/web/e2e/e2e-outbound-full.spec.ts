@@ -93,7 +93,7 @@ test.describe('E2E Flow: Complete Outbound', () => {
         const whRes = await request.post(`${API}/inventory/warehouses`, {
             headers: auth(),
             data: {
-                name: `Outbound WH ${TS}`, shortName: `OUT${TS.slice(-4)}`,
+                name: `Outbound WH ${TS}`, shortName: `O${TS}`,
                 address: '10 Out St', city: 'Jakarta', country: 'Indonesia',
                 type: 'warehouse', location: { lat: -6.22, lng: 106.83 },
             },
@@ -150,8 +150,10 @@ test.describe('E2E Flow: Complete Outbound', () => {
             headers: auth(),
             data: {
                 customerId,
+                type: 'SALES',
+                priority: 'NORMAL',
                 warehouseId,
-                items: [{ productId, quantity: 5, unitPrice: 150000 }],
+                items: [{ productId, quantity: 5 }],
                 notes: `E2E outbound flow ${TS}`,
             },
         });

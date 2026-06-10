@@ -51,7 +51,6 @@ test.describe('Harness: Suppliers CRUD', () => {
                 contactInfo: `supplier-${TS}@vendor.com`,
                 phone: '+6281234567',
                 address: '5 Vendor Road, Jakarta',
-                leadTimeDays: 7,
             },
         });
         expect(res.status(), await res.text()).toBe(201);

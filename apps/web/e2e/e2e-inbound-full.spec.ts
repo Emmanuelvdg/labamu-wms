@@ -58,7 +58,7 @@ test.describe('E2E Flow: Complete Inbound', () => {
 
         const res = await request.post(`${API}/suppliers`, {
             headers: auth(),
-            data: { name: `Inbound Supplier ${TS}`, contactInfo: `in-supp-${TS}@vendor.com`, leadTimeDays: 3 },
+            data: { name: `Inbound Supplier ${TS}`, contactInfo: `in-supp-${TS}@vendor.com` },
         });
         expect(res.ok(), await res.text()).toBeTruthy();
         supplierId = (await res.json()).id;
@@ -89,7 +89,7 @@ test.describe('E2E Flow: Complete Inbound', () => {
         const whRes = await request.post(`${API}/inventory/warehouses`, {
             headers: auth(),
             data: {
-                name: `Inbound WH ${TS}`, shortName: `INB${TS.slice(-4)}`,
+                name: `Inbound WH ${TS}`, shortName: `I${TS}`,
                 address: '5 Inbound Ave', city: 'Jakarta', country: 'Indonesia',
                 type: 'warehouse', location: { lat: -6.21, lng: 106.82 },
             },
@@ -120,8 +120,8 @@ test.describe('E2E Flow: Complete Inbound', () => {
         const res = await request.post(`${API}/purchase-orders`, {
             headers: auth(),
             data: {
-                supplierId, warehouseId,
-                expectedDeliveryDate: '2026-08-01',
+                supplierId,
+                expectedDate: '2026-08-01T00:00:00.000Z',
                 items: [{ productId, quantity: 200, unitCost: 400000 }],
                 notes: `E2E inbound flow ${TS}`,
             },

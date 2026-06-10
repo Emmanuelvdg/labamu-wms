@@ -318,6 +318,7 @@ export class InventoryController {
     }
 
     @Get('locations')
+    @RequirePermission('INVENTORY', 'READ')
     getLocations(
         @Query('warehouseId') warehouseId?: string,
         @Query('structuralType') structuralType?: string,

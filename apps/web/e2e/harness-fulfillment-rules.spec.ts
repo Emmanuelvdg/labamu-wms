@@ -71,10 +71,10 @@ test.describe('Harness: Fulfillment Rules & Reordering', () => {
             headers: auth(),
             data: {
                 name: `Harness Rule ${TS}`,
-                description: 'E2E test fulfillment rule',
                 priority: 1,
-                conditions: { minOrderValue: 100000 },
-                warehouseId,
+                strategy: 'CLOSEST',
+                warehouseId: warehouseId ?? undefined,
+                active: true,
             },
         });
         expect(res.status(), await res.text()).toBeGreaterThanOrEqual(200);

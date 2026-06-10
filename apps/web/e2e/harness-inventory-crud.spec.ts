@@ -93,10 +93,12 @@ test.describe('Harness: Inventory CRUD', () => {
     test('INV-4: POST /inventory/products/bulk creates multiple products', async ({ request }) => {
         const res = await request.post(`${API}/inventory/products/bulk`, {
             headers: auth(),
-            data: [
-                { sku: `BULK-A-${TS}`, name: `Bulk Prod A ${TS}`, category: 'General', price: 10, velocity: 'C' },
-                { sku: `BULK-B-${TS}`, name: `Bulk Prod B ${TS}`, category: 'General', price: 20, velocity: 'C' },
-            ],
+            data: {
+                items: [
+                    { sku: `BULK-A-${TS}`, name: `Bulk Prod A ${TS}`, category: 'General', price: 10, velocity: 'C' },
+                    { sku: `BULK-B-${TS}`, name: `Bulk Prod B ${TS}`, category: 'General', price: 20, velocity: 'C' },
+                ],
+            },
         });
         expect(res.ok(), `Bulk products: ${await res.text()}`).toBeTruthy();
         const body = await res.json();

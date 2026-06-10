@@ -73,7 +73,7 @@ test.describe('Harness: Purchase Orders Lifecycle', () => {
             headers: auth(),
             data: {
                 name: `PO Test WH ${TS}`,
-                shortName: `POW${TS.slice(-4)}`,
+                shortName: `P${TS}`,
                 address: '1 PO St', city: 'Jakarta', country: 'Indonesia',
                 type: 'warehouse', location: { lat: -6.2, lng: 106.8 },
             },
@@ -98,8 +98,7 @@ test.describe('Harness: Purchase Orders Lifecycle', () => {
             headers: auth(),
             data: {
                 supplierId,
-                warehouseId,
-                expectedDeliveryDate: '2026-08-01',
+                expectedDate: '2026-08-01T00:00:00.000Z',
                 items: [{ productId, quantity: 100, unitCost: 90000 }],
                 notes: `E2E PO test ${TS}`,
             },
@@ -116,8 +115,7 @@ test.describe('Harness: Purchase Orders Lifecycle', () => {
             headers: auth(),
             data: {
                 supplierId,
-                warehouseId,
-                expectedDeliveryDate: '2026-09-01',
+                expectedDate: '2026-09-01T00:00:00.000Z',
                 items: [{ productId, quantity: 50, unitCost: 85000 }],
                 notes: `E2E PO to reject ${TS}`,
             },

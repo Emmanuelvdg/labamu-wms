@@ -73,7 +73,9 @@ test.describe('Harness: Orders Lifecycle', () => {
             headers: auth(),
             data: {
                 customerId,
-                items: [{ productId, quantity: 3, unitPrice: 50000 }],
+                type: 'SALES',
+                priority: 'NORMAL',
+                items: [{ productId, quantity: 3 }],
                 notes: `E2E test order ${TS}`,
             },
         });
@@ -88,7 +90,7 @@ test.describe('Harness: Orders Lifecycle', () => {
     test('ORD-2: POST /orders without items → 400', async ({ request }) => {
         const res = await request.post(`${API}/orders`, {
             headers: auth(),
-            data: { customerId },
+            data: { customerId, type: 'SALES', priority: 'NORMAL' },
         });
         expect(res.status()).toBeGreaterThanOrEqual(400);
         expect(res.status()).toBeLessThan(500);
@@ -97,7 +99,7 @@ test.describe('Harness: Orders Lifecycle', () => {
     test('ORD-3: POST /orders without customerId → 400', async ({ request }) => {
         const res = await request.post(`${API}/orders`, {
             headers: auth(),
-            data: { items: [{ productId, quantity: 1, unitPrice: 100 }] },
+            data: { type: 'SALES', priority: 'NORMAL', items: [{ productId, quantity: 1 }] },
         });
         expect(res.status()).toBeGreaterThanOrEqual(400);
         expect(res.status()).toBeLessThan(500);
@@ -156,7 +158,9 @@ test.describe('Harness: Orders Lifecycle', () => {
             headers: auth(),
             data: {
                 customerId,
-                items: [{ productId, quantity: 5, unitPrice: 50000 }],
+                type: 'SALES',
+                priority: 'NORMAL',
+                items: [{ productId, quantity: 5 }],
                 notes: `PUT updated order ${TS}`,
             },
         });
@@ -201,7 +205,9 @@ test.describe('Harness: Orders Lifecycle', () => {
             headers: auth(),
             data: {
                 customerId,
-                items: [{ productId, quantity: 1, unitPrice: 50000 }],
+                type: 'SALES',
+                priority: 'NORMAL',
+                items: [{ productId, quantity: 1 }],
             },
         });
         if (!createRes.ok()) { test.skip(); return; }

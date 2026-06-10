@@ -62,7 +62,7 @@ test.describe('Harness: Warehouses & Locations CRUD', () => {
             headers: auth(),
             data: {
                 name: `Harness WH ${TS}`,
-                shortName: `HWH${TS.slice(-4)}`,
+                shortName: `H${TS}`,
                 address: '1 Harness Blvd',
                 city: 'Jakarta',
                 country: 'Indonesia',
@@ -141,7 +141,7 @@ test.describe('Harness: Warehouses & Locations CRUD', () => {
             headers: auth(),
             data: {
                 name: `Delete Me WH ${TS}`,
-                shortName: `DEL${TS.slice(-4)}`,
+                shortName: `D${TS}`,
                 address: '0 Delete St', city: 'Jakarta', country: 'Indonesia',
                 type: 'warehouse', location: { lat: -6.2, lng: 106.8 },
             },
