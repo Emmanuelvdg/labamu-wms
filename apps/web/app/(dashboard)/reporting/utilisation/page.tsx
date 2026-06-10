@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { fetchWarehouses, fetchLocations, fetchUtilisationHistory } from '@/lib/api';
-import { Loader2, RefreshCw, Warehouse, Box, Layers } from 'lucide-react';
+import { Loader2, RefreshCw, Warehouse, Box, Layers, AlertTriangle } from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
 import { toast } from 'sonner';
 
@@ -152,6 +152,21 @@ export default function UtilisationReportPage() {
                 </div>
             </div>
 
+            {/* No-capacity warning banner */}
+            {data && data.current.maxVolume === 0 && (
+                <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-800">
+                    <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0" />
+                    <div>
+                        <p className="font-medium">No storage capacity configured</p>
+                        <p className="text-sm mt-0.5">
+                            Utilisation cannot be calculated because your locations have no capacity set.
+                            Edit each location and fill in the <strong>Inner Length</strong>, <strong>Width</strong>, and <strong>Height</strong> fields (in mm)
+                            — or set an explicit <strong>Max Volume</strong> — to see live utilisation percentages.
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {/* Key Metrics */}
             <div className="grid gap-4 md:grid-cols-3">
                 <Card>
@@ -160,9 +175,15 @@ export default function UtilisationReportPage() {
                         <Layers className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{data?.current?.utilization || 0}%</div>
+                        <div className="text-2xl font-bold">
+                            {data?.current?.utilization != null
+                                ? (data.current.utilization < 0.01 && data.current.utilization > 0
+                                    ? '< 0.01'
+                                    : data.current.utilization.toFixed(2))
+                                : '0'}%
+                        </div>
                         <p className="text-xs text-muted-foreground">
-                            {data?.current?.usedVolume?.toFixed(2)} / {data?.current?.maxVolume?.toFixed(2)} m³
+                            {data?.current?.usedVolume?.toFixed(3)} / {data?.current?.maxVolume?.toFixed(2)} m³
                         </p>
                     </CardContent>
                 </Card>
@@ -172,7 +193,7 @@ export default function UtilisationReportPage() {
                         <Warehouse className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{data?.current?.usedVolume?.toFixed(2)} m³</div>
+                        <div className="text-2xl font-bold">{data?.current?.usedVolume?.toFixed(3)} m³</div>
                         <p className="text-xs text-muted-foreground">Current stored volume</p>
                     </CardContent>
                 </Card>

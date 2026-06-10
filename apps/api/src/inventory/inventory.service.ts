@@ -1394,6 +1394,7 @@ export class InventoryService {
         innerWidth?: number;
         innerHeight?: number;
         maxWeightKg?: number;
+        maxVolume?: number;
     }) {
         // Validation
         const current = await this.prisma.location.findUnique({ where: { id } });
@@ -1483,6 +1484,7 @@ export class InventoryService {
                 innerWidth: data.innerWidth,
                 innerHeight: data.innerHeight,
                 maxWeightKg: data.maxWeightKg,
+                maxVolume: data.maxVolume,
             } as any,
         });
     }

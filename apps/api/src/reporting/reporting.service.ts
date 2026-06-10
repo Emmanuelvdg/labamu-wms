@@ -337,7 +337,15 @@ export class ReportingService {
         let totalMaxVolume = 0;
 
         for (const loc of locations) {
-            if (loc.maxVolume) totalMaxVolume += loc.maxVolume;
+            // Resolve max volume: use explicit field first, then derive from inner
+            // dimensions (stored in mm → convert to m³ via / 1e9), matching the
+            // same fallback logic used in utilisation.service.ts.
+            let locMaxVol = loc.maxVolume ?? 0;
+            if (!locMaxVol && (loc as any).innerLength && (loc as any).innerWidth && (loc as any).innerHeight) {
+                locMaxVol = ((loc as any).innerLength * (loc as any).innerWidth * (loc as any).innerHeight) / 1e9;
+            }
+            totalMaxVolume += locMaxVol;
+
             for (const inv of loc.inventory) {
                 const p = inv.product;
                 if (p.width && p.height && p.depth) {
@@ -367,15 +375,18 @@ export class ReportingService {
 
         const now = new Date();
         const start = new Date(startDate);
+        // Use date-string comparison to avoid microsecond race where `now` in the
+        // loop body is a few µs later than parseDateRange's `endDate`.
+        const endDateKey = endDate ? toDateKey(new Date(endDate)) : toDateKey(now);
 
         let moveIndex = 0;
 
-        // Loop backwards from NOW to START
+        // Loop backwards from NOW to START, recording state at end-of-day
         for (let d = new Date(now); d >= start; d.setDate(d.getDate() - 1)) {
             const dateKey = toDateKey(d);
 
-            // Record state at END of day D
-            if (d <= new Date(endDate) || !endDate) {
+            // Record state at END of day D (include today via date-string comparison)
+            if (!endDate || dateKey <= endDateKey) {
                 historyMap.set(dateKey, { used: cursorUsedVolume, max: totalMaxVolume });
             }
 
@@ -405,18 +416,23 @@ export class ReportingService {
         }
 
         // 5. Format Output
+        // Round utilisation to 2 decimal places so sub-1% values are visible
+        // (e.g. 0.02% instead of collapsing to 0%).
+        const calcUtil = (used: number, max: number) =>
+            max > 0 ? Number((Math.max(0, used) / max * 100).toFixed(2)) : 0;
+
         const history = Array.from(historyMap.entries()).map(([date, val]) => ({
             date,
-            usedVolume: Number(Math.max(0, val.used).toFixed(2)),
+            usedVolume: Number(Math.max(0, val.used).toFixed(3)),
             maxVolume: val.max,
-            utilization: val.max > 0 ? Number((Math.max(0, val.used) / val.max * 100).toFixed(1)) : 0
+            utilization: calcUtil(val.used, val.max),
         })).sort((a, b) => a.date.localeCompare(b.date));
 
         return {
             current: {
-                usedVolume: Number(currentUsedVolume.toFixed(2)),
-                maxVolume: totalMaxVolume,
-                utilization: totalMaxVolume > 0 ? Number(((currentUsedVolume / totalMaxVolume) * 100).toFixed(1)) : 0
+                usedVolume: Number(currentUsedVolume.toFixed(3)),
+                maxVolume: Number(totalMaxVolume.toFixed(2)),
+                utilization: calcUtil(currentUsedVolume, totalMaxVolume)
             },
             history
         };
