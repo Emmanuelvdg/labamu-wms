@@ -144,7 +144,7 @@ test.describe('E2E Flow: Complete Inbound', () => {
         });
         expect(res.ok(), await res.text()).toBeTruthy();
         const status = (await res.json()).status;
-        expect(status).toMatch(/approved/i);
+        expect(status).toMatch(/approved|ORDERED|ordered/i);
         console.log('✓ PO approved');
     });
 

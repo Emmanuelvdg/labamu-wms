@@ -132,7 +132,7 @@ test.describe('E2E Flow: Complete Outbound', () => {
         });
         if (!existing) {
             await prisma.productInventory.create({
-                data: { productId, warehouseId, locationId, quantity: 50, companyId },
+                data: { productId, warehouseId, locationId, quantity: 50 },
             });
         } else {
             await prisma.productInventory.update({
@@ -154,7 +154,6 @@ test.describe('E2E Flow: Complete Outbound', () => {
                 priority: 'NORMAL',
                 warehouseId,
                 items: [{ productId, quantity: 5 }],
-                notes: `E2E outbound flow ${TS}`,
             },
         });
         expect(res.ok(), await res.text()).toBeTruthy();

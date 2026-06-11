@@ -5,17 +5,17 @@
       "value": "true",
       "domain": "localhost",
       "path": "/",
-      "expires": 1781231834.072626,
+      "expires": 1781764028.226943,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "token",
-      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhOWJkZjc2Mi00MjFhLTQyNDgtYmE2My00NTJmMGI3ZjgxNTIiLCJlbWFpbCI6ImFkbWluQGxhYmFtdS5jby5pZCIsImNvbXBhbnlJZCI6ImRiZGM5NjMxLTU4ODMtNGQ3Ny05MjIyLTYwNzNkZDVmNGMzNCIsImNvbXBhbnlTbHVnIjoibGFiYW11IiwiaWF0IjoxNzgwNjI3MDMzLCJleHAiOjE3ODEyMzE4MzN9.yi_ZckQbNiyooY-d_GGXH5lb2XaHpyh5F2o6mLxFd8U",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhOWJkZjc2Mi00MjFhLTQyNDgtYmE2My00NTJmMGI3ZjgxNTIiLCJlbWFpbCI6ImFkbWluQGxhYmFtdS5jby5pZCIsImNvbXBhbnlJZCI6ImRiZGM5NjMxLTU4ODMtNGQ3Ny05MjIyLTYwNzNkZDVmNGMzNCIsImNvbXBhbnlTbHVnIjoibGFiYW11IiwiaWF0IjoxNzgxMTU5MjI4LCJleHAiOjE3ODE3NjQwMjh9.YZrpRNeg5bFISSQukRBB5U3zljTvQb4S7Fj-Mq7kp1Q",
       "domain": "localhost",
       "path": "/",
-      "expires": 1781231834.10067,
+      "expires": 1781764028.232815,
       "httpOnly": true,
       "secure": false,
       "sameSite": "Lax"
@@ -25,7 +25,7 @@
       "value": "a9bdf762-421a-4248-ba63-452f0b7f8152",
       "domain": "localhost",
       "path": "/",
-      "expires": 1781231834.101267,
+      "expires": 1781764028.233209,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -35,7 +35,7 @@
       "value": "dbdc9631-5883-4d77-9222-6073dd5f4c34",
       "domain": "localhost",
       "path": "/",
-      "expires": 1781231834.101412,
+      "expires": 1781764028.233262,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -45,7 +45,7 @@
       "value": "%7B%22id%22%3A%22a9bdf762-421a-4248-ba63-452f0b7f8152%22%2C%22name%22%3A%22Updated%20User%20Name%22%2C%22email%22%3A%22admin%40labamu.co.id%22%2C%22companyId%22%3A%22dbdc9631-5883-4d77-9222-6073dd5f4c34%22%2C%22companySlug%22%3A%22labamu%22%2C%22permissions%22%3A%5B%22ALL%3AMANAGE%22%5D%7D",
       "domain": "localhost",
       "path": "/",
-      "expires": 1781231834.101493,
+      "expires": 1781764028.233286,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"

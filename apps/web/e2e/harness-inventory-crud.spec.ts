@@ -110,7 +110,8 @@ test.describe('Harness: Inventory CRUD', () => {
     // ── READ PRODUCT ────────────────────────────────────────────────────────────
 
     test('INV-5: GET /inventory/products returns list with new product', async ({ request }) => {
-        const res = await request.get(`${API}/inventory/products`, { headers: auth() });
+        // Use large limit or search by SKU to handle paginated lists
+        const res = await request.get(`${API}/inventory/products?limit=500`, { headers: auth() });
         expect(res.ok()).toBeTruthy();
         const body = await res.json();
         const arr: any[] = Array.isArray(body) ? body : (body.data ?? body.products ?? []);

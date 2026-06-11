@@ -100,10 +100,9 @@ test.describe('Harness: Fulfillment Rules & Reordering', () => {
             headers: auth(),
             data: {
                 name: `Harness Rule UPDATED ${TS}`,
-                description: 'Updated by E2E harness',
                 priority: 2,
-                conditions: { minOrderValue: 200000 },
-                warehouseId,
+                strategy: 'HIGHEST_STOCK',
+                warehouseId: warehouseId ?? undefined,
             },
         });
         expect(res.ok(), `Update rule: ${await res.text()}`).toBeTruthy();
@@ -115,7 +114,7 @@ test.describe('Harness: Fulfillment Rules & Reordering', () => {
         // Create throwaway rule
         const createRes = await request.post(`${API}/fulfillment/rules`, {
             headers: auth(),
-            data: { name: `Rule To Delete ${TS}`, priority: 99, warehouseId },
+            data: { name: `Rule To Delete ${TS}`, priority: 99, strategy: 'CLOSEST', warehouseId: warehouseId ?? undefined },
         });
         if (!createRes.ok()) { test.skip(); return; }
         const toDelete = (await createRes.json()).id;
@@ -171,10 +170,9 @@ test.describe('Harness: Fulfillment Rules & Reordering', () => {
             headers: auth(),
             data: {
                 productId,
-                warehouseId,
-                reorderPoint: 10,
-                reorderQuantity: 50,
-                maxStock: 200,
+                locationId: warehouseId, // API uses locationId field for the location reference
+                minQuantity: 10,
+                maxQuantity: 200,
             },
         });
         expect(res.status(), await res.text()).toBeGreaterThanOrEqual(200);

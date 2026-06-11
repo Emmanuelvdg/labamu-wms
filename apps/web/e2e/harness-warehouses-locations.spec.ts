@@ -66,9 +66,8 @@ test.describe('Harness: Warehouses & Locations CRUD', () => {
                 address: '1 Harness Blvd',
                 city: 'Jakarta',
                 country: 'Indonesia',
-                type: 'warehouse',
+                type: 'WAREHOUSE',
                 location: { lat: -6.2, lng: 106.8 },
-                description: 'E2E test warehouse',
             },
         });
         expect(res.status(), await res.text()).toBe(201);
@@ -150,8 +149,8 @@ test.describe('Harness: Warehouses & Locations CRUD', () => {
         deleteWhId = (await createRes.json()).id;
 
         const delRes = await request.delete(`${API}/warehouses/${deleteWhId}`, { headers: auth() });
-        // Either 200/204 (deleted) or 409 (has dependencies — also acceptable)
-        expect([200, 204, 409]).toContain(delRes.status());
+        // 200/204 = deleted, 400/409 = has dependencies (auto-created locations), also acceptable
+        expect([200, 204, 400, 409]).toContain(delRes.status());
         console.log(`✓ Delete WH: ${delRes.status()}`);
     });
 

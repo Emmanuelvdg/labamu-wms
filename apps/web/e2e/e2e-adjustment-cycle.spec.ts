@@ -86,17 +86,19 @@ test.describe('E2E Flow: Inventory Adjustment Cycle', () => {
         console.log(`✓ ADJ fixtures: product=${productId}, wh=${warehouseId}, loc=${locationId}`);
     });
 
-    // ── STEP 1: Create ADD adjustment (positive quantity) ────────────────────────
+    // ── STEP 1: Create ADD adjustment ────────────────────────────────────────────
 
     test('ADJ-1: POST /inventory/adjustments creates ADD adjustment', async ({ request }) => {
-        // DTO: { productId, locationId, quantity (non-zero), reason }
-        // Positive quantity = ADD stock, negative = REMOVE stock
+        // The adjustment service uses countedQuantity (what you count) vs
+        // currentQuantity (what the system has). Delta = counted - current.
+        // To ADD 100 units to an empty location: countedQuantity=100, currentQuantity=0
         const res = await request.post(`${API}/inventory/adjustments`, {
             headers: auth(),
             data: {
                 productId,
                 locationId,
-                quantity: 100,
+                countedQuantity: 100,
+                currentQuantity: 0,
                 reason: 'E2E cycle count adjustment — initial stock',
             },
         });
@@ -115,7 +117,8 @@ test.describe('E2E Flow: Inventory Adjustment Cycle', () => {
         const res = await request.put(`${API}/inventory/adjustments/${addAdjId}`, {
             headers: auth(),
             data: {
-                quantity: 80,
+                countedQuantity: 80,
+                currentQuantity: 0,
                 reason: 'Updated: E2E cycle count — confirmed quantity',
             },
         });
@@ -164,13 +167,14 @@ test.describe('E2E Flow: Inventory Adjustment Cycle', () => {
     // ── STEP 5: Create REMOVE adjustment ────────────────────────────────────────
 
     test('ADJ-5: POST /inventory/adjustments creates REMOVE adjustment', async ({ request }) => {
-        // Negative quantity = remove stock
+        // countedQuantity=70 (what we found), currentQuantity=80 → delta = -10 (remove)
         const res = await request.post(`${API}/inventory/adjustments`, {
             headers: auth(),
             data: {
                 productId,
                 locationId,
-                quantity: -10,
+                countedQuantity: 70,
+                currentQuantity: 80,
                 reason: 'E2E damaged goods removal',
             },
         });
