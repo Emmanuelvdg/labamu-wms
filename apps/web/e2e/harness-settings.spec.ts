@@ -29,13 +29,14 @@ test.describe.configure({ mode: 'serial' });
 
 test.describe('Harness: Settings (Categories, Attributes, API Keys)', () => {
     let adminToken: string;
+    let adminUserId: string;
     let categoryId: string;
     let attributeId: string;
     let apiKeyId: string;
 
     test.beforeAll(async ({ request }) => {
         const saved = loadAdminApiToken();
-        if (saved) { adminToken = saved.token; return; }
+        if (saved) { adminToken = saved.token; adminUserId = saved.userId; return; }
         const res = await request.post(`${API}/auth/login`, {
             data: { email: 'admin@labamu.co.id', password: 'password123' },
         });
@@ -180,7 +181,7 @@ test.describe('Harness: Settings (Categories, Attributes, API Keys)', () => {
 
     test('APIKEY-1: POST /api-keys creates a new API key', async ({ request }) => {
         const res = await request.post(`${API}/api-keys`, {
-            headers: auth(),
+            headers: { ...auth(), 'x-user-id': adminUserId },
             data: {
                 name: `Harness API Key ${TS}`,
                 permissions: ['INVENTORY:READ', 'ORDERS:READ'],

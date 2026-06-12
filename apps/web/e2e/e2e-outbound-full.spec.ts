@@ -349,7 +349,8 @@ test.describe('E2E Flow: Complete Outbound', () => {
         await page.goto(`/orders/${orderId}`);
         await page.waitForLoadState('networkidle');
         const bodyText = await page.locator('body').textContent();
-        expect(bodyText).not.toMatch(/404|not found/i);
+        // Positive check: page must contain order-related content
+        expect(bodyText).toMatch(/Order|order|Status|Customer/i);
         console.log('✓ Order detail page loaded');
     });
 

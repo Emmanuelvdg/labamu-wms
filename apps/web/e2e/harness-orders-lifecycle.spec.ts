@@ -210,6 +210,9 @@ test.describe('Harness: Orders Lifecycle', () => {
         if (!createRes.ok()) { test.skip(); return; }
         orderToDelete = (await createRes.json()).id;
 
+        // Cancel first if the order has reservations (non-PENDING orders require cancel before delete)
+        await request.post(`${API}/orders/${orderToDelete}/cancel`, { headers: auth() }).catch(() => {});
+
         const delRes = await request.delete(`${API}/orders/${orderToDelete}`, { headers: auth() });
         expect(delRes.ok(), `Delete: ${await delRes.text()}`).toBeTruthy();
 

@@ -212,9 +212,8 @@ test.describe('Harness: Purchase Orders Lifecycle', () => {
         const res = await request.post(`${API}/purchase-orders/${poId}/inspections`, {
             headers: auth(),
             data: {
-                result: 'PASS',
                 notes: 'All items inspected and passed E2E QA',
-                inspectedQuantity: 100,
+                results: [{ productId, receivedQty: 100, acceptedQty: 100, rejectedQty: 0 }],
             },
         });
         expect(res.ok(), `Inspection: ${await res.text()}`).toBeTruthy();

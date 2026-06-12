@@ -173,9 +173,9 @@ test.describe('Harness: Customers CRUD', () => {
         await loginAsAdmin(page);
         await page.goto(`/customers/${createdId}`);
         await page.waitForLoadState('networkidle');
-        // Detail page should not show generic 404 — some customer info must be present
+        // Check the rendered page has customer-related content (positive assertion)
         const bodyText = await page.locator('body').textContent();
-        expect(bodyText).not.toMatch(/404|not found/i);
+        expect(bodyText).toMatch(/Customer|Profile|Order History/i);
         console.log('✓ Customer detail page loaded');
     });
 

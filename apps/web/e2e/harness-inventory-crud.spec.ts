@@ -32,6 +32,7 @@ test.describe('Harness: Inventory CRUD', () => {
     let adminToken: string;
     let productId: string;
     let batchId: string;
+    let warehouseId: string;
 
     test.beforeAll(async ({ request }) => {
         const saved = loadAdminApiToken();
@@ -167,10 +168,20 @@ test.describe('Harness: Inventory CRUD', () => {
     // ── BATCH / LOT ─────────────────────────────────────────────────────────────
 
     test('INV-10: POST /inventory/batch creates a batch for the product', async ({ request }) => {
+        // Batch requires a valid warehouseId — fetch from the first warehouse
+        if (!warehouseId) {
+            const whRes = await request.get(`${API}/inventory/warehouses`, { headers: auth() });
+            if (whRes.ok()) {
+                const whs = await whRes.json();
+                const arr = Array.isArray(whs) ? whs : (whs.data ?? []);
+                if (arr.length > 0) warehouseId = arr[0].id;
+            }
+        }
         const res = await request.post(`${API}/inventory/batch`, {
             headers: auth(),
             data: {
                 productId,
+                warehouseId,
                 batchNumber: `BATCH-${TS}`,
                 purchaseDate: '2026-01-01',
                 expiryDate: '2027-12-31',
