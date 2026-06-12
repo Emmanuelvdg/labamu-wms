@@ -562,8 +562,8 @@ test.describe('Utilisation Reporting (/reporting/utilisation)', () => {
         await page.goto('/reporting/utilisation');
         await page.waitForTimeout(2000);
 
-        // KPI card for Current Utilisation should show "24.7%"
-        await expect(page.getByText('24.7%')).toBeVisible({ timeout: 8000 });
+        // KPI card for Current Utilisation — utilization.toFixed(2) renders as "24.70%"
+        await expect(page.getByText('24.70%')).toBeVisible({ timeout: 8000 });
         console.log('✓ KPI card displays correct utilisation percentage');
     });
 
