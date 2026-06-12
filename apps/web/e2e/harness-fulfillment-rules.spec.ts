@@ -30,6 +30,7 @@ test.describe('Harness: Fulfillment Rules & Reordering', () => {
     let warehouseId: string;
     let productId: string;
     let reorderRuleId: string;
+    let locationId: string;
 
     test.beforeAll(async ({ request }) => {
         const saved = loadAdminApiToken();
@@ -53,6 +54,16 @@ test.describe('Harness: Fulfillment Rules & Reordering', () => {
             const whs = await whRes.json();
             const arr = Array.isArray(whs) ? whs : (whs.data ?? []);
             if (arr.length > 0) warehouseId = arr[0].id;
+        }
+
+        // Get a location ID (required for reordering rules)
+        if (warehouseId) {
+            const locRes = await request.get(`${API}/inventory/locations?warehouseId=${warehouseId}`, { headers: auth() });
+            if (locRes.ok()) {
+                const locs = await locRes.json();
+                const locArr = Array.isArray(locs) ? locs : (locs.data ?? []);
+                if (locArr.length > 0) locationId = locArr[0].id;
+            }
         }
 
         const prodRes = await request.post(`${API}/inventory/products`, {
@@ -165,11 +176,12 @@ test.describe('Harness: Fulfillment Rules & Reordering', () => {
     // ── REORDERING RULES ─────────────────────────────────────────────────────────
 
     test('REORDER-1: POST /inventory/reordering-rules creates a reorder rule', async ({ request }) => {
-        if (!productId || !warehouseId) { test.skip(); return; }
+        if (!productId || !locationId) { test.skip(); return; }
         const res = await request.post(`${API}/inventory/reordering-rules`, {
             headers: auth(),
             data: {
                 productId,
+                locationId,
                 minQuantity: 10,
                 maxQuantity: 200,
             },

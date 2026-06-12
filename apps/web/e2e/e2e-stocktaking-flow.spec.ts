@@ -161,7 +161,7 @@ test.describe('E2E Flow: Stocktaking Session → Count → Reconcile', () => {
     // ── Step 5: GET sessions list includes ours ───────────────────────────────
 
     test('Step 5: GET /stocktaking/sessions list includes our session', async ({ request }) => {
-        const res = await request.get(`${API}/stocktaking/sessions?warehouseId=${warehouseId}`);
+        const res = await request.get(`${API}/stocktaking/sessions?warehouseId=${warehouseId}`, { headers: authHeaders() });
         expect(res.ok()).toBeTruthy();
         const raw = await res.json();
         const sessions: any[] = Array.isArray(raw) ? raw : (raw.data ?? []);

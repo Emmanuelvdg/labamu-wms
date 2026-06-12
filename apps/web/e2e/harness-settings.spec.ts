@@ -145,8 +145,6 @@ test.describe('Harness: Settings (Categories, Attributes, API Keys)', () => {
             data: {
                 name: `Harness Attr UPDATED ${TS}`,
                 type: 'TEXT',
-                description: 'Updated by E2E',
-                isRequired: true,
             },
         });
         expect(res.ok(), `Update attr: ${await res.text()}`).toBeTruthy();

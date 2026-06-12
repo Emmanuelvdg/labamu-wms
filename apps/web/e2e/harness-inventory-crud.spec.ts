@@ -172,6 +172,7 @@ test.describe('Harness: Inventory CRUD', () => {
             data: {
                 productId,
                 batchNumber: `BATCH-${TS}`,
+                purchaseDate: '2026-01-01',
                 expiryDate: '2027-12-31',
                 quantity: 50,
                 costPerUnit: 250000,
