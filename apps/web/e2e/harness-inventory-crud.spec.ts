@@ -136,11 +136,12 @@ test.describe('Harness: Inventory CRUD', () => {
 
     test('INV-8: GET /inventory/products/:id/barcode returns barcode data', async ({ request }) => {
         const res = await request.get(`${API}/inventory/products/${productId}/barcode`, { headers: auth() });
-        expect(res.ok(), `Barcode: ${await res.text()}`).toBeTruthy();
-        const body = await res.json();
-        // Should contain some barcode/QR data
-        expect(body).toBeTruthy();
-        console.log('✓ Barcode endpoint returned data');
+        expect(res.ok(), `Barcode: status=${res.status()}`).toBeTruthy();
+        // Barcode endpoint returns binary PNG image (not JSON)
+        const contentType = res.headers()['content-type'] ?? '';
+        const buf = await res.body();
+        expect(buf.length).toBeGreaterThan(0);
+        console.log(`✓ Barcode endpoint returned data (type=${contentType}, size=${buf.length}b)`);
     });
 
     // ── UPDATE PRODUCT ──────────────────────────────────────────────────────────

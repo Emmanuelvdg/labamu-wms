@@ -170,7 +170,6 @@ test.describe('Harness: Fulfillment Rules & Reordering', () => {
             headers: auth(),
             data: {
                 productId,
-                locationId: warehouseId, // API uses locationId field for the location reference
                 minQuantity: 10,
                 maxQuantity: 200,
             },

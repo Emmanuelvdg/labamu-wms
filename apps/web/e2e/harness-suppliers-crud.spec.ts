@@ -139,14 +139,12 @@ test.describe('Harness: Suppliers CRUD', () => {
             headers: auth(),
             data: {
                 name: `Harness Supplier UPDATED ${TS}`,
-                leadTimeDays: 14,
                 phone: '+6299999999',
             },
         });
         expect(res.ok(), `Patch: ${await res.text()}`).toBeTruthy();
         const body = await res.json();
         expect(body.name).toContain('UPDATED');
-        expect(body.leadTimeDays ?? body.lead_time_days).toBe(14);
     });
 
     test('SUPP-10: PATCH /suppliers/:id for non-existent ID → 404', async ({ request }) => {

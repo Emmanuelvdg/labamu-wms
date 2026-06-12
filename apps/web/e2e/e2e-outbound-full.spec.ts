@@ -247,8 +247,9 @@ test.describe('E2E Flow: Complete Outbound', () => {
             // Check if a packing session already exists for this order
             const existing = await request.get(`${API}/packing/sessions/order/${orderId}`, { headers: auth() });
             if (existing.ok()) {
-                const body = await existing.json();
-                packingSessionId = body.id ?? body.session?.id;
+                const text = await existing.text();
+                const body = text ? JSON.parse(text) : null;
+                packingSessionId = body?.id ?? body?.session?.id;
                 console.log(`✓ Existing packing session: ${packingSessionId}`);
             } else {
                 console.log(`ℹ Packing session: ${res.status()} — may need picking to complete first`);

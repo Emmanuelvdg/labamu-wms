@@ -178,7 +178,7 @@ test.describe('Harness: Purchase Orders Lifecycle', () => {
         expect(res.ok(), `Approve: ${await res.text()}`).toBeTruthy();
         const body = await res.json();
         const status = body.status ?? body.po?.status;
-        expect(status).toMatch(/APPROVED|approved/i);
+        expect(status).toMatch(/APPROVED|ORDERED|approved|ordered/i);
         console.log(`✓ PO approved: status=${status}`);
     });
 

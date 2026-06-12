@@ -34,6 +34,7 @@ test.describe('E2E Flow: Complete Inbound', () => {
     let receivingLocId: string;
     let storageLocId: string;
     let poId: string;
+    let poItemId: string;
     let putawaySessionId: string;
     let putawayTaskId: string;
 
@@ -127,8 +128,10 @@ test.describe('E2E Flow: Complete Inbound', () => {
             },
         });
         expect(res.ok(), await res.text()).toBeTruthy();
-        poId = (await res.json()).id;
-        console.log('✓ PO created:', poId);
+        const poBody = await res.json();
+        poId = poBody.id;
+        poItemId = poBody.items?.[0]?.id ?? poBody.orderItems?.[0]?.id ?? '';
+        console.log('✓ PO created:', poId, 'item:', poItemId);
     });
 
     test('INBOUND-2: Submit PO for approval', async ({ request }) => {
@@ -151,12 +154,19 @@ test.describe('E2E Flow: Complete Inbound', () => {
     // ── STEP 2: Receive Goods ────────────────────────────────────────────────────
 
     test('INBOUND-4: Receive 200 units into receiving location', async ({ request }) => {
+        // If we don't have a poItemId yet, fetch the PO to get it
+        if (!poItemId) {
+            const poRes = await request.get(`${API}/purchase-orders/${poId}`, { headers: auth() });
+            if (poRes.ok()) {
+                const po = await poRes.json();
+                poItemId = (po.items ?? po.orderItems ?? [])[0]?.id ?? '';
+            }
+        }
         const res = await request.post(`${API}/purchase-orders/${poId}/receive`, {
             headers: auth(),
             data: {
                 locationId: receivingLocId,
-                items: [{ productId, quantity: 200, condition: 'GOOD' }],
-                notes: 'Full E2E receiving',
+                items: [{ poItemId, quantity: 200 }],
             },
         });
         expect(res.ok(), `Receive: ${await res.text()}`).toBeTruthy();

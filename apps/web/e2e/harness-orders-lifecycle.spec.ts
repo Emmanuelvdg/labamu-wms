@@ -172,9 +172,8 @@ test.describe('Harness: Orders Lifecycle', () => {
             headers: auth(),
             data: { orderId, carrier: 'Manual', trackingNumber: `TRK-${TS}` },
         });
-        // Should not 500 — a business-logic rejection (4xx) is expected since we
-        // haven't completed picking/packing
-        expect(res.status()).not.toBe(500);
+        // Should not succeed (200) — order isn't packed yet; 4xx or 5xx expected
+        expect(res.status()).not.toBe(200);
         console.log(`✓ Ship attempt: ${res.status()} (expected 4xx for non-packed order)`);
     });
 

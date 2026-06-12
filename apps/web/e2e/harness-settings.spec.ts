@@ -121,8 +121,6 @@ test.describe('Harness: Settings (Categories, Attributes, API Keys)', () => {
             data: {
                 name: `Harness Attr ${TS}`,
                 type: 'TEXT',
-                description: 'E2E test attribute',
-                isRequired: false,
             },
         });
         expect(res.status(), await res.text()).toBeGreaterThanOrEqual(200);

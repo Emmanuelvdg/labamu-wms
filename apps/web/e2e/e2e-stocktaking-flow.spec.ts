@@ -93,6 +93,7 @@ test.describe('E2E Flow: Stocktaking Session → Count → Reconcile', () => {
 
     test('Step 1: POST /stocktaking/sessions creates an OPEN session', async ({ request }) => {
         const res = await request.post(`${API}/stocktaking/sessions`, {
+            headers: authHeaders(),
             data: {
                 warehouseId,
                 type: 'CYCLE_COUNT',
