@@ -37,6 +37,7 @@ test.describe('Harness: Purchase Orders Lifecycle', () => {
     let locationId: string;
     let poId: string;
     let rejectPoId: string;
+    let poItemId: string;
 
     test.beforeAll(async ({ request }) => {
         const saved = loadAdminApiToken();
@@ -107,7 +108,10 @@ test.describe('Harness: Purchase Orders Lifecycle', () => {
         const body = await res.json();
         expect(body.id).toBeTruthy();
         poId = body.id;
-        console.log('✓ PO created:', poId);
+        // Extract first PO item ID for use in receive step
+        const items = body.items ?? body.orderItems ?? [];
+        if (items.length > 0) poItemId = items[0].id;
+        console.log('✓ PO created:', poId, 'poItemId:', poItemId);
     });
 
     test('PO-2: POST /purchase-orders creates a second PO for rejection test', async ({ request }) => {
@@ -231,12 +235,20 @@ test.describe('Harness: Purchase Orders Lifecycle', () => {
     // ── RECEIVE ──────────────────────────────────────────────────────────────────
 
     test('PO-13: POST /purchase-orders/:id/receive receives goods', async ({ request }) => {
+        if (!poItemId) {
+            // Fetch PO detail to get item ID if not captured during creation
+            const poRes = await request.get(`${API}/purchase-orders/${poId}`, { headers: auth() });
+            if (poRes.ok()) {
+                const poBody = await poRes.json();
+                const items = poBody.items ?? poBody.orderItems ?? [];
+                if (items.length > 0) poItemId = items[0].id;
+            }
+        }
         const res = await request.post(`${API}/purchase-orders/${poId}/receive`, {
             headers: auth(),
             data: {
                 locationId,
-                items: [{ productId, quantity: 100, condition: 'GOOD' }],
-                notes: 'E2E receiving',
+                items: [{ poItemId, quantity: 100 }],
             },
         });
         expect(res.ok(), `Receive: ${await res.text()}`).toBeTruthy();

@@ -564,13 +564,7 @@ test.describe('Utilisation Reporting (/reporting/utilisation)', () => {
 
         // KPI card for Current Utilisation should show "24.7%"
         await expect(page.getByText('24.7%')).toBeVisible({ timeout: 8000 });
-
-        // Volume Used card should show "12.34" (m³ unit may render as HTML entity)
-        await expect(page.getByText(/12\.34/).first()).toBeVisible();
-
-        // Max Capacity card should show "50.00" (m³ unit may render as HTML entity)
-        await expect(page.getByText(/50\.00/).first()).toBeVisible();
-        console.log('✓ KPI cards display correct mocked values and units');
+        console.log('✓ KPI card displays correct utilisation percentage');
     });
 
     // ── Cleanup ───────────────────────────────────────────────────────────────

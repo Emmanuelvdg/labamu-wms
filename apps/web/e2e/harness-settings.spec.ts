@@ -42,6 +42,10 @@ test.describe('Harness: Settings (Categories, Attributes, API Keys)', () => {
         });
         adminToken = (await res.json()).token;
         expect(adminToken).toBeTruthy();
+        // Decode userId from JWT payload when user_id cookie is absent
+        if (!adminUserId && adminToken) {
+            try { adminUserId = JSON.parse(Buffer.from(adminToken.split('.')[1], 'base64').toString()).sub; } catch {}
+        }
     });
 
     function auth() {
