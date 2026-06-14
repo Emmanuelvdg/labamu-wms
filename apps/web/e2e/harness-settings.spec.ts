@@ -248,11 +248,13 @@ test.describe('Harness: Settings (Categories, Attributes, API Keys)', () => {
     });
 
     test('APIKEY-3: DELETE /api-keys/:id/revoke revokes the key', async ({ request }) => {
-        if (!apiKeyId) { test.skip(); return; }
-        const res = await request.delete(`${API}/api-keys/${apiKeyId}/revoke`, { headers: auth() });
+        if (!apiKeyId || !adminUserId) { test.skip(); return; }
+        // DELETE /api-keys/:id/revoke also requires x-user-id header
+        const authWithUser = { ...auth(), 'x-user-id': adminUserId };
+        const res = await request.delete(`${API}/api-keys/${apiKeyId}/revoke`, { headers: authWithUser });
         if (res.status() === 404) {
-            // Some implementations use DELETE /api-keys/:id directly
-            const res2 = await request.delete(`${API}/api-keys/${apiKeyId}`, { headers: auth() });
+            // Fallback: some implementations use DELETE /api-keys/:id directly
+            const res2 = await request.delete(`${API}/api-keys/${apiKeyId}`, { headers: authWithUser });
             expect(res2.ok(), `Delete API key: ${await res2.text()}`).toBeTruthy();
         } else {
             expect(res.ok(), `Revoke API key: ${await res.text()}`).toBeTruthy();
