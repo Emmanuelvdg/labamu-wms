@@ -171,7 +171,7 @@ test.describe('Utilisation Reporting (/reporting/utilisation)', () => {
     test('UTIL-2: Filter controls are rendered — warehouse, location, period selectors', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto('/reporting/utilisation');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Warehouse selector: should show at least one option after load
         const warehouseSelect = page.getByRole('combobox').first();
@@ -303,7 +303,7 @@ test.describe('Utilisation Reporting (/reporting/utilisation)', () => {
     test('UTIL-8: Location dropdown populates with warehouse locations', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto('/reporting/utilisation');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
         await page.waitForTimeout(2000); // allow warehouses + locations to load
 
         // Location selector should have "Entire Warehouse" as default option

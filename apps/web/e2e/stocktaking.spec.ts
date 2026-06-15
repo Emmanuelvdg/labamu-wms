@@ -9,7 +9,7 @@ test.describe('Stocktaking & Cycle Counting', () => {
 
     test('TC-STOCK-1: Stocktaking list page loads with correct heading and action button', async ({ page }) => {
         await page.goto('/stocktaking');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await expect(page.getByRole('heading', { name: 'Stocktaking & Cycle Counting' })).toBeVisible({ timeout: 10000 });
         await expect(page.getByText('Manage blind counts, cycle counts, and reconciliations')).toBeVisible();
@@ -22,7 +22,7 @@ test.describe('Stocktaking & Cycle Counting', () => {
 
     test('TC-STOCK-2: Stocktaking list table has correct columns', async ({ page }) => {
         await page.goto('/stocktaking');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await expect(page.getByText('Date')).toBeVisible();
         await expect(page.getByText('Type')).toBeVisible();
@@ -32,7 +32,7 @@ test.describe('Stocktaking & Cycle Counting', () => {
 
     test('TC-STOCK-3: Empty state shown when no active sessions', async ({ page }) => {
         await page.goto('/stocktaking');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         const rows = page.locator('table tbody tr');
         const count = await rows.count();
@@ -44,7 +44,7 @@ test.describe('Stocktaking & Cycle Counting', () => {
 
     test('TC-STOCK-4: New stocktake form has required fields', async ({ page }) => {
         await page.goto('/stocktaking/new');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await expect(page.getByRole('heading', { name: 'Start New Stocktake' })).toBeVisible({ timeout: 10000 });
 
@@ -64,7 +64,7 @@ test.describe('Stocktaking & Cycle Counting', () => {
 
     test('TC-STOCK-5: New stocktake form - type selector has all options', async ({ page }) => {
         await page.goto('/stocktaking/new');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         const typeSelect = page.locator('select').nth(1);
         await expect(typeSelect).toBeVisible({ timeout: 10000 });
@@ -79,7 +79,7 @@ test.describe('Stocktaking & Cycle Counting', () => {
 
     test('TC-STOCK-6: Creating a new cycle count session redirects to the list', async ({ page }) => {
         await page.goto('/stocktaking/new');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         page.on('dialog', async dialog => dialog.accept());
 

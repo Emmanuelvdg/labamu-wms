@@ -9,6 +9,7 @@ test.describe('Supplier Management', () => {
 
     test('TC-9.1: Create Supplier', async ({ page }) => {
         await page.goto('/inventory/suppliers');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Open Modal — rendered as a plain div overlay (no dialog role)
         await page.getByTestId('add-supplier-btn').click();

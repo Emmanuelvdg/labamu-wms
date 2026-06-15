@@ -26,7 +26,7 @@ test.describe('Warehouse Management', () => {
 
         // 1. Navigate to Warehouses
         await page.goto('/inventory/warehouses');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // 2. Create Warehouse
         await page.getByTestId('create-warehouse-btn').click();
@@ -41,7 +41,7 @@ test.describe('Warehouse Management', () => {
 
         // 3. Navigate to Locations Management
         await page.goto('/inventory/locations');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // 4. Create Zone (Room) under Warehouse
         // evaluate bypasses viewport check — the form dialog overflows the visible area
@@ -103,7 +103,7 @@ test.describe('Warehouse Management', () => {
             }
             throw e;
         }
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
         await expect(page.getByText('Loading...')).not.toBeVisible();
 
         const createBtn = page.getByTestId('create-location-btn');
@@ -122,7 +122,7 @@ test.describe('Warehouse Management', () => {
         await page.waitForSelector('h2:has-text("Create Location")', { state: 'hidden' });
 
         await page.reload();
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
         await expect(page.getByText(locName)).toBeVisible();
 
         // 2. Edit

@@ -8,7 +8,7 @@ test.describe('Transfer Operations', () => {
 
     test('TC-XFER-1: Transfers page loads with correct heading and action button', async ({ page }) => {
         await page.goto('/transfers');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await expect(page.getByRole('heading', { name: 'Transfer Operations' })).toBeVisible({ timeout: 10000 });
 
@@ -18,7 +18,7 @@ test.describe('Transfer Operations', () => {
 
     test('TC-XFER-2: Transfers list table has correct columns', async ({ page }) => {
         await page.goto('/transfers');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Verify table headers are present
         const tableHeaders = page.locator('table thead th');
@@ -30,7 +30,7 @@ test.describe('Transfer Operations', () => {
 
     test('TC-XFER-3: Create New Transfer modal opens with correct fields', async ({ page }) => {
         await page.goto('/transfers');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await page.getByRole('button', { name: /New Transfer/i }).click();
 
@@ -52,7 +52,7 @@ test.describe('Transfer Operations', () => {
 
     test('TC-XFER-4: Transfer modal cancel button closes the modal', async ({ page }) => {
         await page.goto('/transfers');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await page.getByRole('button', { name: /New Transfer/i }).click();
         await expect(page.getByRole('heading', { name: 'Create New Transfer' })).toBeVisible();
@@ -67,7 +67,7 @@ test.describe('Transfer Operations', () => {
 
     test('TC-XFER-5: Transfer modal warehouse dropdowns are populated', async ({ page }) => {
         await page.goto('/transfers');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await page.getByRole('button', { name: /New Transfer/i }).click();
         await expect(page.getByRole('heading', { name: 'Create New Transfer' })).toBeVisible();
@@ -84,7 +84,7 @@ test.describe('Transfer Operations', () => {
 
     test('TC-XFER-6: Add Another Product button adds a product row in the modal', async ({ page }) => {
         await page.goto('/transfers');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await page.getByRole('button', { name: /New Transfer/i }).click();
         await expect(page.getByRole('heading', { name: 'Create New Transfer' })).toBeVisible();
@@ -105,7 +105,7 @@ test.describe('Transfer Operations', () => {
 
     test('TC-XFER-7: Creating a transfer with valid data submits correctly', async ({ page }) => {
         await page.goto('/transfers');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await page.getByRole('button', { name: /New Transfer/i }).click();
         await expect(page.getByRole('heading', { name: 'Create New Transfer' })).toBeVisible();

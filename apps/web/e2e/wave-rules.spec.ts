@@ -9,7 +9,7 @@ test.describe('Wave Release Rules', () => {
 
     test('TC-WAVE-1: Wave rules page loads', async ({ page }) => {
         await page.goto('/picking/wave-rules');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await expect(page.getByRole('heading', { name: /wave release rules/i })).toBeVisible({ timeout: 10000 });
         await expect(page.locator('body')).not.toContainText('Application error');
@@ -17,7 +17,7 @@ test.describe('Wave Release Rules', () => {
 
     test('TC-WAVE-2: New Rule button opens creation modal', async ({ page }) => {
         await page.goto('/picking/wave-rules');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await page.getByRole('button', { name: /new rule|add rule/i }).click();
 
@@ -30,7 +30,7 @@ test.describe('Wave Release Rules', () => {
 
     test('TC-WAVE-3: Create a TIME_BASED wave rule', async ({ page }) => {
         await page.goto('/picking/wave-rules');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Requires a warehouse to exist — skip gracefully
         const warehouseSelect = page.locator('select').first();
@@ -62,7 +62,7 @@ test.describe('Wave Release Rules', () => {
 
     test('TC-WAVE-4: Enable/disable toggle is present on existing rules', async ({ page }) => {
         await page.goto('/picking/wave-rules');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // If any rules exist, a toggle should be visible
         const toggle = page.getByRole('button', { name: /enable|disable|toggle/i }).first();
@@ -77,7 +77,7 @@ test.describe('Wave Release Rules', () => {
 
     test('TC-WAVE-5: Manual trigger button visible on MANUAL rules', async ({ page }) => {
         await page.goto('/picking/wave-rules');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Look for "Trigger" action button anywhere in the rules table
         const triggerBtns = page.getByRole('button', { name: /trigger/i });

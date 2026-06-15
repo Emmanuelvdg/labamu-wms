@@ -9,7 +9,7 @@ test.describe('Workflow Templates', () => {
 
     test('TC-WF-1: Workflows page loads with heading and create button', async ({ page }) => {
         await page.goto('/workflows');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Page heading (could be "Workflows", "Workflow Templates", etc.)
         const heading = page.getByRole('heading').first();
@@ -22,7 +22,7 @@ test.describe('Workflow Templates', () => {
 
     test('TC-WF-2: Create New Workflow modal opens with name input', async ({ page }) => {
         await page.goto('/workflows');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         const createBtn = page.getByRole('button', { name: /New Workflow|Create Workflow|Create Template/i }).first();
         await createBtn.click();
@@ -39,7 +39,7 @@ test.describe('Workflow Templates', () => {
 
     test('TC-WF-3: Create modal cancel button closes the modal', async ({ page }) => {
         await page.goto('/workflows');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         await page.getByRole('button', { name: /New Workflow|Create Workflow|Create Template/i }).first().click();
         await expect(page.getByRole('heading', { name: 'Create New Workflow' })).toBeVisible();
@@ -51,7 +51,7 @@ test.describe('Workflow Templates', () => {
 
     test('TC-WF-4: Creating a new workflow template with a name', async ({ page }) => {
         await page.goto('/workflows');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         const timestamp = Date.now();
         const workflowName = `E2E Workflow ${timestamp}`;
@@ -74,7 +74,7 @@ test.describe('Workflow Templates', () => {
 
     test('TC-WF-5: Workflow cards show status, trigger type, and action buttons', async ({ page }) => {
         await page.goto('/workflows');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Check if any templates exist
         const templateCards = page.locator('.border.shadow-sm');
@@ -100,7 +100,7 @@ test.describe('Workflow Templates', () => {
 
     test('TC-WF-6: DRAFT workflow can be activated', async ({ page }) => {
         await page.goto('/workflows');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // First create a new workflow to ensure a DRAFT exists
         const timestamp = Date.now();
@@ -141,7 +141,7 @@ test.describe('Workflow Templates', () => {
 
     test('TC-WF-7: Workflow Builder link navigates to the builder page', async ({ page }) => {
         await page.goto('/workflows');
-        await page.waitForLoadState('networkidle');
+        await page.waitForLoadState('networkidle').catch(() => {});
 
         // Ensure at least one workflow exists
         const timestamp = Date.now();
