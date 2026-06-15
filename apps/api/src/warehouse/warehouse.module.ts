@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
+import {  } from '../prisma.service';
 import { WarehouseAreaController } from './warehouse-area.controller';
 import { WarehouseAreaService } from './warehouse-area.service';
 import { FloorplanImportExportController } from './floorplan-import-export.controller';
@@ -10,7 +10,7 @@ import { FeatureFlagGuard } from '../common/guards/feature-flag.guard';
 @Module({
     imports: [CompanyModule],
     controllers: [WarehouseAreaController, FloorplanImportExportController],
-    providers: [PrismaService, WarehouseAreaService, FloorplanImportExportService, FeatureFlagGuard],
+    providers: [WarehouseAreaService, FloorplanImportExportService, FeatureFlagGuard],
     exports: [WarehouseAreaService, FloorplanImportExportService],
 })
 export class WarehouseModule { }

@@ -4,7 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
-import { PrismaService } from '../prisma.service';
+import {  } from '../prisma.service';
 
 const INSECURE_DEFAULT = 'labamu-jwt-secret-change-in-production-please';
 
@@ -31,7 +31,7 @@ function resolveJwtSecret(): string {
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, JwtStrategy, PrismaService],
+    providers: [AuthService, JwtStrategy],
     exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

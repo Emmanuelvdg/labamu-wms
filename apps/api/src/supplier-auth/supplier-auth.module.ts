@@ -6,7 +6,7 @@ import { SupplierAuthController } from './supplier-auth.controller';
 import { SupplierPortalController } from './supplier-portal.controller';
 import { SupplierJwtStrategy } from './supplier-jwt.strategy';
 import { SupplierAuthGuard } from './supplier-auth.guard';
-import { PrismaService } from '../prisma.service';
+import {  } from '../prisma.service';
 import { NotificationModule } from '../notifications/notification.module';
 
 @Module({
@@ -19,7 +19,7 @@ import { NotificationModule } from '../notifications/notification.module';
         NotificationModule,
     ],
     controllers: [SupplierAuthController, SupplierPortalController],
-    providers: [SupplierAuthService, SupplierJwtStrategy, SupplierAuthGuard, PrismaService],
+    providers: [SupplierAuthService, SupplierJwtStrategy, SupplierAuthGuard],
     exports: [SupplierAuthGuard, SupplierJwtStrategy],
 })
 export class SupplierAuthModule { }

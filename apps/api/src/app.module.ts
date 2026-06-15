@@ -43,10 +43,11 @@ import { SupplierAuthModule } from './supplier-auth/supplier-auth.module';
 import { DeliveryMethodsController } from './configuration/delivery-methods.controller';
 import { DeliveryMethodsAliasController } from './configuration/delivery-methods-alias.controller';
 import { HealthController } from './health.controller';
-import { PrismaService } from './prisma.service';
+import { PrismaModule } from './prisma.module';
 
 @Module({
     imports: [
+        PrismaModule,
         ThrottlerModule.forRoot([{
             ttl: 60000,
             limit: 100,
@@ -89,7 +90,6 @@ import { PrismaService } from './prisma.service';
     ],
     controllers: [DeliveryMethodsController, DeliveryMethodsAliasController, HealthController],
     providers: [
-        PrismaService,
         {
             provide: APP_GUARD,
             useClass: ThrottlerGuard,

@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { BarcodeController } from './barcode.controller';
 import { BarcodeService } from './barcode.service';
-import { PrismaService } from '../prisma.service';
+import {  } from '../prisma.service';
 
 @Module({
   controllers: [BarcodeController],
-  providers: [BarcodeService, PrismaService],
+  providers: [BarcodeService],
   exports: [BarcodeService],
 })
 export class BarcodeModule {}

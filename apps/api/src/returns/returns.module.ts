@@ -2,10 +2,10 @@
 import { Module } from '@nestjs/common';
 import { ReturnsService } from './returns.service';
 import { ReturnsController } from './returns.controller';
-import { PrismaService } from '../prisma.service';
+import {  } from '../prisma.service';
 
 @Module({
     controllers: [ReturnsController],
-    providers: [ReturnsService, PrismaService],
+    providers: [ReturnsService],
 })
 export class ReturnsModule { }
