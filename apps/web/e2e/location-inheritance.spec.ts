@@ -81,7 +81,20 @@ test.describe('Location Attribute Inheritance', () => {
         await page.getByTestId('create-location-btn').click();
         await expect(page.getByTestId('location-name-input')).toBeVisible({ timeout: 5000 });
         await page.getByTestId('location-name-input').fill(childOverrideName);
-        // Skip Structure
+        // Wait for parent-select to appear (it may require a structure selection first)
+        const parentSelectVisible = await page.getByTestId('location-parent-select').isVisible({ timeout: 2000 }).catch(() => false);
+        if (!parentSelectVisible) {
+            // Select Generic structure to surface the parent dropdown
+            await page.getByTestId('location-structure-select').evaluate((el: HTMLElement) => el.click()).catch(() => {});
+            await page.waitForTimeout(200);
+            const genericOpt = page.getByRole('option', { name: /generic/i }).first();
+            if (await genericOpt.isVisible({ timeout: 2000 }).catch(() => false)) {
+                await genericOpt.evaluate((el: HTMLElement) => el.click());
+            } else {
+                await page.getByRole('option').first().evaluate((el: HTMLElement) => el.click()).catch(() => {});
+            }
+            await page.waitForTimeout(300);
+        }
 
         await page.getByTestId('location-parent-select').evaluate((el: HTMLElement) => el.click());
         await page.waitForTimeout(300);

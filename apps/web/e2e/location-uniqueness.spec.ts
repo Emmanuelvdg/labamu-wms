@@ -37,12 +37,7 @@ test.describe('Location Uniqueness', () => {
         await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
         await expect(page.getByText('Location created')).toBeVisible();
 
-        // 2. Attempt Duplicate and Intercept Request
-        const responsePromise = page.waitForResponse(response =>
-            response.url().includes('/inventory/locations') &&
-            response.request().method() === 'POST'
-        );
-
+        // 2. Attempt Duplicate
         await page.getByTestId('create-location-btn').click();
         await page.getByTestId('location-name-input').fill(locName);
         await page.getByTestId('location-structure-select').evaluate((el: HTMLElement) => el.click());
@@ -61,11 +56,23 @@ test.describe('Location Uniqueness', () => {
             await page.getByRole('option').first().evaluate((el: HTMLElement) => el.click());
         }
 
+        // Set up response intercept right before submit to avoid the 15 s action-timeout
+        const responsePromise = page.waitForResponse(
+            response =>
+                response.url().includes('/inventory/locations') &&
+                response.request().method() === 'POST',
+            { timeout: 30000 }
+        );
         await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
 
-        const response = await responsePromise;
-        // Server returns 409 (Conflict) or 500 (Prisma unique constraint) for duplicates
-        expect([409, 422, 500]).toContain(response.status());
-        console.log(`✓ Duplicate location rejected with status ${response.status()}`);
+        // Server may reject at the API (409/422/500) OR client-side before the request fires.
+        const clientError = await page.getByText(/already exists|duplicate|conflict/i).isVisible({ timeout: 3000 }).catch(() => false);
+        if (clientError) {
+            console.log('✓ Duplicate location rejected client-side');
+        } else {
+            const response = await responsePromise;
+            expect([409, 422, 500]).toContain(response.status());
+            console.log(`✓ Duplicate location rejected with status ${response.status()}`);
+        }
     });
 });

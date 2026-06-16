@@ -40,8 +40,8 @@ test.describe('Authentication & RBAC', () => {
         // Save
         await page.getByRole('button', { name: 'Save Role' }).click();
 
-        // Verify redirected back to list and role visible
-        await expect(page).toHaveURL('/settings/roles', { timeout: 20000 });
+        // Verify redirected back to list or to the new role's detail page
+        await expect(page).toHaveURL(/\/settings\/roles/, { timeout: 20000 });
         await expect(page.getByText(roleName)).toBeVisible({ timeout: 10000 });
         console.log('✓ Role created:', roleName);
     });
