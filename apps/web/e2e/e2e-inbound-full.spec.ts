@@ -217,11 +217,23 @@ test.describe('E2E Flow: Complete Inbound', () => {
         const sessionId = body.id ?? body.session?.id ?? putawaySessionId;
         console.log(`✓ Active putaway session: ${sessionId}`);
 
-        // Try to find a task ID
+        // Try to find a task ID from embedded tasks first
         const tasks = body.tasks ?? body.session?.tasks ?? [];
         if (tasks.length > 0) {
             putawayTaskId = tasks[0].id;
-            console.log(`✓ First putaway task: ${putawayTaskId}`);
+            console.log(`✓ First putaway task (embedded): ${putawayTaskId}`);
+        }
+        // If not embedded, fetch tasks from the session directly
+        if (!putawayTaskId && sessionId) {
+            const tasksRes = await request.get(`${API}/inventory/putaway/sessions/${sessionId}/tasks`, { headers: auth() });
+            if (tasksRes.ok()) {
+                const tasksBody = await tasksRes.json();
+                const arr = Array.isArray(tasksBody) ? tasksBody : (tasksBody.data ?? tasksBody.tasks ?? []);
+                if (arr.length > 0) {
+                    putawayTaskId = arr[0].id;
+                    console.log(`✓ First putaway task (fetched): ${putawayTaskId}`);
+                }
+            }
         }
     });
 

@@ -199,7 +199,25 @@ test.describe('E2E Flow: Complete Outbound', () => {
             if (fallback.ok()) {
                 const body = await fallback.json();
                 pickingSessionId = body.id ?? body.session?.id;
-                console.log(`✓ Picking session (fallback): ${pickingSessionId}`);
+                pickingTaskId = body.tasks?.[0]?.id ?? body.session?.tasks?.[0]?.id;
+                // If tasks not embedded, fetch them from the session
+                if (!pickingTaskId && pickingSessionId) {
+                    const sessRes = await request.get(`${API}/strategy/picking/sessions/${pickingSessionId}`, { headers: auth() });
+                    if (sessRes.ok()) {
+                        const sess = await sessRes.json();
+                        pickingTaskId = (sess.tasks ?? sess.session?.tasks ?? [])[0]?.id;
+                    }
+                    // Also try a /tasks sub-endpoint
+                    if (!pickingTaskId) {
+                        const tasksRes = await request.get(`${API}/strategy/picking/sessions/${pickingSessionId}/tasks`, { headers: auth() });
+                        if (tasksRes.ok()) {
+                            const tasks = await tasksRes.json();
+                            const arr = Array.isArray(tasks) ? tasks : (tasks.data ?? tasks.tasks ?? []);
+                            pickingTaskId = arr[0]?.id;
+                        }
+                    }
+                }
+                console.log(`✓ Picking session (fallback): ${pickingSessionId}, task: ${pickingTaskId}`);
             } else {
                 console.log(`ℹ Picking session creation: ${res.status()} / ${fallback.status()} — may need ADVANCED_PICKING flag`);
             }

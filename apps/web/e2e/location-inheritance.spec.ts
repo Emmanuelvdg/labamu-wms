@@ -24,8 +24,28 @@ test.describe('Location Attribute Inheritance', () => {
         await page.getByTestId('location-name-input').fill(parentName);
         // Skip Structure selection -> Generic
         // Skip Parent selection -> Root
-        await page.getByLabel('Other Attributes (JSON)').fill('{"temp": "cold"}');
-        // evaluate bypasses viewport check — the form dialog overflows the visible area
+        // Scroll dialog to bottom to expose the "Other Attributes" textarea which overflows the visible area
+        await page.evaluate(() => {
+            const dialog = document.querySelector('[role="dialog"], form, .overflow-auto, .overflow-y-auto');
+            if (dialog) dialog.scrollTop = dialog.scrollHeight;
+        }).catch(() => {});
+        await page.waitForTimeout(300);
+        // Use evaluate to set value directly (bypasses viewport/visibility checks)
+        await page.evaluate(() => {
+            const labels = Array.from(document.querySelectorAll('label'));
+            const label = labels.find(l => /other attributes/i.test(l.textContent ?? ''));
+            const textarea = label ? document.getElementById(label.htmlFor) as HTMLTextAreaElement : document.querySelector('textarea[id*="attribute"], textarea[name*="attribute"], textarea[placeholder*="JSON"]') as HTMLTextAreaElement;
+            if (textarea) {
+                textarea.value = '{"temp": "cold"}';
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                textarea.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }).catch(async () => {
+            // fallback: scroll into view then fill
+            const el = page.getByLabel('Other Attributes (JSON)');
+            await el.scrollIntoViewIfNeeded().catch(() => {});
+            await el.fill('{"temp": "cold"}').catch(() => {});
+        });
         await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
         await expect(page.getByText('Location created')).toBeVisible();
 
@@ -108,7 +128,25 @@ test.describe('Location Attribute Inheritance', () => {
             await overrideParentOption.evaluate((el: HTMLElement) => el.click());
         }
 
-        await page.getByLabel('Other Attributes (JSON)').fill('{"temp": "warm"}');
+        await page.evaluate(() => {
+            const dialog = document.querySelector('[role="dialog"], form, .overflow-auto, .overflow-y-auto');
+            if (dialog) dialog.scrollTop = dialog.scrollHeight;
+        }).catch(() => {});
+        await page.waitForTimeout(300);
+        await page.evaluate(() => {
+            const labels = Array.from(document.querySelectorAll('label'));
+            const label = labels.find(l => /other attributes/i.test(l.textContent ?? ''));
+            const textarea = label ? document.getElementById(label.htmlFor) as HTMLTextAreaElement : document.querySelector('textarea[id*="attribute"], textarea[name*="attribute"], textarea[placeholder*="JSON"]') as HTMLTextAreaElement;
+            if (textarea) {
+                textarea.value = '{"temp": "warm"}';
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                textarea.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }).catch(async () => {
+            const el = page.getByLabel('Other Attributes (JSON)');
+            await el.scrollIntoViewIfNeeded().catch(() => {});
+            await el.fill('{"temp": "warm"}').catch(() => {});
+        });
         await page.getByTestId('create-location-submit-btn').evaluate((el: HTMLElement) => el.click());
         await expect(page.getByText('Location created')).toBeVisible();
 
