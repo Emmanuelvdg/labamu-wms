@@ -8,6 +8,8 @@ test.describe('Location Attribute Inheritance', () => {
     });
 
     test('should inherit and override attributes', async ({ page }) => {
+        // This test creates 3 locations and verifies API responses — triple the default timeout
+        test.slow();
         const uniqueId = Date.now();
         const parentName = `Parent ${uniqueId}`;
         const childInheritName = `Child Inherit ${uniqueId}`;
