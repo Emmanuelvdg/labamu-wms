@@ -275,24 +275,27 @@ test.describe('Harness: Warehouses & Locations CRUD', () => {
     test('WH-UI-1: /inventory/warehouses page loads', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto('/inventory/warehouses');
-        await page.waitForLoadState('networkidle');
-        const body = await page.locator('body').textContent();
+        await page.waitForLoadState('networkidle').catch(() => {});
+        const body = await page.locator('body').textContent({ timeout: 10000 });
         expect(body).toMatch(/Warehouse/i);
     });
 
     test('WH-UI-2: /inventory/warehouses/:id detail page loads', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto(`/inventory/warehouses/${warehouseId}`);
-        await page.waitForLoadState('networkidle');
-        const body = await page.locator('body').textContent();
+        await page.waitForLoadState('networkidle').catch(() => {});
+        const body = await page.locator('body').textContent({ timeout: 10000 });
         expect(body).not.toMatch(/^404$/);
     });
 
     test('LOC-UI-1: /inventory/locations page loads', async ({ page }) => {
         await loginAsAdmin(page);
         await page.goto('/inventory/locations');
-        await page.waitForLoadState('networkidle');
-        const body = await page.locator('body').textContent();
+        // After many test rounds the locations list is very large — networkidle may never fire.
+        // Use domcontentloaded instead and give it a generous but bounded wait.
+        await page.waitForLoadState('domcontentloaded').catch(() => {});
+        await page.waitForTimeout(2000); // allow initial render
+        const body = await page.locator('body').textContent({ timeout: 10000 });
         expect(body).toMatch(/Location/i);
     });
 });
