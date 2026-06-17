@@ -30,13 +30,17 @@ test.describe('Location Attribute Inheritance', () => {
             if (dialog) dialog.scrollTop = dialog.scrollHeight;
         }).catch(() => {});
         await page.waitForTimeout(300);
-        // Use evaluate to set value directly (bypasses viewport/visibility checks)
+        // Use React-compatible value setter so controlled inputs update React state
         await page.evaluate(() => {
             const labels = Array.from(document.querySelectorAll('label'));
             const label = labels.find(l => /other attributes/i.test(l.textContent ?? ''));
-            const textarea = label ? document.getElementById(label.htmlFor) as HTMLTextAreaElement : document.querySelector('textarea[id*="attribute"], textarea[name*="attribute"], textarea[placeholder*="JSON"]') as HTMLTextAreaElement;
+            const textarea = (label ? document.getElementById(label.htmlFor) : null) as HTMLTextAreaElement | null
+                ?? document.querySelector('textarea[id*="attribute"], textarea[name*="attribute"], textarea[placeholder*="JSON"]') as HTMLTextAreaElement | null;
             if (textarea) {
-                textarea.value = '{"temp": "cold"}';
+                // Trigger React controlled input update via native setter
+                const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+                if (nativeSetter) nativeSetter.call(textarea, '{"temp": "cold"}');
+                else textarea.value = '{"temp": "cold"}';
                 textarea.dispatchEvent(new Event('input', { bubbles: true }));
                 textarea.dispatchEvent(new Event('change', { bubbles: true }));
             }
@@ -136,9 +140,12 @@ test.describe('Location Attribute Inheritance', () => {
         await page.evaluate(() => {
             const labels = Array.from(document.querySelectorAll('label'));
             const label = labels.find(l => /other attributes/i.test(l.textContent ?? ''));
-            const textarea = label ? document.getElementById(label.htmlFor) as HTMLTextAreaElement : document.querySelector('textarea[id*="attribute"], textarea[name*="attribute"], textarea[placeholder*="JSON"]') as HTMLTextAreaElement;
+            const textarea = (label ? document.getElementById(label.htmlFor) : null) as HTMLTextAreaElement | null
+                ?? document.querySelector('textarea[id*="attribute"], textarea[name*="attribute"], textarea[placeholder*="JSON"]') as HTMLTextAreaElement | null;
             if (textarea) {
-                textarea.value = '{"temp": "warm"}';
+                const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+                if (nativeSetter) nativeSetter.call(textarea, '{"temp": "warm"}');
+                else textarea.value = '{"temp": "warm"}';
                 textarea.dispatchEvent(new Event('input', { bubbles: true }));
                 textarea.dispatchEvent(new Event('change', { bubbles: true }));
             }
