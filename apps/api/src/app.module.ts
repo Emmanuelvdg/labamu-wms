@@ -33,6 +33,7 @@ import { NotificationModule } from './notifications/notification.module';
 import { OperationalAuditModule } from './audit/operational-audit.module';
 import { ExcelModule } from './common/excel/excel.module';
 import { CommonFeaturesModule } from './common/common.module';
+import { QuotaModule } from './common/quota/quota.module';
 import { WorkflowModule } from './workflow/workflow.module';
 import { BarcodeModule } from './barcode/barcode.module';
 import { RoutingModule } from './routing/routing.module';
@@ -81,6 +82,7 @@ import { PrismaModule } from './prisma.module';
         OperationalAuditModule,
         ExcelModule,
         CommonFeaturesModule,
+        QuotaModule,
         WorkflowModule,
         BarcodeModule,
         RoutingModule,

@@ -926,12 +926,15 @@ model DocumentAttachment {
 }
 
 model User {
-  id                 String                 @id @default(uuid())
-  email              String                 @unique
-  password           String?
-  name               String
-  companyId          String?
-  lastLoginAt        DateTime?
+  id                          String                 @id @default(uuid())
+  email                       String                 @unique
+  password                    String?
+  name                        String
+  companyId                   String?
+  lastLoginAt                 DateTime?
+  emailVerifiedAt             DateTime?
+  passwordResetToken          String?                @unique
+  passwordResetTokenExpiresAt DateTime?
   apiKeys            ApiKey[]
   pickingSessions    PickingSession[]
   putawaySessions    PutawaySession[]

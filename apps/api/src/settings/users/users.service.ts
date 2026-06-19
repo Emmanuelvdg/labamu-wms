@@ -1,11 +1,18 @@
 
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
+import { EmailService } from '../../common/email/email.service';
+import { QuotaService } from '../../common/quota/quota.service';
+import { getCurrentCompanyId } from '../../common/tenant/tenant-storage';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private emailService: EmailService,
+        private quotaService: QuotaService,
+    ) { }
 
     async getUsers() {
         return this.prisma.user.findMany({
@@ -33,9 +40,12 @@ export class UsersService {
         const existing = await this.prisma.user.findUnique({ where: { email: data.email } });
         if (existing) throw new BadRequestException('Email already exists');
 
+        // Enforce plan quota before creating the user
+        await this.quotaService.enforce(getCurrentCompanyId(), 'users');
+
         const hashedPassword = await bcrypt.hash(data.password || 'changeme123', 10);
 
-        return this.prisma.user.create({
+        const created = await this.prisma.user.create({
             data: {
                 name: data.name,
                 email: data.email,
@@ -49,6 +59,11 @@ export class UsersService {
             },
             include: { roles: true, warehouses: true }
         });
+
+        // Send welcome email (fire-and-forget — don't block the response)
+        this.emailService.sendWelcome(created.email, created.name).catch(() => {});
+
+        return created;
     }
 
     async updateUser(id: string, data: {

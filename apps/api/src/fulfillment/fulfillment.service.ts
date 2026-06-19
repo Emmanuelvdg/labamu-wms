@@ -210,19 +210,33 @@ export class FulfillmentService {
 
 
     async approveTransfer(transferId: string, approverId: string) {
-        return this.prisma.order.update({
+        const transfer = await this.prisma.order.update({
             where: { id: transferId },
-            data: {
-                status: 'APPROVED',
-                // approverId // Order model might not have approverId directly? Let's check schema.
-                // Schema snippet 350-450 didn't show approverId on Order.
-                // But Wait! Line 217 original code set `approverId`.
-                // If generic Order doesn't have it, I can't set it.
-                // I will Comment it out for now or check if extended fields exist.
-                // Assuming based on 'Unified Order Fields' valid status update is key.
-            }
+            data: { status: 'APPROVED' },
+            include: { items: true },
         });
-        // TODO: Trigger Picking Session at Source
+
+        // Trigger a picking session at the source warehouse so pickers can
+        // fulfill the transfer — this mirrors the outbound order flow.
+        if (transfer.warehouseId && transfer.items?.length > 0) {
+            try {
+                await (this.prisma.pickingSession as any).create({
+                    data: {
+                        warehouseId: transfer.warehouseId,
+                        userId: approverId,
+                        strategy: 'SINGLE',
+                        status: 'IN_PROGRESS',
+                        orders: { connect: [{ id: transferId }] },
+                    },
+                });
+                this.logger.log(`Picking session created for transfer ${transferId} at warehouse ${transfer.warehouseId}`);
+            } catch (err: any) {
+                // Non-critical — log but don't fail the approval
+                this.logger.warn(`Could not auto-create picking session for transfer ${transferId}: ${err?.message}`);
+            }
+        }
+
+        return transfer;
     }
 
     // --- Helpers ---

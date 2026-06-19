@@ -5,11 +5,11 @@ import { AttributeController } from './attribute.controller';
 import { AttributeService } from './attribute.service';
 import { UsersController } from './users/users.controller';
 import { UsersService } from './users/users.service';
-import {  } from '../prisma.service';
 import { CategoriesModule } from './categories/categories.module';
+import { EmailModule } from '../common/email/email.module';
 
 @Module({
-    imports: [CategoriesModule],
+    imports: [CategoriesModule, EmailModule],
     controllers: [RolesController, AttributeController, UsersController],
     providers: [RolesService, AttributeService, UsersService],
 })

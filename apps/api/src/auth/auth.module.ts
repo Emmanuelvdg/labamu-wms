@@ -4,7 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
-import {  } from '../prisma.service';
+import { EmailModule } from '../common/email/email.module';
 
 const INSECURE_DEFAULT = 'labamu-jwt-secret-change-in-production-please';
 
@@ -22,6 +22,7 @@ function resolveJwtSecret(): string {
 @Global()
 @Module({
     imports: [
+        EmailModule,
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
             useFactory: () => ({

@@ -878,8 +878,28 @@ function FloorPlanContent() {
                     });
                     const updated = await res.json();
                     setFunctionalAreas(functionalAreas.map(a => a.id === updated.id ? updated : a));
+                } else if (layer === 'zones') {
+                    // Zones and bins are inventory locations — update via the locations API
+                    const res = await fetch(`/api/inventory/locations/${elementData.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ x: snappedX, y: snappedY }),
+                    });
+                    if (res.ok) {
+                        const updated = await res.json();
+                        setZones((prev: any[]) => prev.map(z => z.id === updated.id ? { ...z, x: updated.x ?? snappedX, y: updated.y ?? snappedY } : z));
+                    }
+                } else if (layer === 'bins') {
+                    const res = await fetch(`/api/inventory/locations/${elementData.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ x: snappedX, y: snappedY }),
+                    });
+                    if (res.ok) {
+                        const updated = await res.json();
+                        setBins((prev: any[]) => prev.map(b => b.id === updated.id ? { ...b, x: updated.x ?? snappedX, y: updated.y ?? snappedY } : b));
+                    }
                 }
-                // TODO: Handle zones and bins updates
             }
         } catch (err) {
             console.error('Failed to save element:', err);
@@ -1065,8 +1085,27 @@ function FloorPlanContent() {
                 console.error('Failed to rotate:', err);
                 toast.error('Failed to rotate element');
             }
+        } else if (layer === 'zones' || layer === 'bins') {
+            const elements = layer === 'zones' ? zones : bins;
+            const setElements = layer === 'zones' ? setZones : setBins;
+            const el = (elements as any[]).find((e: any) => e.id === elementId);
+            if (!el) return;
+
+            const newRotation = ((el.rotation || 0) + 90) % 360;
+            try {
+                const res = await fetch(`/api/inventory/locations/${elementId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rotation: newRotation }),
+                });
+                if (res.ok) {
+                    setElements((prev: any[]) => prev.map((e: any) => e.id === elementId ? { ...e, rotation: newRotation } : e));
+                }
+            } catch (err) {
+                console.error('Failed to rotate:', err);
+                toast.error('Failed to rotate element');
+            }
         }
-        // TODO: Handle zones and bins rotation
     };
 
     const handleDelete = async (elementId: string, layer: 'areas' | 'zones' | 'bins') => {

@@ -1,6 +1,6 @@
 import {
     Controller, Post, Body, HttpCode, HttpStatus,
-    Get, Headers, UnauthorizedException,
+    Get, Headers, UnauthorizedException, Query,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -17,6 +17,30 @@ export class AuthController {
     async login(@Body() body: LoginDto) {
         // Returns { token, user }
         return this.authService.login(body.email, body.password);
+    }
+
+    /** Self-service: request a password-reset email. Always returns 200 to avoid enumeration. */
+    @Throttle({ default: { limit: process.env.NODE_ENV === 'production' ? 3 : 100, ttl: 60000 } })
+    @Post('forgot-password')
+    @HttpCode(HttpStatus.OK)
+    async forgotPassword(@Body() body: { email: string }) {
+        await this.authService.forgotPassword(body.email);
+        return { message: 'If that email is registered, a reset link has been sent.' };
+    }
+
+    /** Self-service: set a new password using the emailed token. */
+    @Post('reset-password')
+    @HttpCode(HttpStatus.OK)
+    async resetPassword(@Body() body: { token: string; newPassword: string }) {
+        await this.authService.resetPassword(body.token, body.newPassword);
+        return { message: 'Password updated successfully.' };
+    }
+
+    /** Verify email address using the token sent on account creation. */
+    @Get('verify-email')
+    async verifyEmail(@Query('token') token: string) {
+        await this.authService.verifyEmail(token);
+        return { message: 'Email verified successfully.' };
     }
 
     @Get('me')

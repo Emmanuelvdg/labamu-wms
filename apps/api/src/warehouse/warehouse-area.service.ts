@@ -302,7 +302,18 @@ export class WarehouseAreaService {
         const maxVolume = bin.maxVolume || 0;
 
         const weightUtilization = maxWeight > 0 ? (currentWeight / maxWeight) * 100 : 0;
-        const volumeUtilization = 0; // TODO: Calculate from product volumes
+
+        // Calculate volume utilization: sum of (length × width × height × qty) for each batch
+        const currentVolume = batches.reduce((sum: number, batch: any) => {
+            const p = batch.product;
+            if (!p) return sum;
+            const l = p.length ?? p.lengthCm ?? 0;
+            const w = p.width ?? p.widthCm ?? 0;
+            const h = p.height ?? p.heightCm ?? 0;
+            return sum + (l * w * h * batch.currentQuantity);
+        }, 0);
+        const volumeUtilization = maxVolume > 0 ? (currentVolume / maxVolume) * 100 : 0;
+
         const itemUtilization = 0; // Would need maxItems field
 
         const overallUtilization = Math.max(weightUtilization, volumeUtilization, itemUtilization);
@@ -330,7 +341,7 @@ export class WarehouseAreaService {
 
             // Current Usage
             currentWeight: Math.round(currentWeight * 100) / 100,
-            currentVolume: 0,
+            currentVolume: Math.round(currentVolume * 100) / 100,
             currentItems,
 
             // Utilization Percentages

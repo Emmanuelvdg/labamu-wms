@@ -57,6 +57,7 @@ function getUserFromCookie(): User | null {
             id: parsed.id,
             name: parsed.name ?? '',
             email: parsed.email ?? '',
+            companyId: parsed.companyId ?? null,
             roles: [{ name: 'cached', permissions }],
         };
     } catch {

@@ -51,7 +51,20 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
             if (!params.model || !TENANT_SCOPED_MODELS.has(params.model)) return next(params);
 
             const companyId = getCurrentCompanyId();
-            if (!companyId) return next(params);
+            if (!companyId) {
+                // In production, unscoped writes on tenant-scoped models are a security risk.
+                // Block them to prevent accidental cross-tenant data corruption.
+                if (process.env.NODE_ENV === 'production') {
+                    const unsafeOps = ['create', 'createMany', 'update', 'updateMany', 'upsert', 'delete', 'deleteMany'];
+                    if (unsafeOps.includes(params.action)) {
+                        throw new Error(
+                            `[TenantGuard] Unscoped ${params.action} on ${params.model} blocked in production. ` +
+                            `All write operations on tenant-scoped models require a JWT-derived companyId.`
+                        );
+                    }
+                }
+                return next(params);
+            }
 
             const readOps = ['findMany', 'findFirst', 'count', 'aggregate', 'groupBy', 'findFirstOrThrow'];
             const writeOps = ['create', 'createMany'];
