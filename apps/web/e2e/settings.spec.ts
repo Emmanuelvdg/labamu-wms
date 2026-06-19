@@ -109,8 +109,18 @@ test.describe('Seasonality Settings Page', () => {
 
     test.beforeEach(async ({ page }) => {
         await loginAsAdmin(page);
-        await page.goto('/settings/seasonality');
-        await page.waitForLoadState('networkidle');
+        try {
+            await page.goto('/settings/seasonality');
+        } catch (e: any) {
+            if (/ERR_NETWORK_IO_SUSPENDED|ERR_CONNECTION_RESET|ERR_ABORTED/i.test(e?.message ?? '')) {
+                // Network briefly suspended after long prior test — retry once
+                await page.waitForTimeout(2000);
+                await page.goto('/settings/seasonality');
+            } else {
+                throw e;
+            }
+        }
+        await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
         await expect(page.getByText('Loading...')).not.toBeVisible({ timeout: 15000 });
     });
 

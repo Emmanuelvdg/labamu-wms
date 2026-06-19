@@ -61,7 +61,13 @@ export default function InventoryLedgerPage() {
             const res = await fetch(`/api/reporting/inventory-ledger?${params}`);
             if (res.ok) {
                 const data = await res.json();
-                setEntries(Array.isArray(data.entries) ? data.entries : data);
+                // Normalise all possible shapes: array | { entries } | { data } | { items } | other → []
+                const arr: LedgerEntry[] = Array.isArray(data) ? data
+                    : Array.isArray(data.entries) ? data.entries
+                    : Array.isArray(data.data) ? data.data
+                    : Array.isArray(data.items) ? data.items
+                    : [];
+                setEntries(arr);
                 if (data.total != null) setTotal(data.total);
             }
         } catch { /* ignore */ } finally {

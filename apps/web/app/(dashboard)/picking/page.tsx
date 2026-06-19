@@ -286,19 +286,23 @@ export default function PickingPage() {
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Configure Picking Session</h2>
 
                     <div className="w-full max-w-sm text-left mb-8">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Strategy</label>
-                        <select
-                            value={strategy}
-                            onChange={(e: any) => setStrategy(e.target.value)}
-                            className="w-full border border-gray-300 rounded-md py-2 px-3 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        >
-                            <option value="SINGLE">Single Order</option>
-                            <option value="BATCH">Batch Picking</option>
-                            <option value="CLUSTER">Cluster Picking</option>
-                            <option value="WAVE">Wave Picking</option>
-                            <option value="WAVELESS">Waveless (Continuous Flow)</option>
-                            <option value="ZONE">Zone Picking</option>
-                        </select>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Strategy</label>
+                        <div className="flex flex-wrap gap-2">
+                            {(['SINGLE', 'BATCH', 'CLUSTER', 'WAVE', 'WAVELESS', 'ZONE'] as const).map((s) => (
+                                <button
+                                    key={s}
+                                    type="button"
+                                    onClick={() => setStrategy(s)}
+                                    className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
+                                        strategy === s
+                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    {s}
+                                </button>
+                            ))}
+                        </div>
                         {{
                             SINGLE:   <p className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">Pick one order at a time. Best for low volumes or urgent single-order fulfilment.</p>,
                             BATCH:    <p className="mt-2 text-xs text-gray-500 bg-gray-50 rounded p-2">Group multiple orders in one walk. Reduces travel time when orders share similar pick locations.</p>,

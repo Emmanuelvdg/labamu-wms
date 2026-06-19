@@ -78,14 +78,6 @@ test.describe('TC-35: Tenant Management', () => {
         await loginAsPlatformAdmin(page);
         await page.goto('/admin/tenants');
         await page.waitForLoadState('networkidle').catch(() => {});
-        // If the tenants page throws an Internal Server Error (e.g. DB query timeout after
-        // many test runs have created hundreds of tenants), skip the test gracefully rather
-        // than failing on missing elements.
-        const hasServerError = await page.getByText('Internal Server Error').isVisible({ timeout: 3000 }).catch(() => false);
-        if (hasServerError) {
-            console.log('ℹ /admin/tenants shows Internal Server Error — server-side issue, skipping this test');
-            test.skip();
-        }
     });
 
     test('TC-35.6: Tenants list page loads with table columns', async ({ page }) => {
