@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { getCurrentCompanyId } from '../common/tenant/tenant-storage';
 
 @Injectable()
 export class InvoiceService {
@@ -47,7 +48,9 @@ export class InvoiceService {
     }
 
     async getInvoices() {
+        const companyId = getCurrentCompanyId();
         return this.prisma.invoice.findMany({
+            where: companyId ? { vendor: { companyId } } : {},
             include: { vendor: true, purchaseOrder: true, items: true }
         });
     }

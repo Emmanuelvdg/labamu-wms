@@ -85,6 +85,7 @@ export class AuthController {
         if (!user) {
             throw new UnauthorizedException('User not found');
         }
-        return user;
+        const { password: _pw, ...safeUser } = user as any;
+        return safeUser;
     }
 }

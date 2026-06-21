@@ -1,5 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { getCurrentCompanyId } from './tenant/tenant-storage';
 
 @Injectable()
 export class BarcodeValidatorService {
@@ -11,21 +12,27 @@ export class BarcodeValidatorService {
      * Look up any entity by barcode (could be SKU, location barcode, batch number, etc.)
      */
     async lookupBarcode(barcode: string) {
+        const companyId = getCurrentCompanyId();
+        const tenantFilter = companyId ? { companyId } : {};
+
         // Try product by SKU
         const product = await this.prisma.product.findFirst({
-            where: { OR: [{ sku: barcode }, { id: barcode }] },
+            where: { ...tenantFilter, OR: [{ sku: barcode }, { id: barcode }] },
         });
         if (product) return { type: 'PRODUCT', entity: product };
 
         // Try location by barcode
         const location = await this.prisma.location.findFirst({
-            where: { OR: [{ code: barcode }, { id: barcode }] },
+            where: {
+                OR: [{ code: barcode }, { id: barcode }],
+                ...(companyId ? { warehouse: { companyId } } : {}),
+            },
         });
         if (location) return { type: 'LOCATION', entity: location };
 
         // Try batch by batch number
         const batch = await this.prisma.inventoryBatch.findFirst({
-            where: { OR: [{ batchNumber: barcode }, { id: barcode }] },
+            where: { ...tenantFilter, OR: [{ batchNumber: barcode }, { id: barcode }] },
             include: { product: true },
         });
         if (batch) return { type: 'BATCH', entity: batch };

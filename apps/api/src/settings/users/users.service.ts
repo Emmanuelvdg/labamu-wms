@@ -14,11 +14,19 @@ export class UsersService {
         private quotaService: QuotaService,
     ) { }
 
+    private omitPassword<T extends { password?: any }>(user: T): Omit<T, 'password'> {
+        const { password: _pw, ...safe } = user as any;
+        return safe;
+    }
+
     async getUsers() {
-        return this.prisma.user.findMany({
+        const companyId = getCurrentCompanyId();
+        const users = await this.prisma.user.findMany({
+            where: companyId ? { companyId } : {},
             include: { roles: true, warehouses: true },
             orderBy: { name: 'asc' }
         });
+        return users.map(u => this.omitPassword(u));
     }
 
     async getUser(id: string) {
@@ -27,7 +35,7 @@ export class UsersService {
             include: { roles: true, warehouses: true }
         });
         if (!user) throw new NotFoundException('User not found');
-        return user;
+        return this.omitPassword(user);
     }
 
     async createUser(data: {
@@ -63,7 +71,7 @@ export class UsersService {
         // Send welcome email (fire-and-forget — don't block the response)
         this.emailService.sendWelcome(created.email, created.name).catch(() => {});
 
-        return created;
+        return this.omitPassword(created);
     }
 
     async updateUser(id: string, data: {
@@ -81,7 +89,7 @@ export class UsersService {
             if (existing) throw new BadRequestException('Email already exists');
         }
 
-        return this.prisma.user.update({
+        const updated = await this.prisma.user.update({
             where: { id },
             data: {
                 name: data.name,
@@ -96,6 +104,7 @@ export class UsersService {
             },
             include: { roles: true, warehouses: true }
         });
+        return this.omitPassword(updated);
     }
 
     async deleteUser(id: string) {

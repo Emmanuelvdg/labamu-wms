@@ -12,9 +12,11 @@ import { NotificationModule } from '../notifications/notification.module';
 @Module({
     imports: [
         PassportModule,
-        JwtModule.register({
-            secret: process.env.JWT_SECRET ?? 'labamu-jwt-secret-change-in-production-please',
-            signOptions: { expiresIn: '7d' },
+        JwtModule.registerAsync({
+            useFactory: () => ({
+                secret: process.env.JWT_SECRET,
+                signOptions: { expiresIn: '7d' },
+            }),
         }),
         NotificationModule,
     ],

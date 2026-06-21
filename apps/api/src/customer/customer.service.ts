@@ -1,18 +1,21 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Customer } from '@labamu/database';
+import { getCurrentCompanyId } from '../common/tenant/tenant-storage';
 
 @Injectable()
 export class CustomerService {
     constructor(private prisma: PrismaService) { }
 
     async createCustomer(data: { name: string; address?: string; latitude?: number; longitude?: number }): Promise<Customer> {
+        const companyId = getCurrentCompanyId();
         return this.prisma.customer.create({
             data: {
                 name: data.name,
                 address: data.address,
                 latitude: data.latitude,
                 longitude: data.longitude,
+                ...(companyId ? { companyId } : {}),
             },
         });
     }
@@ -42,8 +45,11 @@ export class CustomerService {
     }
 
     async getCustomers(take = 50, skip = 0): Promise<any> {
+        const companyId = getCurrentCompanyId();
+        const tenantWhere = companyId ? { companyId } : {};
         const [customers, total] = await Promise.all([
             this.prisma.customer.findMany({
+                where: tenantWhere,
                 orderBy: { createdAt: 'desc' },
                 include: {
                     _count: {
@@ -53,7 +59,7 @@ export class CustomerService {
                 take,
                 skip,
             }),
-            this.prisma.customer.count(),
+            this.prisma.customer.count({ where: tenantWhere }),
         ]);
 
         // Calculate lifetime value (LTV) per customer in this page

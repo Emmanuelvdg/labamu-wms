@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { InventoryLedgerQueryDto } from './inventory-ledger-query.dto';
+import { getCurrentCompanyId } from '../common/tenant/tenant-storage';
 
 @Injectable()
 export class InventoryLedgerService {
@@ -29,12 +30,15 @@ export class InventoryLedgerService {
        *  - ADJUSTMENT: from inventoryAdjustment table
        */
     async getLedgerEntries(query: InventoryLedgerQueryDto) {
+        const companyId = getCurrentCompanyId();
+        const tenantWhere = companyId ? { companyId } : {};
         const { startDate, endDate } = this.parseDateRange(query);
         const entries: any[] = [];
 
         // 1. Inbound: Receipts (instead of ProductInventory snapshot)
         const receipts = await this.prisma.receipt.findMany({
             where: {
+                ...tenantWhere,
                 receivedAt: { gte: startDate, lte: endDate },
                 status: 'DONE',
             },
@@ -69,6 +73,7 @@ export class InventoryLedgerService {
         // Note: For Order, 'warehouse' relation is direct.
         const orders = await this.prisma.order.findMany({
             where: {
+                ...tenantWhere,
                 createdAt: { gte: startDate, lte: endDate },
                 status: { in: ['PENDING', 'PICKING', 'SHIPPED'] },
             },
@@ -104,6 +109,7 @@ export class InventoryLedgerService {
         // 3. Adjustments (lost, damaged, manual adjustments)
         const adjustments = await this.prisma.inventoryAdjustment.findMany({
             where: {
+                ...tenantWhere,
                 createdAt: { gte: startDate, lte: endDate },
             },
             include: {

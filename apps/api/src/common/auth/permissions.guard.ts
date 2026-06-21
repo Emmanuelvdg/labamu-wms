@@ -39,7 +39,7 @@ export class PermissionsGuard implements CanActivate {
         let userId: string | undefined;
         let companyId: string | null = null;
 
-        const secret = process.env.JWT_SECRET ?? 'labamu-jwt-secret-change-in-production-please';
+        const secret = process.env.JWT_SECRET!;
         const authHeader: string | undefined = request.headers['authorization'];
 
         if (authHeader?.startsWith('Bearer ')) {

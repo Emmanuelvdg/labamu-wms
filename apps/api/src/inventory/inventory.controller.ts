@@ -3,6 +3,7 @@ import { Response } from 'express';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { RequirePermission } from '../common/auth/permissions.decorator';
 import { CreateAdjustmentDto } from './dto/create-adjustment.dto';
+import { CreateProductDto } from './dto/create-product.dto';
 import { InventoryService } from './inventory.service';
 import { PackagingService } from './packaging.service';
 import { UtilisationService } from './utilisation.service';
@@ -52,7 +53,7 @@ export class InventoryController {
 
     @Post('products')
     @RequirePermission('INVENTORY', 'CREATE')
-    createProduct(@Body() data: any) {
+    createProduct(@Body() data: CreateProductDto) {
         const mapped = {
             ...data,
             price: data.price ?? data.sellingPrice,

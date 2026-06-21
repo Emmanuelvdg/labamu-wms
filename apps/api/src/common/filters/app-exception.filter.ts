@@ -6,6 +6,7 @@ import {
     Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { AppError } from '../errors/app-error';
 import { ErrorCatalogService } from '../errors/error-catalog.service';
 import * as fs from 'node:fs';
@@ -77,7 +78,25 @@ export class AppExceptionFilter implements ExceptionFilter {
             return;
         }
 
-        // 3. Plain Error — try to match via legacy message patterns
+        // 3. PrismaClientKnownRequestError — safe mapping before the generic Error handler
+        if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+            const ts = new Date().toISOString();
+            const code = exception.code;
+            if (code === 'P2025') {
+                response.status(404).json({ statusCode: 404, code: 'NOT_FOUND', message: 'Record not found.', userMessage: 'The requested resource could not be found.', severity: 'warning', category: 'data', timestamp: ts });
+            } else if (code === 'P2002') {
+                response.status(409).json({ statusCode: 409, code: 'CONFLICT', message: 'Duplicate value — a record with this data already exists.', userMessage: 'This item already exists. Please use a different value.', severity: 'warning', category: 'data', timestamp: ts });
+            } else if (code === 'P2003') {
+                response.status(400).json({ statusCode: 400, code: 'FK_VIOLATION', message: 'Invalid reference — the linked record does not exist.', userMessage: 'One of the referenced items could not be found.', severity: 'warning', category: 'data', timestamp: ts });
+            } else {
+                this.logger.error(`[PRISMA:${code}] ${exception.message}`, exception.stack);
+                this.logToFile(`[PRISMA:${code}] ${exception.message}`, exception.stack);
+                response.status(500).json({ statusCode: 500, code: 'DB_ERROR', message: isProd ? 'A database error occurred.' : `Prisma error ${code}`, userMessage: 'A database error occurred. Please try again or contact support.', severity: 'error', category: 'system', timestamp: ts });
+            }
+            return;
+        }
+
+        // 4. Plain Error — try to match via legacy message patterns
         if (exception instanceof Error) {
             const legacyResolved = this.catalog.resolveFromMessage(exception.message);
             if (legacyResolved) {
@@ -102,7 +121,7 @@ export class AppExceptionFilter implements ExceptionFilter {
             return;
         }
 
-        // 4. Unknown — completely unexpected
+        // 5. Unknown — completely unexpected
         this.logger.error('[UNKNOWN] Non-Error exception caught', JSON.stringify(exception));
         this.logToFile('[UNKNOWN] Non-Error exception caught', JSON.stringify(exception));
         response.status(500).json({

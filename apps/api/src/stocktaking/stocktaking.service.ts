@@ -70,27 +70,33 @@ export class StocktakingService {
         if (scopeLocationIds?.length) inventoryWhere.locationId = { in: scopeLocationIds };
         if (scopeProductIds?.length) inventoryWhere.productId = { in: scopeProductIds };
 
-        const inventory = await this.prisma.productInventory.findMany({
-            where: inventoryWhere,
-            include: { location: true, product: true }
-        });
+        // Process inventory in batches to avoid OOM on large warehouses
+        const BATCH_SIZE = 1000;
+        let cursor: string | undefined;
+        const tasksPayload: any[] = [];
 
-        // Create tasks
-        const tasksPayload = inventory.map(inv => ({
-            sessionId,
-            locationId: inv.locationId!, // Assuming inventory always has location in this context? If aggregate has no location, it's problematic. ProductInventory usually has locationId nullable.
-            // If locationId is null (warehouse level aggregate), we can't count it specifically in a location.
-            // Filter out null locations for now.
-            productId: inv.productId,
-            systemQuantity: inv.quantity,
-            status: 'PENDING'
-        })).filter(t => t.locationId); // Only location-specific inventory
+        while (true) {
+            const batch = await this.prisma.productInventory.findMany({
+                where: inventoryWhere,
+                include: { location: true, product: true },
+                take: BATCH_SIZE,
+                ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+                orderBy: { id: 'asc' },
+            });
 
-        // Bulk insert not supported easily with createMany AND relations unless pure IDs. 
-        // createMany is supported.
+            for (const inv of batch) {
+                if (inv.locationId) {
+                    tasksPayload.push({ sessionId, locationId: inv.locationId, productId: inv.productId, systemQuantity: inv.quantity, status: 'PENDING' });
+                }
+            }
+
+            if (batch.length < BATCH_SIZE) break;
+            cursor = batch[batch.length - 1].id;
+        }
+
         if (tasksPayload.length > 0) {
             await this.prisma.stocktakeTask.createMany({
-                data: tasksPayload as any // Cast to avoid strict type issues if generated client is lagging
+                data: tasksPayload as any
             });
         }
 

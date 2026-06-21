@@ -13,6 +13,9 @@ export interface JwtPayload {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     constructor(private prisma: PrismaService) {
+        if (!process.env.JWT_SECRET) {
+            throw new Error('JWT_SECRET environment variable is not set. Set it before starting the API.');
+        }
         super({
             jwtFromRequest: ExtractJwt.fromExtractors([
                 // 1. Bearer token in Authorization header
@@ -21,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
                 (req: any) => req?.cookies?.token ?? null,
             ]),
             ignoreExpiration: false,
-            secretOrKey: process.env.JWT_SECRET ?? 'labamu-jwt-secret-change-in-production-please', // resolveJwtSecret() runs first in AuthModule
+            secretOrKey: process.env.JWT_SECRET,
         });
     }
 
@@ -33,6 +36,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         if (!user) {
             throw new UnauthorizedException('User not found');
         }
-        return { ...user, companyId: payload.companyId, companySlug: payload.companySlug };
+        const { password: _pw, ...safeUser } = user as any;
+        return { ...safeUser, companyId: payload.companyId, companySlug: payload.companySlug };
     }
 }

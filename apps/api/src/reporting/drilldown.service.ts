@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { getCurrentCompanyId } from '../common/tenant/tenant-storage';
 
 @Injectable()
 export class DrillDownService {
@@ -22,9 +23,11 @@ export class DrillDownService {
     }
 
     async getStockValueDetails(query?: any) {
+        const companyId = getCurrentCompanyId();
         const { startDate, endDate } = this.parseDateRange(query);
 
         const inventory = await this.prisma.productInventory.findMany({
+            where: companyId ? { product: { companyId } } : {},
             include: {
                 product: {
                     select: {
@@ -57,10 +60,12 @@ export class DrillDownService {
     }
 
     async getFulfillmentDetails(query?: any) {
+        const companyId = getCurrentCompanyId();
         const { startDate, endDate } = this.parseDateRange(query);
 
         const orders = await this.prisma.order.findMany({
             where: {
+                ...(companyId ? { companyId } : {}),
                 createdAt: {
                     gte: startDate,
                     lte: endDate
@@ -89,8 +94,10 @@ export class DrillDownService {
     }
 
     async getStockoutDetails(query?: any) {
+        const companyId = getCurrentCompanyId();
         const products = await this.prisma.product.findMany({
             where: {
+                ...(companyId ? { companyId } : {}),
                 status: 'Active'
             },
             include: {
@@ -112,10 +119,12 @@ export class DrillDownService {
     }
 
     async getPendingOrderDetails(query?: any) {
+        const companyId = getCurrentCompanyId();
         const { startDate, endDate } = this.parseDateRange(query);
 
         const orders = await this.prisma.order.findMany({
             where: {
+                ...(companyId ? { companyId } : {}),
                 status: { in: ['PENDING', 'RESERVED', 'PICKING'] },
                 createdAt: {
                     gte: startDate,
@@ -155,10 +164,12 @@ export class DrillDownService {
     }
 
     async getCycleTimeDetails(query?: any) {
+        const companyId = getCurrentCompanyId();
         const { startDate, endDate } = this.parseDateRange(query);
 
         const orders = await this.prisma.order.findMany({
             where: {
+                ...(companyId ? { companyId } : {}),
                 status: 'SHIPPED',
                 createdAt: {
                     gte: startDate,
@@ -193,8 +204,12 @@ export class DrillDownService {
     }
 
     async getCapacityDetails(query?: any) {
+        const companyId = getCurrentCompanyId();
         const locations = await this.prisma.location.findMany({
-            where: { maxVolume: { not: null } },
+            where: {
+                maxVolume: { not: null },
+                ...(companyId ? { warehouse: { companyId } } : {}),
+            },
             include: {
                 inventory: {
                     include: {

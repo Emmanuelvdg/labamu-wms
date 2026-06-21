@@ -1,13 +1,15 @@
 import { Injectable, ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma.service';
+import { getCurrentCompanyId } from '../common/tenant/tenant-storage';
 
 @Injectable()
 export class SupplierService {
     constructor(private prisma: PrismaService) { }
 
     async create(data: { name: string; contactInfo?: string; email?: string; phone?: string; address?: string }) {
-        return this.prisma.supplier.create({ data });
+        const companyId = getCurrentCompanyId();
+        return this.prisma.supplier.create({ data: { ...data, ...(companyId ? { companyId } : {}) } });
     }
 
     async bulkCreate(items: { name: string; contactInfo?: string; email?: string; phone?: string; address?: string }[]): Promise<{ created: any[]; errors: { index: number; item: any; error: string }[] }> {
@@ -35,8 +37,11 @@ export class SupplierService {
     }
 
     async findAll(take = 50, skip = 0) {
+        const companyId = getCurrentCompanyId();
+        const tenantWhere = companyId ? { companyId } : {};
         const [data, total] = await Promise.all([
             this.prisma.supplier.findMany({
+                where: tenantWhere,
                 include: {
                     _count: {
                         select: { purchaseOrders: true },
@@ -46,7 +51,7 @@ export class SupplierService {
                 take,
                 skip,
             }),
-            this.prisma.supplier.count(),
+            this.prisma.supplier.count({ where: tenantWhere }),
         ]);
         return { data, total, limit: take, offset: skip };
     }

@@ -3,6 +3,9 @@ import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nes
 import { UsersService } from './users.service';
 import { PermissionsGuard } from '../../common/auth/permissions.guard';
 import { RequirePermission } from '../../common/auth/permissions.decorator';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('settings/users')
 @UseGuards(PermissionsGuard)
@@ -23,13 +26,13 @@ export class UsersController {
 
     @Post()
     @RequirePermission('SETTINGS', 'UPDATE')
-    createUser(@Body() data: any) {
+    createUser(@Body() data: CreateUserDto) {
         return this.usersService.createUser(data);
     }
 
     @Put(':id')
     @RequirePermission('SETTINGS', 'UPDATE')
-    updateUser(@Param('id') id: string, @Body() data: any) {
+    updateUser(@Param('id') id: string, @Body() data: UpdateUserDto) {
         return this.usersService.updateUser(id, data);
     }
 
@@ -41,7 +44,7 @@ export class UsersController {
 
     @Post(':id/reset-password')
     @RequirePermission('SETTINGS', 'UPDATE')
-    resetPassword(@Param('id') id: string, @Body() body: { newPassword: string }) {
+    resetPassword(@Param('id') id: string, @Body() body: ResetPasswordDto) {
         return this.usersService.resetPassword(id, body.newPassword);
     }
 }

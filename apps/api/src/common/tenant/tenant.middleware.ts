@@ -18,7 +18,7 @@ export class TenantMiddleware implements NestMiddleware {
 
     use(req: Request, res: Response, next: NextFunction) {
         let companyId: string | null = null;
-        const secret = process.env.JWT_SECRET ?? 'labamu-jwt-secret-change-in-production-please';
+        const secret = process.env.JWT_SECRET!;
 
         // 1. Prefer explicit Authorization: Bearer header
         const authHeader = req.headers['authorization'];

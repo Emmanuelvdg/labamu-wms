@@ -1,12 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CurrencyService } from '../currency/currency.service';
+import { getCurrentCompanyId } from '../common/tenant/tenant-storage';
 
 @Injectable()
 export class ReportingService {
     constructor(private prisma: PrismaService, private currency: CurrencyService) { }
 
     async generateComplianceReport(type: string, period: string): Promise<any> {
+        const companyId = getCurrentCompanyId();
         const startOfMonth = new Date(`${period}-01`);
         const endOfMonth = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() + 1, 0);
 
@@ -15,6 +17,7 @@ export class ReportingService {
             // Note: Using Average Cost as proxy for Value since Price is missing
             const shippedOrders = await this.prisma.order.findMany({
                 where: {
+                    ...(companyId ? { companyId } : {}),
                     status: 'SHIPPED',
                     updatedAt: {
                         gte: startOfMonth,
@@ -64,6 +67,7 @@ export class ReportingService {
             // Gathering Stock Transactions for the period
             const transactions = await this.prisma.stockTransaction.findMany({
                 where: {
+                    ...(companyId ? { product: { companyId } } : {}),
                     date: {
                         gte: startOfMonth,
                         lte: endOfMonth
@@ -107,6 +111,7 @@ export class ReportingService {
     }
 
     async getDashboardAnalytics(query?: any): Promise<any> {
+        const companyId = getCurrentCompanyId();
         const { startDate, endDate } = this.parseDateRange(query);
 
         const currencies = await this.currency.listCurrencies();
@@ -114,6 +119,7 @@ export class ReportingService {
 
         // 1. Inventory Value
         const products = await this.prisma.product.findMany({
+            where: companyId ? { companyId } : {},
             include: { inventory: true }
         });
 
@@ -143,8 +149,10 @@ export class ReportingService {
         const stockoutRate = activeProducts > 0 ? (outOfStockProducts / activeProducts) * 100 : 0;
 
         // 2. Order Fulfillment Rate (filtered by date range)
+        const tenantWhere = companyId ? { companyId } : {};
         const totalOrders = await this.prisma.order.count({
             where: {
+                ...tenantWhere,
                 createdAt: {
                     gte: startDate,
                     lte: endDate
@@ -153,6 +161,7 @@ export class ReportingService {
         });
         const shippedOrders = await this.prisma.order.count({
             where: {
+                ...tenantWhere,
                 status: 'SHIPPED',
                 createdAt: {
                     gte: startDate,
@@ -165,6 +174,7 @@ export class ReportingService {
         // 3. Pending Orders (filtered by date range)
         const pendingOrders = await this.prisma.order.count({
             where: {
+                ...tenantWhere,
                 status: { in: ['PENDING', 'RESERVED', 'PICKING'] },
                 createdAt: {
                     gte: startDate,
@@ -176,6 +186,7 @@ export class ReportingService {
         // 4. Order Cycle Time (Avg hours from Created to Shipped, filtered by date range)
         const shippedOrdersList = await this.prisma.order.findMany({
             where: {
+                ...tenantWhere,
                 status: 'SHIPPED',
                 createdAt: {
                     gte: startDate,
@@ -207,6 +218,7 @@ export class ReportingService {
 
             const dailyCount = await this.prisma.order.count({
                 where: {
+                    ...tenantWhere,
                     status: 'SHIPPED',
                     updatedAt: {
                         gte: startOfDay,
@@ -438,17 +450,20 @@ export class ReportingService {
         };
     }
     async getCycleTimeTrend(query?: any): Promise<any[]> {
+        const companyId = getCurrentCompanyId();
         const { startDate, endDate } = this.parseDateRange(query);
         // Group by day for now
         const orders = await this.prisma.order.findMany({
             where: {
+                ...(companyId ? { companyId } : {}),
                 status: 'SHIPPED',
                 updatedAt: {
                     gte: startDate,
                     lte: endDate
                 }
             },
-            select: { createdAt: true, updatedAt: true }
+            select: { createdAt: true, updatedAt: true },
+            take: 5000,
         });
 
         const grouped = new Map<string, { totalHours: number, count: number }>();
