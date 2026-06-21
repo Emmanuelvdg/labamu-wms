@@ -30,6 +30,7 @@ model Company {
   featureFlags          FeatureFlag[]
   auditLogs             AuditLog[]
   notificationConfigs   CompanyNotificationConfig[]
+  scrapOrders           ScrapOrder[]
 }
 
 // ── Platform admin models ─────────────────────────────────────────────────────
@@ -665,11 +666,17 @@ model ScrapOrder {
   id          String   @id @default(uuid())
   locationId  String
   productId   String
+  companyId   String?
   quantity    Int
   maxQuantity Int
   active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
   product     Product  @relation(fields: [productId], references: [id])
   location    Location @relation(fields: [locationId], references: [id])
+  company     Company? @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
 }
 
 model ReorderingRule {

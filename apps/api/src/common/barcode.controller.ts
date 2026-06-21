@@ -1,6 +1,8 @@
-import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Query, BadRequestException, UseGuards } from '@nestjs/common';
 import { BarcodeValidatorService } from './barcode-validator.service';
+import { PermissionsGuard } from './auth/permissions.guard';
 
+@UseGuards(PermissionsGuard)
 @Controller('barcode')
 export class BarcodeController {
     constructor(private readonly barcodeValidator: BarcodeValidatorService) { }

@@ -1,6 +1,8 @@
-import { Controller, Post, Body, Param } from '@nestjs/common';
+import { Controller, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { IntegrationService } from './integration.service';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
 
+@UseGuards(PermissionsGuard)
 @Controller('integration')
 export class IntegrationController {
     constructor(private readonly integrationService: IntegrationService) { }

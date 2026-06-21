@@ -1,11 +1,13 @@
 import {
-    Controller, Post, Get, Delete,
+    Controller, Post, Get, Delete, UseGuards,
     Body, Param, Headers, HttpException, HttpStatus, ForbiddenException, BadRequestException, ConflictException,
 } from '@nestjs/common';
 import { ApiKeyService, CreateApiKeyDto } from './api-key.service';
 import { FeatureFlagService } from '../company/feature-flag.service';
 import { getCurrentCompanyId } from '../common/tenant/tenant-storage';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
 
+@UseGuards(PermissionsGuard)
 @Controller('api-keys')
 export class ApiKeyController {
     constructor(
