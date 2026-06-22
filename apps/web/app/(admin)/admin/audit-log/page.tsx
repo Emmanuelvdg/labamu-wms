@@ -152,10 +152,10 @@ export default function AuditLogPage() {
                         Showing {filtered.length} of {logs.length} entries
                     </div>
                 </div>
-                {loading && (
-                    <div className="px-4 py-3 text-sm text-gray-400">Loading…</div>
-                )}
             </div>
+            {loading && (
+                <div className="px-4 py-3 text-sm text-gray-400">Loading…</div>
+            )}
         </div>
     );
 }
