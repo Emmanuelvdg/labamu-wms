@@ -280,23 +280,18 @@ test.describe('Utilisation Reporting (/reporting/utilisation)', () => {
         await page.goto('/reporting/utilisation');
         await waitForChartLoad(page);
 
-        const requests: string[] = [];
-        page.on('request', req => {
-            if (req.url().includes('/reporting/utilisation/history')) {
-                requests.push(req.url());
-            }
-        });
-
         const selects = page.getByRole('combobox');
         const selectCount = await selects.count();
         const periodSelect = selects.nth(selectCount - 1);
         await periodSelect.click();
-        await page.getByRole('option', { name: 'Last 3 Months' }).click();
-        await page.waitForTimeout(2000);
 
-        const req90d = requests.find(url => url.includes('period=90d'));
+        // Use waitForRequest to reliably catch the 90d request regardless of timing
+        const [req90d] = await Promise.all([
+            page.waitForRequest(req => req.url().includes('/reporting/utilisation/history') && req.url().includes('period=90d'), { timeout: 5000 }),
+            page.getByRole('option', { name: 'Last 3 Months' }).click(),
+        ]);
         expect(req90d).toBeTruthy();
-        console.log(`✓ Period 90d request: ${req90d}`);
+        console.log(`✓ Period 90d request: ${req90d.url()}`);
     });
 
     // ── UTIL-8: Location selector populates after warehouse selection ──────────

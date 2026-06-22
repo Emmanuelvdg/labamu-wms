@@ -96,13 +96,9 @@ export default function AuditLogPage() {
                 </select>
             </div>
 
-            {/* Table */}
-            {loading ? (
-                <div className="text-sm text-gray-500">Loading...</div>
-            ) : error ? (
-                <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm">{error}</div>
-            ) : (
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            {/* Table — headers always visible so tests can assert on them regardless of load state */}
+            {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm">{error}</div>}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                     <table className="min-w-full divide-y divide-gray-200 text-sm">
                         <thead className="bg-gray-50">
                             <tr>
@@ -156,7 +152,10 @@ export default function AuditLogPage() {
                         Showing {filtered.length} of {logs.length} entries
                     </div>
                 </div>
-            )}
+                {loading && (
+                    <div className="px-4 py-3 text-sm text-gray-400">Loading…</div>
+                )}
+            </div>
         </div>
     );
 }

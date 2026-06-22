@@ -114,7 +114,7 @@ export default function WarehousesPage() {
 
             setShowCreateModal(false);
             setEditingId(null);
-            load();
+            await load();
             setNewWarehouse({
                 name: '',
                 type: 'Distribution Center',

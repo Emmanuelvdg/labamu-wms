@@ -138,7 +138,7 @@ export function UserDialog({ open, onOpenChange, user, roles, warehouses, onSucc
 
                     <div className="space-y-2">
                         <Label>Roles</Label>
-                        <div className="border rounded-md p-4 space-y-2">
+                        <div className="border rounded-md p-4 space-y-2 max-h-48 overflow-y-auto">
                             {roles.map((role) => (
                                 <div key={role.id} className="flex items-center space-x-2">
                                     <input
@@ -158,7 +158,7 @@ export function UserDialog({ open, onOpenChange, user, roles, warehouses, onSucc
 
                     <div className="space-y-2">
                         <Label>Warehouses (Optional)</Label>
-                        <div className="border rounded-md p-4 space-y-2">
+                        <div className="border rounded-md p-4 space-y-2 max-h-40 overflow-y-auto">
                             {warehouses.map((w) => (
                                 <div key={w.id} className="flex items-center space-x-2">
                                     <input
