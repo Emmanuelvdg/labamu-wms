@@ -208,7 +208,7 @@ export class DrillDownService {
         const locations = await this.prisma.location.findMany({
             where: {
                 maxVolume: { not: null },
-                ...(companyId ? { warehouse: { companyId } } : {}),
+                ...(companyId ? { warehouseView: { companyId } } : {}),
             },
             include: {
                 inventory: {

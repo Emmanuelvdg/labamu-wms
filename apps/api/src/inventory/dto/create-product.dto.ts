@@ -110,4 +110,67 @@ export class CreateProductDto {
     @IsString()
     @MaxLength(100)
     requiredAttributeId?: string;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    weight?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    width?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    height?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    depth?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    minShelfLifeDays?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    stackable?: boolean;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    maxStackHeight?: number;
+
+    @IsOptional()
+    @IsNumber()
+    @Min(0)
+    temperatureMin?: number;
+
+    @IsOptional()
+    @IsNumber()
+    temperatureMax?: number;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    preferredPackaging?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(50)
+    abcClass?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(2000)
+    expiryDate?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(50)
+    status?: string;
 }
