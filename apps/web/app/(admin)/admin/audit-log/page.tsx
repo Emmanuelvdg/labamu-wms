@@ -98,64 +98,61 @@ export default function AuditLogPage() {
 
             {/* Table — headers always visible so tests can assert on them regardless of load state */}
             {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg text-sm">{error}</div>}
+            {loading && <div className="px-4 py-3 text-sm text-gray-400">Loading…</div>}
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Time</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Actor</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Action</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Target</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {filtered.length === 0 ? (
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Time</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Actor</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Action</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Target</th>
-                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Details</th>
+                                <td colSpan={5} className="px-4 py-12 text-center text-sm text-gray-400">
+                                    No audit log entries found
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {filtered.length === 0 ? (
-                                <tr>
-                                    <td colSpan={5} className="px-4 py-12 text-center text-sm text-gray-400">
-                                        No audit log entries found
+                        ) : (
+                            filtered.map((log: any) => (
+                                <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                                        {new Date(log.createdAt).toLocaleString()}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="text-xs font-medium text-gray-700">{log.actorEmail}</div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ACTION_COLORS[log.action] ?? 'bg-gray-100 text-gray-600'}`}>
+                                            {log.action}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <div className="text-xs text-gray-700">{log.targetLabel || log.targetId}</div>
+                                        <div className="text-xs text-gray-400">{log.targetType}</div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        {log.metadata ? (
+                                            <code className="text-xs text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded">
+                                                {typeof log.metadata === 'string'
+                                                    ? log.metadata.slice(0, 80)
+                                                    : JSON.stringify(log.metadata).slice(0, 80)}
+                                            </code>
+                                        ) : null}
                                     </td>
                                 </tr>
-                            ) : (
-                                filtered.map((log: any) => (
-                                    <tr key={log.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
-                                            {new Date(log.createdAt).toLocaleString()}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="text-xs font-medium text-gray-700">{log.actorEmail}</div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ACTION_COLORS[log.action] ?? 'bg-gray-100 text-gray-600'}`}>
-                                                {log.action}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="text-xs text-gray-700">{log.targetLabel || log.targetId}</div>
-                                            <div className="text-xs text-gray-400">{log.targetType}</div>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {log.metadata ? (
-                                                <code className="text-xs text-gray-500 bg-gray-50 px-1.5 py-0.5 rounded">
-                                                    {typeof log.metadata === 'string'
-                                                        ? log.metadata.slice(0, 80)
-                                                        : JSON.stringify(log.metadata).slice(0, 80)}
-                                                </code>
-                                            ) : null}
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                    <div className="px-4 py-2 border-t border-gray-100 text-xs text-gray-400">
-                        Showing {filtered.length} of {logs.length} entries
-                    </div>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+                <div className="px-4 py-2 border-t border-gray-100 text-xs text-gray-400">
+                    Showing {filtered.length} of {logs.length} entries
                 </div>
             </div>
-            {loading && (
-                <div className="px-4 py-3 text-sm text-gray-400">Loading…</div>
-            )}
         </div>
     );
 }
