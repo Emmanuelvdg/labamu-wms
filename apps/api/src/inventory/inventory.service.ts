@@ -524,6 +524,7 @@ export class InventoryService {
             const warehouse = await tx.warehouse.create({
                 data: {
                     ...data,
+                    type: data.type ?? 'STANDARD',
                     location: JSON.stringify(data.location),
                     viewLocationId: viewLocation.id,
                 },
