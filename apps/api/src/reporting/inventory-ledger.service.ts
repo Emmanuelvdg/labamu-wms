@@ -107,9 +107,10 @@ export class InventoryLedgerService {
         }
 
         // 3. Adjustments (lost, damaged, manual adjustments)
+        // inventoryAdjustment has no direct companyId; scope via product relation
         const adjustments = await this.prisma.inventoryAdjustment.findMany({
             where: {
-                ...tenantWhere,
+                ...(companyId ? { product: { companyId } } : {}),
                 createdAt: { gte: startDate, lte: endDate },
             },
             include: {
