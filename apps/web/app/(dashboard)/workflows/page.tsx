@@ -48,7 +48,7 @@ export default function WorkflowsPage() {
             await createWorkflowTemplate({ name: newTemplateName, description: 'New workflow', triggerType: 'MANUAL' });
             setShowCreateModal(false);
             setNewTemplateName('');
-            loadData();
+            await loadData();
         } catch (err: any) {
             alert(err.message || 'Failed to create template');
         }
@@ -58,7 +58,7 @@ export default function WorkflowsPage() {
         // if (!confirm('Are you sure you want to activate this workflow?')) return;
         try {
             await activateWorkflowTemplate(id);
-            loadData();
+            await loadData();
         } catch (err: any) {
             alert(err.message || 'Failed to activate template');
         }
@@ -67,7 +67,7 @@ export default function WorkflowsPage() {
     const handleClone = async (id: string) => {
         try {
             await cloneWorkflowTemplate(id);
-            loadData();
+            await loadData();
         } catch (err: any) {
             alert(err.message || 'Failed to clone template');
         }
@@ -77,7 +77,7 @@ export default function WorkflowsPage() {
         // if (!confirm('Are you sure you want to archive this workflow?')) return;
         try {
             await deleteWorkflowTemplate(id);
-            loadData();
+            await loadData();
         } catch (err: any) {
             alert(err.message || 'Failed to archive template');
         }
