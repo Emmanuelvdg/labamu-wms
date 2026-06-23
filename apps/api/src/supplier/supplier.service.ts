@@ -8,6 +8,7 @@ export class SupplierService {
     constructor(private prisma: PrismaService) { }
 
     async create(data: { name: string; contactInfo?: string; email?: string; phone?: string; address?: string }) {
+        if (!data.name?.trim()) throw new BadRequestException('name is required');
         const companyId = getCurrentCompanyId();
         return this.prisma.supplier.create({ data: { ...data, ...(companyId ? { companyId } : {}) } });
     }
