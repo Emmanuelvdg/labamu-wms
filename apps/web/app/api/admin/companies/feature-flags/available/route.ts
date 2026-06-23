@@ -8,7 +8,11 @@ function adminHeaders(request: Request) {
 }
 
 export async function GET(request: Request) {
-    const res = await fetch(`${INTERNAL_API_URL}/feature-flags/available`, { headers: adminHeaders(request) });
-    const data = await res.json().catch(() => []);
-    return NextResponse.json(data, { status: res.ok ? 200 : res.status });
+    try {
+        const res = await fetch(`${INTERNAL_API_URL}/feature-flags/available`, { headers: adminHeaders(request) });
+        const data = await res.json().catch(() => []);
+        return NextResponse.json(data, { status: res.ok ? 200 : res.status });
+    } catch {
+        return NextResponse.json([], { status: 200 });
+    }
 }

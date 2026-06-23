@@ -28,7 +28,7 @@ interface UserDialogProps {
     user?: any; // If provided, we are editing
     roles: any[];
     warehouses: any[];
-    onSuccess: () => void;
+    onSuccess: () => Promise<void> | void;
 }
 
 export function UserDialog({ open, onOpenChange, user, roles, warehouses, onSuccess }: UserDialogProps) {
@@ -74,7 +74,7 @@ export function UserDialog({ open, onOpenChange, user, roles, warehouses, onSucc
                 await createUser(formData);
                 toast.success('User created successfully');
             }
-            onSuccess();
+            await onSuccess();
             onOpenChange(false);
         } catch (error: any) {
             toast.error(error.message || 'Failed to save user');

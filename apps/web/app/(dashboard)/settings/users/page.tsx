@@ -46,8 +46,8 @@ export default function UsersPage() {
         }
     };
 
-    const handleSuccess = () => {
-        mutate();
+    const handleSuccess = async () => {
+        await mutate();
     };
 
     return (
