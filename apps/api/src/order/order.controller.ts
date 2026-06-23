@@ -67,8 +67,9 @@ export class OrderController {
 
     @Post('ship')
     @RequirePermission('ORDERS', 'UPDATE')
-    createShipment(@Body() data: { orderId: string; carrier: string; trackingId: string }, @Req() req: any) {
-        return this.orderService.createShipment({ ...data, actor: { id: req.user?.id, email: req.user?.email, companyId: req.user?.companyId } });
+    createShipment(@Body() data: { orderId: string; carrier: string; trackingId?: string; trackingNumber?: string }, @Req() req: any) {
+        const trackingId = data.trackingId ?? data.trackingNumber ?? '';
+        return this.orderService.createShipment({ ...data, trackingId, actor: { id: req.user?.id, email: req.user?.email, companyId: req.user?.companyId } });
     }
 
     @Post(':id/check-availability')
