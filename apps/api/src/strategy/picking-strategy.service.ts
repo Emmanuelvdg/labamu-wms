@@ -513,7 +513,7 @@ export class PickingStrategyService {
         const batches = await this.prisma.inventoryBatch.findMany({
             where: {
                 productId,
-                warehouseId,
+                ...(warehouseId ? { warehouseId } : {}),
                 status: 'Active',
                 currentQuantity: { gt: 0 }
             },
