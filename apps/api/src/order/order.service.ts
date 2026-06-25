@@ -243,6 +243,9 @@ export class OrderService {
                 include: { items: true }
             });
             if (!orderCheck) throw new AppError('ORDER_NOT_FOUND', { orderId: data.orderId });
+            if (!['PACKED', 'PACKING'].includes(orderCheck.status)) {
+                throw new BadRequestException(`Order must be in PACKED status before shipping (current: ${orderCheck.status})`);
+            }
             if (orderCheck.items.length === 0) {
                 throw new BadRequestException('Cannot ship an order with no line items. Please add products to this order first.');
             }
