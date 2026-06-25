@@ -127,9 +127,9 @@ export default function WarehousesPage() {
                 incomingSteps: '1_step',
                 outgoingSteps: '1_step',
             });
-        } catch (err) {
-            console.error(err);
-            toast.error(editingId ? 'Failed to update warehouse' : 'Failed to create warehouse');
+        } catch (err: any) {
+            console.error('Warehouse save error:', err);
+            toast.error(editingId ? `Failed to update warehouse: ${err?.message}` : `Failed to create warehouse: ${err?.message}`);
         }
     };
 

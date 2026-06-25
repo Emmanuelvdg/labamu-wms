@@ -22,6 +22,7 @@ export class QuotaService {
      */
     async enforce(companyId: string | null, resource: QuotaResource): Promise<void> {
         if (!companyId) return; // dev / E2E — no enforcement
+        if (process.env.NODE_ENV !== 'production') return; // only enforce in production
 
         const company = await runWithoutTenant(() =>
             (this.prisma as any).company.findUnique({
