@@ -8,6 +8,7 @@ export class CustomerService {
     constructor(private prisma: PrismaService) { }
 
     async createCustomer(data: { name: string; address?: string; latitude?: number; longitude?: number }): Promise<Customer> {
+        if (!data.name?.trim()) throw new BadRequestException('name is required');
         const companyId = getCurrentCompanyId();
         return this.prisma.customer.create({
             data: {

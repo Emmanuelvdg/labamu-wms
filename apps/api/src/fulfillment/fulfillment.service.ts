@@ -216,25 +216,8 @@ export class FulfillmentService {
             include: { items: true },
         });
 
-        // Trigger a picking session at the source warehouse so pickers can
-        // fulfill the transfer — this mirrors the outbound order flow.
-        if (transfer.warehouseId && transfer.items?.length > 0) {
-            try {
-                await (this.prisma.pickingSession as any).create({
-                    data: {
-                        warehouseId: transfer.warehouseId,
-                        userId: approverId,
-                        strategy: 'SINGLE',
-                        status: 'IN_PROGRESS',
-                        orders: { connect: [{ id: transferId }] },
-                    },
-                });
-                this.logger.log(`Picking session created for transfer ${transferId} at warehouse ${transfer.warehouseId}`);
-            } catch (err: any) {
-                // Non-critical — log but don't fail the approval
-                this.logger.warn(`Could not auto-create picking session for transfer ${transferId}: ${err?.message}`);
-            }
-        }
+        // PickingSession has no orders relation — transfer picking is managed
+        // via the picking module directly, not auto-created here.
 
         return transfer;
     }
