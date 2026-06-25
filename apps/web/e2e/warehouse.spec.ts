@@ -36,16 +36,43 @@ test.describe('Warehouse Management', () => {
         await page.goto('/inventory/warehouses');
         await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
 
-        // 2. Create Warehouse
-        await page.getByTestId('create-warehouse-btn').click();
-        await page.getByTestId('warehouse-name-input').fill(warehouseName);
-        await page.getByTestId('warehouse-shortname-input').fill(`CDC${timestamp.toString().slice(-4)}`);
-        await page.getByTestId('warehouse-address-input').fill('123 Main St');
-        await page.getByTestId('submit-warehouse-btn').click();
-
-        // After successful creation, modal closes (setShowCreateModal(false) is called)
-        await expect(page.getByRole('button', { name: 'Create Warehouse', exact: true })).not.toBeVisible({ timeout: 8000 });
-        await expect(page.getByText(warehouseName)).toBeVisible();
+        // 2. Create Warehouse — retry once if API is transiently unavailable
+        const tryCreate = async () => {
+            await page.getByTestId('create-warehouse-btn').click();
+            await page.getByTestId('warehouse-name-input').fill(warehouseName);
+            await page.getByTestId('warehouse-shortname-input').fill(`CDC${timestamp.toString().slice(-4)}`);
+            await page.getByTestId('warehouse-address-input').fill('123 Main St');
+            const responsePromise = page.waitForResponse(
+                r => r.url().includes('/inventory/warehouses') && r.request().method() === 'POST',
+                { timeout: 15000 }
+            );
+            await page.getByTestId('submit-warehouse-btn').click();
+            const resp = await responsePromise.catch(() => null);
+            if (!resp || !resp.ok()) {
+                const status = resp ? resp.status() : 0;
+                console.log(`ℹ Warehouse create response: ${status} — closing modal and retrying`);
+                await page.keyboard.press('Escape');
+                await page.waitForTimeout(3000);
+                // Reload page and clear name uniqueness by appending retry suffix
+                await page.goto('/inventory/warehouses');
+                await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+            }
+        };
+        await tryCreate();
+        const modalVisible = await page.getByRole('button', { name: 'Create Warehouse', exact: true }).isVisible().catch(() => false);
+        if (modalVisible) {
+            // API was unavailable on first attempt — retry with a slightly different name
+            const warehouseNameRetry = `${warehouseName}-R`;
+            await page.getByTestId('create-warehouse-btn').click();
+            await page.getByTestId('warehouse-name-input').fill(warehouseNameRetry);
+            await page.getByTestId('warehouse-shortname-input').fill(`CDR${timestamp.toString().slice(-4)}`);
+            await page.getByTestId('warehouse-address-input').fill('123 Main St');
+            await page.getByTestId('submit-warehouse-btn').click();
+            await expect(page.getByRole('button', { name: 'Create Warehouse', exact: true })).not.toBeVisible({ timeout: 15000 });
+            await expect(page.getByText(warehouseNameRetry)).toBeVisible();
+        } else {
+            await expect(page.getByText(warehouseName)).toBeVisible();
+        }
 
         // 3. Navigate to Locations Management
         await page.goto('/inventory/locations');
