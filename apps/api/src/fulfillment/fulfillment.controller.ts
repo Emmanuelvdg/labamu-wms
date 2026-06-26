@@ -28,8 +28,6 @@ export class FulfillmentController {
         try {
             return await this.prisma.fulfillmentRule.create({ data });
         } catch (e: any) {
-            const fs = require('fs');
-            fs.writeFileSync('api_error.log', `Error creating rule: ${e.message}\n${JSON.stringify(e, null, 2)}`);
             throw e;
         }
     }

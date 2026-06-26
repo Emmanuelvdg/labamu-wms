@@ -46,13 +46,12 @@ export class AuthController {
     @Get('me')
     async getMe(
         @Headers('authorization') authHeader: string,
-        @Headers('x-user-id') userId: string,
         @Headers('cookie') cookieHeader: string,
     ) {
-        let resolvedUserId: string | undefined = userId;
+        let resolvedUserId: string | undefined;
 
         // 1. Try Bearer token
-        if (!resolvedUserId && authHeader?.startsWith('Bearer ')) {
+        if (authHeader?.startsWith('Bearer ')) {
             try {
                 const payload = this.authService.verifyToken(authHeader.slice(7));
                 resolvedUserId = payload.sub;

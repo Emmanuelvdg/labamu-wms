@@ -1,14 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import * as fs from 'fs';
-import * as path from 'path';
 
 @Injectable()
 export class StrategyService {
-    private log(message: string) {
-        const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
-        fs.appendFileSync(logPath, `[StrategyService] ${message}\n`);
-    }
+    private readonly logger = new Logger(StrategyService.name);
 
     constructor(private prisma: PrismaService) { }
 
@@ -112,7 +107,7 @@ export class StrategyService {
     // --- CRUD for Reservation Strategies ---
 
     async createReservationStrategy(data: { name: string; rules?: string }) {
-        this.log(`Creating strategy: ${data.name}, active: true`);
+        this.logger.debug(`Creating strategy: ${data.name}`);
         return this.prisma.reservationStrategy.upsert({
             where: { name: data.name },
             update: {

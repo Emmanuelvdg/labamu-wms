@@ -27,8 +27,7 @@ export class QuotaService {
         const company = await runWithoutTenant(() =>
             (this.prisma as any).company.findUnique({
                 where: { id: companyId },
-                select: { plan: true },
-                include: { tenantPlan: true },
+                select: { plan: true, tenantPlan: true },
             })
         ) as any;
         if (!company) return;

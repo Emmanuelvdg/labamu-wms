@@ -1,9 +1,11 @@
-import { Controller, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { DeliveryMethodsController } from './delivery-methods.controller';
 import { PrismaService } from '../prisma.service';
 import { ShippingService } from '../shipping/shipping.service';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
 
 @Controller('delivery-methods')
+@UseGuards(PermissionsGuard)
 export class DeliveryMethodsAliasController extends DeliveryMethodsController {
     constructor(prisma: PrismaService, private shippingService: ShippingService) {
         super(prisma);

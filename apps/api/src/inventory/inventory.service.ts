@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { parse as csvParse } from 'csv-parse/sync';
 import * as bwipjs from 'bwip-js';
@@ -16,12 +15,6 @@ import { getRequiredAreaTypes, AREA_TYPE_LABELS } from '../warehouse/area-types'
 @Injectable()
 export class InventoryService {
     private readonly logger = new Logger(InventoryService.name);
-
-    private log(message: string) {
-        const logPath = 'c:\\Users\\EmmanuelVanDeGeer\\.gemini\\antigravity\\scratch\\labamu-ims\\debug_reservation.log';
-        fs.appendFileSync(logPath, `[InventoryService] ${message}\n`);
-        this.logger.debug(`[InventoryService] ${message}`);
-    }
 
     constructor(
         private prisma: PrismaService,
@@ -794,7 +787,7 @@ export class InventoryService {
         // IMPORTANT: If product.averageCost is 0 but batches exist, calculate the true average from existing batches
         // This handles products created before the average cost feature was implemented
         if (currentAvgCost === 0 && currentTotalQty > 0) {
-            this.log(`[AverageCost] Product ${data.productId}: averageCost is 0 but inventory exists. Calculating from batches...`);
+            this.logger.debug(`[AverageCost] Product ${data.productId}: averageCost is 0 but inventory exists. Calculating from batches...`);
 
             const existingBatches = await this.prisma.inventoryBatch.findMany({
                 where: {
@@ -813,7 +806,7 @@ export class InventoryService {
 
                 if (totalQty > 0) {
                     currentAvgCost = totalValue / totalQty;
-                    this.log(`[AverageCost] Calculated from batches: ${existingBatches.length} batches, Total Value=${totalValue}, Total Qty=${totalQty}, Avg=${currentAvgCost}`);
+                    this.logger.debug(`[AverageCost] Calculated from batches: ${existingBatches.length} batches, Total Value=${totalValue}, Total Qty=${totalQty}, Avg=${currentAvgCost}`);
                 }
             }
         }
@@ -832,7 +825,7 @@ export class InventoryService {
             data: { averageCost: roundedAvgCost }
         });
 
-        this.log(`[AverageCost] Product ${data.productId}: Old Avg=${currentAvgCost.toFixed(2)}, New Avg=${roundedAvgCost.toFixed(2)} (added ${data.quantity} @ ${data.costPerUnit})`);
+        this.logger.debug(`[AverageCost] Product ${data.productId}: Old Avg=${currentAvgCost.toFixed(2)}, New Avg=${roundedAvgCost.toFixed(2)} (added ${data.quantity} @ ${data.costPerUnit})`);
 
         // 3. Update Aggregate Inventory (Legacy support)
         // Find existing inventory record for this product/warehouse/location
@@ -1054,8 +1047,8 @@ export class InventoryService {
                     });
                 }
 
-                this.log(`[ReserveStock] Product: ${item.productId}, Policy: ${policy}, MinShelfLife: ${minShelfLifeDays}, Found Inventory Records: ${inventory.length}`);
-                inventory.forEach(i => this.log(` - ID: ${i.id}, LocationId: ${i.locationId}, Qty: ${i.quantity}, Reserved: ${i.reserved}`));
+                this.logger.debug(`[ReserveStock] Product: ${item.productId}, Policy: ${policy}, MinShelfLife: ${minShelfLifeDays}, Found Inventory Records: ${inventory.length}`);
+                inventory.forEach(i => this.logger.debug(` - ID: ${i.id}, LocationId: ${i.locationId}, Qty: ${i.quantity}, Reserved: ${i.reserved}`));
 
                 let remainingQty = item.quantity;
 
@@ -1285,7 +1278,7 @@ export class InventoryService {
                 } as any,
             });
         } catch (e: any) {
-            this.log(`Error creating location: ${e.message}`);
+            this.logger.debug(`Error creating location: ${e.message}`);
             throw e;
         }
     }
@@ -1586,7 +1579,7 @@ export class InventoryService {
                 const quantity = data.countedQuantity - data.currentQuantity;
                 const status = data.status || 'DRAFT';
 
-                this.log(`Creating Adjustment: ${JSON.stringify(data)}`);
+                this.logger.debug(`Creating Adjustment: ${JSON.stringify(data)}`);
 
                 // 1. Create Adjustment Record
                 const adjustment = await tx.inventoryAdjustment.create({
@@ -1610,7 +1603,7 @@ export class InventoryService {
                 return adjustment;
             });
         } catch (error: any) {
-            this.log(`Error creating adjustment: ${error.message}`);
+            this.logger.debug(`Error creating adjustment: ${error.message}`);
             throw error;
         }
     }

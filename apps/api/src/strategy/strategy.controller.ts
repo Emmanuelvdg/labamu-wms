@@ -5,10 +5,12 @@ import { PickingStrategyService } from './picking-strategy.service';
 import { WaveReleaseRuleService } from './wave-release-rule.service';
 import { TaskOptimisationService } from '../workflow/task-optimisation.service';
 import { FeatureFlagGuard, RequireFlag } from '../common/guards/feature-flag.guard';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
 
 type PickingStrategyType = 'BATCH' | 'CLUSTER' | 'WAVE' | 'SINGLE' | 'WAVELESS' | 'ZONE';
 
 @Controller('strategy')
+@UseGuards(PermissionsGuard)
 export class StrategyController {
     constructor(
         private readonly strategyService: StrategyService,

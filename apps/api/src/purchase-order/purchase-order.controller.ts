@@ -147,8 +147,7 @@ export class PurchaseOrderController {
     }
 
     @Get(':id/documents/:docId/download')
-    // Can optionally use a permissions guard here or pass token in URL
-    // @RequirePermission('PURCHASE_ORDERS', 'READ')
+    @RequirePermission('PURCHASE_ORDERS', 'READ')
     async downloadDocument(
         @Param('id') poId: string,
         @Param('docId') docId: string,

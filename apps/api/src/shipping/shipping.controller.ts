@@ -1,11 +1,13 @@
-import { Controller, Post, Body, Get, Param, Put, Query, Delete, Res } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Put, Query, Delete, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { ShippingService } from './shipping.service';
 import { ShippingDocsService } from './shipping-docs.service';
 import { RequirePermission } from '../common/auth/permissions.decorator';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
 import { CarrierIntegrationService } from './carrier-integration.service';
 
 @Controller('shipping')
+@UseGuards(PermissionsGuard)
 export class ShippingController {
     constructor(
         private readonly shippingService: ShippingService,

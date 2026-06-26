@@ -2,8 +2,10 @@ import { Controller, Get, Post, Put, Delete, Patch, Param, Body, UseGuards, NotF
 import { WarehouseAreaService, CreateAreaDto, UpdateAreaDto, UpdateFloorPlanDto } from './warehouse-area.service';
 import { PrismaService } from '../prisma.service';
 import { FeatureFlagGuard, RequireFlag } from '../common/guards/feature-flag.guard';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
 
 @Controller('warehouses')
+@UseGuards(PermissionsGuard)
 export class WarehouseAreaController {
     constructor(
         private warehouseAreaService: WarehouseAreaService,

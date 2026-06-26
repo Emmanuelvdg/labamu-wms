@@ -1,8 +1,10 @@
-import { Controller, Get, Post, Patch, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Query, UseGuards } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { ExpiryCheckerService } from './expiry-checker.service';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
 
 @Controller('notifications')
+@UseGuards(PermissionsGuard)
 export class NotificationController {
     constructor(
         private readonly notificationService: NotificationService,

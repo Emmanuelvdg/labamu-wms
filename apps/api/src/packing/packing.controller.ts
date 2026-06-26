@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Param, Body, Query, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, Delete, UseGuards } from '@nestjs/common';
 import { PackingService } from './packing.service';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
+import { RequirePermission } from '../common/auth/permissions.decorator';
 
 @Controller('packing')
+@UseGuards(PermissionsGuard)
 export class PackingController {
     constructor(private readonly packingService: PackingService) { }
 

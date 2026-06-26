@@ -27,11 +27,12 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        if (user.password) {
-            const isPasswordValid = await bcrypt.compare(password, user.password);
-            if (!isPasswordValid) {
-                throw new UnauthorizedException('Invalid credentials');
-            }
+        if (!user.password) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            throw new UnauthorizedException('Invalid credentials');
         }
 
         const payload: JwtPayload = {

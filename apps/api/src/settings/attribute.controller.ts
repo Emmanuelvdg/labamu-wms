@@ -1,8 +1,9 @@
-
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { AttributeService } from './attribute.service';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
 
 @Controller('settings/attributes')
+@UseGuards(PermissionsGuard)
 export class AttributeController {
     constructor(private readonly attributeService: AttributeService) { }
 

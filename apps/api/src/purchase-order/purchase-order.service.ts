@@ -586,6 +586,10 @@ export class PurchaseOrderService {
         const uploadDir = join(process.cwd(), 'uploads', 'po-documents');
         const file = join(uploadDir, doc.filePath);
 
+        if (!file.startsWith(uploadDir + require('path').sep) && file !== uploadDir) {
+            throw new AppError('FILE_NOT_FOUND', { filePath: doc.filePath });
+        }
+
         if (!fs.existsSync(file)) {
             throw new AppError('FILE_NOT_FOUND', { filePath: doc.filePath });
         }

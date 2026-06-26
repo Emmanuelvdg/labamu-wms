@@ -1,7 +1,9 @@
-import { Controller, Get, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Query, BadRequestException, UseGuards } from '@nestjs/common';
 import { RoutingService } from './routing.service';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
 
 @Controller('routing')
+@UseGuards(PermissionsGuard)
 export class RoutingController {
     constructor(private readonly routingService: RoutingService) { }
 

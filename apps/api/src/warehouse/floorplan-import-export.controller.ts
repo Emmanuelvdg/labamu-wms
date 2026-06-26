@@ -1,9 +1,11 @@
-import { Controller, Post, Get, Param, UseInterceptors, UploadedFile, Res, Header, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Param, UseInterceptors, UploadedFile, Res, Header, BadRequestException, UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FloorplanImportExportService } from './floorplan-import-export.service';
 import { Response } from 'express';
+import { PermissionsGuard } from '../common/auth/permissions.guard';
 
 @Controller('floorplan')
+@UseGuards(PermissionsGuard)
 export class FloorplanImportExportController {
     constructor(private readonly service: FloorplanImportExportService) { }
 
