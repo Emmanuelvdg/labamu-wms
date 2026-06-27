@@ -63,17 +63,19 @@ export class CustomerService {
             this.prisma.customer.count({ where: tenantWhere }),
         ]);
 
-        // Calculate lifetime value (LTV) per customer in this page
-        const data = await Promise.all(customers.map(async (c) => {
-            const agg = await this.prisma.order.aggregate({
-                where: { customerId: c.id, status: { notIn: ['CANCELLED'] } },
-                _sum: { totalAmount: true }
-            });
-            return {
-                ...c,
-                totalOrders: c._count.orders,
-                lifetimeValue: agg._sum.totalAmount || 0,
-            };
+        // Calculate lifetime value (LTV) per customer — single groupBy instead of N aggregates
+        const customerIds = customers.map(c => c.id);
+        const ltvRows = await this.prisma.order.groupBy({
+            by: ['customerId'],
+            where: { customerId: { in: customerIds }, status: { notIn: ['CANCELLED'] } },
+            _sum: { totalAmount: true },
+        });
+        const ltvMap = new Map(ltvRows.map(r => [r.customerId, r._sum.totalAmount ?? 0]));
+
+        const data = customers.map(c => ({
+            ...c,
+            totalOrders: c._count.orders,
+            lifetimeValue: ltvMap.get(c.id) ?? 0,
         }));
 
         return { data, total, limit: take, offset: skip };

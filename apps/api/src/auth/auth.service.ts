@@ -62,11 +62,12 @@ export class AuthService {
         if (!user) return;
 
         const token = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
         await (this.prisma.user.update as any)({
             where: { id: user.id },
-            data: { passwordResetToken: token, passwordResetTokenExpiresAt: expiresAt },
+            data: { passwordResetToken: tokenHash, passwordResetTokenExpiresAt: expiresAt },
         });
 
         const appUrl = process.env.APP_URL ?? 'https://app.labamu.id';
@@ -77,9 +78,10 @@ export class AuthService {
 
     /** Complete self-service password reset using the emailed token. */
     async resetPassword(token: string, newPassword: string): Promise<void> {
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
         const user = await (this.prisma.user.findFirst as any)({
             where: {
-                passwordResetToken: token,
+                passwordResetToken: tokenHash,
                 passwordResetTokenExpiresAt: { gt: new Date() },
             },
         }) as any;
@@ -106,10 +108,11 @@ export class AuthService {
 
         // Reuse the reset token slot as a verification token (expires in 24h)
         const token = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
         await (this.prisma.user.update as any)({
             where: { id: user.id },
-            data: { passwordResetToken: token, passwordResetTokenExpiresAt: expiresAt },
+            data: { passwordResetToken: tokenHash, passwordResetTokenExpiresAt: expiresAt },
         });
 
         const appUrl = process.env.APP_URL ?? 'https://app.labamu.id';
@@ -119,9 +122,10 @@ export class AuthService {
 
     /** Mark email as verified using the token from the verification email. */
     async verifyEmail(token: string): Promise<void> {
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
         const user = await (this.prisma.user.findFirst as any)({
             where: {
-                passwordResetToken: token,
+                passwordResetToken: tokenHash,
                 passwordResetTokenExpiresAt: { gt: new Date() },
             },
         }) as any;
