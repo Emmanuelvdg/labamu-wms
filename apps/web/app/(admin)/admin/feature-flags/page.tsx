@@ -15,12 +15,12 @@ export default function FeatureFlagsPage() {
     const [readinessWarning, setReadinessWarning] = useState('');
 
     useEffect(() => {
-        Promise.all([getAvailableFlags(), fetchTenants()])
-            .then(([flags, tenantList]: [any[], any[]]) => {
-                setAvailableFlags(flags);
-                setTenants(Array.isArray(tenantList) ? tenantList : []);
-            })
-            .catch((e: any) => setError(e.message || 'Failed to load data'));
+        getAvailableFlags()
+            .then((flags: any[]) => setAvailableFlags(Array.isArray(flags) ? flags : []))
+            .catch((e: any) => setError(e.message || 'Failed to load flags'));
+        fetchTenants()
+            .then((tenantList: any[]) => setTenants(Array.isArray(tenantList) ? tenantList : []))
+            .catch(() => { /* tenants are optional — don't block the flags section */ });
     }, []);
 
     useEffect(() => {

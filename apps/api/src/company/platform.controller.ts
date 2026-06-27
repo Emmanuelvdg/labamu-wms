@@ -53,7 +53,6 @@ export class PlatformController {
     // ── Feature Flags (Phase 7) ───────────────────────────────────────────────
 
     @Get('feature-flags/available')
-    @RequirePermission('ALL', 'MANAGE')
     getAvailableFlags() {
         return this.flags.getAvailableFlags();
     }

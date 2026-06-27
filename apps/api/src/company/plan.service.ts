@@ -74,9 +74,13 @@ export class PlanService {
                 this.prisma.order.count({ where: { warehouse: { companyId } } }),
             ]);
 
-            const usage = { userCount, warehouseCount, productCount, orderCount };
-
-            return { effective, usage, plan: company.plan };
+            return {
+                users:      { current: userCount,      max: effective.maxUsers },
+                warehouses: { current: warehouseCount, max: effective.maxWarehouses },
+                products:   { current: productCount,   max: effective.maxProducts },
+                orders:     { current: orderCount,     max: effective.maxOrders },
+                plan:       company.plan,
+            };
         });
     }
 
