@@ -140,7 +140,7 @@ export class WorkflowEngineService {
                     const backoffMs = (step.retryBackoffSeconds || 30) * Math.pow(2, currentTask.retryCount) * 1000;
                     const retryAfter = new Date(Date.now() + backoffMs);
 
-                    await this.prisma.workflowTaskInstance.update({
+                    await tx.workflowTaskInstance.update({
                         where: { id: currentTask.id },
                         data: {
                             status: 'PENDING',
@@ -152,7 +152,7 @@ export class WorkflowEngineService {
                         }
                     });
 
-                    await this.prisma.workflowAuditLog.create({
+                    await tx.workflowAuditLog.create({
                         data: {
                             instanceId,
                             action: 'TASK_RETRY_SCHEDULED',
@@ -169,7 +169,7 @@ export class WorkflowEngineService {
                 }
 
                 // Retries exhausted — mark workflow failed
-                await this.prisma.workflowInstance.update({
+                await tx.workflowInstance.update({
                     where: { id: instanceId },
                     data: { status: 'FAILED' }
                 });
@@ -179,14 +179,14 @@ export class WorkflowEngineService {
             // ── Parallel join check ────────────────────────────────────────────────
             // If the completing task belongs to a parallelGroup, wait until all
             // sibling tasks in the group are also COMPLETED before advancing.
-            const currentStep = await this.prisma.workflowStep.findUnique({ where: { id: currentTask.stepId } });
+            const currentStep = await tx.workflowStep.findUnique({ where: { id: currentTask.stepId } });
             if (currentStep?.parallelGroup) {
-                const siblingSteps = await this.prisma.workflowStep.findMany({
+                const siblingSteps = await tx.workflowStep.findMany({
                     where: { templateId: currentStep.templateId, parallelGroup: currentStep.parallelGroup }
                 });
                 const siblingStepIds = siblingSteps.map(s => s.id);
 
-                const incompleteSiblings = await this.prisma.workflowTaskInstance.findMany({
+                const incompleteSiblings = await tx.workflowTaskInstance.findMany({
                     where: {
                         instanceId,
                         stepId: { in: siblingStepIds },
@@ -204,14 +204,14 @@ export class WorkflowEngineService {
             }
 
             // Task is COMPLETED. Find next step.
-            const transitions = await this.prisma.workflowTransition.findMany({
+            const transitions = await tx.workflowTransition.findMany({
                 where: { fromStepId: currentTask.stepId },
                 orderBy: { order: 'asc' }
             });
 
             if (transitions.length === 0) {
                 // End of workflow
-                await this.prisma.workflowInstance.update({
+                await tx.workflowInstance.update({
                     where: { id: instanceId },
                     data: { status: 'COMPLETED', completedAt: new Date() }
                 });
@@ -228,7 +228,7 @@ export class WorkflowEngineService {
                 }
             }
 
-            const nextStep = await this.prisma.workflowStep.findUnique({ where: { id: nextStepId } });
+            const nextStep = await tx.workflowStep.findUnique({ where: { id: nextStepId } });
 
             // ── Parallel fan-out ───────────────────────────────────────────────────
             if (nextStep?.parallelGroup) {

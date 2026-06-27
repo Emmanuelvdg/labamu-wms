@@ -43,11 +43,11 @@ export class InventoryLedgerService {
                 status: 'DONE',
             },
             include: {
-                items: { include: { product: { select: { sku: true, name: true } } } },
+                items: { include: { product: { select: { id: true, sku: true, name: true } } } },
                 destinationLocation: {
                     select: {
                         name: true,
-                        warehouseView: { select: { name: true } } // Use warehouseView relation based on schema
+                        warehouseView: { select: { id: true, name: true } }
                     }
                 },
             },
@@ -57,13 +57,15 @@ export class InventoryLedgerService {
             for (const item of receipt.items) {
                 entries.push({
                     date: receipt.receivedAt.toISOString(),
-                    type: 'RECEIPT', // or PUTAWAY
+                    type: 'RECEIPT',
+                    productId: item.product.id,
                     productSku: item.product.sku,
                     productName: item.product.name,
                     quantity: item.quantity,
+                    warehouseId: receipt.destinationLocation?.warehouseView?.id,
                     warehouseName: receipt.destinationLocation?.warehouseView?.name || 'Unknown',
                     locationName: receipt.destinationLocation?.name,
-                    orderIds: [receipt.purchaseOrderId], // Link to PO
+                    orderIds: [receipt.purchaseOrderId],
                     notes: 'Inbound receipt',
                 });
             }
@@ -78,8 +80,8 @@ export class InventoryLedgerService {
                 status: { in: ['PENDING', 'PICKING', 'SHIPPED'] },
             },
             include: {
-                items: { include: { product: { select: { sku: true, name: true } } } },
-                warehouse: { select: { name: true } },
+                items: { include: { product: { select: { id: true, sku: true, name: true } } } },
+                warehouse: { select: { id: true, name: true } },
                 // Order might not have location directly, usually it's derived or on items.
                 // Schema has `warehouseId` on Order, but `locationId` is NOT on Order header in the schema I viewed.
                 // Checking schema: Order has `warehouseId`, `destinationWarehouseId`... no `locationId`.
@@ -95,11 +97,13 @@ export class InventoryLedgerService {
                 entries.push({
                     date: order.createdAt.toISOString(),
                     type,
+                    productId: item.product.id,
                     productSku: item.product.sku,
                     productName: item.product.name,
-                    quantity: -Math.abs(qty), // decrease
+                    quantity: -Math.abs(qty),
+                    warehouseId: order.warehouse?.id,
                     warehouseName: order.warehouse?.name,
-                    locationName: '', // Order header doesn't specify source location, specific tasks do.
+                    locationName: '',
                     orderIds: [order.id],
                     notes: `${type.toLowerCase()} order`,
                 });
@@ -114,8 +118,8 @@ export class InventoryLedgerService {
                 createdAt: { gte: startDate, lte: endDate },
             },
             include: {
-                product: { select: { sku: true, name: true } },
-                location: { select: { name: true, warehouseView: { select: { name: true } } } },
+                product: { select: { id: true, sku: true, name: true } },
+                location: { select: { name: true, warehouseView: { select: { id: true, name: true } } } },
                 // Adjustment has locationId, location has warehouseView.
                 // Adjustment does NOT have direct warehouseId relation in schema?
                 // Schema Line 510: `model InventoryAdjustment { ... locationId ... }`
@@ -128,9 +132,11 @@ export class InventoryLedgerService {
             entries.push({
                 date: adj.createdAt.toISOString(),
                 type: 'ADJUSTMENT',
+                productId: adj.product.id,
                 productSku: adj.product.sku,
                 productName: adj.product.name,
                 quantity: adj.quantity,
+                warehouseId: adj.location?.warehouseView?.id,
                 warehouseName: adj.location?.warehouseView?.name,
                 locationName: adj.location?.name,
                 orderIds: [],
@@ -140,10 +146,10 @@ export class InventoryLedgerService {
 
         // Apply optional filters from query
         const filtered = entries.filter((e) => {
-            if (query.warehouseId && e.warehouseName && e.warehouseName !== query.warehouseId) return false;
+            if (query.warehouseId && e.warehouseId !== query.warehouseId) return false;
             if (query.locationId && e.locationName && e.locationName !== query.locationId) return false;
             if (query.status && e.type !== query.status) return false;
-            if (query.productId && e.productSku !== query.productId) return false;
+            if (query.productId && e.productId !== query.productId) return false;
             return true;
         });
 
