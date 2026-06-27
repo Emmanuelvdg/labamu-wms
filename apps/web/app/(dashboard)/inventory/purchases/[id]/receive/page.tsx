@@ -27,6 +27,7 @@ export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{
     const [loading, setLoading] = useState(true);
     const [receiveQuantities, setReceiveQuantities] = useState<Record<string, number>>({});
     const [destinationLocationId, setDestinationLocationId] = useState('');
+    const [quantitiesInitialized, setQuantitiesInitialized] = useState(false);
 
     const { data: locations } = useSWR('locations', () => fetchLocations());
 
@@ -44,12 +45,18 @@ export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{
             setPo(poData);
             setReceipts(receiptsData);
 
-            // Initialize receive quantities to 0
-            const initialQuantities: Record<string, number> = {};
-            poData.items.forEach((item: any) => {
-                initialQuantities[item.productId] = 0;
+            // Initialize receive quantities to 0 only on first load (prevents StrictMode double-invoke from resetting user edits)
+            setQuantitiesInitialized(prev => {
+                if (!prev) {
+                    const initialQuantities: Record<string, number> = {};
+                    poData.items.forEach((item: any) => {
+                        initialQuantities[item.productId] = 0;
+                    });
+                    setReceiveQuantities(initialQuantities);
+                    return true;
+                }
+                return prev;
             });
-            setReceiveQuantities(initialQuantities);
 
             // Auto-select a receiving location if possible
             const receivingLoc = locationsData?.find((l: any) =>
@@ -144,7 +151,7 @@ export default function ReceivePurchaseOrderPage({ params }: { params: Promise<{
     return (
         <div className="min-h-screen bg-gray-50 p-8">
             <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
-                <h1 className="text-2xl font-bold mb-6">Receive Purchase Order #{po.orderNumber}</h1>
+                <h1 className="text-2xl font-bold mb-6">Receive Purchase Order #{po.poNumber}</h1>
 
                 <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
