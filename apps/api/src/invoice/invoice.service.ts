@@ -61,6 +61,10 @@ export class InvoiceService {
             include: { vendor: true, purchaseOrder: true, items: true }
         });
         if (!invoice) throw new NotFoundException('Invoice not found');
+        const companyId = getCurrentCompanyId();
+        if (companyId && invoice.vendor?.companyId !== companyId) {
+            throw new NotFoundException('Invoice not found');
+        }
         return invoice;
     }
 

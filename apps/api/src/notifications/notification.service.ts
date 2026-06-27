@@ -68,9 +68,9 @@ export class NotificationService {
         return this.prisma.notification.count({ where });
     }
 
-    async markAsRead(id: string) {
+    async markAsRead(id: string, userId?: string) {
         return this.prisma.notification.update({
-            where: { id },
+            where: userId ? { id, userId } : { id },
             data: { read: true },
         });
     }

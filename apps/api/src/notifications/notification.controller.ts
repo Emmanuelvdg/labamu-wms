@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Patch, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Query, UseGuards, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { NotificationService } from './notification.service';
 import { ExpiryCheckerService } from './expiry-checker.service';
 import { PermissionsGuard } from '../common/auth/permissions.guard';
@@ -28,8 +29,9 @@ export class NotificationController {
     }
 
     @Patch(':id/read')
-    async markAsRead(@Param('id') id: string) {
-        return this.notificationService.markAsRead(id);
+    async markAsRead(@Param('id') id: string, @Req() req: Request) {
+        const userId = (req as any).user?.id;
+        return this.notificationService.markAsRead(id, userId);
     }
 
     @Post('mark-all-read')
